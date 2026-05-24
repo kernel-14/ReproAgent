@@ -1,0 +1,332 @@
+# configs/or_optimization_loop.yaml
+# Faithful reproduction configuration for the optimization and evaluation loop of "Stay on topic with Classifier-Free Guidance"
+
+# -------------------------------------------------------------------------
+# 1. Defined Symbols (defines_symbols)
+# -------------------------------------------------------------------------
+defines_symbols:
+  w_p: "prompt"
+  flops_computation: "flops_computation_formula"
+  sum_k: "sum_k_formula"
+  p_k: "p_k_formula"
+  x_i: "x_i_formula"
+  sum_i_1_n: "sum_i_1_n_formula"
+  equation: "equation_formula"
+  formula: "formula_definition"
+  search: "search_algorithm"
+  p_theta: "p_theta_model"
+  p_phi: "p_phi_classifier"
+
+# -------------------------------------------------------------------------
+# 2. Calls Symbols (calls_symbols)
+# -------------------------------------------------------------------------
+calls_symbols:
+  compute_loss: "src.cfg_guidance.metrics.compute_loss"
+  aggregate_loss: "src.cfg_guidance.metrics.aggregate_loss"
+  compute_reward: "src.cfg_guidance.metrics.compute_reward"
+  aggregate_reward: "src.cfg_guidance.metrics.aggregate_reward"
+  compute_ours_oradaptersby_inventory_objective: "src.cfg_guidance.metrics.compute_ours_oradaptersby_inventory_objective"
+  compute_ours_oradaptersby_inventory_score: "src.cfg_guidance.metrics.compute_ours_oradaptersby_inventory_score"
+  compute_accuracy: "src.cfg_guidance.metrics.compute_accuracy"
+  aggregate_accuracy: "src.cfg_guidance.metrics.aggregate_accuracy"
+  compute_metric_shannon_entropy_accuracy_countcomparisonbetween_objective: "src.cfg_guidance.metrics.compute_metric_shannon_entropy_accuracy_countcomparisonbetween_objective"
+  compute_metric_shannon_entropy_accuracy_countcomparisonbetween_score: "src.cfg_guidance.metrics.compute_metric_shannon_entropy_accuracy_countcomparisonbetween_score"
+  load_data_utils: "src.cfg_guidance.data_utils.load_data_utils"
+  prepare_data_utils: "src.cfg_guidance.data_utils.prepare_data_utils"
+
+# -------------------------------------------------------------------------
+# 3. Priority Methods & Sweeps
+# -------------------------------------------------------------------------
+priority_methods:
+  - "ours"
+  - "chain_of_thought"
+  - "bert"
+  - "ppo"
+
+priority_sweeps:
+  - "p"
+  - "temperature"
+
+# -------------------------------------------------------------------------
+# 4. Environment/Task Factories
+# -------------------------------------------------------------------------
+environment_task_factories:
+  - id: "unit-002"
+    aliases: ["zero_shot_eval", "glue"]
+    setup_metadata:
+      description: "Zero-shot evaluation environment"
+      decides_which: "zero_shot"
+    availability_check: "check_zero_shot_available"
+    runnable_config_hook: "setup_zero_shot_config"
+  - id: "unit-003"
+    aliases: ["cot_eval"]
+    setup_metadata:
+      description: "Chain-of-Thought evaluation environment"
+      decides_which: "cot"
+    availability_check: "check_cot_available"
+    runnable_config_hook: "setup_cot_config"
+  - id: "unit-004"
+    aliases: ["program_synthesis_eval"]
+    setup_metadata:
+      description: "Program synthesis evaluation environment"
+      decides_which: "program_synthesis"
+    availability_check: "check_program_synthesis_available"
+    runnable_config_hook: "setup_program_synthesis_config"
+  - id: "unit-007"
+    aliases: ["negative_prompting_eval"]
+    setup_metadata:
+      description: "Negative prompting evaluation environment"
+      decides_which: "negative_prompting"
+    availability_check: "check_negative_prompting_available"
+    runnable_config_hook: "setup_negative_prompting_config"
+  - id: "glue"
+    aliases: ["glue_tasks"]
+    setup_metadata:
+      description: "GLUE benchmark tasks"
+      decides_which: "glue"
+    availability_check: "check_glue_available"
+    runnable_config_hook: "setup_glue_config"
+  - id: "significantly_different"
+    aliases: ["significantly_different_eval"]
+    setup_metadata:
+      description: "Significantly different task distributions"
+    availability_check: "check_significantly_different_available"
+    runnable_config_hook: "setup_significantly_different_config"
+  - id: "underperform_distributions_among_all"
+    aliases: ["underperform_distributions"]
+    setup_metadata:
+      description: "Underperforming distributions among all models"
+    availability_check: "check_underperform_distributions_available"
+    runnable_config_hook: "setup_underperform_distributions_config"
+  - id: "humanoid"
+    aliases: ["humanoid_eval"]
+    setup_metadata:
+      description: "Humanoid evaluation environment"
+    availability_check: "check_humanoid_available"
+    runnable_config_hook: "setup_humanoid_config"
+  - id: "common_sense_reasoning"
+    aliases: ["common_sense_reasoning_eval"]
+    setup_metadata:
+      description: "Common sense reasoning tasks"
+    availability_check: "check_common_sense_reasoning_available"
+    runnable_config_hook: "setup_common_sense_reasoning_config"
+  - id: "diverse_array"
+    aliases: ["diverse_array_eval"]
+    setup_metadata:
+      description: "Diverse array of tasks"
+    availability_check: "check_diverse_array_available"
+    runnable_config_hook: "setup_diverse_array_config"
+
+# -------------------------------------------------------------------------
+# 5. Dataset/Benchmark Loaders
+# -------------------------------------------------------------------------
+dataset_benchmark_loaders:
+  - id: "LAMBADA"
+    setup_metadata:
+      description: "LAMBADA dataset for word prediction"
+    validation_check: "validate_lambada"
+    runnable_config_hook: "load_lambada_config"
+  - id: "Closebook QA"
+    setup_metadata:
+      description: "Closebook QA datasets (TriviaQA, WebQuestions)"
+    validation_check: "validate_closebook_qa"
+    runnable_config_hook: "load_closebook_qa_config"
+  - id: "Common Sense Reasoning"
+    setup_metadata:
+      description: "Common Sense Reasoning suite (HellaSwag, PIQA, ARC, etc.)"
+    validation_check: "validate_common_sense_reasoning"
+    runnable_config_hook: "load_common_sense_reasoning_config"
+  - id: "Open-Assistant"
+    setup_metadata:
+      description: "Open-Assistant dataset for negative prompting"
+    validation_check: "validate_open_assistant"
+    runnable_config_hook: "load_open_assistant_config"
+
+# -------------------------------------------------------------------------
+# 6. Selectable Method/Baseline/Variant Factories
+# -------------------------------------------------------------------------
+selectable_methods:
+  - id: "ours"
+    class_path: "src.cfg_guidance.wrapper.CFGWrapper"
+    setup_metadata:
+      description: "Our proposed Classifier-Free Guidance method"
+  - id: "chain_of_thought"
+    class_path: "src.cfg_guidance.wrapper.CoTWrapper"
+    setup_metadata:
+      description: "Chain-of-Thought prompting baseline"
+  - id: "bert"
+    class_path: "src.cfg_guidance.wrapper.BERTWrapper"
+    setup_metadata:
+      description: "BERT baseline model"
+  - id: "gamma_5"
+    class_path: "src.cfg_guidance.wrapper.CFGWrapper"
+    setup_metadata:
+      description: "CFG with gamma=1.5"
+      default_gamma: 1.5
+  - id: "CFG Logit Transformation"
+    class_path: "src.cfg_guidance.core.cfg_logit_transformation"
+    setup_metadata:
+      description: "Core CFG logit transformation function"
+  - id: "Chain-of-Thought (CoT)"
+    class_path: "src.cfg_guidance.wrapper.CoTWrapper"
+    setup_metadata:
+      description: "Chain-of-Thought (CoT) prompting structure"
+  - id: "Negative Prompting"
+    class_path: "src.cfg_guidance.wrapper.NegativePromptingWrapper"
+    setup_metadata:
+      description: "Negative prompting using CFG framework"
+  - id: "LLaMA-7B"
+    class_path: "src.cfg_guidance.wrapper.HFModelWrapper"
+    setup_metadata:
+      model_name: "decapoda-research/llama-7b-hf"
+  - id: "GPT-J"
+    class_path: "src.cfg_guidance.wrapper.HFModelWrapper"
+    setup_metadata:
+      model_name: "EleutherAI/gpt-j-6B"
+  - id: "CodeGen-350M-mono"
+    class_path: "src.cfg_guidance.wrapper.HFModelWrapper"
+    setup_metadata:
+      model_name: "Salesforce/codegen-350M-mono"
+  - id: "Falcon-7b-Base"
+    class_path: "src.cfg_guidance.wrapper.HFModelWrapper"
+    setup_metadata:
+      model_name: "tiiuae/falcon-7b"
+  - id: "Falcon-7b-Instruct"
+    class_path: "src.cfg_guidance.wrapper.HFModelWrapper"
+    setup_metadata:
+      model_name: "tiiuae/falcon-7b-instruct"
+  - id: "Redpajama-3b"
+    class_path: "src.cfg_guidance.wrapper.HFModelWrapper"
+    setup_metadata:
+      model_name: "togethercomputer/RedPajama-INCITE-Base-3B-v1"
+
+# -------------------------------------------------------------------------
+# 7. Required Parameter Sweeps
+# -------------------------------------------------------------------------
+parameter_sweeps:
+  guidance_scale_gamma:
+    values: [1.0, 1.25, 1.5, 2.0, 3.0, 5.0]
+    default: 1.5
+  top_p:
+    values: [0.9]
+    default: 0.9
+  temperature:
+    values: [0.2, 0.6, 0.8, 1.0, 1.5]
+    default: 0.8
+
+# -------------------------------------------------------------------------
+# 8. Full Experiment-Matrix Route Contract
+# -------------------------------------------------------------------------
+experiment_matrix:
+  datasets_or_tasks:
+    - "unit-002"
+    - "unit-003"
+    - "unit-004"
+    - "unit-007"
+    - "glue"
+    - "significantly_different"
+    - "underperform_distributions_among_all"
+    - "humanoid"
+    - "common_sense_reasoning"
+    - "diverse_array"
+  methods_or_models:
+    - "ours"
+    - "chain_of_thought"
+    - "bert"
+    - "gamma_5"
+    - "CFG Logit Transformation"
+    - "Chain-of-Thought (CoT)"
+    - "Negative Prompting"
+    - "LLaMA-7B"
+    - "GPT-J"
+    - "CodeGen-350M-mono"
+    - "Falcon-7b-Base"
+    - "Falcon-7b-Instruct"
+    - "Redpajama-3b"
+  parameters:
+    - "guidance_scale_gamma"
+    - "top_p"
+    - "temperature"
+
+# -------------------------------------------------------------------------
+# 9. Formula/Algorithm Anchors
+# -------------------------------------------------------------------------
+formula_anchors:
+  section_2_1_classifier_guidance:
+    symbols: ["gamma", "P_theta", "P_phi", "theta", "epsilon_t", "x_t+1"]
+    defaults:
+      gamma: 1.5
+      theta: 1.0
+      epsilon_t: 0.0
+      x_t_plus_1: 3.0
+    formula: "log P_hat(epsilon_t | x_t+1, c) = gamma * log P_theta(epsilon_t | x_t+1, c) - (gamma - 1) * log P_theta(epsilon_t | x_t+1)"
+  section_2_2_cfg_language_models:
+    symbols: ["gamma", "P_theta", "prod_i=1^T", "w_i", "w_j<i", "prod_i^T"]
+    defaults:
+      gamma: 1.5
+      prod_i_1_T: 1.0
+      w_i: 6.0
+      w_j_less_than_i: 7.0
+      prod_i_T: 5.0
+      constant: 3.4
+    formula: "log P_hat(w_i | w_j<i, c) = log P_theta(w_i | w_j<i) + gamma * (log P_theta(w_i | w_j<i, c) - log P_theta(w_i | w_j<i))"
+  section_3_1_basic_prompting:
+    symbols: ["gamma"]
+    defaults:
+      gamma: 1.5
+      llama_accuracy: 81.0
+      palm_accuracy: 77.9
+    formula: "LLaMA-7B accuracy with gamma=1.5 is 81.0%, outperforming PaLM-540B zero-shot of 77.9%"
+  section_3_3_1_program_synthesis:
+    symbols: ["gamma"]
+    defaults:
+      gamma: 1.25
+      k_values: [1, 10, 100]
+      temperature: 0.2
+    formula: "Evaluate pass@k for k=1, 10, 100 under different CFG strengths and temperatures"
+  section_5_3_visualizing_cfg:
+    symbols: ["w_t", "w_<t", "w_T", "w_hat", "c_bar"]
+    defaults:
+      rank_limit: 3
+    formula: "Rank vocabulary by difference: log P(w_t | w_<t) - log P(w_T | w_hat)"
+  section_c_5_deliberative_prompting:
+    symbols: ["gamma"]
+    defaults:
+      gamma_baseline: 1.0
+      gamma_ours: 1.5
+      val_1: 14.0
+      val_2: 0.8
+      val_3: 15.0
+      val_4: 0.6
+    formula: "First value is result for gamma=1 (baseline), second value is result for gamma=1.5 (ours)"
+  section_e_cfg_vs_instruction_tuning:
+    symbols: ["CFG", "gamma", "P_instruct"]
+    defaults:
+      gamma: 1.5
+      top_p: 0.9
+      val_1: 90.0
+      val_2: 50.0
+    formula: "Entropy of logits for vanilla prompted P(y|x), unprompted P(x), CFG-gamma=1.5, and P_instruct(y|x)"
+  addendum:
+    symbols: ["w_p", "flops_computation", "sum_k", "p_k", "x_i", "x_<i", "sum_i=1^n"]
+    defaults:
+      w_p: 5.1
+      constant: 1.0
+    formula: "FLOPs measured using electra flops_computation.py formula; Falcon-7b-Base model used at start of Section 5"
+
+# -------------------------------------------------------------------------
+# 10. Training/Optimization Loop Config
+# -------------------------------------------------------------------------
+training_loop:
+  epochs: 1
+  batch_size: 4
+  learning_rate: 0.00005
+  optimizer: "AdamW"
+  weight_decay: 0.01
+  warmup_steps: 10
+  max_grad_norm: 1.0
+  logging_steps: 5
+  save_steps: 50
+  eval_steps: 10
+  output_dir: "results/checkpoints"
+  log_file: "results/training_trace.json"

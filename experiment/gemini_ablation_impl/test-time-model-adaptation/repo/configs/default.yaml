@@ -1,0 +1,265 @@
+# configs/default.yaml
+# Paper: Test-Time Model Adaptation with Only Forward Passes
+# Faithful reproduction configuration and experiment registry
+
+project_metadata:
+  title: "Test-Time Model Adaptation with Only Forward Passes"
+  hypothesis: "FOA maintains performance on quantized models and generalizes across diverse datasets like Autonomous Driving and WILDS"
+  decision_value: "reproduces the primary claims regarding robustness, efficiency, and generalization"
+
+defines_symbols:
+  source_statistics_collection: "Source Statistics Collection"
+  ood_data_pipeline: "OOD Data Pipeline"
+  foa_core_adaptation: "FOA Core Adaptation"
+  back_to_source_activation_shifting: "Back-to-Source Activation Shifting"
+  imagenet_c_main_benchmark: "ImageNet-C Main Benchmark"
+  ood_generalization_benchmark: "OOD Generalization Benchmark"
+  ablation_study: "Ablation Study"
+  metrics_and_artifacts_writer: "Metrics and Artifacts Writer"
+  trust_remote_code: true
+  load_dataset: true
+  reset_peak_memory_stats: true
+  max_memory_allocated: true
+
+global_settings:
+  trust_remote_code: true
+  load_dataset: true
+  reset_peak_memory_stats: true
+  max_memory_allocated: true
+  device: "cuda"
+  seed: 42
+  mode: "smoke" # "smoke" or "full"
+
+source_statistics_collection:
+  enabled: true
+  num_samples: 256  # Q in the paper
+  save_path: "results/source_stats.pt"
+  description: "Before TTA, collect a small set of source in-distribution samples D_S and feed them into the model to obtain CLS tokens e_i^0, then calculate mean and std."
+
+back_to_source_activation_shifting:
+  enabled: true
+  shifting_layer_index: 11  # N final layer CLS feature
+  alpha: 1.0  # alpha values = 0, 1
+  moving_average_momentum: 0.9
+  formula: "d_t = mu_N^S - mu_N(t)"
+
+interval_update_bs1:
+  enabled: true
+  interval: 10  # pre-defined number of samples before CMA optimization update for BS=1
+
+# Expose required parameter sweeps as executable constants/default accessors
+parameter_sweeps:
+  learning_rate: [0.0001, 0.001, 0.01, 0.1]
+  K: [2, 4, 8, 12, 16, 20, 24, 28]  # population size K in [2, 28]
+  prompt_dim: [192, 384, 768]
+  N: [9, 10, 11]  # shifting layer index
+  batch_size: [1, 64]
+  alpha: [0, 1]
+  lambda: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+  prompt_count: [1, 3, 5, 10]
+
+# Fixed hyperparameter anchors
+fixed_hyperparameters:
+  batch_size_64: 64
+  momentum_0.9: 0.9
+  default_lambda: 0.4
+  default_K: 28
+  default_prompt_dim: 768
+  default_shifting_layer: 11
+
+# Paper evidence contract: explicitly register environment/task aliases
+environment_registry:
+  imagenet:
+    id: "imagenet"
+    alias: "ImageNet"
+    family: "ImageNet"
+    setup_metadata:
+      num_classes: 1000
+      resolution: 224
+    availability_check: "check_imagenet_available"
+  wilds:
+    id: "wilds"
+    alias: "WILDS"
+    family: "WILDS"
+    setup_metadata:
+      num_classes: 182
+      resolution: 224
+    availability_check: "check_wilds_available"
+
+# Paper evidence contract: explicitly register dataset/benchmark aliases
+dataset_registry:
+  imagenet_1k:
+    id: "imagenet_1k"
+    alias: "ImageNet-1K"
+    loader_hook: "load_imagenet_1k"
+    validation_check: "validate_imagenet_1k"
+  imagenet_c:
+    id: "imagenet_c"
+    alias: "ImageNet-C"
+    loader_hook: "load_imagenet_c"
+    validation_check: "validate_imagenet_c"
+  imagenet_r:
+    id: "imagenet_r"
+    alias: "ImageNet-R"
+    loader_hook: "load_imagenet_r"
+    validation_check: "validate_imagenet_r"
+  imagenet_v2:
+    id: "imagenet_v2"
+    alias: "ImageNetV2"
+    loader_hook: "load_imagenet_v2"
+    validation_check: "validate_imagenet_v2"
+  imagenet_sketch:
+    id: "imagenet_sketch"
+    alias: "ImageNet-Sketch"
+    loader_hook: "load_imagenet_sketch"
+    validation_check: "validate_imagenet_sketch"
+  autonomous_driving:
+    id: "autonomous_driving"
+    alias: "Autonomous Driving"
+    loader_hook: "load_autonomous_driving"
+    validation_check: "validate_autonomous_driving"
+  wilds:
+    id: "wilds"
+    alias: "WILDS"
+    loader_hook: "load_wilds"
+    validation_check: "validate_wilds"
+
+# Paper evidence contract: expose method/baseline/attack selectors
+method_registry:
+  ours: "foa"
+  foa: "foa"
+  lame: "lame"
+  t3a: "t3a"
+  tent: "tent"
+  cotta: "cotta"
+  sar: "sar"
+  cma_es: "cma_es"
+  vit: "vit"
+  resnet: "resnet"
+  vision_mamba: "vision_mamba"
+  test_time_adaptation: "tta"
+
+# Model precision registry and quantization preparation hook
+model_precision_registry:
+  full_precision: "float32"
+  quantized_8bit: "int8"
+  quantization_preparation_hook: "prepare_quantized_vit"
+
+# Materialize a callable protocol matrix linking named experiments to environments/tasks, method selectors, metric functions, and artifact writer functions
+experiment_registry:
+  experiment_i:
+    name: "Experiment I: ImageNet-C"
+    environment: "imagenet"
+    dataset: "imagenet_c"
+    methods: ["foa", "t3a", "tent", "cotta", "sar", "NoAdapt"]
+    metrics: ["accuracy", "ece"]
+    artifact_writers: ["write_metrics_artifact", "write_evaluation_results_artifact", "write_table_2_artifact", "write_table_11_artifact"]
+    run_routes: ["run_table_2_route", "run_table_11_route"]
+    tables: ["Table 2", "Table 11"]
+  experiment_ii:
+    name: "Experiment II: Quantized Models"
+    environment: "imagenet"
+    dataset: "imagenet_c"
+    methods: ["foa", "t3a", "tent", "cotta", "sar", "NoAdapt"]
+    precision: "quantized_8bit"
+    metrics: ["accuracy", "ece"]
+    artifact_writers: ["write_metrics_artifact", "write_evaluation_results_artifact", "write_table_4_artifact"]
+    tables: ["Table 4"]
+  experiment_iii:
+    name: "Experiment III: Ablation Studies"
+    environment: "imagenet"
+    dataset: "imagenet_c"
+    methods: ["foa"]
+    ablation_switches:
+      shifting: [true, false]
+      prompting: [true, false]
+      fitness: ["entropy", "alignment"]
+    metrics: ["accuracy"]
+    artifact_writers: ["write_ablation_results_artifact", "write_table_5_artifact"]
+    tables: ["Table 5"]
+  experiment_iv:
+    name: "Experiment IV: Cross-Dataset (Driving, WILDS)"
+    environment: "wilds"
+    dataset: "wilds"
+    methods: ["foa", "t3a", "tent", "cotta", "sar", "NoAdapt"]
+    metrics: ["accuracy"]
+    artifact_writers: ["write_evaluation_results_artifact", "write_table_6_artifact", "write_table_7_artifact"]
+    tables: ["Table 6", "Table 7"]
+  experiment_v:
+    name: "Experiment V: Generalization (R/V2/Sketch)"
+    environment: "imagenet"
+    dataset: ["imagenet_r", "imagenet_v2", "imagenet_sketch"]
+    methods: ["foa", "t3a", "tent", "cotta", "sar", "NoAdapt"]
+    metrics: ["accuracy"]
+    artifact_writers: ["write_evaluation_results_artifact", "write_table_10_artifact"]
+    tables: ["Table 10"]
+  experiment_vi:
+    name: "Experiment VI: Sensitivity & Complexity"
+    environment: "imagenet"
+    dataset: "imagenet_c"
+    methods: ["foa"]
+    sweeps: ["K", "alpha", "lambda", "prompt_count"]
+    metrics: ["accuracy", "ece", "wall_clock_time", "peak_memory"]
+    artifact_writers: ["write_sensitivity_report_artifact", "write_complexity_results_artifact", "write_table_8_artifact", "write_table_15_artifact", "write_figure_4_artifact"]
+    tables: ["Table 8", "Table 15"]
+    figures: ["Figure 4"]
+  experiment_vii:
+    name: "Experiment VII: Model Variants (ViT, ResNet)"
+    environment: "imagenet"
+    dataset: "imagenet_c"
+    methods: ["foa"]
+    models: ["vit", "resnet"]
+    metrics: ["accuracy"]
+    artifact_writers: ["write_evaluation_results_artifact", "write_table_16_artifact", "write_table_17_artifact"]
+    tables: ["Table 16", "Table 17"]
+
+# Evidence obligation matrix registry
+evidence_obligation_matrix:
+  rows:
+    - method: "FOA"
+      source_path: "methods/foa.py"
+    - method: "CoTTA"
+      source_path: "methods/baselines.py"
+    - method: "SAR"
+      source_path: "methods/baselines.py"
+    - dataset: "ImageNet-C/R/V2/Sketch"
+      source_path: "data/loader.py"
+    - dataset: "Autonomous Driving, WILDS"
+      source_path: "data/loader.py"
+    - metric: "Accuracy, ECE"
+      source_path: "utils/metrics.py"
+    - experiment: "Experiment I: ImageNet-C"
+      target: "Table 2, Table 11"
+    - experiment: "Experiment II: Quantized Models"
+      target: "Table 4"
+    - experiment: "Experiment III: Ablation Studies"
+      target: "Table 5"
+    - experiment: "Experiment IV: Cross-Dataset (Driving, WILDS)"
+      target: "Table 6, Table 7"
+    - experiment: "Experiment V: Generalization (R/V2/Sketch)"
+      target: "Table 10"
+    - experiment: "Experiment VI: Sensitivity & Complexity"
+      target: "Table 8, Table 15, Figure 4"
+    - experiment: "Experiment VII: Model Variants (ViT, ResNet)"
+      target: "Table 16, Table 17"
+
+# Declared writes_artifacts
+writes_artifacts:
+  - "results/metrics.json"
+  - "results/sensitivity_report.json"
+  - "results/adaptation_trace.json"
+  - "results/source_stats.pt"
+  - "results/dataset_registry.json"
+  - "results/environment_registry.json"
+  - "results/evaluation_results.json"
+  - "results/ablation_results.json"
+  - "results/complexity_results.json"
+  - "results/evidence_contract_matrix.json"
+  - "results/experiment_registry.json"
+  - "results/artifact_manifest.json"
+  - "results/tables/experiment_results.csv"
+  - "results/figures/figure_2.png"
+  - "results/tables/table_2.csv"
+  - "results/figures/figure_3.png"
+  - "results/tables/table_3.csv"
+  - "results/tables/table_4.csv"

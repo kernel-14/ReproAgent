@@ -1,0 +1,417 @@
+# config/default.yaml
+# Centralized configuration and registry for DPMs-ANT reproduction.
+# Reference Grounding: Section 4 & 5 of the paper "Bridging Data Gaps in Diffusion Models with Adversarial Noise-Based Transfer Learning"
+
+metadata:
+  project_name: "DPMs-ANT Reproduction"
+  paper_title: "Bridging Data Gaps in Diffusion Models with Adversarial Noise-Based Transfer Learning"
+  blacklisted_repos:
+    - "https://github.com/ShinyGua/DPMs-ANT"
+
+# 1. Fixed Hyperparameter Anchors
+fixed_hyperparameters:
+  gamma_5: 5.0
+  omega_0.02: 0.02
+  adversarial_inner_steps_10: 10
+  batch_size_64: 64
+  pretraining_iterations_5000: 5000
+  finetuning_iterations_300: 300
+  shot_setting_10: 10
+  shot_setting_100: 100
+
+# 2. Parameter Sweeps and Bounded Config Entries
+parameter_sweeps:
+  shot_count:
+    default: 10
+    values: [10, 100]
+  training_iteration_count:
+    default: 300
+    values: [0, 50, 100, 150, 200, 250, 300, 350]
+  similarity_guidance_scale:
+    default: 5.0
+    values: [1.0, 3.0, 5.0, 7.0, 9.0]
+  adversarial_noise_scale:
+    default: 0.02
+    values: [0.01, 0.02, 0.03, 0.04, 0.05]
+  learning_rate:
+    default: 5e-5
+    values: [5e-6, 1e-5, 5e-5, 1e-4]
+  batch_size:
+    default: 64
+    values: [16, 32, 64, 128]
+
+# 3. Environment and Task Registry
+environments:
+  toy_gaussian_2d:
+    id: "toy_gaussian_2d"
+    alias: "2D Gaussian environment"
+    description: "2D Gaussian source N((1,1), I) and target N((-1,-1), I)"
+    setup_metadata:
+      source_mean: [1.0, 1.0]
+      target_mean: [-1.0, -1.0]
+      covariance: "identity"
+    availability_check: "src.reporting.exp_toy_gaussian.check_availability"
+    runnable_config_hook: "experiments.toy_gaussian.run_toy_experiment"
+  
+  fewshot_image_generation:
+    id: "fewshot_image_generation"
+    alias: "shot image generation"
+    description: "Few-shot image generation transfer tasks"
+    setup_metadata:
+      shot_count: 10
+    availability_check: "src.reporting.exp_fewshot_transfer.check_availability"
+    runnable_config_hook: "experiments.fewshot_main.run_few_shot_experiment"
+
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    description: "ImageNet environment for external validation"
+    setup_metadata:
+      keep_external: true
+    availability_check: "src.reporting.exp_fewshot_transfer.check_imagenet_availability"
+    runnable_config_hook: "experiments.fewshot_main.run_imagenet_experiment"
+
+# 4. Dataset Registry
+datasets:
+  toy_gaussian:
+    id: "toy_gaussian"
+    alias: "2D Gaussian source N((1,1), I) and target N((-1,-1), I)"
+    source: "N((1,1), I)"
+    target: "N((-1,-1), I)"
+    validation_check: "src.reporting.exp_toy_gaussian.validate_toy_dataset"
+  
+  ffhq:
+    id: "ffhq"
+    alias: "ffhq"
+    description: "Flickr-Faces-HQ dataset (source domain)"
+    validation_check: "src.reporting.exp_fewshot_transfer.validate_ffhq"
+
+  lsun_church:
+    id: "lsun_church"
+    alias: "lsun_church"
+    description: "LSUN Church dataset (source domain)"
+    validation_check: "src.reporting.exp_fewshot_transfer.validate_lsun_church"
+
+  babies:
+    id: "babies"
+    alias: "10-shot Babies"
+    description: "10-shot Babies target dataset"
+    validation_check: "src.reporting.exp_fewshot_transfer.validate_babies"
+
+  sunglasses:
+    id: "sunglasses"
+    alias: "10-shot Sunglasses"
+    description: "10-shot Sunglasses target dataset"
+    validation_check: "src.reporting.exp_fewshot_transfer.validate_sunglasses"
+
+  raphael_peale:
+    id: "raphael_peale"
+    alias: "10-shot Raphael Peale"
+    description: "10-shot Raphael Peale target dataset"
+    validation_check: "src.reporting.exp_fewshot_transfer.validate_raphael_peale"
+
+  sketches:
+    id: "sketches"
+    alias: "10-shot Sketches"
+    description: "10-shot Sketches target dataset"
+    validation_check: "src.reporting.exp_fewshot_transfer.validate_sketches"
+
+  face_paintings:
+    id: "face_paintings"
+    alias: "10-shot face paintings"
+    description: "10-shot face paintings target dataset"
+    validation_check: "src.reporting.exp_fewshot_transfer.validate_face_paintings"
+
+  haunted_houses:
+    id: "haunted_houses"
+    alias: "Haunted Houses"
+    description: "10-shot Haunted Houses target dataset"
+    validation_check: "src.reporting.exp_fewshot_transfer.validate_haunted_houses"
+
+  landscape_drawings:
+    id: "landscape_drawings"
+    alias: "Landscape drawings"
+    description: "10-shot Landscape drawings target dataset"
+    validation_check: "src.reporting.exp_fewshot_transfer.validate_landscape_drawings"
+
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    description: "ImageNet dataset for external validation"
+    validation_check: "src.reporting.exp_fewshot_transfer.validate_imagenet"
+
+# 5. Method and Baseline Registry
+methods:
+  ours:
+    id: "ours"
+    alias: "ours"
+    description: "Our proposed DPMs-ANT method"
+    modules: ["Adaptor-based Diffusion Architecture", "Similarity-Guided Training (SGT) Module", "Adversarial Noise Selection (AN) Module"]
+  
+  dpms_ant:
+    id: "dpms_ant"
+    alias: "dpms_ant"
+    description: "Diffusion Probabilistic Models with Adversarial Noise-Based Transfer Learning"
+    modules: ["Adaptor-based Diffusion Architecture", "Similarity-Guided Training (SGT) Module", "Adversarial Noise Selection (AN) Module"]
+
+  diffusion_model:
+    id: "diffusion_model"
+    alias: "diffusion_model"
+    description: "Standard Diffusion Model baseline"
+
+  ddpm:
+    id: "ddpm"
+    alias: "ddpm"
+    description: "Denoising Diffusion Probabilistic Models baseline"
+
+  ldm:
+    id: "ldm"
+    alias: "ldm"
+    description: "Latent Diffusion Models baseline"
+
+  similarity_guided_training:
+    id: "similarity_guided_training"
+    alias: "similarity_guided_training"
+    description: "DPMs-ANT without Adversarial Noise Selection (SGT only)"
+
+  adversarial_noise_selection:
+    id: "adversarial_noise_selection"
+    alias: "adversarial_noise_selection"
+    description: "Adversarial Noise Selection module only"
+
+  ddpm_pa:
+    id: "ddpm_pa"
+    alias: "ddpm_pa"
+    description: "DDPM with Prior Adaptation baseline"
+
+  tgan:
+    id: "tgan"
+    alias: "tgan"
+    description: "Transferring GANs baseline"
+
+  ada:
+    id: "ada"
+    alias: "ada"
+    description: "Adaptive Discriminator Augmentation baseline"
+
+  ewc:
+    id: "ewc"
+    alias: "ewc"
+    description: "Elastic Weight Consolidation baseline"
+
+  cdc:
+    id: "cdc"
+    alias: "cdc"
+    description: "Cross-Domain Consistency baseline"
+
+  dcl:
+    id: "dcl"
+    alias: "dcl"
+    description: "Dual Contrastive Learning baseline"
+
+# 6. Active Route Contracts & Modules
+modules:
+  Adaptor-based Diffusion Architecture:
+    description: "Adaptor module parameterization (psi) and frozen base model (theta)"
+    implementation: "src.models.adaptor.Adaptor"
+  
+  Similarity-Guided Training (SGT) Module:
+    description: "SGT loss using KL-divergence between current model and target model"
+    implementation: "src.methods.ant_trainer.similarity_guided_loss"
+    formula: "L_SGT = D_KL(p_theta_T || p_theta)"
+  
+  Adversarial Noise Selection (AN) Module:
+    description: "AN selection via inner optimization loop to find adversarial noise"
+    implementation: "src.methods.noise_selection.select_adversarial_noise"
+    formula: "epsilon_star = argmax_epsilon L_SGT(epsilon)"
+
+  Few-shot Data Pipeline:
+    description: "Data pipeline for loading few-shot datasets and applying augmentations"
+    implementation: "src.data.infra_validation.FewShotDataPipeline"
+
+  Evaluation & Artifact Suite:
+    description: "Suite for computing FID, Intra-LPIPS, and writing tables/figures"
+    implementation: "src.reporting.exp_fewshot_transfer.EvaluationSuite"
+
+# 7. Callable Protocol Matrix & Experiment Specs
+experiments:
+  toy_data_visualization:
+    id: "toy_data_visualization"
+    name: "Toy Data Visualization Experiment"
+    environment: "toy_gaussian_2d"
+    dataset: "toy_gaussian"
+    method: "dpms_ant"
+    hyperparameters:
+      gamma: 5.0
+      omega: 0.02
+      adversarial_inner_steps: 10
+      batch_size: 64
+      training_iterations: 300
+    metrics:
+      - "toy_mean_variance"
+    artifact_writers:
+      - "run_figure_2b_route"
+      - "write_figure_2b_artifact"
+    expected_outputs:
+      toy_metrics: "results/toy_metrics.json"
+      figure_2b: "results/figures/figure_2b.png"
+
+  fewshot_image_generation:
+    id: "fewshot_image_generation"
+    name: "Few-shot Image Generation Main Experiment"
+    environment: "fewshot_image_generation"
+    datasets:
+      - "ffhq"
+      - "lsun_church"
+      - "babies"
+      - "sunglasses"
+      - "raphael_peale"
+      - "sketches"
+      - "face_paintings"
+      - "haunted_houses"
+      - "landscape_drawings"
+    methods:
+      - "dpms_ant"
+      - "ddpm_pa"
+      - "tgan"
+      - "ada"
+      - "ewc"
+      - "cdc"
+      - "dcl"
+    hyperparameters:
+      gamma: 5.0
+      omega: 0.02
+      adversarial_inner_steps: 10
+      batch_size: 64
+      training_iterations: 300
+    metrics:
+      - "FID"
+      - "Intra-LPIPS"
+    artifact_writers:
+      - "run_table_2_route"
+      - "write_table_2_artifact"
+      - "run_table_3_route"
+      - "write_table_3_artifact"
+      - "run_table_5_route"
+      - "write_table_5_artifact"
+    expected_outputs:
+      metrics: "results/metrics.json"
+      table_3: "results/tables/table_3.csv"
+      table_5: "results/tables/table_5.csv"
+      table_6: "results/tables/table_6.csv"
+      table_7: "results/tables/table_7.csv"
+      table_8: "results/tables/table_8.csv"
+      table_9: "results/tables/table_9.csv"
+
+  ablation_adversarial_noise:
+    id: "ablation_adversarial_noise"
+    name: "Ablation Study on Adversarial Noise"
+    environment: "fewshot_image_generation"
+    dataset: "sunglasses"
+    methods:
+      - "dpms_ant"
+      - "similarity_guided_training"
+      - "diffusion_model"
+    hyperparameters:
+      gamma: 5.0
+      omega: 0.02
+      adversarial_inner_steps: 10
+      batch_size: 64
+      training_iterations: 300
+    metrics:
+      - "FID"
+      - "Intra-LPIPS"
+    artifact_writers:
+      - "run_table_5_route"
+      - "write_table_5_artifact"
+    expected_outputs:
+      table_5: "results/tables/table_5.csv"
+
+# 8. Evidence Contract Matrix (Infrastructure)
+evidence_contract_matrix:
+  - claim_id: "method_implementation"
+    description: "Method implementation: Adaptor (psi), SGT, ANS"
+    target_artifact: "results/method_registry.json"
+    validator: "src.data.infra_validation.validate_method_registry"
+  
+  - claim_id: "algorithm_1_trace"
+    description: "Algorithm 1: DPMs-ANT procedure"
+    target_artifact: "results/ant_training_trace.json"
+    validator: "src.data.infra_validation.validate_training_trace"
+
+  - claim_id: "model_loading"
+    description: "Model Loading: Frozen theta and Adaptor psi"
+    target_artifact: "results/trained_model.pth"
+    validator: "src.data.infra_validation.validate_trained_model"
+
+  - claim_id: "toy_data_experiment"
+    description: "Experiment 5.1: Toy Data (N((1,1),I) to N((-1,-1),I))"
+    target_artifact: "results/toy_metrics.json"
+    validator: "src.data.infra_validation.validate_toy_metrics"
+
+  - claim_id: "figure_2b"
+    description: "Figure 2b: Heat maps of gradient changes"
+    target_artifact: "results/figures/figure_2b.png"
+    validator: "src.data.infra_validation.validate_figure_2b"
+
+  - claim_id: "table_2"
+    description: "Table 2: FID on Babies/Sunglasses"
+    target_artifact: "results/metrics.json"
+    validator: "src.data.infra_validation.validate_table_2"
+
+  - claim_id: "table_3"
+    description: "Table 3: FID on LSUN Church"
+    target_artifact: "results/tables/table_3.csv"
+    validator: "src.data.infra_validation.validate_table_3"
+
+  - claim_id: "table_5"
+    description: "Table 5: Intra-LPIPS results"
+    target_artifact: "results/tables/table_5.csv"
+    validator: "src.data.infra_validation.validate_table_5"
+
+  - claim_id: "table_6"
+    description: "Table 6: FID on Raphael Peale"
+    target_artifact: "results/tables/table_6.csv"
+    validator: "src.data.infra_validation.validate_table_6"
+
+  - claim_id: "table_7"
+    description: "Table 7: FID on Sketches"
+    target_artifact: "results/tables/table_7.csv"
+    validator: "src.data.infra_validation.validate_table_7"
+
+  - claim_id: "table_8"
+    description: "Table 8: FID on face paintings"
+    target_artifact: "results/tables/table_8.csv"
+    validator: "src.data.infra_validation.validate_table_8"
+
+  - claim_id: "table_9"
+    description: "Table 9: FID on Haunted Houses/Landscape"
+    target_artifact: "results/tables/table_9.csv"
+    validator: "src.data.infra_validation.validate_table_9"
+
+  - claim_id: "infrastructure"
+    description: "Infrastructure validation and registry generation"
+    target_artifact: "results/evidence_contract_matrix.json"
+    validator: "src.data.infra_validation.validate_evidence_contract"
+
+# 9. Artifact Manifest
+artifact_manifest:
+  - path: "results/evidence_contract_matrix.json"
+    type: "json"
+    description: "Preserved paper-derived evidence obligation matrix"
+    generator: "write_evidence_contract_matrix_artifact"
+  
+  - path: "results/experiment_registry.json"
+    type: "json"
+    description: "Registry of all experiments and their configurations"
+    generator: "write_experiment_registry_artifact"
+
+  - path: "results/dataset_registry.json"
+    type: "json"
+    description: "Registry of all datasets and validation hooks"
+    generator: "write_dataset_registry_artifact"
+
+  - path: "results/artifact_manifest.json"
+    type: "json"
+    description: "Manifest of all generated artifacts"
+    generator: "write_artifact_manifest_artifact"

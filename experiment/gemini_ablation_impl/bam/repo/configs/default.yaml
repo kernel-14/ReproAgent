@@ -1,0 +1,116 @@
+# configs/default.yaml
+# reference_grounding: paperbench_ref_008 docs/the-training-cookbook.rst
+# reference_grounding: paperbench_ref_005 doc/use_cases.md
+
+metadata:
+  project_name: "Batch and Match (BaM) Reproduction"
+  paper_title: "Batch and match: black-box variational inference with a score-based divergence"
+
+# Paper evidence contract: explicitly register environment/task aliases for cifar.
+environment_registry:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10"]
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+
+# Unit-derived method obligations: environment/task factories
+environment_factories:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10"]
+    setup_metadata: {in_channels: 3}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  determines_which:
+    id: "determines_which"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  keep_all_paper_visible:
+    id: "keep_all_paper_visible"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  config_data_pipeline:
+    id: "config_data_pipeline"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  config_factory:
+    id: "config_factory"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  registry_configuration_artifact:
+    id: "registry_configuration_artifact"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  implement_explicit_paper_derived_dataset:
+    id: "implement_explicit_paper_derived_dataset"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  protocols_that_consume_it:
+    id: "protocols_that_consume_it"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  represent_full:
+    id: "represent_full"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  determines_which_adapters:
+    id: "determines_which_adapters"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  data_pipeline_evaluation_config_tests_expose:
+    id: "data_pipeline_evaluation_config_tests_expose"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  cifar_keep_external:
+    id: "cifar_keep_external"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+
+# Paper evidence contract: explicitly register dataset/benchmark aliases for cifar.
+dataset_registry:
+  cifar:
+    id: "cifar"
+    loader: "src.data.inventory_registry_make.load_inventory_registry_make"
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+    validation_checks: ["check_channels", "check_resolution"]
+    runnable_config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+
+# Paper evidence contract: expose method/baseline/attack selectors for ours, baseline.
+method_registry:
+  ours:
+    id: "ours"
+    name: "BaM"
+    description: "Batch and Match Variational Inference"
+    objective: "score_based_divergence"
+  baseline:
+    id: "baseline"
+    name: "ADVI"
+    description: "Automatic Differentiation Variational Inference"
+    objective: "elbo"
+  gsm:
+    id: "gsm"
+    name: "GSM"
+    description: "Gaussian Score Matching"
+    objective: "score_matching"
+
+# Paper evidence contract: expose bounded sweep/config entries for lambda; p; learning_rate; batch_size.
+# Paper evidence contract: expose fixed hyperparameter anchors for 100_iterations.
+hyperparameters:
+  fixed:
+    iterations: 100 # 100_iterations anchor
+    optimizer: "adam"
+    warmup_steps: 100
+    peak_lr: 1e-4
+    initial_lr: 0.0
+  sweeps:
+    lambda: [0.1, 1.0, 10.0, 100.0]
+    learning_rate: [1e-4, 5e-4, 1e-3]
+    batch_size: [2, 5, 10, 20, 40]
+  defaults:
+    lambda: 1.0
+    learning_rate: 1e-3
+    batch_size: 20
+
+# Paper formula/algorithm symbol inventory must be code-visible
+# reference_grounding: paper chunk_007_01, chunk_008_02, chunk_029
+algorithm_symbols:
+  dimensions:
+    R_DtimesD: "Covariance matrix space"

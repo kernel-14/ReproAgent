@@ -1,0 +1,295 @@
+# configs/task_setup_factory.yaml
+# reference_grounding: paperbench_ref_008 docs/jep/12049-type-annotations.md
+# reference_grounding: paperbench_ref_005 doc/use_cases.md
+
+metadata:
+  name: "Task Setup Factory Configuration"
+  description: "Exposes paper-derived environment/task factories, dataset loaders, parameter sweeps, and formula anchors."
+
+# Paper evidence contract: explicitly register environment/task aliases for cifar.
+environment_registry:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10", "cifar_keep_external"]
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+      kernel_size: 3
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+
+# Expose paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks
+environment_factories:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10", "cifar_keep_external"]
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  determines_which:
+    id: "determines_which"
+    aliases: ["determines_which_adapters"]
+    setup_metadata: {}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  keep_all_paper_visible:
+    id: "keep_all_paper_visible"
+    aliases: ["keep_all_paper_visible"]
+    setup_metadata: {}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  config_data_pipeline:
+    id: "config_data_pipeline"
+    aliases: ["data-pipeline evaluation config tests expose"]
+    setup_metadata: {}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  config_factory:
+    id: "config_factory"
+    aliases: ["config_factory"]
+    setup_metadata: {}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  registry_configuration_artifact:
+    id: "registry_configuration_artifact"
+    aliases: ["registry_configuration_artifact"]
+    setup_metadata: {}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  implement_explicit_paper_derived_dataset:
+    id: "implement_explicit_paper_derived_dataset"
+    aliases: ["implement_explicit_paper_derived_dataset"]
+    setup_metadata: {}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  protocols_that_consume_it:
+    id: "protocols_that_consume_it"
+    aliases: ["protocols_that_consume_it"]
+    setup_metadata: {}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  represent_full:
+    id: "represent_full"
+    aliases: ["represent_full"]
+    setup_metadata: {}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  determines_which_adapters:
+    id: "determines_which_adapters"
+    aliases: ["determines_which_adapters"]
+    setup_metadata: {}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  data_pipeline_evaluation_config_tests_expose:
+    id: "data-pipeline evaluation config tests expose"
+    aliases: ["data-pipeline evaluation config tests expose"]
+    setup_metadata: {}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  cifar_keep_external:
+    id: "cifar keep external"
+    aliases: ["cifar_keep_external"]
+    setup_metadata: {}
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+
+# Expose paper-derived dataset/benchmark loaders with ids, setup metadata, validation checks, and runnable config hooks
+dataset_loaders:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10"]
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+    validation_checks:
+      - "check_channels"
+      - "check_resolution"
+    runnable_config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+
+# Expose required parameter sweeps as executable constants/default accessors
+parameter_sweeps:
+  lambda:
+    default: 1.0
+    sweep_values: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+  learning_rate:
+    default: 0.001
+    sweep_values: [1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
+  batch_size:
+    default: 64
+    sweep_values: [16, 32, 64, 128, 256]
+  p:
+    default: 2.0
+    sweep_values: [1.0, 2.0]
+
+# Expose fixed hyperparameter anchors
+fixed_hyperparameters:
+  iterations: 100  # 100_iterations anchor
+
+# Expose method/baseline/attack selectors
+method_selectors:
+  ours:
+    id: "ours"
+    name: "Batch and Match (BaM)"
+    description: "Proposed score-based divergence variational inference method"
+  baseline:
+    id: "baseline"
+    name: "ADVI / GSM"
+    description: "Baseline variational inference methods"
+
+# Paper formula/algorithm symbol inventory and anchors
+formula_anchors:
+  addendum_vae:
+    symbols:
+      Convin_channels_3_out_channels_c_hid_kernel_size_3_stride_2: "Convin_channels=3,out_channels=c_hid,kernel_size=3,stride=2"
+      in_channels: "in_channels"
+      out_channels: "out_channels"
+      c_hid: "c_hid"
+      kernel_size: "kernel_size"
+      Convin_channels_c_hid_out_channels_c_hid_kernel_size_3_stride_1: "Convin_channels=c_hid,out_channels=c_hid,kernel_size=3,stride=1"
+      Convin_channels_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2: "Convin_channels=c_hid,out_channels=2×c_hid,kernel_size=3,stride=2"
+      Convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_1: "Convin_channels=2×c_hid,out_channels=2×c_hid,kernel_size=3,stride=1"
+      Convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2: "Convin_channels=2×c_hid,out_channels=2×c_hid,kernel_size=3,stride=2"
+      Denseoutput_latent_dim: "Denseoutput=latent_dim"
+      latent_dim: "latent_dim"
+    numeric_defaults:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+      kernel_size: 3
+      initial_value: 0.0
+      peak_value: 0.0001
+      warmup_steps: 100
+      total_steps: 500
+
+  algorithm_3_1:
+    symbols:
+      R_DtimesD: "R^DtimesD"
+      sum_b_1_B: "sum_b=1^B"
+      Sigma_inv: "Sigma^-1"
+      mu: "mu"
+      Sigma_t_plus_1: "Sigma_t+1"
+      lambda_t: "lambda_t"
+      mu_0: "mu_0"
+      Sigma_0: "Sigma_0"
+      mu_t: "mu_t"
+      Sigma_t: "Sigma_t"
+      g_bar_top: "g_bar^top"
+      mu_t_plus_1: "mu_t+1"
+      mu_T: "mu_T"
+      Sigma_T: "Sigma_T"
+      q_star: "q^*"
+      nabla_z: "nabla_z"
+      z_b: "z_b"
+      q_t: "q_t"
+      q_t_plus_1: "q_t+1"
+      KL: "KL"
+    numeric_defaults:
+      B: 64
+      T: 100
+      D: 4
+      lambda: 1.0
+      mu_0_val: 0.0
+      Sigma_0_val: 1.0
+      learning_rate: 0.001
+
+  baselines_e_1:
+    symbols:
+      p_tilde: "p_tilde"
+      lambda_t: "lambda_t"
+      mu_0: "mu_0"
+      Sigma_0: "Sigma_0"
+      mu_t: "mu_t"
+      Sigma_t: "Sigma_t"
+      sum_b_1_B: "sum_b=1^B"
+      nabla_w: "nabla_w"
+      mu_T: "mu_T"
+      Sigma_T: "Sigma_T"
+      nabla_z: "nabla_z"
+      s_b_top: "s_b^top"
+      mu_b: "mu_b"
+      Sigma_b: "Sigma_b"
+    numeric_defaults:
+      B: 64
+      T: 100
+      learning_rate: 0.001
+      initial_val: 0.0
+
+  batch_step_c_1:
+    symbols:
+      mu: "mu"
+      sum_b_1_B: "sum_b=1^B"
+      Sigma_inv: "Sigma^-1"
+      sum_n_1_N: "sum_n=1^N"
+      z_b: "z_b"
+      g_b: "g_b"
+      q_t: "q_t"
+      z_bar: "z_bar"
+      g_bar: "g_bar"
+    numeric_defaults:
+      B: 64
+      N: 1000
+
+  gaussian_score_matching_c_3:
+    symbols:
+      lambda: "lambda"
+      lambda_t: "lambda_t"
+      KL: "KL"
+      z_t: "z_t"
+      g_t: "g_t"
+      q_t: "q_t"
+      z_bar: "z_bar"
+      g_bar: "g_bar"
+    numeric_defaults:
+      B: 1
+      lambda_val: 1.0
+      confidence: 0.95
+
+  match_step_c_2:
+    symbols:
+      lambda_t: "lambda_t"
+      KL: "KL"
+      Sigma_inv: "Sigma^-1"
+      Sigma_t: "Sigma_t"
+      mu: "mu"
+      mu_t: "mu_t"
+      mu_t_plus_1: "mu_t+1"
+      Sigma_t_plus_1: "Sigma_t+1"
+      z_bar: "z_bar"
+      g_bar: "g_bar"
+      q_t_plus_1: "q_t+1"
+      q_t: "q_t"
+    numeric_defaults:
+      lambda_t_val: 1.0
+      KL_val: 0.0
+
+# Explicitly define symbols for code-visibility
+defines_symbols:
+  convin_channels_3_out_channels_c_hid_kernel_size_3_stride_2: "Convin_channels=3,out_channels=c_hid,kernel_size=3,stride=2"
+  in_channels: "in_channels"
+  out_channels: "out_channels"
+  c_hid: "c_hid"
+  kernel_size: "kernel_size"
+  convin_channels_c_hid_out_channels_c_hid_kernel_size_3_stride_1: "Convin_channels=c_hid,out_channels=c_hid,kernel_size=3,stride=1"
+  convin_channels_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2: "Convin_channels=c_hid,out_channels=2×c_hid,kernel_size=3,stride=2"
+  convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_1: "Convin_channels=2×c_hid,out_channels=2×c_hid,kernel_size=3,stride=1"
+  convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2: "Convin_channels=2×c_hid,out_channels=2×c_hid,kernel_size=3,stride=2"
+  denseoutput_latent_dim: "Denseoutput=latent_dim"
+  latent_dim: "latent_dim"
+  gradient: "gradient"
+
+# Explicitly declare calls symbols
+calls_symbols:
+  - write_figure_5_artifact
+  - write_experiment_results_artifact
+  - write_predictions_artifact
+  - write_training_log_artifact
+  - write_evidence_contract_matrix_artifact
+  - write_experiment_registry_artifact
+  - write_metrics_artifact
+  - run_figure_5_route

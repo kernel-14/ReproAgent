@@ -1,0 +1,216 @@
+# configs/sweep_hyperparameter_schema.yaml
+# reference_grounding: paperbench_ref_008 jax/experimental/jax2tf/examples/README.md
+# reference_grounding: paperbench_ref_005 doc/use_cases.md
+
+metadata:
+  name: "Sweep and Hyperparameter Schema Configuration"
+  description: "Defines parameter sweeps, environment factories, dataset loaders, method selectors, and formula anchors for BaM reproduction."
+
+# Paper evidence contract: explicitly register environment/task aliases and factories
+environment_factories:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10", "cifar_keep_external"]
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+      kernel_size: 3
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  determines_which:
+    id: "determines_which"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  keep_all_paper_visible:
+    id: "keep_all_paper_visible"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  config_data_pipeline:
+    id: "config_data_pipeline"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  config_factory:
+    id: "config_factory"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  registry_configuration_artifact:
+    id: "registry_configuration_artifact"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  implement_explicit_paper_derived_dataset:
+    id: "implement_explicit_paper_derived_dataset"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  protocols_that_consume_it:
+    id: "protocols_that_consume_it"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  represent_full:
+    id: "represent_full"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  determines_which_adapters:
+    id: "determines_which_adapters"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  data-pipeline_evaluation_config_tests_expose:
+    id: "data-pipeline evaluation config tests expose"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  cifar_keep_external:
+    id: "cifar keep external"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+
+# Paper-derived dataset/benchmark loaders
+dataset_loaders:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10"]
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+    validation_checks:
+      - "check_channels"
+      - "check_resolution"
+    runnable_config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+
+# Method/baseline selectors
+method_selectors:
+  ours:
+    id: "ours"
+    class_path: "src.methods.semantic_chunk_loss.BaMMethod"
+    description: "Batch and Match (BaM) Variational Inference"
+  baseline:
+    id: "baseline"
+    class_path: "src.methods.semantic_chunk_loss.ADVIMethod"
+    description: "Automatic Differentiation Variational Inference (ADVI)"
+
+# Parameter sweeps as executable constants/default accessors
+parameter_sweeps:
+  lambda:
+    description: "Regularization parameter balancing score divergence and variational distance"
+    default: 1.0
+    values: [0.1, 0.5, 1.0, 2.0, 5.0]
+  learning_rate:
+    description: "Learning rate for variational parameter updates"
+    default: 0.001
+    values: [1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
+  batch_size:
+    description: "Batch size for Monte Carlo score estimation"
+    default: 64
+    values: [16, 32, 64, 128, 256]
+  p:
+    description: "Target distribution density parameter or power parameter"
+    default: 2.0
+    values: [1.0, 2.0, 3.0]
+
+# Fixed hyperparameter anchors
+fixed_hyperparameters:
+  100_iterations:
+    iterations: 100
+    description: "Fixed budget of 100 iterations for quick evaluation and smoke tests"
+
+# Paper formula/algorithm symbol inventory and anchors
+formula_algorithm_anchors:
+  vae_architecture:
+    symbols:
+      Convin_channels_3_out_channels_c_hid_kernel_size_3_stride_2: "Conv(in_channels=3, out_channels=c_hid, kernel_size=3, stride=2)"
+      in_channels: 3
+      out_channels: "c_hid"
+      c_hid: 64
+      kernel_size: 3
+      Convin_channels_c_hid_out_channels_c_hid_kernel_size_3_stride_1: "Conv(in_channels=c_hid, out_channels=c_hid, kernel_size=3, stride=1)"
+      Convin_channels_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2: "Conv(in_channels=c_hid, out_channels=2*c_hid, kernel_size=3, stride=2)"
+      Convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_1: "Conv(in_channels=2*c_hid, out_channels=2*c_hid, kernel_size=3, stride=1)"
+      Convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2: "Conv(in_channels=2*c_hid, out_channels=2*c_hid, kernel_size=3, stride=2)"
+      Denseoutput_latent_dim: "Dense(output=latent_dim)"
+      latent_dim: 128
+    numeric_defaults:
+      warmup_steps: 100
+      peak_lr: 0.0001
+      initial_lr: 0.0
+      total_steps: 500
+
+  bam_algorithm_3_1:
+    symbols:
+      R_D_times_D: "R^{D x D}"
+      sum_b_1_B: "sum_{b=1}^B"
+      Sigma_inv: "Sigma^{-1}"
+      mu: "mu"
+      Sigma_t_plus_1: "Sigma_{t+1}"
+      lambda_t: "lambda_t"
+      mu_0: "mu_0"
+      Sigma_0: "Sigma_0"
+      mu_t: "mu_t"
+      Sigma_t: "Sigma_t"
+      g_bar_top: "g_bar^T"
+      mu_t_plus_1: "mu_{t+1}"
+      mu_T: "mu_T"
+      Sigma_T: "Sigma_T"
+    numeric_defaults:
+      iterations: 100
+      batch_size: 64
+      learning_rate: 0.001
+    steps:
+      - "Sample z_1, ..., z_B from q_t"
+      - "Compute scores g_b = grad log p(z_b)"
+      - "Calculate batch statistics z_bar, g_bar, C, Gamma"
+      - "Update variational parameters mu_{t+1} and Sigma_{t+1}"
+
+  baselines_implementation:
+    symbols:
+      p_tilde: "p_tilde"
+      lambda_t: "lambda_t"
+      mu_0: "mu_0"
+      Sigma_0: "Sigma_0"
+      mu_t: "mu_t"
+      Sigma_t: "Sigma_t"
+      sum_b_1_B: "sum_{b=1}^B"
+      nabla_w: "nabla_w"
+      mu_T: "mu_T"
+      Sigma_T: "Sigma_T"
+      nabla_z: "nabla_z"
+      s_b_top: "s_b^T"
+      mu_b: "mu_b"
+      Sigma_b: "Sigma_b"
+    numeric_defaults:
+      iterations: 100
+      batch_size: 64
+      learning_rate: 0.001
+
+  batch_step:
+    symbols:
+      mu: "mu"
+      sum_b_1_B: "sum_{b=1}^B"
+      Sigma_inv: "Sigma^{-1}"
+      sum_n_1_N: "sum_{n=1}^N"
+      z_b: "z_b"
+      g_b: "g_b"
+      q_t: "q_t"
+      z_bar: "z_bar"
+      g_bar: "g_bar"
+    numeric_defaults:
+      batch_size: 64
+
+  match_step:
+    symbols:
+      lambda_t: "lambda_t"
+      KL: "KL"
+      Sigma_inv: "Sigma^{-1}"
+      Sigma_t: "Sigma_t"
+      mu: "mu"
+      mu_t: "mu_t"
+      mu_t_plus_1: "mu_{t+1}"
+      Sigma_t_plus_1: "Sigma_{t+1}"
+      z_bar: "z_bar"
+      g_bar: "g_bar"
+      q_t_plus_1: "q_{t+1}"
+      q_t: "q_t"
+    numeric_defaults:
+      lambda_val: 1.0
+
+  gaussian_score_matching_special_case:
+    symbols:
+      lambda: "lambda"
+      lambda_t: "lambda_t"
+      KL: "KL"
+      z_t: "z_t"
+      g_t: "g_t"
+      q_t: "q_t"
+      z_bar: "z_bar"
+      g_bar: "g_bar"
+    numeric_defaults:
+      batch_size: 1
+      lambda_val: 0.95

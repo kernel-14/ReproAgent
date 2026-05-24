@@ -1,0 +1,295 @@
+# configs/default.yaml
+# Centralized configuration and registry for DPMs-ANT reproduction.
+# Reference Grounding: Sections 4 & 5 of the paper "Bridging Data Gaps in Diffusion Models with Adversarial Noise-Based Transfer Learning"
+
+metadata:
+  project_name: "DPMs-ANT Reproduction"
+  paper_title: "Bridging Data Gaps in Diffusion Models with Adversarial Noise-Based Transfer Learning"
+  blacklisted_repos:
+    - "https://github.com/ShinyGua/DPMs-ANT"
+
+# 1. Defined Symbols Registry (for code-first symbol mapping)
+defined_symbols:
+  toy_data_visualization_experiment: "Toy Data Visualization Experiment"
+  few_shot_image_generation_main_experiment: "Few-shot Image Generation Main Experiment"
+  ablation_study_on_adversarial_noise: "Ablation Study on Adversarial Noise"
+  adaptor_based_diffusion_architecture: "Adaptor-based Diffusion Architecture"
+  adversarial_noise_selection_an_module: "Adversarial Noise Selection (AN) Module"
+  similarity_guided_training_sgt_module: "Similarity-Guided Training (SGT) Module"
+  few_shot_data_pipeline: "Few-shot Data Pipeline"
+  evaluation_artifact_suite: "Evaluation & Artifact Suite"
+  distill: "distill"
+  decrease: "decrease"
+  beta_t: "beta_t"
+  x_t: "x_t"
+
+# 2. Fixed Hyperparameter Anchors
+fixed_hyperparameters:
+  gamma_5: 5.0
+  omega_0.02: 0.02
+  adversarial_inner_steps_10: 10
+  batch_size_64: 64
+  pretraining_iterations_5000: 5000
+  finetuning_iterations_300: 300
+  shot_setting_10: 10
+  shot_setting_100: 100
+
+# 3. Parameter Sweeps and Bounded Config Entries
+parameter_sweeps:
+  shot_count:
+    default: 10
+    values: [10, 100]
+  training_iteration_count:
+    default: 300
+    values: [0, 50, 100, 150, 200, 250, 300, 350]
+  similarity_guidance_scale:
+    default: 5.0
+    values: [1.0, 3.0, 5.0, 7.0, 9.0]
+  adversarial_noise_scale:
+    default: 0.02
+    values: [0.01, 0.02, 0.03, 0.04, 0.05]
+  learning_rate:
+    default: 5e-5
+    values: [5e-6, 1e-5, 5e-5, 1e-4]
+  batch_size:
+    default: 64
+    values: [16, 32, 64, 128]
+
+# 4. Environment and Task Registry
+environments:
+  toy_gaussian_2d:
+    id: "toy_gaussian_2d"
+    alias: "2D Gaussian environment"
+    description: "2D Gaussian source N((1,1), I) and target N((-1,-1), I)"
+    setup_metadata:
+      source_mean: [1.0, 1.0]
+      target_mean: [-1.0, -1.0]
+      covariance: "identity"
+    availability_check: "src.reporting.exp_toy_gaussian.check_availability"
+    runnable_config_hook: "experiments.toy_gaussian.run_toy_experiment"
+  
+  fewshot_image_generation:
+    id: "fewshot_image_generation"
+    alias: "shot image generation"
+    description: "Few-shot image generation transfer tasks"
+    setup_metadata:
+      shot_count: 10
+      image_size: 256
+    availability_check: "src.reporting.exp_fewshot_transfer.check_availability"
+    runnable_config_hook: "experiments.fewshot_main.run_few_shot_experiment"
+
+# 5. Dataset Registry
+datasets:
+  toy_gaussian:
+    id: "toy_gaussian"
+    alias: "2D Gaussian source N((1,1), I) and target N((-1,-1), I)"
+    source: "synthetic"
+    num_samples: 10000
+  ffhq:
+    id: "ffhq"
+    alias: "ffhq"
+    source: "external"
+    resolution: 256
+  lsun_church:
+    id: "lsun_church"
+    alias: "lsun_church"
+    source: "external"
+    resolution: 256
+  babies:
+    id: "babies"
+    alias: "10-shot Babies"
+    source: "external"
+    shot_count: 10
+  sunglasses:
+    id: "sunglasses"
+    alias: "10-shot Sunglasses"
+    source: "external"
+    shot_count: 10
+  raphael_peale:
+    id: "raphael_peale"
+    alias: "10-shot Raphael Peale"
+    source: "external"
+    shot_count: 10
+  sketches:
+    id: "sketches"
+    alias: "10-shot Sketches"
+    source: "external"
+    shot_count: 10
+  face_paintings:
+    id: "face_paintings"
+    alias: "10-shot face paintings"
+    source: "external"
+    shot_count: 10
+  haunted_houses:
+    id: "haunted_houses"
+    alias: "Haunted Houses"
+    source: "external"
+    shot_count: 10
+  landscape_drawings:
+    id: "landscape_drawings"
+    alias: "Landscape drawings"
+    source: "external"
+    shot_count: 10
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    source: "external"
+    shot_count: 100
+
+# 6. Method and Baseline Registry
+methods:
+  ours:
+    id: "ours"
+    alias: "dpms_ant"
+    description: "Diffusion Policy Models with Adversarial Noise-Based Transfer Learning"
+    components:
+      - "Adaptor module (psi)"
+      - "Similarity-Guided Training (SGT)"
+      - "Adversarial Noise Selection (ANS)"
+  diffusion_model:
+    id: "diffusion_model"
+    alias: "ddpm"
+    description: "Denoising Diffusion Probabilistic Models (Ho et al., 2020)"
+  ldm:
+    id: "ldm"
+    alias: "ldm"
+    description: "Latent Diffusion Models (Rombach et al., 2022)"
+  ddpm_pa:
+    id: "ddpm_pa"
+    alias: "ddpm_pa"
+    description: "DDPM with Prior Adaptation (Zhu et al., 2022)"
+  tgan:
+    id: "tgan"
+    alias: "tgan"
+    description: "Transferring GANs (Wang et al., 2018)"
+  ada:
+    id: "ada"
+    alias: "ada"
+    description: "Adaptive Discriminator Augmentation (Karras et al., 2020a)"
+  ewc:
+    id: "ewc"
+    alias: "ewc"
+    description: "Elastic Weight Consolidation (Li et al., 2020)"
+  cdc:
+    id: "cdc"
+    alias: "cdc"
+    description: "Cross-Domain Consistency"
+  dcl:
+    id: "dcl"
+    alias: "dcl"
+    description: "Dual Contrastive Learning"
+
+# 7. Metric Registry
+metrics:
+  fid:
+    id: "fid"
+    alias: "fidelity_score"
+    description: "Fréchet Inception Distance"
+    target_direction: "lower"
+  intra_lpips:
+    id: "intra_lpips"
+    alias: "intra_lpips"
+    description: "Intra-class Learned Perceptual Image Patch Similarity"
+    target_direction: "higher"
+  memory_usage:
+    id: "memory_usage"
+    alias: "gpu_memory"
+    description: "Peak GPU Memory Usage in GB"
+    target_direction: "lower"
+
+# 8. Experiment Registry & Callable Specs
+experiments:
+  toy_data_visualization:
+    id: "toy_data_visualization"
+    name: "Toy Data Visualization Experiment"
+    environment: "toy_gaussian_2d"
+    method: "ours"
+    hyperparameters:
+      gamma: 5.0
+      omega: 0.02
+      adversarial_inner_steps: 10
+    metrics: ["toy_mean_variance"]
+    artifact_writers:
+      - "results/toy_metrics.json"
+      - "results/figures/figure_2b.png"
+
+  fewshot_image_generation_main:
+    id: "fewshot_image_generation_main"
+    name: "Few-shot Image Generation Main Experiment"
+    environment: "fewshot_image_generation"
+    method: "ours"
+    baselines: ["tgan", "ada", "ewc", "cdc", "dcl", "ddpm_pa"]
+    hyperparameters:
+      batch_size: 64
+      training_iterations: 300
+    metrics: ["fid", "intra_lpips"]
+    artifact_writers:
+      - "results/metrics.json"
+      - "results/tables/table_3.csv"
+      - "results/tables/table_5.csv"
+      - "results/tables/table_6.csv"
+      - "results/tables/table_7.csv"
+      - "results/tables/table_8.csv"
+      - "results/tables/table_9.csv"
+      - "results/figures/figure_4.png"
+
+  ablation_study_adversarial_noise:
+    id: "ablation_study_adversarial_noise"
+    name: "Ablation Study on Adversarial Noise"
+    environment: "fewshot_image_generation"
+    method: "ours"
+    variants:
+      - "ours_full"
+      - "ours_wo_an"
+      - "finetuning_only"
+    metrics: ["fid", "intra_lpips"]
+    artifact_writers:
+      - "results/ablation_registry.json"
+
+# 9. Classifier Training Configuration (Reference: Addendum Section 5.2)
+classifier_training:
+  ddpm_pretrained_url: "https://openaipublic.blob.core.windows.net/diffusion/jul-2021/256x256_classifier.pt"
+  ldm_pretrained_url: "https://openaipublic.blob.core.windows.net/diffusion/jul-2021/64x64_classifier.pt"
+  optimizer: "Adam"
+  learning_rate: 1e-4
+  batch_size: 64
+  iterations: 300
+  num_classes: 2
+
+# 10. Specific Table Hyperparameters (Reference: Addendum Table 3 & 5)
+table_specific_hyperparameters:
+  ddpm_ffhq_to_babies:
+    learning_rate: 5e-6
+    C: 8
+    omega: 0.02
+    J: 10
+    gamma: 3.0
+    training_iterations: 160
+  ddpm_ffhq_to_sunglasses:
+    learning_rate: 5e-5
+    C: 8
+    omega: 0.02
+    J: 10
+    gamma: 15.0
+    training_iterations: 300
+
+# 11. Artifact Manifest & Output Paths
+artifacts:
+  metrics_json: "results/metrics.json"
+  table_3: "results/tables/table_3.csv"
+  table_5: "results/tables/table_5.csv"
+  table_6: "results/tables/table_6.csv"
+  table_7: "results/tables/table_7.csv"
+  table_8: "results/tables/table_8.csv"
+  table_9: "results/tables/table_9.csv"
+  figure_4: "results/figures/figure_4.png"
+  evidence_contract_matrix: "results/evidence_contract_matrix.json"
+  experiment_registry: "results/experiment_registry.json"
+  environment_registry: "results/environment_registry.json"
+  dataset_registry: "results/dataset_registry.json"
+  artifact_manifest: "results/artifact_manifest.json"
+  sensitivity_report: "results/sensitivity_report.json"
+  data_manifest: "results/data_manifest.json"
+  summary_csv: "results/tables/summary.csv"
+  method_registry: "results/method_registry.json"
+  ablation_registry: "results/ablation_registry.json"

@@ -1,0 +1,178 @@
+# configs/or_optimization_loop.yaml
+# reference_grounding: paperbench_ref_008 docs/jep/12049-type-annotations.md
+
+metadata:
+  name: "Optimization and Representation Loop Configuration"
+  description: "Configuration for BaM optimization loop, active routes, environment factories, dataset loaders, method factories, and parameter sweeps."
+
+active_routes:
+  hierarchical_bayesian_posterior_inference:
+    id: "Hierarchical Bayesian Posterior Inference"
+    enabled: true
+    description: "Hierarchical Bayesian Posterior Inference route"
+  evaluation_metrics:
+    id: "Evaluation Metrics"
+    enabled: true
+    description: "Evaluation Metrics route"
+  match_step_update:
+    id: "Match Step Update"
+    enabled: true
+    description: "Match Step Update route"
+  synthetic_gaussian_convergence_experiment:
+    id: "Synthetic Gaussian Convergence Experiment"
+    enabled: true
+    description: "Synthetic Gaussian Convergence Experiment route"
+  bam_algorithm_core:
+    id: "BaM Algorithm Core"
+    enabled: true
+    description: "BaM Algorithm Core route"
+  non_gaussian_robustness_experiment:
+    id: "Non-Gaussian Robustness Experiment"
+    enabled: true
+    description: "Non-Gaussian Robustness Experiment route"
+  batch_step_statistics:
+    id: "Batch Step Statistics"
+    enabled: true
+    description: "Batch Step Statistics route"
+  gaussian_variational_family:
+    id: "Gaussian Variational Family"
+    enabled: true
+    description: "Gaussian Variational Family route"
+
+environment_factories:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10", "cifar_keep_external"]
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  determines_which:
+    id: "determines_which"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  keep_all_paper_visible:
+    id: "keep_all_paper_visible"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  config_data_pipeline:
+    id: "config_data_pipeline"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  config_factory:
+    id: "config_factory"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  registry_configuration_artifact:
+    id: "registry_configuration_artifact"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  implement_explicit_paper_derived_dataset:
+    id: "implement_explicit_paper_derived_dataset"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  protocols_that_consume_it:
+    id: "protocols_that_consume_it"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  represent_full:
+    id: "represent_full"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  determines_which_adapters:
+    id: "determines_which_adapters"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  data_pipeline_evaluation_config_tests_expose:
+    id: "data-pipeline evaluation config tests expose"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+
+dataset_loaders:
+  cifar:
+    id: "cifar"
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+    validation_checks:
+      - "check_channels"
+      - "check_resolution"
+    runnable_config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+
+method_factories:
+  ours:
+    id: "ours"
+    class_path: "src.methods.semantic_chunk_loss.BaMMethod"
+    description: "Batch and Match (BaM) Variational Inference"
+  baseline:
+    id: "baseline"
+    class_path: "src.methods.semantic_chunk_loss.ADVIMethod"
+    description: "Automatic Differentiation Variational Inference (ADVI)"
+  100_iterations:
+    id: "100_iterations"
+    class_path: "src.methods.semantic_chunk_loss.BaMMethod"
+    description: "BaM run with 100 iterations limit"
+  Ours:
+    id: "Ours"
+    class_path: "src.methods.semantic_chunk_loss.BaMMethod"
+    description: "BaM Method (Capitalized alias)"
+
+parameter_sweeps:
+  lambda:
+    default: 1.0
+    values: [0.1, 0.5, 1.0, 2.0, 5.0]
+    description: "Score matching divergence weight lambda"
+  p:
+    default: 2.0
+    values: [1.0, 2.0]
+    description: "Norm power p"
+  learning_rate:
+    default: 0.001
+    values: [0.0001, 0.001, 0.01, 0.1]
+    description: "Learning rate for optimization"
+  batch_size:
+    default: 64
+    values: [16, 32, 64, 128]
+    description: "Batch size for Monte Carlo score estimation"
+
+# Executable algorithm and formula anchors
+formula_anchors:
+  section_3_1_algorithm:
+    description: "Monte Carlo estimate of score-based divergence"
+    formula: "D(q; p) approx 1/B * sum_{b=1}^B || nabla_z log(q(z_b)/p(z_b)) ||^2_{Cov(q)}"
+    symbols: ["lambda_t", "KL", "q^*", "sum_b=1^B", "nabla_z", "z_b", "q_t", "q_t+1"]
+    defaults:
+      lambda_t: 1.0
+      KL: 2.0
+      q_star: 0.0
+      B: 5
+  section_c_1_batch_step:
+    description: "Batch step statistics computation"
+    formula: "z_bar = 1/B * sum z_b, C = 1/B * sum (z_b - z_bar)(z_b - z_bar)^T, g_bar = 1/B * sum g_b, Gamma = 1/B * sum (g_b - g_bar)(g_b - g_bar)^T"
+    symbols: ["mu", "sum_b=1^B", "z_b", "Sigma^-1", "g_b", "q_t", "z_bar", "g_bar", "sum_n=1^N"]
+    defaults:
+      B: 1
+      N: 2
+  section_c_2_match_step:
+    description: "Match step updates for Gaussian variational family"
+    formula: "q_{t+1} update based on sampled scores"
+    symbols: ["lambda_t", "KL", "q_t+1", "q_t", "Sigma^-1", "Sigma_t", "mu", "mu_t", "mu_t+1", "Sigma_t+1", "z_bar", "g_bar"]
+    defaults:
+      lambda_t: 1.0
+      KL: 2.0
+      q_t: 0.0
+  section_c_3_gaussian_score_matching:
+    description: "Gaussian score matching as a special case of BaM"
+    formula: "Equivalence when B=1 and lambda -> infinity"
+    symbols: ["lambda", "lambda_t", "KL", "z_t", "g_t", "q_t", "z_bar", "g_bar"]
+    defaults:
+      lambda: 1.0
+      lambda_t: 0.0
+      KL: 95
+  addendum_vae_network:
+    description: "VAE neural network architecture details"
+    symbols: ["Convin_channels=3", "out_channels=c_hid", "kernel_size=3", "stride=2", "in_channels", "kernel_size", "Convin_channels=c_hid", "out_channels=c_hid", "kernel_size=3", "stride=1", "Convin_channels=c_hid", "out_channels=2*c_hid", "kernel_size=3", "stride=2", "Convin_channels=2*c_hid", "out_channels=2*c_hid", "kernel_size=3", "stride=1", "Convin_channels=2*c_hid", "out_channels=2*c_hid", "kernel_size=3", "stride=2", "out_channels", "c_hid", "Denseoutput=latent_dim", "latent_dim"]
+    defaults:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+      kernel_size: 3
+      stride: 2
+      optimizer: "Adam"
+      initial_lr: 0.0
+      peak_lr: 0.0001
+      warmup_steps: 100
+      total_steps: 500

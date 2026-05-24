@@ -1,0 +1,212 @@
+# configs/addendum_constraints_flags.yaml
+# reference_grounding: paperbench_ref_005 doc/use_cases.md
+# reference_grounding: paperbench_ref_008 docs/jep/12049-type-annotations.md
+
+metadata:
+  name: "Batch and Match (BaM) Variational Inference Configuration"
+  description: "Configuration flags, addendum constraints, and experiment sweeps for BaM and baselines."
+
+active_routes:
+  deep_generative_model_latent_inference:
+    enabled: true
+    description: "Deep Generative Model Latent Inference route"
+  data_and_model_pipeline:
+    enabled: true
+    description: "Data and Model Pipeline route"
+
+environment_factories:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10"]
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+
+dataset_loaders:
+  cifar:
+    id: "cifar"
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+    validation_checks:
+      - "check_channels"
+      - "check_resolution"
+    runnable_config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+
+method_factories:
+  ours:
+    id: "ours"
+    class_path: "src.methods.semantic_chunk_loss.BaMMethod"
+    description: "Batch and Match (BaM) Variational Inference"
+  baseline:
+    id: "baseline"
+    class_path: "src.methods.semantic_chunk_loss.ADVIMethod"
+    description: "Automatic Differentiation Variational Inference (ADVI)"
+  100_iterations:
+    id: "100_iterations"
+    class_path: "src.methods.semantic_chunk_loss.BaMMethod"
+    description: "BaM run with 100 iterations limit"
+  Ours:
+    id: "Ours"
+    class_path: "src.methods.semantic_chunk_loss.BaMMethod"
+    description: "BaM Variational Inference (Capitalized Alias)"
+
+parameter_sweeps:
+  lambda:
+    default: 1.0
+    values: [0.1, 0.5, 1.0, 2.0]
+    description: "Regularization parameter lambda or step size lambda_t"
+  p:
+    default: 2.0
+    values: [1.0, 2.0]
+    description: "Norm power or target distribution parameter p"
+  learning_rate:
+    default: 0.0001
+    values: [1e-5, 1e-4, 1e-3, 1e-2]
+    description: "Learning rate for gradient-based methods"
+  batch_size:
+    default: 4
+    values: [3, 4, 8, 16]
+    description: "Batch size B. Note: B=3 for D=4 low-rank BaM solver, B=4 for Figure E.1 experiments."
+
+experiment_matrix:
+  datasets_or_tasks: ["cifar"]
+  methods_or_models: ["ours", "baseline", "100_iterations", "Ours"]
+  parameters: ["lambda", "learning_rate", "batch_size"]
+
+formula_algorithm_anchors:
+  c3_gaussian_score_matching:
+    section: "C.3. Gaussian score matching as a special case"
+    symbols:
+      lambda: 1.0
+      lambda_t: 1.0
+      KL: 0.0
+      z_t: 0.0
+      g_t: 0.0
+      q_t: 0.0
+      z_bar: 0.0
+      g_bar: 0.0
+    numeric_defaults:
+      lambda_val: 1.0
+      lambda_t_val: 0.0
+      iterations: 95
+    steps: "To see this equivalence, we set B=1, and we use z_t and g_t to denote, respectively, the single sample from q_t and its score under p at the t-th iteration of BaM. The equivalence arises from a simple intuition: as lambda..."
+
+  section_3_1_algorithm:
+    section: "3.1. Algorithm"
+    symbols:
+      lambda_t: 1.0
+      KL: 0.0
+      q_star: 0.0
+      sum_b_1_B: 0.0
+      nabla_z: 0.0
+      z_b: 0.0
+      q_t: 0.0
+      q_t_plus_1: 0.0
+    numeric_defaults:
+      B: 4
+      T: 100
+      lambda_0: 1.0
+      learning_rate: 1e-4
+    steps: "p) approx 1/B sum_{b=1}^B ||nabla_z log(q(z_b)/p(z_b))||^2_{Cov(q)}. This estimator is unbiased, but it does not lend itself to optimization: we cannot simultaneously sample..."
+
+  addendum_vae_network:
+    section: "addendum"
+    symbols:
+      Convin_channels_3_out_channels_c_hid_kernel_size_3_stride_2: true
+      in_channels: 3
+      out_channels: 64
+      c_hid: 64
+      kernel_size: 3
+      Convin_channels_c_hid_out_channels_c_hid_kernel_size_3_stride_1: true
+      Convin_channels_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2: true
+      Convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_1: true
+      Convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2: true
+      Denseoutput_latent_dim: 128
+      latent_dim: 128
+    numeric_defaults:
+      optimizer: "Adam"
+      initial_lr: 0.0
+      peak_lr: 1e-4
+      warmup_steps: 100
+      total_steps: 500
+      batch_size: 4
+
+  c1_batch_step:
+    section: "C.1. Batch step"
+    symbols:
+      mu: 0.0
+      sum_b_1_B: 0.0
+      z_b: 0.0
+      Sigma_inv: 0.0
+      g_b: 0.0
+      q_t: 0.0
+      z_bar: 0.0
+      g_bar: 0.0
+      sum_n_1_N: 0.0
+    numeric_defaults:
+      B: 4
+      D: 4
+    steps: "Batch step: At each iteration, Algorithm 1 solves an optimization based on samples drawn from its current Gaussian approximation to the target distribution. The algorithm uses these samples to compute a (biased) empirical estimate of the score-based divergence between the..."
+
+  c2_match_step:
+    section: "C.2. Match step"
+    symbols:
+      lambda_t: 1.0
+      KL: 0.0
+      q_t_plus_1: 0.0
+      q_t: 0.0
+      Sigma_inv: 0.0
+      Sigma_t: 0.0
+      mu: 0.0
+      mu_t: 0.0
+      mu_t_plus_1: 0.0
+      Sigma_t_plus_1: 0.0
+      z_bar: 0.0
+      g_bar: 0.0
+    numeric_defaults:
+      lambda: 1.0
+      B: 4
+      D: 4
+    steps: "Match step: The MATCH step of the algorithm updates the Gaussian approximation of VI to better match the recently sampled scores of the target distribution. The update at the t-th iteration is computed as q_{t+1}..."
+
+  e1_implementation_baselines:
+    section: "E.1. Implementation of baselines"
+    symbols:
+      lambda_t: 1.0
+      p_tilde: 0.0
+      mu_0: 0.0
+      R_D: 0.0
+      Sigma_0: 0.0
+      S_plus_plus_D: 0.0
+      z_1: 0.0
+      z_B: 0.0
+      q_t: 0.0
+      mu_t: 0.0
+      Sigma_t: 0.0
+      L_ELBO: 0.0
+      ELBO: 0.0
+      z_1_B: 0.0
+    numeric_defaults:
+      iterations: 100
+      batch_size: 4
+      learning_rate: 1e-4
+    steps: "Algorithm 2 Implementation of ADVI Input: Iterations T, batch size B, unnormalized target p_tilde, learning rate lambda_t > 0, initial variational mean mu_0 in R^D, initial variational covariance Sigma_0..."
+
+calls_symbols:
+  - "compute_accuracy"
+  - "aggregate_accuracy"
+  - "compute_loss"
+  - "aggregate_loss"
+  - "compute_mse"
+  - "aggregate_mse"
+  - "compute_metric_results_artifact_manifest_json_objective"
+  - "compute_metric_results_artifact_manifest_json_score"
+  - "compute_fidelity_score"
+  - "aggregate_fidelity_score"
+  - "write_fidelity_score_artifact"
+  - "compute_metric_kl_divergence_metric_score_based_divergence_cifar_objective"

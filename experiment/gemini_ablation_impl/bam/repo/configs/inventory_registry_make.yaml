@@ -1,0 +1,203 @@
+# configs/inventory_registry_make.yaml
+# reference_grounding: paperbench_ref_005 posterior_database/data/info/nes_logit_data.info.json
+# reference_grounding: paperbench_ref_008 docs/jep/28661-jax-array-protocol.md
+
+metadata:
+  name: "Inventory Registry Make Configuration"
+  description: "Configuration for dataset inventory, environment factories, parameter sweeps, and formula anchors."
+
+# Paper evidence contract: explicitly register environment/task aliases for cifar.
+environment_factories:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10", "cifar_keep_external"]
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+      kernel_size: 3
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  determines_which:
+    id: "determines_which"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  keep_all_paper_visible:
+    id: "keep_all_paper_visible"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  config_data_pipeline:
+    id: "config_data_pipeline"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  config_factory:
+    id: "config_factory"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  registry_configuration_artifact:
+    id: "registry_configuration_artifact"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  implement_explicit_paper_derived_dataset:
+    id: "implement_explicit_paper_derived_dataset"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  protocols_that_consume_it:
+    id: "protocols_that_consume_it"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  represent_full:
+    id: "represent_full"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  determines_which_adapters:
+    id: "determines_which_adapters"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  data_pipeline_evaluation_config_tests_expose:
+    id: "data_pipeline_evaluation_config_tests_expose"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+
+# Paper evidence contract: explicitly register dataset/benchmark aliases for cifar.
+dataset_loaders:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10"]
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+      kernel_size: 3
+    validation_checks:
+      - "check_channels"
+      - "check_resolution"
+    runnable_config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+
+# Paper evidence contract: expose method/baseline/attack selectors for ours, baseline.
+method_selectors:
+  ours:
+    id: "ours"
+    class_path: "src.methods.semantic_chunk_loss.BaMMethod"
+    description: "Batch and Match (BaM) Variational Inference"
+  baseline:
+    id: "baseline"
+    class_path: "src.methods.semantic_chunk_loss.ADVIMethod"
+    description: "Automatic Differentiation Variational Inference (ADVI)"
+
+# Paper evidence contract: expose fixed hyperparameter anchors for 100_iterations.
+hyperparameter_anchors:
+  iterations_100:
+    id: "100_iterations"
+    max_iterations: 100
+    description: "Fixed hyperparameter anchor for 100 iterations"
+
+# Paper evidence contract: expose required parameter sweeps as executable constants/default accessors
+parameter_sweeps:
+  lambda:
+    default: 1.0
+    values: [0.1, 1.0, 10.0, 100.0]
+    description: "Regularization weight balancing score divergence and KL"
+  p:
+    default: 2.0
+    values: [1.0, 2.0]
+    description: "Norm power or probability parameter"
+  learning_rate:
+    default: 1e-4
+    values: [1e-5, 1e-4, 1e-3, 5e-3]
+    description: "Learning rate for gradient-based optimization"
+  batch_size:
+    default: 64
+    values: [16, 32, 64, 128]
+    description: "Batch size for Monte Carlo score estimation"
+
+# Paper formula/algorithm symbol inventory must be code-visible
+formula_symbols:
+  convin_channels_3_out_channels_c_hid_kernel_size_3_stride_2:
+    in_channels: 3
+    out_channels: "c_hid"
+    kernel_size: 3
+    stride: 2
+  in_channels: 3
+  out_channels: "c_hid"
+  c_hid: 64
+  kernel_size: 3
+  convin_channels_c_hid_out_channels_c_hid_kernel_size_3_stride_1:
+    in_channels: "c_hid"
+    out_channels: "c_hid"
+    kernel_size: 3
+    stride: 1
+  convin_channels_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2:
+    in_channels: "c_hid"
+    out_channels: "2 * c_hid"
+    kernel_size: 3
+    stride: 2
+  convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_1:
+    in_channels: "2 * c_hid"
+    out_channels: "2 * c_hid"
+    kernel_size: 3
+    stride: 1
+  convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2:
+    in_channels: "2 * c_hid"
+    out_channels: "2 * c_hid"
+    kernel_size: 3
+    stride: 2
+  denseoutput_latent_dim:
+    output: "latent_dim"
+  latent_dim: 128
+  gradient: "nabla_z"
+  KL: "Kullback-Leibler divergence"
+  S_plus_plus_D: "S_++^D positive definite covariance space"
+  R_D_times_D: "R^{D x D} matrix space"
+  Sigma_top: "Sigma^top transpose covariance"
+  sum_d_1_D: "sum_{d=1}^D dimension sum"
+
+# Executable algorithm contract: paper-visible algorithms must expose concrete functions/classes
+algorithm_anchors:
+  section_3_1_algorithm:
+    symbols: ["q^*", "sum_b=1^B", "nabla_z", "z_b", "q_t", "q_t+1", "lambda_t", "KL"]
+    defaults:
+      B: 64
+      lambda_t: 1.0
+    steps:
+      - "Sample z_1, ..., z_B from q_t"
+      - "Compute scores g_b = nabla log p(z_b) at each sample"
+      - "Calculate batch means and covariances"
+      - "Update q by minimizing empirical score-based divergence"
+  section_3_2_proof_of_convergence:
+    symbols: ["varepsilon_t", "varepsilon_t^top", "J_t", "H_t", "K_t", "H_t+1", "J_t+1", "K_t+1"]
+    defaults:
+      varepsilon_t: 0.0
+      J_t: 1.0
+  section_c_1_batch_step:
+    symbols: ["mu", "sum_b=1^B", "Sigma^-1", "sum_n=1^N", "z_b", "g_b", "q_t", "z_bar", "g_bar"]
+    defaults:
+      B: 64
+  section_c_2_match_step:
+    symbols: ["lambda_t", "KL", "Sigma^-1", "Sigma_t", "mu", "mu_t", "mu_t+1", "Sigma_t+1", "z_bar", "g_bar", "q_t+1", "q_t"]
+    defaults:
+      lambda_t: 1.0
+  section_c_3_gaussian_score_matching:
+    symbols: ["lambda", "lambda_t", "KL", "z_t", "g_t", "q_t", "z_bar", "g_bar"]
+    defaults:
+      B: 1
+      lambda: 1e5
+  section_e_1_baselines:
+    symbols: ["p_tilde", "lambda_t", "mu_0", "Sigma_0", "mu_t", "Sigma_t", "sum_b=1^B", "nabla_w", "mu_T", "Sigma_T", "nabla_z", "s_b^top", "mu_b", "Sigma_b"]
+    defaults:
+      B: 64
+      learning_rate: 1e-3
+
+# Executable artifact contract: table/figure/metric/prediction writers
+artifact_writers:
+  dataset_registry:
+    path: "results/dataset_registry.json"
+    writer_function: "src.reporting.inventory_registry_make.write_dataset_registry_artifact"
+  data_manifest:
+    path: "results/data_manifest.json"
+    writer_function: "src.reporting.inventory_registry_make.write_data_manifest_artifact"
+  figure_5:
+    path: "results/figures/figure_5.png"
+    writer_function: "src.reporting.inventory_registry_make.write_figure_5_artifact"
+  experiment_results:
+    path: "results/tables/experiment_results.csv"
+    writer_function: "src.reporting.inventory_registry_make.write_experiment_results_artifact"
+  predictions:
+    path: "results/predictions.jsonl"
+    writer_function: "src.reporting.inventory_registry_make.write_predictions_artifact"
+  training_log:
+    path: "results/training_log.json"
+    writer_function: "src.reporting.inventory_registry_make.write_training_log_artifact"
+  evidence_contract_matrix:
+    path: "results/evidence_contract_matrix.json"
+    writer_function: "src.reporting.inventory_registry_make.write_evidence_contract_matrix_artifact"

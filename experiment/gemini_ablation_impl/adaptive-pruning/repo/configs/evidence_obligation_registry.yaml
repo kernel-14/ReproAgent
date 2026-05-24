@@ -1,0 +1,478 @@
+# configs/evidence_obligation_registry.yaml
+# Evidence Obligation Registry for APT (Adaptive Pruning and Tuning)
+# Exposes paper-derived environment/task factories, dataset loaders, parameter sweeps,
+# method/baseline selectors, fixed hyperparameter anchors, and formula/algorithm symbol inventories.
+
+# ==========================================
+# Environment & Task Factories
+# ==========================================
+environment_factories:
+  unit-001:
+    id: "unit-001"
+    aliases: ["unit-001", "smoke_test"]
+    setup_metadata:
+      description: "Smoke test environment for basic pipeline validation"
+      requires_gpu: false
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_unit_config"
+
+  squad:
+    id: "squad"
+    aliases: ["squad", "squad_v1.1", "squad_v2.0"]
+    setup_metadata:
+      description: "Stanford Question Answering Dataset for reading comprehension evaluation"
+      requires_gpu: true
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_squad_config"
+
+  glue:
+    id: "glue"
+    aliases: ["glue", "glue_benchmark"]
+    setup_metadata:
+      description: "General Language Understanding Evaluation benchmark"
+      requires_gpu: true
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_glue_config"
+
+  pruning_roberta_models_targeting_similar:
+    id: "pruning_roberta_models_targeting_similar"
+    aliases: ["roberta_pruning", "roberta_similar"]
+    setup_metadata:
+      description: "Pruning RoBERTa models targeting similar downstream performance"
+      requires_gpu: true
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_roberta_pruning_config"
+
+  apt_consistently_reach_higher:
+    id: "apt_consistently_reach_higher"
+    aliases: ["apt_higher_performance"]
+    setup_metadata:
+      description: "APT consistently reaches higher performance compared to baselines"
+      requires_gpu: true
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_apt_higher_config"
+
+  salience_notably_hurts:
+    id: "salience_notably_hurts"
+    aliases: ["salience_ablation"]
+    setup_metadata:
+      description: "Ablation showing that removing salience scoring notably hurts performance"
+      requires_gpu: true
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_salience_ablation_config"
+
+  sst2:
+    id: "sst2"
+    aliases: ["sst2", "glue_sst2"]
+    setup_metadata:
+      description: "Stanford Sentiment Treebank task from GLUE"
+      requires_gpu: true
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_sst2_config"
+
+  open_llm_leaderboard_few_shot:
+    id: "open_llm_leaderboard_few_shot"
+    aliases: ["open_llm_leaderboard", "few_shot_eval"]
+    setup_metadata:
+      description: "Open LLM Leaderboard few-shot evaluation tasks"
+      requires_gpu: true
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_few_shot_config"
+
+  fine_tuning_will_not_hurt_their:
+    id: "fine_tuning_will_not_hurt_their"
+    aliases: ["fine_tuning_stability"]
+    setup_metadata:
+      description: "Evaluation showing that fine-tuning will not hurt their stability"
+      requires_gpu: true
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_ft_stability_config"
+
+  apt_reaches_superior:
+    id: "apt_reaches_superior"
+    aliases: ["apt_superiority"]
+    setup_metadata:
+      description: "APT reaches superior efficiency and accuracy trade-offs"
+      requires_gpu: true
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_apt_superior_config"
+
+  determines_which:
+    id: "determines_which"
+    aliases: ["determines_which_adapters"]
+    setup_metadata:
+      description: "Evaluation of how APT determines which adapters to tune/prune"
+      requires_gpu: true
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_determines_config"
+
+  keep_all_paper_visible:
+    id: "keep_all_paper_visible"
+    aliases: ["paper_visible_tasks"]
+    setup_metadata:
+      description: "Keep all paper-visible tasks and benchmarks registered"
+      requires_gpu: true
+    availability_check: "src.apt.utils.registry.check_environment_availability"
+    runnable_config_hook: "src.apt.utils.registry.get_paper_visible_config"
+
+# ==========================================
+# Dataset & Benchmark Loaders
+# ==========================================
+dataset_loaders:
+  SST2:
+    id: "SST2"
+    aliases: ["SST2", "sst2", "glue/sst2"]
+    setup_metadata:
+      description: "SST-2 dataset loader"
+    validation_check: "src.apt.data.pipeline.validate_sst2"
+    runnable_config_hook: "src.apt.data.pipeline.get_sst2_loader_config"
+
+  MNLI:
+    id: "MNLI"
+    aliases: ["MNLI", "mnli", "glue/mnli"]
+    setup_metadata:
+      description: "MNLI dataset loader"
+    validation_check: "src.apt.data.pipeline.validate_mnli"
+    runnable_config_hook: "src.apt.data.pipeline.get_mnli_loader_config"
+
+  squad:
+    id: "squad"
+    aliases: ["squad", "squad_v1.1", "squad_v2.0"]
+    setup_metadata:
+      description: "SQuAD dataset loader"
+    validation_check: "src.apt.data.pipeline.validate_squad"
+    runnable_config_hook: "src.apt.data.pipeline.get_squad_loader_config"
+
+  glue:
+    id: "glue"
+    aliases: ["glue", "glue_benchmark"]
+    setup_metadata:
+      description: "GLUE benchmark loader"
+    validation_check: "src.apt.data.pipeline.validate_glue"
+    runnable_config_hook: "src.apt.data.pipeline.get_glue_loader_config"
+
+  truthfulqa:
+    id: "truthfulqa"
+    aliases: ["truthfulqa", "truthful_qa"]
+    setup_metadata:
+      description: "TruthfulQA benchmark loader"
+    validation_check: "src.apt.data.pipeline.validate_truthfulqa"
+    runnable_config_hook: "src.apt.data.pipeline.get_truthfulqa_loader_config"
+
+# ==========================================
+# Parameter Sweeps & Bounded Configs
+# ==========================================
+parameter_sweeps:
+  early_training_step_threshold:
+    name: "early-training step threshold t << T"
+    symbol: "t"
+    default_value: 100
+    sweep_values: [50, 100, 200, 500]
+    description: "Threshold step for early-training salience calculation"
+
+  batch_size:
+    name: "batch_size"
+    symbol: "batch_size"
+    default_value: 32
+    sweep_values: [16, 32, 64, 128]
+    description: "Batch size sweep values"
+
+# ==========================================
+# Fixed Hyperparameter Anchors
+# ==========================================
+fixed_hyperparameters:
+  10_shot_setting:
+    name: "10_shot_setting"
+    value: 10
+    description: "Few-shot evaluation setting with 10 shots"
+
+  batch_size_128:
+    name: "batch_size_128"
+    value: 128
+    description: "Fixed batch size of 128 for large tasks"
+
+  batch_size_32:
+    name: "batch_size_32"
+    value: 32
+    description: "Fixed batch size of 32 for small/medium tasks"
+
+# ==========================================
+# Method, Baseline & Attack Selectors
+# ==========================================
+method_selectors:
+  ours:
+    id: "ours"
+    name: "APT (Adaptive Pruning and Tuning)"
+    description: "Proposed adaptive pruning and tuning method"
+    config_overrides:
+      use_apt: true
+      use_lora: true
+
+  bert:
+    id: "bert"
+    name: "BERT Baseline"
+    description: "Standard BERT fine-tuning baseline"
+    config_overrides:
+      model_type: "bert"
+      use_apt: false
+
+  roberta:
+    id: "roberta"
+    name: "RoBERTa Baseline"
+    description: "Standard RoBERTa fine-tuning baseline"
+    config_overrides:
+      model_type: "roberta"
+      use_apt: false
+
+  t5:
+    id: "t5"
+    name: "T5 Baseline"
+    description: "Standard T5 fine-tuning baseline"
+    config_overrides:
+      model_type: "t5"
+      use_apt: false
+
+  fine_tuning:
+    id: "fine_tuning"
+    name: "Full Fine-Tuning"
+    description: "Standard full parameter fine-tuning"
+    config_overrides:
+      tuning_mode: "full"
+      use_apt: false
+
+  lora:
+    id: "lora"
+    name: "LoRA (Low-Rank Adaptation)"
+    description: "Standard LoRA parameter-efficient fine-tuning"
+    config_overrides:
+      tuning_mode: "lora"
+      use_apt: false
+
+  test_time_adaptation:
+    id: "test_time_adaptation"
+    name: "Test-Time Adaptation"
+    description: "Adaptation at test time baseline"
+    config_overrides:
+      tuning_mode: "tta"
+      use_apt: false
+
+  cofi_baseline:
+    id: "cofi_baseline"
+    name: "CoFi Baseline with LoRA and L0 module controls"
+    description: "CoFi baseline implemented using LoRA and L0 module controls plus default hyperparameters"
+    config_overrides:
+      use_cofi: true
+      use_lora: true
+      use_l0: true
+      cofi_lambda: 0.1
+
+# ==========================================
+# Formula & Algorithm Symbol Inventory
+# ==========================================
+formula_algorithm_symbols:
+  S_bar_t:
+    symbol: "S_bar^t"
+    description: "Exponential moving average of block salience at step t"
+    default_value: 0.85
+    reference_grounding: "addendum"
+
+  S_bar_t_1:
+    symbol: "S_bar^t-1"
+    description: "Exponential moving average of block salience at step t-1"
+    default_value: 0.85
+    reference_grounding: "addendum"
+
+  S_hat:
+    symbol: "S_hat"
+    description: "Current outlier-aware salience score of block"
+    default_value: 0.15
+    reference_grounding: "addendum"
+
+  mu:
+    symbol: "mu"
+    description: "Outlier threshold multiplier or kurtosis scaling factor"
+    default_value: 7
+    reference_grounding: "addendum"
+
+  global_step:
+    symbol: "global_step"
+    description: "Current training step"
+    default_value: 0
+    reference_grounding: "addendum"
+
+  pruning_start_step:
+    symbol: "pruning_start_step"
+    description: "Step at which adaptive pruning starts"
+    default_value: 100
+    reference_grounding: "addendum"
+
+  pruning_end_step:
+    symbol: "pruning_end_step"
+    description: "Step at which adaptive pruning ends"
+    default_value: 1000
+    reference_grounding: "addendum"
+
+  L_distill:
+    symbol: "L_distill"
+    description: "Self-distillation loss term"
+    default_value: 0.0
+    reference_grounding: "addendum"
+
+  L_pred:
+    symbol: "L_pred"
+    description: "Prediction loss term"
+    default_value: 0.0
+    reference_grounding: "addendum"
+
+  L_layer:
+    symbol: "L_layer"
+    description: "Layer-wise distillation loss term"
+    default_value: 0.0
+    reference_grounding: "addendum"
+
+  max_memory_allocated:
+    symbol: "max_memory_allocated"
+    description: "Maximum GPU memory allocated during training"
+    default_value: 0.0
+    reference_grounding: "addendum"
+
+  torch_cuda_max_memory_allocated:
+    symbol: "torch.cuda.max_memory_allocated"
+    description: "PyTorch CUDA max memory allocated function call"
+    default_value: 0.0
+    reference_grounding: "addendum"
+
+  tau:
+    symbol: "tau"
+    description: "Temperature parameter for distillation"
+    default_value: 2.0
+    reference_grounding: "addendum"
+
+  Theta:
+    symbol: "Theta"
+    description: "Total language model parameter set"
+    default_value: 110000000
+    reference_grounding: "3. Problem Formulation"
+
+  gamma_T:
+    symbol: "gamma_T"
+    description: "Target sparsity ratio at end of pruning"
+    default_value: 0.5
+    reference_grounding: "3. Problem Formulation"
+
+  gamma_t:
+    symbol: "gamma_t"
+    description: "Sparsity ratio at step t"
+    default_value: 0.9
+    reference_grounding: "3. Problem Formulation"
+
+  Delta_t:
+    symbol: "Delta_t"
+    description: "Pruning interval or step increment"
+    default_value: 10
+    reference_grounding: "3. Problem Formulation"
+
+  M_t:
+    symbol: "M_t"
+    description: "Binary pruning mask at step t"
+    default_value: 1.0
+    reference_grounding: "3. Problem Formulation"
+
+  R_t:
+    symbol: "R_t"
+    description: "Adapter rank allocation at step t"
+    default_value: 8
+    reference_grounding: "3. Problem Formulation"
+
+  Theta_T:
+    symbol: "Theta_T"
+    description: "Pruned model parameters at step T"
+    default_value: 55000000
+    reference_grounding: "3. Problem Formulation"
+
+  M_T:
+    symbol: "M_T"
+    description: "Final binary pruning mask at step T"
+    default_value: 1.0
+    reference_grounding: "3. Problem Formulation"
+
+  delta:
+    symbol: "delta"
+    description: "Block size or dimension parameter"
+    default_value: 4
+    reference_grounding: "C. Adaptive Pruning and Tuning Details"
+
+  Theta_t:
+    symbol: "Theta_t"
+    description: "Model parameters at step t"
+    default_value: 110000000
+    reference_grounding: "3. Problem Formulation"
+
+  Theta_0:
+    symbol: "Theta_0"
+    description: "Initial model parameters"
+    default_value: 110000000
+    reference_grounding: "3. Problem Formulation"
+
+  d_m:
+    symbol: "d_m"
+    description: "Model hidden dimension"
+    default_value: 768
+    reference_grounding: "C. Adaptive Pruning and Tuning Details"
+
+  n_L:
+    symbol: "n_L"
+    description: "Number of layers"
+    default_value: 12
+    reference_grounding: "C. Adaptive Pruning and Tuning Details"
+
+  n_h:
+    symbol: "n_h"
+    description: "Number of attention heads"
+    default_value: 12
+    reference_grounding: "C. Adaptive Pruning and Tuning Details"
+
+  n_f:
+    symbol: "n_f"
+    description: "Intermediate FFN dimension"
+    default_value: 3072
+    reference_grounding: "C. Adaptive Pruning and Tuning Details"
+
+  C_head:
+    symbol: "C_head"
+    description: "Cost or parameter count of an attention head"
+    default_value: 196608
+    reference_grounding: "C. Adaptive Pruning and Tuning Details"
+
+  C_neuron:
+    symbol: "C_neuron"
+    description: "Cost or parameter count of an FFN neuron"
+    default_value: 1536
+    reference_grounding: "C. Adaptive Pruning and Tuning Details"
+
+  C_dimension:
+    symbol: "C_dimension"
+    description: "Cost or parameter count of a hidden dimension block"
+    default_value: 110592
+    reference_grounding: "C. Adaptive Pruning and Tuning Details"
+
+# ==========================================
+# Numeric & Default Anchors
+# ==========================================
+numeric_anchors:
+  ema_decay: 0.85
+  one: 1
+  ema_weight: 0.15
+  kurtosis_threshold: 7
+  zero: 0
+  sparsity_target: 0.9
+  lambda_distill: 0.1
+  delta: 4
+  temperature: 2
+  tuning_budget: 4.4
+  alpha: 3
+  five: 5
+  rank: 8
+  hidden_dim: 768
+  num_layers: 12
+  ffn_dim: 3072

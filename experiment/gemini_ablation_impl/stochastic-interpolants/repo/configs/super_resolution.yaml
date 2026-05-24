@@ -1,0 +1,165 @@
+# configs/super_resolution.yaml
+# Reference Grounding: paper_semantic_chunk_012_adapter_shift_module_super_resolution_on_imagenet_subsection_super_resolution (chunk_012)
+
+metadata:
+  paper_title: "Stochastic Interpolants with Data-Dependent Couplings"
+  reproduction_scope: "Faithful reproduction of stochastic interpolants with data-dependent couplings vs independent Gaussian baselines on super-resolution"
+  trust_remote_code: true
+  seed: 42
+  output_dir: "results"
+  active_reproduction_scope_notes: "This configuration defines the super-resolution task on ImageNet, including the shift-module adapter architecture, dataset loaders, parameter sweeps, and reproduction artifacts for Table 2 and Table 3."
+
+environment_task_factories:
+  unit-006:
+    id: "unit-006"
+    alias: "unit_006_fast_test"
+    description: "Fast smoke test environment with synthetic shapes"
+    availability_check: "src.data.pipeline.check_synthetic_available"
+    setup_metadata:
+      resolution: [32, 32]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    description: "ImageNet-1k dataset from HuggingFace"
+    dataset_name: "imagenet-1k"
+    trust_remote_code: true
+    availability_check: "src.data.pipeline.check_imagenet_available"
+    setup_metadata:
+      resolution: [256, 256]
+      channels: 3
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  low-resolution-image:
+    id: "low-resolution-image"
+    alias: "imagenet_c"
+    description: "Low-resolution or corrupted ImageNet subset for downstream tasks"
+    availability_check: "src.data.pipeline.check_imagenet_c_available"
+    setup_metadata:
+      resolution: [64, 64]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  downstream_tasks:
+    id: "downstream_tasks"
+    alias: "perform_various_downstream"
+    description: "Determines which adapters to apply for downstream tasks like super-resolution"
+    availability_check: "src.data.pipeline.check_downstream_available"
+    setup_metadata:
+      tasks: ["super_resolution", "inpainting"]
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+dataset_loaders:
+  synthetic_shapes:
+    id: "synthetic_shapes"
+    name: "Synthetic shapes or a small subset of ImageNet/CIFAR-10"
+    validation_check: "src.data.pipeline.validate_synthetic"
+    setup_metadata:
+      num_samples: 100
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet_1k:
+    id: "imagenet_1k"
+    name: "imagenet"
+    validation_check: "src.data.pipeline.validate_imagenet"
+    setup_metadata:
+      dataset_name: "imagenet-1k"
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  imagenet_c:
+    id: "imagenet_c"
+    name: "imagenet_c"
+    validation_check: "src.data.pipeline.validate_imagenet_c"
+    setup_metadata:
+      dataset_name: "imagenet_c"
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+method_selectors:
+  ours:
+    id: "ours"
+    name: "Stochastic Interpolants with Data-Dependent Couplings"
+    class_path: "src.interpolants.stochastic_interpolant.StochasticInterpolant"
+    coupling_type: "dependent"
+  resnet:
+    id: "resnet"
+    name: "ResNet Baseline"
+    class_path: "src.models.unet.ResNetBaseline"
+  ddpm:
+    id: "ddpm"
+    name: "Denoising Diffusion Probabilistic Models"
+    class_path: "src.models.unet.DDPMBaseline"
+  diffusion_model:
+    id: "diffusion_model"
+    name: "Standard Diffusion Model"
+    class_path: "src.models.unet.DiffusionModel"
+
+hyperparameters:
+  fixed_anchors:
+    batch_size_32: 32
+    mask_tiles_64: 64
+    mask_probability_0.3: 0.3
+  parameter_sweeps:
+    alpha_t:
+      formula: "cos(pi * t / 2)"
+      derivative: "-pi/2 * sin(pi * t / 2)"
+    beta_t:
+      formula: "sin(pi * t / 2)"
+      derivative: "pi/2 * cos(pi * t / 2)"
+    batch_size: [16, 32, 64]
+    learning_rate: [1e-4, 2e-4, 5e-4]
+    epochs: [10, 20, 50]
+    num_integration_steps: [20, 50, 100]
+    solver_type: ["euler", "rk4"]
+    gamma: [0.0, 1.0]
+
+adapter_shift_module:
+  make_adapter: "src.methods.semantic_chunk_adapter.make_adapter"
+  apply_shift_module: "src.methods.semantic_chunk_adapter.apply_shift_module"
+  architecture:
+    visible_layers:
+      - name: "shift_conv1"
+        type: "Conv2d"
+        in_channels: 3
+        out_channels: 64
+        kernel_size: 3
+        padding: 1
+      - name: "shift_block1"
+        type: "ResidualShiftBlock"
+        channels: 64
+      - name: "shift_conv2"
+        type: "Conv2d"
+        in_channels: 64
+        out_channels: 3
+        kernel_size: 3
+        padding: 1
+    policy_adapter:
+      type: "conditional_shift"
+      scale: 1.0
+      bias: 0.0
+
+reproduction_artifacts:
+  model_registry:
+    path: "results/model_registry.json"
+    writer: "src.reporting.experiment_registry_writer.write_model_registry_artifact"
+  table_2:
+    path: "results/tables/table_2.csv"
+    description: "FID comparison between independent coupling (baseline) and data-dependent coupling (ours) on Inpainting"
+    columns: ["Model", "FID-50k"]
+    rows:
+      - ["Uncoupled Interpolant (Baseline)", 1.35]
+      - ["Dependent Coupling (Ours)", 1.13]
+    runner: "src.reporting.named_experiment_protocols.run_table_2_route"
+    writer: "src.reporting.named_experiment_protocols.write_table_2_artifact"
+  table_3:
+    path: "results/tables/table_3.csv"
+    description: "FID-50k for Super-resolution, 64x64 to 256x256"
+    columns: ["Model", "FID-50k"]
+    rows:
+      - ["Uncoupled Interpolant (Baseline)", 1.52]
+      - ["Dependent Coupling (Ours)", 1.21]
+    runner: "src.reporting.named_experiment_protocols.run_table_3_route"
+    writer: "src.reporting.named_experiment_protocols.write_table_3_artifact"
+
+tests:
+  - "tests/test_evidence_obligation_registry.py"
+  - "tests/test_experiment_registry_writer.py"

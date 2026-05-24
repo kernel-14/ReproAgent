@@ -1,0 +1,238 @@
+# configs/experiments.yaml
+# reference_grounding: paperbench_ref_030 readme.md
+
+metadata:
+  title: "BBox-Adapter: Lightweight Adapting for Black-Box Large Language Models"
+  reproduction_scope: "Faithful reproduction of BBox-Adapter training, inference, and evaluation routes."
+  hypothesis: "训练好的 BBox-Adapter 可以无需重训或技术修改地迁移到不同黑盒 LLM，证明其 plug-and-play 适配能力。"
+  decision_value: "若该单元成功，说明 adapter 与 base generator 解耦；若失败，则论文关于轻量、可插拔适配的主张受到影响。"
+  seed: 42
+
+environment_task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "question-answering"
+    setup_metadata:
+      positive_source: "ground_truth"
+      cache_path: "results/cache"
+      source_adapter_checkpoint: "results/adapter_checkpoint"
+      target_base_model: "gpt-3.5-turbo"
+      achieving_improvements: true
+      determines_which: "adapter_scores"
+      keep_all_paper_visible: true
+    availability_checks:
+      - "import bbox_adapter"
+    runnable_config_hooks:
+      data_pipeline: "bbox_adapter.datasets.build_datasets"
+      config_factory: "bbox_adapter.config.resolve_batch_size_defaults"
+      registry_configuration_artifact: "configs/experiments.yaml"
+
+dataset_loaders:
+  gsm8k:
+    id: "gsm8k"
+    aliases: ["GSM8K", "gsm8k"]
+    setup_metadata:
+      task_type: "mathematical"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  strategyqa:
+    id: "strategyqa"
+    aliases: ["StrategyQA", "strategyqa"]
+    setup_metadata:
+      task_type: "implicit_reasoning"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  truthfulqa:
+    id: "truthfulqa"
+    aliases: ["TruthfulQA", "truthfulqa"]
+    setup_metadata:
+      task_type: "truthful"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  scienceqa:
+    id: "scienceqa"
+    aliases: ["ScienceQA", "scienceqa"]
+    setup_metadata:
+      task_type: "scientific"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  toxigen:
+    id: "toxigen"
+    aliases: ["ToxiGen", "toxigen"]
+    setup_metadata:
+      task_type: "toxicity"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+
+parameter_sweeps:
+  positive_sample_source:
+    description: "positive sample source 应显式支持 Ground-Truth、AI Feedback、Human Feedback。"
+    values: ["Ground-Truth", "AI Feedback", "Human Feedback"]
+    default: "Ground-Truth"
+  beam_size:
+    description: "beam sizes must include k=1,3,5 for Figure 3(a) scale analysis"
+    values: [1, 3, 5]
+    default: 3
+  adapter_size:
+    description: "adapter_size={0.1B,0.3B}"
+    values: [0.1, 0.3]
+    default: 0.1
+  iteration_count:
+    description: "iterations configurable。"
+    values: [3, 0, 1, 2, 4]
+    default: 3
+
+metrics:
+  table_2_reproduction_artifact:
+    id: "table_2_reproduction_artifact"
+    canonical_identifier: "metric_table_2_reproduction_artifact"
+    formula: "accuracy"
+    aggregation: "average"
+  table_3_reproduction_artifact:
+    id: "table_3_reproduction_artifact"
+    canonical_identifier: "metric_table_3_reproduction_artifact"
+    formula: "accuracy"
+    aggregation: "average"
+  table_4_reproduction_artifact:
+    id: "table_4_reproduction_artifact"
+    canonical_identifier: "metric_table_4_reproduction_artifact"
+    formula: "accuracy, training cost, inference cost"
+    aggregation: "average"
+  table_5_reproduction_artifact:
+    id: "table_5_reproduction_artifact"
+    canonical_identifier: "metric_table_5_reproduction_artifact"
+    formula: "accuracy"
+    aggregation: "average"
+  figure_3_reproduction_artifact:
+    id: "figure_3_reproduction_artifact"
+    canonical_identifier: "metric_figure_3_reproduction_artifact"
+    formula: "accuracy"
+    aggregation: "average"
+  table_6_reproduction_artifact:
+    id: "table_6_reproduction_artifact"
+    canonical_identifier: "metric_table_6_reproduction_artifact"
+    formula: "accuracy, GPU memory usage"
+    aggregation: "average"
+  ranking_based_nce_loss_positive_score_negative_score:
+    id: "ranking_based_nce_loss_positive_score_negative_score"
+    canonical_identifier: "metric_ranking_based_nce_loss_positive_score_negative_score"
+    formula: "-log(sigmoid(pos_score - neg_score))"
+    aggregation: "mean"
+  accuracy:
+    id: "accuracy"
+    canonical_identifier: "metric_accuracy"
+    formula: "correct_predictions / total_predictions"
+    aggregation: "mean"
+  accuracy_absolute_improvement_average_improvement_across_datasets:
+    id: "accuracy_absolute_improvement_average_improvement_across_datasets"
+    canonical_identifier: "metric_accuracy_absolute_improvement_average_improvement_across_datasets"
+    formula: "accuracy - base_accuracy"
+    aggregation: "mean"
+  accuracy_accuracy_gain_training_cost_inference_cost_relative:
+    id: "accuracy_accuracy_gain_training_cost_inference_cost_relative"
+    canonical_identifier: "metric_accuracy_accuracy_gain_training_cost_inference_cost_relative"
+    formula: "cost_ratio"
+    aggregation: "mean"
+
+result_trend_assertions:
+  bbox_adapter_outperforms_gpt35:
+    assertion: "BBOX-ADAPTER outperforms gpt-3.5-turbo by average 6.39%"
+    decisive_metric: "metric_accuracy_absolute_improvement_average_improvement_across_datasets"
+    expected_value: 0.0639
+  ai_feedback_competitive:
+    assertion: "AI Feedback competitive with Ground-Truth。"
+    decisive_metric: "metric_accuracy"
+  no_retraining_plug_and_play:
+    assertion: "no retraining or additional technical modification in plug-and-play route。"
+    decisive_metric: "metric_table_3_reproduction_artifact"
+  increasing_beams_enhancement:
+    assertion: "increasing beams contributes average 2.41% performance enhancement。"
+    decisive_metric: "metric_figure_3_reproduction_artifact"
+    expected_value: 0.0241
+  baseline_outperformance:
+    assertion: "baseline_outperformance: proposed method should be compared against explicit baselines"
+    decisive_metric: "metric_accuracy"
+
+reproduction_artifacts:
+  table_2:
+    id: "table_2"
+    canonical_identifier: "artifact_table_2"
+    name: "table_2_main_results"
+    canonical_name_identifier: "artifact_table_2_main_results"
+    caption: "Table 2. Main results of adapting gpt-3.5-turbo on downstream tasks."
+    path: "results/table2_main_results.csv"
+    json_path: "results/table2_main_results.json"
+  table_3:
+    id: "table_3"
+    canonical_identifier: "artifact_table_3"
+    name: "table_3_plug_and_play_adaptation"
+    canonical_name_identifier: "artifact_table_3_plug_and_play_adaptation"
+    caption: "Table 3. Results of plug-and-play adaptation on davinci-002 and Mixtral-8×7B across four datasets."
+    path: "results/table3_plug_and_play.csv"
+    json_path: "results/table3_plug_and_play.json"
+    predictions_path: "results/plug_and_play_predictions.jsonl"
+  table_4:
+    id: "table_4"
+    canonical_identifier: "artifact_table_4"
+    name: "table_4_cost_analysis"
+    canonical_name_identifier: "artifact_table_4_cost_analysis"
+    caption: "Table 4. Comparison of performance and cost for the base model, SFT, and BBOX-ADAPTER."
+    path: "results/table4_cost_analysis.csv"
+    json_path: "results/table4_cost_analysis.json"
+  table_5:
+    id: "table_5"
+    canonical_identifier: "artifact_table_5"
+    name: "table_5_ranking_based_nce_loss_ablation"
+    canonical_name_identifier: "artifact_table_5_ranking_based_nce_loss_ablation"
+    caption: "Table 5. Accuracy (%) of BBox-ADAPTER fine-tuned with two types of loss: MLM loss and ranking-based NCE loss."
+    path: "results/table5_ablation_nce_vs_mlm.csv"
+    json_path: "results/table5_ablation_nce_vs_mlm.json"
+  figure_3:
+    id: "figure_3"
+    canonical_identifier: "artifact_figure_3"
+    caption: "Figure 3. Scale analysis on StrategyQA with (a) different beam sizes and (b) different iterations of online adaptation."
+    path: "results/figure3_scale_analysis.csv"
+    json_path: "results/figure3_scale_analysis.json"
+  table_6:
+    id: "table_6"
+    canonical_identifier: "artifact_table_6"
+    caption: "Table 6. Accuracy (%) and GPU memory usage on adapting Mixtral-8x7B to the StrategyQA dataset."
+    path: "results/table6_whitebox_extension.csv"
+    json_path: "results/table6_whitebox_extension.json"
+
+plug_and_play_route:
+  source_adapter_checkpoint: "results/adapter_checkpoint"
+  target_base_model:
+    - "davinci-002"
+    - "Mixtral-8x7B"
+  dataset:
+    - "GSM8K"
+    - "StrategyQA"
+    - "TruthfulQA"
+    - "ScienceQA"
+  config: "configs/experiments.yaml"
+  no_retraining_or_additional_technical_modification: true
+
+active_route_closure_symbols:
+  - "compute_accuracy"
+  - "aggregate_accuracy"
+  - "compute_loss"
+  - "aggregate_loss"
+  - "compute_metric_manifest_and_config_snapshot_entrypoint_metric_entrypoint_objective"
+  - "compute_metric_manifest_and_config_snapshot_entrypoint_metric_entrypoint_score"
+  - "train_main"
+  - "run_training_loop"
+  - "evaluate_main"
+  - "compute_main_metrics"
+  - "aggregate_metrics"
+  - "load_unit_run_plug"

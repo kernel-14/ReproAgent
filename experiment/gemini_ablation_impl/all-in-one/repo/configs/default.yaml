@@ -1,0 +1,133 @@
+# configs/default.yaml
+# Paper: All-in-one simulation-based inference (Simformer)
+# Reference Grounding: paper:unit_006 (chunk_014)
+
+# Reproduction Metadata and Hypothesis
+reproduction:
+  hypothesis: "Simformer能够处理观测时间点不一致、观测数量不同的无结构数据集，并准确推断参数。"
+  decision_value: "验证Simformer在处理非结构化/不规则观测数据时的灵活性和鲁棒性。"
+  active_scope: ["unit-006", "unit-007", "unit-008", "unit-009"]
+
+# Paper evidence contract: expose bounded sweep/config entries for p; batch_size.
+# Paper evidence contract: expose fixed hyperparameter anchors for mask_probability_0.3.
+hyperparameters:
+  batch_size: 256
+  p: 1000  # Number of simulations or parameter dimension anchor
+  mask_probability: 0.3
+  learning_rate: 0.0001
+  num_layers: 6
+  embed_dim: 128
+  num_heads: 8
+  mask_probability_0.3: 0.3  # Fixed hyperparameter anchor
+
+# Environment/Task Factories
+# Expose paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks
+task_factories:
+  unit-006:
+    id: "lotka_volterra"
+    alias: "lotka_volterra_unstructured"
+    description: "approximating posterior distributions across four | unit-006"
+    setup_metadata:
+      unstructured: true
+      irregular_time: true
+      implementation: "实现Lotka-Volterra模拟器，支持生成不规则时间点和不同观测数量的数据。"
+    availability_check: "src.simformer.utils.check_simulator_available"
+    config_hook: "src.simformer.data.prepare_lotka_volterra"
+    entrypoint: "python run_lotka_volterra.py"
+
+  unit-007:
+    id: "sird"
+    alias: "sird_functional_parameters"
+    description: "model all conditionals across all | unit-007"
+    setup_metadata:
+      functional_parameters: true
+    availability_check: "src.simformer.utils.check_simulator_available"
+    config_hook: "src.simformer.data.prepare_sird"
+    entrypoint: "python run_sird.py"
+
+  unit-008:
+    id: "hodgkin_huxley"
+    alias: "hodgkin_huxley_interval_constraints"
+    description: "hodgkin-huxley | posterior estimation techniques | unit-008"
+    setup_metadata:
+      interval_constraints: true
+    availability_check: "src.simformer.utils.check_simulator_available"
+    config_hook: "src.simformer.data.prepare_hodgkin_huxley"
+    entrypoint: "python run_hodgkin_huxley.py"
+
+  unit-009:
+    id: "benchmark_suite"
+    alias: "across_all_four_benchmark"
+    description: "averaged across all benchmark | unit-009 | gaussian linear"
+    tasks: 
+      - "two_moons"
+      - "gaussian_linear"
+      - "gaussian_mixture"
+      - "slcp"
+    setup_metadata:
+      standard_benchmark: true
+    availability_check: "src.simformer.utils.check_benchmark_available"
+    config_hook: "src.simformer.data.prepare_benchmark"
+
+# Method/Baseline Selectors
+# Paper evidence contract: expose method/baseline/attack selectors for ours, simformer, npe, nle, nre, diffusion_model.
+method_selectors:
+  ours: "simformer"
+  simformer: "src.simformer.models.SimformerTransformer"
+  npe: "src.simformer.baselines.NPE"
+  nle: "src.simformer.baselines.NLE"
+  nre: "src.simformer.baselines.NRE"
+  diffusion_model: "src.simformer.models.ScoreEstimator"
+
+# Callable Protocol Matrix
+# Linking named experiments to environments/tasks, method selectors, metric functions, and artifact writer functions
+experiment_protocols:
+  lotka_volterra_unstructured:
+    task_factory: "unit-006"
+    method: "ours"
+    metrics: ["compute_c2st"]
+    artifact_writer: "write_lotka_volterra_posterior_artifact"
+    output_path: "results/lotka_volterra_posterior.png"
+
+  sird_functional_parameters:
+    task_factory: "unit-007"
+    method: "ours"
+    metrics: ["compute_c2st"]
+    artifact_writer: "write_sird_posterior_artifact"
+    output_path: "results/sird_posterior.png"
+
+  hodgkin_huxley_interval_constraints:
+    task_factory: "unit-008"
+    method: "ours"
+    metrics: ["compute_c2st"]
+    artifact_writer: "write_hodgkin_huxley_posterior_artifact"
+    output_path: "results/hodgkin_huxley_posterior.png"
+
+# Metric Definitions and Aggregations
+metrics:
+  c2st:
+    id: "c2st_accuracy"
+    formula: "classifier_two_sample_test"
+    aggregation: "average_across"
+  outputs:
+    - "results/c2st_metrics.json"
+    - "results/metrics.json"
+
+# Executable Anchor Contract
+# Exact numeric constants, defaults, sweep values, and formulas
+anchors:
+  mask_probability_0.3: 0.3
+  batch_size_default: 256
+  p_default: 1000
+  gaussian_linear_dim: 10
+  two_moons_dim: 2
+  c2st_perfect_alignment: 0.5
+  c2st_complete_distinction: 1.0
+
+# Artifact Registry
+artifacts:
+  lotka_volterra_posterior: "results/lotka_volterra_posterior.png"
+  c2st_metrics: "results/c2st_metrics.json"
+  general_metrics: "results/metrics.json"
+  experiment_registry: "results/experiment_registry.json"
+  evidence_contract: "results/evidence_contract_matrix.json"

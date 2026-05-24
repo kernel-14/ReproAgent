@@ -1,0 +1,143 @@
+# configs/inventory_registry_make.yaml
+# Reference Grounding: paper_dataset_inventory (chunk_005, chunk_008, chunk_011)
+
+metadata:
+  paper_title: "Stochastic Interpolants with Data-Dependent Couplings"
+  reproduction_scope: "Faithful reproduction of stochastic interpolants with data-dependent couplings vs independent Gaussian baselines"
+  trust_remote_code: true
+  seed: 42
+  output_dir: "results"
+  active_reproduction_scope_notes: "This configuration defines the dataset registry, environment/task factories, and parameter sweeps for the stochastic interpolants reproduction."
+
+environment_task_factories:
+  unit-006:
+    id: "unit-006"
+    alias: "unit_006_fast_test"
+    description: "Fast smoke test environment with synthetic shapes"
+    availability_check: "src.data.pipeline.check_synthetic_available"
+    setup_metadata:
+      resolution: [32, 32]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    description: "ImageNet-1k dataset from HuggingFace"
+    dataset_name: "imagenet-1k"
+    trust_remote_code: true
+    availability_check: "src.data.pipeline.check_imagenet_available"
+    setup_metadata:
+      resolution: [256, 256]
+      channels: 3
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  low-resolution-image:
+    id: "low-resolution-image"
+    alias: "imagenet_c"
+    description: "Low-resolution or corrupted ImageNet subset for downstream tasks"
+    availability_check: "src.data.pipeline.check_imagenet_c_available"
+    setup_metadata:
+      resolution: [64, 64]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  downstream_tasks:
+    id: "downstream_tasks"
+    alias: "perform_various_downstream"
+    description: "Downstream evaluation tasks such as inpainting and super-resolution"
+    availability_check: "src.data.pipeline.check_downstream_available"
+    setup_metadata:
+      tasks: ["inpainting", "super_resolution"]
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+dataset_loaders:
+  synthetic_shapes:
+    id: "synthetic_shapes"
+    name: "Synthetic shapes or a small subset of ImageNet/CIFAR-10"
+    validation_check: "src.data.pipeline.validate_synthetic"
+    setup_metadata:
+      num_samples: 100
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet_1k:
+    id: "imagenet_1k"
+    name: "imagenet"
+    alias: "imagenet_1k"
+    validation_check: "src.data.pipeline.validate_imagenet"
+    setup_metadata:
+      dataset_name: "imagenet-1k"
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  imagenet_c:
+    id: "imagenet_c"
+    name: "imagenet_c"
+    alias: "imagenet_c"
+    validation_check: "src.data.pipeline.validate_imagenet_c"
+    setup_metadata:
+      corruption_type: "gaussian_blur"
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+method_selectors:
+  ours:
+    id: "ours"
+    name: "Stochastic Interpolants with Data-Dependent Couplings"
+    description: "Proposed method with data-dependent coupling"
+  resnet:
+    id: "resnet"
+    name: "ResNet Baseline"
+    description: "Standard ResNet architecture baseline"
+  ddpm:
+    id: "ddpm"
+    name: "DDPM Baseline"
+    description: "Denoising Diffusion Probabilistic Models baseline"
+  diffusion_model:
+    id: "diffusion_model"
+    name: "Diffusion Model"
+    description: "Standard diffusion model baseline"
+
+parameter_sweeps:
+  alpha_t:
+    description: "alpha_t coefficient for stochastic interpolant I_t = alpha_t * x_0 + beta_t * x_1"
+    formula: "1 - t"
+    derivative: "-1"
+  beta_t:
+    description: "beta_t coefficient for stochastic interpolant I_t = alpha_t * x_0 + beta_t * x_1"
+    formula: "t"
+    derivative: "1"
+  gamma:
+    values: [0.0, 1.0]
+    description: "gamma values for noise coefficient gamma_t * z"
+  learning_rate:
+    values: [0.0001, 0.0002, 0.0005, 0.001]
+    default: 0.0002
+  batch_size:
+    values: [16, 32, 64]
+    default: 32
+  epochs:
+    values: [10, 20, 50]
+    default: 10
+  num_integration_steps:
+    values: [10, 20, 50, 100]
+    default: 50
+  solver_type:
+    values: ["euler", "rk4"]
+    default: "euler"
+
+fixed_hyperparameter_anchors:
+  batch_size_32:
+    parameter: "batch_size"
+    value: 32
+  mask_tiles_64:
+    parameter: "mask_tiles"
+    value: 64
+  mask_probability_0.3:
+    parameter: "mask_probability"
+    value: 0.3
+
+artifact_paths:
+  dataset_registry: "results/dataset_registry.json"
+  data_manifest: "results/data_manifest.json"
+  figure_1: "results/figures/figure_1.png"
+  figure_2: "results/figures/figure_2.png"
+  figure_3: "results/figures/figure_3.png"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+  figure_4: "results/figures/figure_4.png"

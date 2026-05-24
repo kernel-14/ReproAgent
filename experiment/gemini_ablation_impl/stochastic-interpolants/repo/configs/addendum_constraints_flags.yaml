@@ -1,0 +1,126 @@
+# configs/addendum_constraints_flags.yaml
+# Reference Grounding: paper_addendum_constraints (addendum.md)
+
+metadata:
+  paper_title: "Stochastic Interpolants with Data-Dependent Couplings"
+  reproduction_scope: "Faithful reproduction of stochastic interpolants with data-dependent couplings vs independent Gaussian baselines"
+  trust_remote_code: true
+
+environment_task_factories:
+  unit-006:
+    id: "unit-006"
+    alias: "unit_006_fast_test"
+    description: "Fast smoke test environment with synthetic shapes"
+    availability_check: "src.data.pipeline.check_synthetic_available"
+    setup_metadata:
+      resolution: [32, 32]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    description: "ImageNet-1k dataset from HuggingFace"
+    dataset_name: "imagenet-1k"
+    trust_remote_code: true
+    availability_check: "src.data.pipeline.check_imagenet_available"
+    setup_metadata:
+      resolution: [256, 256]
+      channels: 3
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  low-resolution-image:
+    id: "low-resolution-image"
+    alias: "imagenet_c"
+    description: "Low-resolution or corrupted ImageNet subset for downstream tasks"
+    availability_check: "src.data.pipeline.check_imagenet_c_available"
+    setup_metadata:
+      resolution: [64, 64]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+dataset_loaders:
+  synthetic_shapes:
+    id: "synthetic_shapes"
+    name: "Synthetic shapes or a small subset of ImageNet/CIFAR-10"
+    validation_check: "src.data.pipeline.validate_synthetic"
+    setup_metadata:
+      num_samples: 100
+  imagenet_1k:
+    id: "imagenet_1k"
+    name: "imagenet"
+    validation_check: "src.data.pipeline.validate_imagenet"
+    setup_metadata:
+      trust_remote_code: true
+  imagenet_c:
+    id: "imagenet_c"
+    name: "imagenet_c"
+    validation_check: "src.data.pipeline.validate_imagenet_c"
+    setup_metadata:
+      corruption_type: "gaussian_noise"
+
+method_baseline_factories:
+  ours:
+    id: "ours"
+    name: "Stochastic Interpolants with Data-Dependent Couplings"
+    class_path: "src.interpolants.stochastic_interpolant.StochasticInterpolant"
+    coupling_type: "dependent"
+    setup_metadata:
+      gamma: 1.0
+  independent_gaussian:
+    id: "independent_gaussian"
+    name: "Independent Gaussian Coupling"
+    class_path: "src.interpolants.stochastic_interpolant.StochasticInterpolant"
+    coupling_type: "independent"
+    setup_metadata:
+      gamma: 0.0
+  resnet:
+    id: "resnet"
+    name: "resnet"
+    class_path: "src.models.unet.UNet"
+    setup_metadata:
+      resnet_block_groups: 32
+  ddpm:
+    id: "ddpm"
+    name: "ddpm"
+    class_path: "src.models.unet.UNet"
+    setup_metadata:
+      diffusion_model: "ddpm"
+  diffusion_model:
+    id: "diffusion_model"
+    name: "diffusion_model"
+    class_path: "src.models.unet.UNet"
+    setup_metadata:
+      diffusion_model: "standard"
+
+fixed_hyperparameters:
+  batch_size_32:
+    batch_size: 32
+  mask_tiles_64:
+    mask_tiles: 64
+  mask_probability_0.3:
+    mask_probability: 0.3
+
+parameter_sweeps:
+  gamma_values: [0.0, 1.0]
+  learning_rate: [1e-4, 2e-4, 5e-4]
+  batch_size: [16, 32, 64]
+  epochs: [10, 50, 100]
+  num_integration_steps: [50, 100, 250]
+  solver_type: ["euler", "rk4"]
+  alpha_t: "cos(pi * t / 2)"
+  beta_t: "sin(pi * t / 2)"
+
+experiment_matrix:
+  datasets_or_tasks: ["unit-006", "imagenet", "low-resolution-image"]
+  methods_or_models: ["ours", "independent_gaussian", "resnet", "ddpm", "diffusion_model"]
+  parameters:
+    gamma: [0.0, 1.0]
+    batch_size: [32]
+    learning_rate: [2e-4]
+    solver_type: ["euler", "rk4"]
+
+active_reproduction_scope:
+  default_mode: "runtime_smoke"
+  max_gradient_steps: 200000
+  resnet_block_groups: 32
+  trust_remote_code: true

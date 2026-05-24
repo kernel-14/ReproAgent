@@ -1,0 +1,155 @@
+# reference_grounding: paperbench_ref_001 README.md
+
+project_metadata:
+  name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+
+# 1. Paper Evidence Contract & Registry
+evidence_obligation_matrix:
+  environments:
+    - id: "robotics"
+      aliases: ["RoboticSequence", "push-wall", "peg-unplug-side", "them were originally introduced"]
+    - id: "nethack"
+      aliases: ["NetHack", "nethack learning", "nle", "unit-001", "fine-tuning + bc"]
+  datasets:
+    - id: "robotics"
+      aliases: ["RoboticSequenceDataset", "metaworld_trajectories"]
+    - id: "nethack"
+      aliases: ["TtyrecDataset", "nld-aa-v0"]
+  methods:
+    selectors: ["ours", "ppo", "sac", "bc", "oracle", "nle", "ewc"]
+  metrics:
+    - "loss"
+    - "reward"
+    - "return"
+    - "success_rate"
+    - "gold score"
+    - "eating score"
+    - "staircase score"
+    - "scout score"
+  trends:
+    - id: "baseline_outperformance"
+      description: "proposed method should be compared against explicit baselines"
+
+# 2. Parameter Sweep & Hyperparameter Anchors
+parameter_sweep:
+  learning_rate:
+    sweep_values: [0.0001, 0.0003, 0.001]
+    default: 0.0003
+  batch_size:
+    sweep_values: [64, 128, 256]
+    default: 128
+  fixed_hyperparameters:
+    batch_size_128: 128
+
+# 3. Paper Formula & Algorithm Symbol Inventory
+symbol_inventory:
+  add_nledata_directory: "/tmp/nle_data"
+  add_altorg_directory: "/tmp/altorg_data"
+  ttyrec_dataset_name: "nld-aa-v0"
+  batch_size: 128
+  L_aux: "auxiliary loss term"
+  theta: "current policy parameters"
+  sum_i: "summation index over parameters"
+  F_i: "Fisher information matrix diagonal element"
+  theta_star_i: "pre-trained policy parameter i"
+  theta_i: "current policy parameter i"
+  theta_star: "pre-trained policy parameters"
+  L_BC: "behavioral cloning loss"
+  B_BC: "behavioral cloning state buffer"
+  D_KL: "Kullback-Leibler divergence"
+  pi_star: "pre-trained policy"
+  pi_theta: "current policy"
+  L_KS: "kickstarting loss"
+  s_0: "initial state in two-state MDP"
+  v_0: "value of state s_0"
+  gamma: 0.99
+  r_0: 0.0
+  f_theta: "transition probability function"
+  r_1: 1.0
+  epsilon: 0.11
+
+# 4. Numeric & Default Anchors
+numeric_anchors:
+  batch_size: 128
+  num_stages: 2
+  state_0: 0
+  state_9: 9
+  state_1: 1
+  epsilon: 0.11
+  f_theta_val: 2.22
+  gamma_val: 0.5
+  r_1_val: 10
+  weight_norm_c: 0.08
+  apple_retrieval_m: 9.93
+  asset_13: 13
+  sigma: 11
+  max_steps: 30
+  max_path_length: 200
+  beta: 1.5
+
+# 5. Environment & Task Factories
+environment_factories:
+  NetHack:
+    id: "NetHack-v0"
+    aliases: ["nethack learning", "nle", "unit-001", "fine-tuning + bc"]
+    setup_metadata:
+      eval_rollout_limit: 100000
+      eval_no_progress_limit: 150
+      eval_death_termination: true
+      fisher_matrix_batches: 10000
+      dataset_name: "NLD-AA"
+      ttyrec_dataset: "nld-aa-v0"
+    availability_check:
+      package: "nle"
+      import_test: "nle.env.NLE"
+    runnable_config_hooks:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+    metrics:
+      - "gold score"
+      - "eating score"
+      - "staircase score"
+      - "scout score"
+      - "experience points"
+      - "dungeon depth"
+
+  RoboticSequence:
+    id: "RoboticSequence-v0"
+    aliases: ["robotics", "push-wall", "peg-unplug-side", "them were originally introduced"]
+    setup_metadata:
+      num_stages: 4
+      stage_success_threshold: 0.9
+      random_start_goal: true
+      observation_space: "robot_config + stage_one_hot"
+      policy_network:
+        hidden_layers: 4
+        neurons_per_layer: 256
+    availability_check:
+      package: "metaworld"
+      import_test: "metaworld.envs.ALL_V2_ENVIRONMENTS"
+    runnable_config_hooks:
+      beta: 1.5
+      max_path_length: 200
+    metrics:
+      - "success_rate"
+      - "stage_success_rate"
+      - "Forward Transfer"
+      - "AUC"
+      - "AUC_b"
+
+# 6. Dataset & Benchmark Loaders
+dataset_loaders:
+  robotics:
+    id: "robotics"
+    aliases: ["RoboticSequenceDataset", "metaworld_trajectories"]
+    setup_metadata:
+      num_trajectories: 100
+      state_dim: 39
+      action_dim: 4
+    validation_checks:
+      file_exists: false
+      min_samples: 1000
+    runnable_config_hooks:
+      buffer_size: 100000
+      batch_size: 128

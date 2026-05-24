@@ -1,0 +1,329 @@
+# configs/default_config.yaml
+# Reference Grounding: paper_task_environment_setup, paper_training_or_optimization_loop, paper:paper_training_or_optimization_loop
+
+# -----------------------------------------------------------------------------
+# 1. Paper Formula & Algorithm Symbol Inventory (Code-Visible Keys)
+# -----------------------------------------------------------------------------
+symbols:
+  vel_left: [-1.0, 0.0]
+  vel_up: [0.0, 1.0]
+  vel_down: [0.0, -1.0]
+  vel_right: [1.0, 0.0]
+  l_pi: "L_pi = -E_{(s, g, a) ~ D} [log pi(a | s, g)]"
+  e_s_g_asimd: "E_{(s, g, a) ~ D}"
+  p_randomgoal: 0.3
+  p_geometric_goal: 0.5
+  p_current_goal: 0.2
+  L_eta: "L_eta = E_{eta ~ p(eta)} [log q_theta(eta | z)]"
+  L_eta_e: "L_eta^e"
+  L_eta_d: "L_eta^d"
+  D_KL: "D_KL(q_theta(z | L_eta^e) || p(z))"
+  beta: 0.1
+  KL: "KL divergence term"
+  p_theta: "p_theta(z)"
+  sum_k_1: "sum_{k=1}^K"
+  K_prime: 6
+  q_theta: "q_theta(z | L_eta^e)"
+  s_k_d: "s_k^d"
+  s_1_e: "s_1^e"
+  s_2_e: "s_2^e"
+  s_K_e: "s_K^e"
+  sum_k: "sum_k"
+  loss: "loss_function"
+  mask: "done_mask"
+  sample: "sample_reward_function"
+
+# -----------------------------------------------------------------------------
+# 2. Required Parameter Sweeps & Default Accessors
+# -----------------------------------------------------------------------------
+parameters:
+  K: 64  # number of encoder states
+  reward_discretization_bins: 20
+  latent_dimension_size: 50
+  embedding_dim: 128
+  num_heads: 4
+  num_layers: 2
+  learning_rate: 0.0003
+  batch_size: 256
+  training_iterations: 1000000
+  sweeps:
+    learning_rate: [0.0001, 0.0003, 0.001]
+    batch_size: [128, 256, 512]
+    K: [16, 32, 64, 128]
+    reward_discretization_bins: [10, 20, 50]
+    latent_dimension_size: [16, 32, 50, 128]
+
+# -----------------------------------------------------------------------------
+# 3. Environment/Task Factories Registry
+# -----------------------------------------------------------------------------
+environments:
+  unit-001:
+    id: "unit-001"
+    alias: "unit_test_env"
+    setup_metadata:
+      state_dim: 4
+      action_dim: 2
+    availability_check: "src.utils.env_checks.check_unit_env"
+    runnable_config_hook: "src.environments.factories.make_unit_env"
+  
+  deepmind_control:
+    id: "exorl_dmc"
+    alias: "deepmind_control"
+    setup_metadata:
+      domain: "walker"
+      task: "walk"
+      sparse_reward: false
+    availability_check: "src.utils.env_checks.check_dmc"
+    runnable_config_hook: "src.environments.factories.make_dmc_env"
+
+  robotics:
+    id: "d4rl_robotics"
+    alias: "robotics"
+    setup_metadata:
+      domain: "antmaze"
+      task: "medium-play-v2"
+      sparse_reward: true
+    availability_check: "src.utils.env_checks.check_d4rl"
+    runnable_config_hook: "src.environments.factories.make_d4rl_env"
+
+  AntMaze:
+    id: "antmaze-medium-play-v2"
+    alias: "robotics"
+    setup_metadata:
+      task: "antmaze-medium-play-v2"
+      sparse_reward: true
+    availability_check: "src.utils.env_checks.check_d4rl"
+    runnable_config_hook: "src.environments.factories.make_d4rl_env"
+
+  Kitchen:
+    id: "kitchen-complete-v0"
+    alias: "robotics"
+    setup_metadata:
+      task: "kitchen-complete-v0"
+      sparse_reward: true
+    availability_check: "src.utils.env_checks.check_d4rl"
+    runnable_config_hook: "src.environments.factories.make_d4rl_env"
+
+# -----------------------------------------------------------------------------
+# 4. Dataset/Benchmark Loaders Registry
+# -----------------------------------------------------------------------------
+datasets:
+  deepmind_control:
+    id: "exorl_dataset"
+    alias: "deepmind_control"
+    setup_metadata:
+      source: "ExORL"
+      path: "data/exorl"
+    validation_check: "src.data.validation.validate_exorl"
+    runnable_config_hook: "src.data.dataset_loaders.load_exorl"
+
+  robotics:
+    id: "d4rl_dataset"
+    alias: "robotics"
+    setup_metadata:
+      source: "D4RL"
+      path: "data/d4rl"
+    validation_check: "src.data.validation.validate_d4rl"
+    runnable_config_hook: "src.data.dataset_loaders.load_d4rl"
+
+  ExORL:
+    id: "exorl_dataset"
+    alias: "deepmind_control"
+    setup_metadata:
+      source: "ExORL"
+    validation_check: "src.data.validation.validate_exorl"
+    runnable_config_hook: "src.data.dataset_loaders.load_exorl"
+
+  AntMaze:
+    id: "antmaze_dataset"
+    alias: "robotics"
+    setup_metadata:
+      source: "D4RL"
+    validation_check: "src.data.validation.validate_d4rl"
+    runnable_config_hook: "src.data.dataset_loaders.load_d4rl"
+
+  Kitchen:
+    id: "kitchen_dataset"
+    alias: "robotics"
+    setup_metadata:
+      source: "D4RL"
+    validation_check: "src.data.validation.validate_d4rl"
+    runnable_config_hook: "src.data.dataset_loaders.load_d4rl"
+
+# -----------------------------------------------------------------------------
+# 5. Method/Baseline/Attack Selectors
+# -----------------------------------------------------------------------------
+methods:
+  ours:
+    name: "Functional Reward Encoding (FRE)"
+    class_path: "src.methods.core_arch.FRE"
+  bc:
+    name: "Behavior Cloning"
+    class_path: "src.methods.baselines.BC"
+  iql:
+    name: "Implicit Q-Learning"
+    class_path: "src.methods.baselines.IQL"
+  test_time_adaptation:
+    name: "Test-Time Adaptation"
+    class_path: "src.methods.baselines.TTA"
+  ppo:
+    name: "Proximal Policy Optimization"
+    class_path: "src.methods.baselines.PPO"
+
+# -----------------------------------------------------------------------------
+# 6. Callable Experiment Specs & Protocol Matrix
+# -----------------------------------------------------------------------------
+experiments:
+  "Experiment 5.2: Main comparison (ExORL)":
+    environment: "deepmind_control"
+    method: "ours"
+    parameter_defaults:
+      learning_rate: 0.0003
+      batch_size: 256
+    metric_function: "src.reporting.eval_bench.compute_normalized_score"
+    artifact_writer: "src.reporting.eval_bench.write_table1_exorl"
+    output_path: "results/table1_exorl.csv"
+
+  "Experiment 5.2: Main comparison (D4RL)":
+    environment: "robotics"
+    method: "ours"
+    parameter_defaults:
+      learning_rate: 0.0003
+      batch_size: 256
+    metric_function: "src.reporting.eval_bench.compute_normalized_score"
+    artifact_writer: "src.reporting.eval_bench.write_table2_d4rl"
+    output_path: "results/table2_d4rl.csv"
+
+  "Experiment 5.3: Scaling properties (reward subsets)":
+    environment: "deepmind_control"
+    method: "ours"
+    parameter_defaults:
+      learning_rate: 0.0003
+      batch_size: 256
+      reward_subsets: ["singleton", "linear", "mlp", "joint"]
+    metric_function: "src.reporting.eval_bench.compute_normalized_score"
+    artifact_writer: "src.reporting.eval_bench.write_table3"
+    output_path: "results/table3.csv"
+
+  "Experiment 5.4: Domain knowledge (XY/velocity rewards)":
+    environment: "robotics"
+    method: "ours"
+    parameter_defaults:
+      learning_rate: 0.0003
+      batch_size: 256
+      reward_subsets: ["xy_velocity"]
+    metric_function: "src.reporting.eval_bench.compute_normalized_score"
+    artifact_writer: "src.reporting.eval_bench.write_figure6"
+    output_path: "results/figure6.png"
+
+  "Experiment: Extended results (Table 3)":
+    environment: "deepmind_control"
+    method: "ours"
+    parameter_defaults:
+      learning_rate: 0.0003
+      batch_size: 256
+    metric_function: "src.reporting.eval_bench.compute_normalized_score"
+    artifact_writer: "src.reporting.eval_bench.write_table3"
+    output_path: "results/table3.csv"
+
+  "Experiment: Extended results (Table 4)":
+    environment: "robotics"
+    method: "ours"
+    parameter_defaults:
+      learning_rate: 0.0003
+      batch_size: 256
+    metric_function: "src.reporting.eval_bench.compute_normalized_score"
+    artifact_writer: "src.reporting.eval_bench.write_table4"
+    output_path: "results/table4.csv"
+
+  "Experiment: Visualization (Figure 7)":
+    environment: "deepmind_control"
+    method: "ours"
+    parameter_defaults:
+      learning_rate: 0.0003
+      batch_size: 256
+    metric_function: "src.reporting.eval_bench.compute_visualization"
+    artifact_writer: "src.reporting.eval_bench.write_figure7"
+    output_path: "results/figure7.png"
+
+  "Experiment: Visualization (Figure 8)":
+    environment: "deepmind_control"
+    method: "ours"
+    parameter_defaults:
+      learning_rate: 0.0003
+      batch_size: 256
+    metric_function: "src.reporting.eval_bench.compute_visualization"
+    artifact_writer: "src.reporting.eval_bench.write_figure8"
+    output_path: "results/figure8.png"
+
+  "Experiment: Visualization (Figure 9)":
+    environment: "deepmind_control"
+    method: "ours"
+    parameter_defaults:
+      learning_rate: 0.0003
+      batch_size: 256
+    metric_function: "src.reporting.eval_bench.compute_visualization"
+    artifact_writer: "src.reporting.eval_bench.write_figure9"
+    output_path: "results/figure9.png"
+
+# -----------------------------------------------------------------------------
+# 7. Executable Algorithm & Formula Anchors
+# -----------------------------------------------------------------------------
+algorithms:
+  preliminaries:
+    description: "Rewards as functions of state eta(s) or state-action pairs eta(s, a)"
+    formula: "eta(s)"
+    loss_terms: ["loss"]
+
+  functional_reward_encoding:
+    description: "Section 4.1: Learn a latent representation z maximally informative about L_eta while compressive"
+    objective: "We would like to learn a latent representation z that is maximally informative about L_eta, while remaining maximally compressive."
+    formula_terms:
+      L_eta: "L_eta"
+      L_eta_e: "L_eta^e"
+      L_eta_d: "L_eta^d"
+      D_KL: "D_KL"
+      beta: 0.1
+      KL: "KL"
+      p_theta: "p_theta"
+      sum_k_1: "sum_k=1"
+      K_prime: 6
+      q_theta: "q_theta"
+      sum_k: "sum_k"
+      s_k_d: "s_k^d"
+      s_1_e: "s_1^e"
+      s_2_e: "s_2^e"
+    masking:
+      causal_masking: false
+      positional_encodings: false
+      unordered_set: true
+
+  offline_rl_with_fre:
+    description: "Section 4.3: Train encoder and policy"
+    steps:
+      - "Begin: # Train encoder while not converged do"
+      - "Sample reward function eta ~ p(eta)"
+      - "Sample K states for encoder {s_k^e} ~ D"
+      - "Sample K' states for decoder {s_k^d} ~ D"
+      - "Train FRE by maximizing Equation (6)"
+      - "end while"
+      - "# Train policy while not converged do"
+      - "Sample reward function eta ~ p(eta)"
+      - "Encode z ~ q_theta(z | L_eta^e)"
+      - "Train policy pi(a | s, z) using offline RL (e.g., IQL or TD3)"
+    symbols:
+      K_prime: 6
+      p_theta: "p_theta"
+      s_k_e: "s_k^e"
+      s_k_d: "s_k^d"
+
+  hindsight_relabeling:
+    description: "Addendum: Hindsight relabeling during training"
+    loss_function: "L_pi = -E_{(s, g, a) ~ D} [log pi(a | s, g)]"
+    goal_sampling_priors:
+      p_randomgoal: 0.3
+      p_geometric_goal: 0.5
+      p_current_goal: 0.2
+    masking:
+      done_mask_on_goal_achieved: true
+      random_binary_mask_chance: 0.9

@@ -1,0 +1,321 @@
+# configs/default.yaml
+# Reproduction configuration for "Stay on topic with Classifier-Free Guidance"
+
+# -------------------------------------------------------------------------
+# 1. Defined Symbols (defines_symbols)
+# -------------------------------------------------------------------------
+w_p: "prompt"
+flops_computation: "flops_computation_formula"
+sum_k: "sum_k_formula"
+p_k: "p_k_formula"
+x_i: "x_i_formula"
+sum_i_1_n: "sum_i_1_n_formula"
+equation: "equation_formula"
+formula: "formula_definition"
+search: "search_algorithm"
+p_theta: "p_theta_model"
+p_phi: "p_phi_classifier"
+
+# -------------------------------------------------------------------------
+# 2. Environment/Task Factories
+# -------------------------------------------------------------------------
+environment_task_factories:
+  - id: "unit-002"
+    aliases: ["zero_shot_eval", "glue"]
+    setup_metadata:
+      description: "Zero-shot evaluation environment"
+    availability_check: "check_zero_shot_available"
+    runnable_config_hook: "setup_zero_shot_config"
+  - id: "unit-003"
+    aliases: ["cot_eval"]
+    setup_metadata:
+      description: "Chain-of-Thought evaluation environment"
+    availability_check: "check_cot_available"
+    runnable_config_hook: "setup_cot_config"
+  - id: "unit-004"
+    aliases: ["program_synthesis_eval"]
+    setup_metadata:
+      description: "Program synthesis evaluation environment"
+    availability_check: "check_program_synthesis_available"
+    runnable_config_hook: "setup_program_synthesis_config"
+  - id: "unit-007"
+    aliases: ["negative_prompting_eval"]
+    setup_metadata:
+      description: "Negative prompting evaluation environment"
+    availability_check: "check_negative_prompting_available"
+    runnable_config_hook: "setup_negative_prompting_config"
+  - id: "glue"
+    aliases: ["glue_tasks", "glue"]
+    setup_metadata:
+      description: "GLUE benchmark tasks"
+    availability_check: "check_glue_available"
+    runnable_config_hook: "setup_glue_config"
+  - id: "significantly_different"
+    aliases: ["sig_diff"]
+    setup_metadata:
+      description: "Significantly different distributions"
+    availability_check: "check_sig_diff_available"
+    runnable_config_hook: "setup_sig_diff_config"
+  - id: "underperform_distributions_among_all"
+    aliases: ["underperform_dist"]
+    setup_metadata:
+      description: "Underperform distributions among all"
+    availability_check: "check_underperform_available"
+    runnable_config_hook: "setup_underperform_config"
+  - id: "humanoid"
+    aliases: ["humanoid_task"]
+    setup_metadata:
+      description: "Humanoid control or evaluation task"
+    availability_check: "check_humanoid_available"
+    runnable_config_hook: "setup_humanoid_config"
+  - id: "decides_which"
+    aliases: ["decides_which_task"]
+    setup_metadata:
+      description: "Decides which adapter/method to use"
+    availability_check: "check_decides_which_available"
+    runnable_config_hook: "setup_decides_which_config"
+  - id: "config_tests_artifact_writer_expose_explicit"
+    aliases: ["config_tests_artifact"]
+    setup_metadata:
+      description: "Config tests artifact-writer expose explicit"
+    availability_check: "check_config_tests_available"
+    runnable_config_hook: "setup_config_tests_config"
+  - id: "common_sense_reasoning"
+    aliases: ["common_sense"]
+    setup_metadata:
+      description: "Common sense reasoning tasks"
+    availability_check: "check_common_sense_available"
+    runnable_config_hook: "setup_common_sense_config"
+  - id: "diverse_array"
+    aliases: ["diverse_array_tasks"]
+    setup_metadata:
+      description: "Diverse array of tasks"
+    availability_check: "check_diverse_array_available"
+    runnable_config_hook: "setup_diverse_array_config"
+
+# -------------------------------------------------------------------------
+# 3. Dataset/Benchmark Loaders
+# -------------------------------------------------------------------------
+dataset_benchmark_loaders:
+  - id: "LAMBADA"
+    aliases: ["lambada", "glue"]
+    setup_metadata:
+      description: "LAMBADA sentence completion benchmark"
+    validation_check: "validate_lambada"
+    runnable_config_hook: "setup_lambada_config"
+  - id: "Closebook QA"
+    aliases: ["closebook_qa"]
+    setup_metadata:
+      description: "Closebook QA benchmark"
+    validation_check: "validate_closebook_qa"
+    runnable_config_hook: "setup_closebook_qa_config"
+  - id: "Common Sense Reasoning"
+    aliases: ["common_sense_reasoning"]
+    setup_metadata:
+      description: "Common Sense Reasoning benchmark suite"
+    validation_check: "validate_common_sense"
+    runnable_config_hook: "setup_common_sense_config"
+  - id: "Open-Assistant"
+    aliases: ["open_assistant"]
+    setup_metadata:
+      description: "Open-Assistant dataset for negative prompting"
+    validation_check: "validate_open_assistant"
+    runnable_config_hook: "setup_open_assistant_config"
+
+# -------------------------------------------------------------------------
+# 4. Method/Baseline/Attack Selectors
+# -------------------------------------------------------------------------
+method_selectors:
+  - "ours"
+  - "chain_of_thought"
+  - "bert"
+  - "ppo"
+
+# -------------------------------------------------------------------------
+# 5. Parameter Sweeps & Hyperparameters
+# -------------------------------------------------------------------------
+parameter_sweeps:
+  guidance_scale_gamma:
+    default: 1.5
+    sweep_values: [1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 8.0]
+  top_p:
+    default: 0.9
+    sweep_values: [0.5, 0.8, 0.9, 0.95, 1.0]
+  temperature:
+    default: 0.7
+    sweep_values: [0.2, 0.4, 0.6, 0.7, 0.8, 1.0]
+  p:
+    default: 0.9
+    sweep_values: [0.5, 0.8, 0.9, 0.95, 1.0]
+
+fixed_hyperparameter_anchors:
+  gamma_5: 5.0
+  gamma_1_5: 1.5
+  gamma_1: 1.0
+  top_p_0_9: 0.9
+  temp_0_2: 0.2
+  temp_0_8: 0.8
+  temp_0_6: 0.6
+
+# -------------------------------------------------------------------------
+# 6. Baseline Default Hyperparameters (Binding addendum clarification)
+# -------------------------------------------------------------------------
+baseline_default_hyperparameters:
+  ours:
+    gamma: 1.5
+    temperature: 0.7
+    top_p: 0.9
+  chain_of_thought:
+    gamma: 1.5
+    temperature: 0.7
+    top_p: 0.9
+  bert:
+    learning_rate: 0.00005
+    epochs: 3
+  ppo:
+    learning_rate: 0.0003
+    clip_range: 0.2
+
+# -------------------------------------------------------------------------
+# 7. Paper Formula/Algorithm Anchors & Symbols
+# -------------------------------------------------------------------------
+paper_formula_anchors:
+  section_2_1_classifier_guidance:
+    description: "Classifier Guidance in Text-to-Image Models"
+    symbols:
+      P_theta: "P_theta(x)"
+      P_phi: "P_phi(c | x)"
+      gamma: "gamma"
+      theta: "theta"
+      epsilon_t: "epsilon_t"
+      x_t_plus_1: "x_t+1"
+    numeric_defaults:
+      gamma: 4
+      theta: 1
+      epsilon_t: 0
+      x_t_plus_1: 3
+    algorithm_terms:
+      - "equation"
+      - "ema"
+      - "sample"
+    formula_steps:
+      equation_3: "log P_hat_theta(epsilon_t | x_t+1, c) = gamma * log P_theta(epsilon_t | x_t+1, c) - (gamma - 1) * log P_theta(epsilon_t | x_t+1)"
+
+  section_2_2_classifier_free_guidance:
+    description: "Classifier-Free Guidance of Language Models"
+    symbols:
+      P_theta: "P_theta(w_i | w_j<i, c)"
+      prod_i_1_T: "prod_i=1^T"
+      gamma: "gamma"
+      prod_i_T: "prod_i^T"
+      w_i: "w_i"
+      w_j_less_than_i: "w_j<i"
+    numeric_defaults:
+      gamma: 1
+      prod_i_1_T: 6
+      prod_i_T: 7
+      w_i: 5
+      w_j_less_than_i: 3.4
+    algorithm_terms:
+      - "equation"
+      - "formula"
+      - "sample"
+    formula_steps:
+      equation_4: "log P_hat_theta(w_i | w_j<i, c) = log P_theta(w_i | w_j<i) + gamma * (log P_theta(w_i | w_j<i, c) - log P_theta(w_i | w_j<i))"
+
+  addendum_flops:
+    description: "FLOPs computation and Falcon-7b-Base model"
+    symbols:
+      flops_computation: "flops_computation"
+      sum_k: "sum_k"
+      sum_i_1_n: "sum_i=1^n"
+      w_p: "w_p"
+      p_k: "p_k"
+      x_i: "x_i"
+      x_less_than_i: "x_<i"
+    numeric_defaults:
+      flops_computation: 5.1
+      sum_k: 1
+    algorithm_terms:
+      - "equation"
+      - "formula"
+      - "search"
+    formula_steps:
+      flops_formula: "https://github.com/google-research/electra/blob/master/flops_computation.py"
+      model_anchor: "Falcon-7b-Base"
+
+  section_c_5_chain_of_thought:
+    description: "Deliberative Prompting: Chain-of-Thought"
+    symbols:
+      gamma: "gamma"
+    numeric_defaults:
+      gamma_baseline: 1
+      gamma_ours: 1.5
+      val_14: 14
+      val_0_8: 0.8
+      val_15: 15
+      val_0_6: 0.6
+    formula: "In each cell, the first value is the result for gamma=1 (baseline) and the second value is the result for gamma=1.5 (ours)."
+
+  section_3_1_zero_shot:
+    description: "Basic Prompting: Zero-Shot Prompts"
+    symbols:
+      gamma: "gamma"
+    numeric_defaults:
+      llama_accuracy: 81
+      gamma: 1.5
+      palm_accuracy: 77.9
+    formula: "Furthermore, we note that even the smallest LLaMA 7B model achieves 81% accuracy in Lambada (OpenAI) zeroshot benchmark with gamma=1.5, outperforming the current SOTA (zero-shot) of PaLM-540B (77.9%)."
+
+  section_3_3_1_program_synthesis:
+    description: "PROGRAM SYNTHESIS EVALUATIONS"
+    symbols:
+      gamma: "gamma"
+    numeric_defaults:
+      cfg_strength_1: 4
+      cfg_strength_2: 8
+      cfg_strength_3: 2
+      cfg_strength_4: 3
+      cfg_strength_5: 1
+      k_1: 10
+      k_2: 100
+      temp: 0.2
+    algorithm_terms:
+      - "increase"
+    formula: "We test different CFG strength and different temperatures, evaluating at pass@k for k=1,10,100."
+
+  section_e_entropy_comparison:
+    description: "Further Comparison between CFG and Instruction-Tuning"
+    symbols:
+      CFG: "CFG"
+      gamma: "gamma"
+      P_instruct: "P_instruct"
+    numeric_defaults:
+      top_p: 0.9
+      gamma: 1.5
+      val_90: 90
+      val_50: 50
+    formula: "Entropy of logits for the vanilla prompted distribution P(y|x), the unprompted distribution P(x), the CFG-gamma=1.5 distribution and an instruction-tuned model P_instruct(y|x)."
+
+  section_5_3_visualizing_cfg:
+    description: "Visualizing Classifier-Free Guidance"
+    symbols:
+      w_t: "w_t"
+      w_less_than_t: "w_<t"
+      w_T: "w_T"
+      w_hat: "w_hat"
+      c_bar: "c_bar"
+      n_c: "n_c"
+      n_p: "n_p"
+    numeric_defaults:
+      rank_diff: 3
+    algorithm_terms:
+      - "rank"
+    formula: "We visualize the vocabulary at each timestep ranked by the difference log P(w_t | w_<t) - log P(w_T | w_hat), showing which tokens are encouraged or discouraged the most."
+
+# -------------------------------------------------------------------------
+# 8. Active Reproduction Scope Notes
+# -------------------------------------------------------------------------
+reproduction_scope:
+  active_mode: "runtime_smoke"
+  notes: "This configuration supports both runtime_smoke and full evaluation modes. Bounded execution defaults are set to ensure quick validation."

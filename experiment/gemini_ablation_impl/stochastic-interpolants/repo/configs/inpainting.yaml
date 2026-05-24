@@ -1,0 +1,125 @@
+# configs/inpainting.yaml
+# Reference Grounding: paper:unit_005 (chunk_011, chunk_012)
+
+metadata:
+  paper_title: "Stochastic Interpolants with Data-Dependent Couplings"
+  reproduction_scope: "Faithful reproduction of stochastic interpolants with data-dependent couplings vs independent Gaussian baselines on inpainting"
+  trust_remote_code: true
+  seed: 42
+  output_dir: "results"
+
+environment_task_factories:
+  unit-006:
+    id: "unit-006"
+    alias: "unit_006_fast_test"
+    description: "Fast smoke test environment with synthetic shapes"
+    availability_check: "src.data.pipeline.check_synthetic_available"
+    setup_metadata:
+      resolution: [32, 32]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    description: "ImageNet-1k dataset from HuggingFace"
+    dataset_name: "imagenet-1k"
+    trust_remote_code: true
+    availability_check: "src.data.pipeline.check_imagenet_available"
+    setup_metadata:
+      resolution: [256, 256]
+      channels: 3
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  low-resolution-image:
+    id: "low-resolution-image"
+    alias: "imagenet_c"
+    description: "Low-resolution or corrupted ImageNet subset for downstream tasks"
+    availability_check: "src.data.pipeline.check_imagenet_c_available"
+    setup_metadata:
+      resolution: [64, 64]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+dataset_loaders:
+  synthetic_shapes:
+    id: "synthetic_shapes"
+    name: "Synthetic shapes or a small subset of ImageNet/CIFAR-10"
+    validation_check: "src.data.pipeline.validate_synthetic"
+    setup_metadata:
+      num_samples: 100
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet_1k:
+    id: "imagenet_1k"
+    name: "imagenet"
+    validation_check: "src.data.pipeline.validate_imagenet"
+    setup_metadata:
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  imagenet_c:
+    id: "imagenet_c"
+    name: "imagenet_c"
+    validation_check: "src.data.pipeline.validate_imagenet_c"
+    setup_metadata:
+      corruption: "blur"
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+method_baseline_selectors:
+  ours:
+    id: "ours"
+    name: "Dependent Coupling (Ours)"
+    description: "Data-dependent coupling for stochastic interpolants"
+  independent_gaussian:
+    id: "independent"
+    name: "Uncoupled Interpolant (Baseline)"
+    description: "Independent Gaussian coupling baseline"
+  resnet:
+    id: "resnet"
+    name: "ResNet Baseline"
+    description: "Standard ResNet baseline"
+  ddpm:
+    id: "ddpm"
+    name: "DDPM Baseline"
+    description: "Denoising Diffusion Probabilistic Models baseline"
+  diffusion_model:
+    id: "diffusion_model"
+    name: "Diffusion Model Baseline"
+    description: "Standard diffusion model baseline"
+
+hyperparameters:
+  fixed_anchors:
+    batch_size_32: 32
+    mask_tiles_64: 64
+    mask_probability_0.3: 0.3
+  sweeps:
+    gamma_values: [0.0, 1.0]
+    learning_rate: [0.0001, 0.0002, 0.0005]
+    batch_size: [16, 32, 64]
+    epochs: [10, 20, 50]
+    num_integration_steps: [50, 100, 250]
+    solver_type: ["euler", "rk4"]
+  interpolant:
+    alpha_t: "1 - t"
+    beta_t: "t"
+    d_alpha_t: "-1"
+    d_beta_t: "1"
+
+evaluation:
+  metrics:
+    - "MSE"
+    - "LPIPS"
+    - "FID"
+  target_assertions:
+    trend: "Data-dependent coupling should outperform independent coupling"
+    table_2_fid_baseline: 1.35
+    table_2_fid_ours: 1.13
+
+artifact_writer:
+  outputs:
+    - "results/metrics.json"
+    - "results/inpainting_comparison.png"
+    - "results/figures/figure_1.png"
+    - "results/figures/figure_2.png"
+    - "results/figures/figure_3.png"
+    - "results/tables/table_2.csv"
+    - "results/tables/table_3.csv"
+    - "results/figures/figure_4.png"

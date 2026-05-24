@@ -1,0 +1,147 @@
+# reference_grounding: paperbench_ref_001 config.py
+
+project_metadata:
+  name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+
+# 1. Config Schema & Sweep Registry
+schema_version: "1.0"
+resolved_config_artifact: "results/config_resolved.json"
+sensitivity_report_artifact: "results/sensitivity_report.json"
+
+# 2. Paper Evidence Contract: Method/Baseline/Attack Selectors
+method_selectors:
+  selectors: ["ours", "ppo", "sac", "bc", "oracle", "nle", "ewc"]
+  default: "ours"
+
+# 3. Bounded Sweep/Config Entries
+parameter_sweep:
+  learning_rate:
+    sweep_values: [0.0001, 0.0003, 0.001]
+    default: 0.0003
+  batch_size:
+    sweep_values: [64, 128, 256]
+    default: 128
+  fixed_hyperparameters:
+    batch_size_128: 128
+
+# 4. Paper Formula & Algorithm Symbol Inventory (Code-Visible)
+symbol_inventory:
+  add_nledata_directory: "/tmp/nle_data"
+  add_altorg_directory: "/tmp/altorg_data"
+  TtyrecDataset"nld-aa-v0": "nld-aa-v0"
+  batch_size=128: 128
+  batch_size: 128
+  L_aux: "auxiliary loss term"
+  theta: "current policy parameters"
+  sum_i: "summation index over parameters"
+  F^i: "Fisher information matrix diagonal element"
+  theta_*^i: "pre-trained policy parameter i"
+  theta^i: "current policy parameter i"
+  theta_*: "pre-trained policy parameters"
+  L_BC: "behavioral cloning loss"
+  B_BC: "behavioral cloning buffer"
+  D_KL: "Kullback-Leibler divergence"
+  pi_*: "pre-trained policy"
+  pi_theta: "current policy"
+  L_KS: "kickstarting loss"
+  s_0: "initial state"
+  v_0: "value of state s_0"
+  gamma: 0.99
+  r_0: "reward 0"
+  f_theta: "transition probability or function"
+  r_1: "reward 1"
+  epsilon: 0.1
+
+# 5. Numeric & Default Anchors
+numeric_anchors:
+  anchor_128: 128
+  anchor_2: 2
+  anchor_0: 0
+  anchor_9: 9
+  anchor_1: 1
+  anchor_0_11: 0.11
+  anchor_2_22: 2.22
+  anchor_0_5: 0.5
+  anchor_10: 10
+  anchor_0_08: 0.08
+  anchor_9_93: 9.93
+  anchor_13: 13
+  anchor_11: 11
+  anchor_30: 30
+  anchor_200: 200
+  anchor_1_5: 1.5
+
+# 6. Paper-Derived Environment/Task Factories
+environment_factories:
+  NetHack:
+    id: "NetHack-v0"
+    aliases:
+      - "nethack learning"
+      - "nle"
+      - "unit-001"
+      - "fine-tuning + bc"
+    setup_metadata:
+      eval_rollout_limit: 100000
+      eval_no_progress_limit: 150
+      eval_death_termination: true
+      fisher_matrix_batches: 10000
+      dataset_name: "NLD-AA"
+      ttyrec_dataset: "nld-aa-v0"
+    availability_check:
+      package: "nle"
+      import_test: "nle.env.NLE"
+    runnable_config_hooks:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+    metrics:
+      - "gold score"
+      - "eating score"
+      - "staircase score"
+      - "scout score"
+      - "experience points"
+      - "dungeon depth"
+
+  RoboticSequence:
+    id: "RoboticSequence-v0"
+    aliases:
+      - "robotics"
+      - "push-wall"
+      - "peg-unplug-side"
+      - "them were originally introduced"
+    setup_metadata:
+      num_stages: 4
+      stage_success_threshold: 0.9
+      random_start_goal: true
+      observation_space: "robot_config + stage_one_hot"
+      policy_network:
+        hidden_layers: 4
+        neurons_per_layer: 256
+    availability_check:
+      package: "metaworld"
+      import_test: "metaworld.envs.ALL_V2_ENVIRONMENTS"
+    runnable_config_hooks:
+      beta: 1.5
+      max_path_length: 200
+    metrics:
+      - "success_rate"
+      - "stage_success_rate"
+      - "Forward Transfer"
+      - "AUC"
+      - "AUC_b"
+
+# 7. Paper-Derived Dataset/Benchmark Loaders
+dataset_loaders:
+  robotics:
+    id: "RoboticSequenceDataset"
+    aliases:
+      - "metaworld_trajectories"
+      - "robotics"
+    setup_metadata:
+      source: "MetaWorld"
+      type: "expert_trajectories"
+    validation_checks:
+      - "check_file_exists"
+      - "check_trajectory_length"
+    runnable_config_hooks:
+      batch_size: 128

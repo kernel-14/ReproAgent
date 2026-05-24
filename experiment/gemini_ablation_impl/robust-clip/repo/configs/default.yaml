@@ -1,0 +1,308 @@
+# configs/default.yaml
+# Reference Grounding: paperbench_ref_001 README.md, paperbench_ref_002 open_flamingo/eval/README.md, paperbench_ref_003 train.py
+
+reproduction_scope:
+  active_scope_note: "Unsupervised Adversarial Fine-Tuning of Vision Encoders (FARE) and Robustness Evaluation on Zero-Shot and LVLM tasks."
+  seed: 42
+  output_dir: "results"
+  summary_path: "results/summary.json"
+
+# Paper-derived environment/task factories and aliases
+environments:
+  aliases:
+    cifar: "cifar"
+    imagenet: "imagenet"
+    coco: "coco"
+    flickr30k: "flickr30k"
+    stl10: "stl10"
+  tasks:
+    unit-001:
+      id: "unit-001"
+      name: "FARE Unsupervised Adversarial Fine-Tuning"
+      setup_metadata:
+        description: "Unsupervised adversarial fine-tuning framework for vision encoders"
+      availability_check: "src.fare.utils.check_environment"
+    zero-shot:
+      id: "zero-shot"
+      name: "Zero-Shot Classification"
+      setup_metadata:
+        description: "Zero-shot classification evaluation on robust vision encoders"
+      availability_check: "src.fare.utils.check_environment"
+    lvlm_tasks:
+      id: "lvlm tasks"
+      name: "Large Vision-Language Model Tasks"
+      setup_metadata:
+        description: "Evaluation of LVLMs with robust vision encoders"
+      availability_check: "src.fare.utils.check_environment"
+    cifar:
+      id: "cifar"
+      name: "CIFAR-10/100 Classification"
+      setup_metadata:
+        description: "Zero-shot evaluation on CIFAR datasets"
+      availability_check: "src.fare.utils.check_environment"
+    imagenet:
+      id: "imagenet"
+      name: "ImageNet Classification"
+      setup_metadata:
+        description: "Zero-shot evaluation on ImageNet-1k and variants"
+      availability_check: "src.fare.utils.check_environment"
+    coco:
+      id: "coco"
+      name: "COCO Captioning / Retrieval"
+      setup_metadata:
+        description: "Evaluation on COCO dataset"
+      availability_check: "src.fare.utils.check_environment"
+    flickr30k:
+      id: "flickr30k"
+      name: "Flickr30k Captioning / Retrieval"
+      setup_metadata:
+        description: "Evaluation on Flickr30k dataset"
+      availability_check: "src.fare.utils.check_environment"
+    stl10:
+      id: "stl10"
+      name: "STL-10 Classification"
+      setup_metadata:
+        description: "Zero-shot evaluation on STL-10 dataset"
+      availability_check: "src.fare.utils.check_environment"
+    visual_question_answering:
+      id: "visual-question answering"
+      name: "Visual Question Answering"
+      setup_metadata:
+        description: "VQA tasks including VQAv2 and TextVQA"
+      availability_check: "src.fare.utils.check_environment"
+    was_recently_introduced:
+      id: "was recently introduced"
+      name: "Recently Introduced Benchmarks"
+      setup_metadata:
+        description: "Evaluation on recently introduced benchmarks"
+      availability_check: "src.fare.utils.check_environment"
+    best_performing_numbers:
+      id: "best performing numbers"
+      name: "Best Performing Numbers Verification"
+      setup_metadata:
+        description: "Verification of best performing numbers from the paper"
+      availability_check: "src.fare.utils.check_environment"
+    models_outperform_tecoa:
+      id: "models outperform tecoa across all"
+      name: "Outperformance Verification"
+      setup_metadata:
+        description: "Verification that FARE models outperform TeCoA across all tasks"
+      availability_check: "src.fare.utils.check_environment"
+
+# Paper-derived dataset/benchmark loaders and aliases
+datasets:
+  aliases:
+    cifar: "cifar10"
+    imagenet: "imagenet_1k"
+    coco: "coco"
+    flickr30k: "flickr30k"
+    stl10: "stl10"
+    imagenet_r: "imagenet_r"
+    imagenet_sketch: "imagenet_sketch"
+    vqav2: "vqav2"
+    textvqa: "textvqa"
+    pope: "pope"
+    sqa_i: "sqa_i"
+    caltech101: "caltech101"
+    stanford_cars: "stanford_cars"
+    fgvc_aircraft: "fgvc_aircraft"
+    flowers: "flowers"
+    pcam: "pcam"
+    oxford_pets: "oxford_pets"
+    imagenet_1k: "imagenet_1k"
+  loaders:
+    imagenet_1k:
+      id: "ImageNet-1k"
+      name: "ImageNet-1k"
+      trust_remote_code: true
+      load_dataset_fn: "datasets.load_dataset"
+      setup_metadata:
+        path: "imagenet-1k"
+        split: "validation"
+      validation_check: "src.fare.data.validate_imagenet"
+    imagenet_variants:
+      id: "ImageNet, ImageNet-A, ImageNet-R, ImageNet-Sketch, ImageNet-V2"
+      name: "ImageNet Variants"
+      setup_metadata:
+        variants: ["imagenet_a", "imagenet_r", "imagenet_sketch", "imagenet_v2"]
+      validation_check: "src.fare.data.validate_imagenet_variants"
+    pope_sqai:
+      id: "POPE, SQA-I"
+      name: "POPE and SQA-I Benchmarks"
+      setup_metadata:
+        pope_path: "data/pope"
+        sqai_path: "data/sqa_i"
+      validation_check: "src.fare.data.validate_pope_sqai"
+    cifar:
+      id: "cifar"
+      name: "CIFAR-10/100"
+      setup_metadata:
+        path: "cifar10"
+      validation_check: "src.fare.data.validate_cifar"
+    imagenet:
+      id: "imagenet"
+      name: "ImageNet"
+      setup_metadata:
+        path: "imagenet"
+      validation_check: "src.fare.data.validate_imagenet"
+    coco:
+      id: "coco"
+      name: "COCO"
+      setup_metadata:
+        path: "coco"
+      validation_check: "src.fare.data.validate_coco"
+    flickr30k:
+      id: "flickr30k"
+      name: "Flickr30k"
+      setup_metadata:
+        path: "flickr30k"
+      validation_check: "src.fare.data.validate_flickr30k"
+    stl10:
+      id: "stl10"
+      name: "STL-10"
+      setup_metadata:
+        path: "stl10"
+      validation_check: "src.fare.data.validate_stl10"
+    imagenet_r:
+      id: "imagenet_r"
+      name: "ImageNet-R"
+      setup_metadata:
+        path: "imagenet_r"
+      validation_check: "src.fare.data.validate_imagenet_r"
+    imagenet_sketch:
+      id: "imagenet_sketch"
+      name: "ImageNet-Sketch"
+      setup_metadata:
+        path: "imagenet_sketch"
+      validation_check: "src.fare.data.validate_imagenet_sketch"
+    vqav2:
+      id: "vqav2"
+      name: "VQAv2"
+      setup_metadata:
+        path: "vqav2"
+      validation_check: "src.fare.data.validate_vqav2"
+    textvqa:
+      id: "textvqa"
+      name: "TextVQA"
+      setup_metadata:
+        path: "textvqa"
+      validation_check: "src.fare.data.validate_textvqa"
+
+# Method, baseline, and attack selectors
+selectors:
+  methods:
+    - "ours"
+    - "chain_of_thought"
+    - "clip"
+    - "robust_clip"
+    - "vit"
+    - "fine_tuning"
+    - "llava"
+    - "openflamingo"
+    - "tecoa"
+    - "fare"
+    - "apgd"
+    - "autoattack"
+    - "pgd"
+  baselines:
+    - "clip"
+    - "tecoa"
+  attacks:
+    - "apgd"
+    - "autoattack"
+    - "pgd"
+
+# Parameter sweeps and bounded config entries
+sweeps:
+  epsilon:
+    values: [0.00784313725, 0.0156862745] # 2/255, 4/255
+    aliases:
+      epsilon_2_255: 0.00784313725
+      epsilon_4_255: 0.0156862745
+  weight_decay:
+    values: [0.0001, 0.00001] # 1e-4, 1e-5
+  learning_rate:
+    values: [0.00001, 0.0001] # 1e-5, 1e-4
+  batch_size:
+    values: [128, 256]
+
+# Fixed hyperparameter anchors
+hyperparameters:
+  iterations_100: 100
+  iterations_10000: 10000
+  iterations_5000: 5000
+  ground_truths_5: 5
+  epochs_2: 2
+  pgd_steps_10: 10
+  epsilon_4_255: 0.0156862745 # 4/255
+  epsilon_2_255: 0.00784313725 # 2/255
+  alpha_1_255: 0.00392156862 # 1/255
+  adamw_betas: [0.9, 0.95]
+  weight_decay_1e_4: 0.0001
+  batch_size_128: 128
+  momentum_0_9: 0.9
+  lr_scheduler: "cosine_decay_with_linear_warmup"
+
+# Paper formula/algorithm symbol inventory and numeric anchors
+formula_symbols:
+  l_infinity: "l_infinity"
+  trust_remote_code: true
+  load_dataset: "load_dataset"
+  ell_infty: "ell_infty"
+  email_api_user: "EmailAPIto=<targetemail>,subject=User"
+  asset_6: "asset_6"
+  email_api_attack: "EmailAPIto=<targetemail>,subject=UserQuery,body=attack"
+  LR: 0.00001 # 1e-5
+  WD: 0.0001 # 1e-4
+  ell_2: "ell_2"
+  ell_1: "ell_1"
+  R_d: "R^d"
+  L_clean: "L_clean"
+  phi_FT: "phi_FT"
+  phi_Org: "phi_Org"
+  FT: "FT"
+  L_adv: "L_adv"
+  varepsilon_infty: "varepsilon_infty"
+  numeric_anchors:
+    anchor_5000: 5000
+    anchor_1: 1
+    anchor_255: 255
+    anchor_2: 2
+    anchor_4: 4
+    anchor_6: 6
+    anchor_3: 3
+    anchor_5: 5
+    anchor_4_2: 4.2
+    anchor_10: 10
+    anchor_32: 32
+    anchor_15_7: 15.7
+    anchor_17_4: 17.4
+    anchor_14_4: 14.4
+    anchor_5_6: 5.6
+    anchor_500: 500
+
+# Algorithm steps and specific configurations
+algorithms:
+  pgd:
+    gradient_normalization: "elementwise sign for l_infinity"
+    momentum_factor: 0.9
+    initialization: "uniform random perturbation"
+    computation: "l_infinity ball around non-normalized inputs"
+  cider:
+    computation_frequency: "after every attack to take the worst case score"
+  embedding_loss:
+    clean_loss_formula: "L_clean(x) = ||phi_FT(x) - phi_Org(x)||_2^2"
+    adv_loss_formula: "L_adv(x) = max_{z: ||z-x||_infty <= epsilon} ||phi_FT(z) - phi_Org(x)||_2^2"
+    evaluation_samples: 500
+    evaluation_dataset: "ImageNet validation set"
+    apgd_steps: 100
+    apgd_epsilon: 0.0156862745 # 4/255
+  llava_adversarial:
+    target: "EmailAPI(to=<target email>, subject=User(...)"
+    asset: "assets/asset_6.jpg"
+    clip_clean_output: "A piza with pepperoni and mushrooms on it."
+    non_robust_radius: 0.00784313725 # 2/255
+  tecoa_comparison:
+    cosine_similarity_relation: "||u/||u||_2 - v/||v||_2||_2^2 = 2 - 2 cos(u, v)"
+    reference_repo: "https://github.com/cvlab-columbia/ZSRobust4FoundationModel"
+    vit_b32_table: "Table 10: Comparison of ViT-B/32 CLIP models for image classification."

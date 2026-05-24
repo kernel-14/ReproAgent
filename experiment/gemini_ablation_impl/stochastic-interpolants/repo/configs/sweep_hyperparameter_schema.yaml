@@ -1,0 +1,208 @@
+# configs/sweep_hyperparameter_schema.yaml
+# Reference Grounding: paper_contract_sweep_hyperparameter_protocol (chunk_008, chunk_009, chunk_016_01)
+
+metadata:
+  paper_title: "Stochastic Interpolants with Data-Dependent Couplings"
+  reproduction_scope: "Faithful reproduction of stochastic interpolants with data-dependent couplings vs independent Gaussian baselines"
+  trust_remote_code: true
+  seed: 42
+  output_dir: "results"
+  active_reproduction_scope_notes: "This schema defines the hyperparameter space and sweeps required to reproduce the paper's results, including inpainting and transport cost analysis."
+
+environment_task_factories:
+  unit-006:
+    id: "unit-006"
+    alias: "unit_006_fast_test"
+    description: "Fast smoke test environment with synthetic shapes"
+    availability_check: "src.data.pipeline.check_synthetic_available"
+    setup_metadata:
+      resolution: [32, 32]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    description: "ImageNet-1k dataset from HuggingFace"
+    dataset_name: "imagenet-1k"
+    trust_remote_code: true
+    availability_check: "src.data.pipeline.check_imagenet_available"
+    setup_metadata:
+      resolution: [256, 256]
+      channels: 3
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  low-resolution-image:
+    id: "low-resolution-image"
+    alias: "imagenet_c"
+    description: "Low-resolution or corrupted ImageNet subset for downstream tasks"
+    availability_check: "src.data.pipeline.check_imagenet_c_available"
+    setup_metadata:
+      resolution: [64, 64]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  perform_various_downstream:
+    id: "perform_various_downstream"
+    alias: "downstream_tasks"
+    description: "Determines which downstream tasks are performed"
+    is_determined: true
+    runnable_config_hook: "src.evaluation.metrics.setup_downstream_eval"
+
+dataset_loaders:
+  synthetic_shapes:
+    id: "synthetic_shapes"
+    name: "Synthetic shapes or a small subset of ImageNet/CIFAR-10"
+    validation_check: "src.data.pipeline.validate_synthetic"
+    setup_metadata:
+      num_samples: 100
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    name: "imagenet"
+    validation_check: "src.data.pipeline.validate_imagenet"
+    setup_metadata:
+      split: "train"
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  imagenet_1k:
+    id: "imagenet_1k"
+    alias: "imagenet"
+    name: "imagenet_1k"
+    validation_check: "src.data.pipeline.validate_imagenet"
+    setup_metadata:
+      split: "train"
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  imagenet_c:
+    id: "imagenet_c"
+    name: "imagenet_c"
+    validation_check: "src.data.pipeline.validate_imagenet_c"
+    setup_metadata:
+      corruption_type: "gaussian_noise"
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+method_selectors:
+  ours:
+    id: "ours"
+    description: "Stochastic Interpolants with Data-Dependent Couplings"
+    class_path: "src.interpolants.stochastic_interpolant.StochasticInterpolant"
+  resnet:
+    id: "resnet"
+    description: "ResNet baseline for comparison"
+    class_path: "src.models.unet.ResNetBackbone"
+  ddpm:
+    id: "ddpm"
+    description: "Denoising Diffusion Probabilistic Models baseline"
+    class_path: "src.methods.semantic_chunk_diffusion.DDPMBaseline"
+  diffusion_model:
+    id: "diffusion_model"
+    description: "Standard Diffusion Model baseline"
+    class_path: "src.methods.semantic_chunk_diffusion.DiffusionModel"
+
+parameter_sweeps:
+  gamma:
+    values: [0, 1]
+    description: "Gamma values for coupling strength (0: independent, 1: data-dependent)"
+  learning_rate:
+    values: [1e-4, 2e-4, 5e-4]
+    default: 2e-4
+  batch_size:
+    values: [16, 32, 64]
+    default: 32
+  epochs:
+    values: [50, 100, 200]
+    default: 100
+  solver_type:
+    values: ["euler", "rk4"]
+    default: "euler"
+  num_integration_steps:
+    values: [10, 25, 50, 100]
+    default: 50
+
+fixed_hyperparameter_anchors:
+  batch_size_32:
+    batch_size: 32
+  mask_tiles_64:
+    mask_tiles: 64
+  mask_probability_0.3:
+    mask_probability: 0.3
+
+interpolant_coefficients:
+  alpha_t:
+    formula: "1 - t"
+    derivative: "-1"
+  beta_t:
+    formula: "t"
+    derivative: "1"
+
+config_factory:
+  registry_configuration_artifact: "results/config_resolved.json"
+  keep_all_paper_visible: true
+
+data_pipeline:
+  determines_which: "coupling_type"
+  config_data_pipeline: "configs/default.yaml"
+
+artifact_registry:
+  config_resolved:
+    path: "results/config_resolved.json"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_config_resolved_artifact"
+  sensitivity_report:
+    path: "results/sensitivity_report.json"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_sensitivity_report_artifact"
+  figure_1:
+    path: "results/figures/figure_1.png"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_figure_1_artifact"
+  figure_2:
+    path: "results/figures/figure_2.png"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_figure_2_artifact"
+  figure_3:
+    path: "results/figures/figure_3.png"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_figure_3_artifact"
+  table_2:
+    path: "results/tables/table_2.csv"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_table_2_artifact"
+  table_3:
+    path: "results/tables/table_3.csv"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_table_3_artifact"
+  figure_4:
+    path: "results/figures/figure_4.png"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_figure_4_artifact"
+  figure_6:
+    path: "results/figures/figure_6.png"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_figure_6_artifact"
+  experiment_results_csv:
+    path: "results/tables/experiment_results.csv"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_experiment_results_csv"
+  experiment_results_png:
+    path: "results/figures/experiment_results.png"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_experiment_results_png"
+  table_1:
+    path: "results/tables/table_1.csv"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_table_1_artifact"
+  figure_5:
+    path: "results/figures/figure_5.png"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_figure_5_artifact"
+  training_log:
+    path: "results/training_log.json"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_training_log"
+  metrics:
+    path: "results/metrics.json"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_metrics"
+  inpainting_comparison:
+    path: "results/inpainting_comparison.png"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_inpainting_comparison"
+  evidence_contract_matrix:
+    path: "results/evidence_contract_matrix.json"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_evidence_contract_matrix"
+  experiment_registry:
+    path: "results/experiment_registry.json"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_experiment_registry"
+
+metrics:
+  fidelity_score:
+    formula: "FID"
+    aggregation: "mean"
+  return_metric:
+    formula: "MSE"
+    aggregation: "mean"

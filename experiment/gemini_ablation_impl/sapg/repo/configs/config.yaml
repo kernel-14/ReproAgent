@@ -1,0 +1,281 @@
+# configs/config.yaml
+# SAPG: Split and Aggregate Policy Gradients Configuration File
+# Reference Grounding: paper_contract_sweep_hyperparameter_protocol, paper_task_environment_setup, paper_training_or_optimization_loop
+
+project:
+  name: "sapg_reproduction"
+  description: "Faithful reproduction of Split and Aggregate Policy Gradients (SAPG)"
+
+# 3. Preliminaries & Algorithm Symbols Inventory
+symbols:
+  s_0: "initial_state"
+  a_t: "action_at_t"
+  s_t: "state_at_t"
+  sum_t_0_T_1: "sum_{t=0}^{T-1}"
+  gamma_t: "gamma^t"
+  A_hat: "advantage_estimate"
+  pi_theta: "policy_parameterized_by_theta"
+  nabla_theta: "policy_gradient"
+  rho_d: "state_visitation_distribution"
+  Q_hat: "action_value_estimate"
+  V_hat: "state_value_estimate"
+  L_on: "on_policy_loss"
+  pi_old: "old_policy"
+  r_t: "reward_at_t"
+  epsilon: "ppo_clip_parameter"
+  A_t: "advantage_at_t"
+  pi_1: "policy_1"
+  pi_M: "policy_M"
+  pi_i: "policy_i"
+  pi_j: "policy_j"
+  L_off: "off_policy_loss"
+  mu: "importance_weight_threshold"
+  pi_i_old: "old_policy_i"
+  lambda: "aggregation_weight"
+
+numeric_anchors:
+  zero: 0
+  one: 1
+  two: 2
+  three: 3
+  six: 6
+  seven: 7
+  twenty_three: 23
+  thirty: 30
+  entropy_coef_default: 0.005
+  num_environments: 24576
+
+# Expose required parameter sweeps as executable constants/default accessors
+sweeps:
+  M:
+    default: 4
+    values: [2, 4, 8]
+    description: "Number of parallel policies (leader + followers)"
+  lambda:
+    default: 1.0
+    values: [0.1, 0.5, 1.0, 2.0]
+    description: "Aggregation weight for off-policy updates"
+  mu:
+    default: 0.1
+    values: [0.01, 0.05, 0.1, 0.2]
+    description: "Importance weight threshold"
+  sigma:
+    default: 0.003
+    values: [0.0, 0.003, 0.005]
+    description: "Entropy coefficients for followers to enforce diversity"
+  epochs:
+    default: 100
+    values: [50, 100, 200]
+    description: "Number of training epochs"
+  batch_size:
+    default: 4096
+    values: [1024, 2048, 4096, 8192]
+    description: "Batch size for policy updates"
+
+# Method / Baseline / Attack Selectors
+method_selectors:
+  ours: "sapg"
+  sapg: "sapg"
+  ppo: "ppo"
+  pbt: "pbt"
+  pql: "pql"
+  ddpg: "ddpg"
+
+# Baseline Default Hyperparameters (Binding addendum clarification)
+baselines:
+  ppo:
+    clip_range: 0.2
+    ent_coef: 0.0
+    learning_rate: 0.0003
+    n_steps: 2048
+    gae_lambda: 0.95
+    gamma: 0.99
+  ddpg:
+    buffer_size: 1000000
+    learning_rate: 0.001
+    batch_size: 256
+    tau: 0.005
+    gamma: 0.99
+  pql:
+    num_critics: 2
+    learning_rate: 0.0003
+    batch_size: 1024
+  pbt:
+    population_size: 8
+    mutation_rate: 0.2
+    explore_weight: 0.1
+
+# Environment / Task Factories Registry
+environments:
+  AllegroKuka-Throw:
+    id: "AllegroKuka-Throw-v0"
+    alias: "throw"
+    difficulty: "hard"
+    dof: 23
+    observation_dim: 67
+    action_dim: 23
+    exploration_noise: 0.2
+    availability_check: "src.sapg.envs.task_registry.check_task_registry_available"
+  AllegroKuka-Regrasping:
+    id: "AllegroKuka-Regrasping-v0"
+    alias: "regrasping"
+    difficulty: "hard"
+    dof: 23
+    observation_dim: 67
+    action_dim: 23
+    exploration_noise: 0.25
+    availability_check: "src.sapg.envs.task_registry.check_task_registry_available"
+  AllegroKuka-Reorientation:
+    id: "AllegroKuka-Reorientation-v0"
+    alias: "reorientation"
+    difficulty: "hard"
+    dof: 23
+    observation_dim: 67
+    action_dim: 23
+    exploration_noise: 0.3
+    availability_check: "src.sapg.envs.task_registry.check_task_registry_available"
+  AllegroHand-Reorient:
+    id: "AllegroHand-Reorient-v0"
+    alias: "allegro_reorient"
+    difficulty: "easy"
+    dof: 16
+    observation_dim: 44
+    action_dim: 16
+    exploration_noise: 0.1
+    availability_check: "src.sapg.envs.task_registry.check_task_registry_available"
+  ShadowHand-Reorient:
+    id: "ShadowHand-Reorient-v0"
+    alias: "shadow_reorient"
+    difficulty: "easy"
+    dof: 24
+    observation_dim: 60
+    action_dim: 20
+    exploration_noise: 0.1
+    availability_check: "src.sapg.envs.task_registry.check_task_registry_available"
+
+# Callable Protocol Matrix linking named experiments to environments, methods, metrics, and artifact writers
+experiment_specs:
+  - name: "SAPG Method"
+    experiment_group: "Experiment I: AllegroKuka (Throw, Regrasping, Reorientation)"
+    environments: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    method: "sapg"
+    metrics: ["success_rate", "mean_reward"]
+    artifact_writer: "src.sapg.utils.reporting.write_metrics_json"
+    output_path: "results/metrics.json"
+
+  - name: "DDPG Baseline"
+    experiment_group: "Experiment I: AllegroKuka (Throw, Regrasping, Reorientation)"
+    environments: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    method: "ddpg"
+    metrics: ["success_rate"]
+    artifact_writer: "src.sapg.utils.reporting.write_table_1_csv"
+    output_path: "results/tables/table_1.csv"
+
+  - name: "Leader-Follower Aggregation"
+    experiment_group: "Experiment I: AllegroKuka (Throw, Regrasping, Reorientation)"
+    environments: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    method: "sapg"
+    metrics: ["success_rate", "aggregation_efficiency"]
+    artifact_writer: "src.sapg.utils.reporting.write_table_1_csv"
+    output_path: "results/tables/table_1.csv"
+
+  - name: "Latent Conditioning Diversity"
+    experiment_group: "Experiment I: AllegroKuka (Throw, Regrasping, Reorientation)"
+    environments: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    method: "sapg"
+    metrics: ["latent_diversity_score"]
+    artifact_writer: "src.sapg.utils.reporting.write_figure_2_png"
+    output_path: "results/figures/fig_2.png"
+
+  - name: "Training Schedule (epochs)"
+    experiment_group: "Experiment I: AllegroKuka (Throw, Regrasping, Reorientation)"
+    environments: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    method: "sapg"
+    metrics: ["success_rate_vs_epochs"]
+    artifact_writer: "src.sapg.utils.reporting.write_metrics_json"
+    output_path: "results/metrics.json"
+
+  - name: "AllegroKuka Hard Tasks"
+    experiment_group: "Experiment I: AllegroKuka (Throw, Regrasping, Reorientation)"
+    environments: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    method: "sapg"
+    metrics: ["success_rate", "steps_to_success"]
+    artifact_writer: "src.sapg.utils.reporting.write_experiment_results_csv"
+    output_path: "results/tables/experiment_results.csv"
+
+  - name: "In-hand Reorientation Easy Tasks"
+    experiment_group: "Experiment II: Easy Tasks (AllegroHand, ShadowHand)"
+    environments: ["AllegroHand-Reorient", "ShadowHand-Reorient"]
+    method: "sapg"
+    metrics: ["success_rate", "steps_to_success"]
+    artifact_writer: "src.sapg.utils.reporting.write_experiment_results_csv"
+    output_path: "results/tables/experiment_results.csv"
+
+  - name: "Main Comparison"
+    experiment_group: "Experiment I & II"
+    environments: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation", "AllegroHand-Reorient", "ShadowHand-Reorient"]
+    method: "sapg"
+    metrics: ["success_rate", "sample_efficiency"]
+    artifact_writer: "src.sapg.utils.reporting.write_table_1_csv"
+    output_path: "results/tables/table_1.csv"
+
+  - name: "Hyperparameters"
+    experiment_group: "Experiment I & II"
+    environments: ["AllegroKuka-Throw", "ShadowHand-Reorient"]
+    method: "sapg"
+    metrics: ["hyperparameter_sensitivity"]
+    artifact_writer: "src.sapg.utils.reporting.write_table_2_csv"
+    output_path: "results/tables/table_2.csv"
+
+  - name: "Task Details"
+    experiment_group: "Experiment I & II"
+    environments: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation", "AllegroHand-Reorient", "ShadowHand-Reorient"]
+    method: "sapg"
+    metrics: ["dof", "observation_dim", "action_dim"]
+    artifact_writer: "src.sapg.utils.reporting.write_table_3_csv"
+    output_path: "results/tables/table_3.csv"
+
+  - name: "Ablation Results"
+    experiment_group: "Experiment I: AllegroKuka (Throw, Regrasping, Reorientation)"
+    environments: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    method: "sapg"
+    metrics: ["ablation_success_rate"]
+    artifact_writer: "src.sapg.utils.reporting.write_table_4_csv"
+    output_path: "results/tables/table_4.csv"
+
+  - name: "Training Curves"
+    experiment_group: "Experiment I & II"
+    environments: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation", "AllegroHand-Reorient", "ShadowHand-Reorient"]
+    method: "sapg"
+    metrics: ["success_rate_over_time"]
+    artifact_writer: "src.sapg.utils.reporting.write_figure_2_png"
+    output_path: "results/figures/fig_2.png"
+
+# Algorithm Anchors & Steps
+algorithm_anchors:
+  preliminaries:
+    section: "3. Preliminaries"
+    description: "Optimize the policy using gradient descent with Monte Carlo estimates of the gradient"
+    formula: "nabla_theta J(pi_theta) = E_{s ~ rho_d, a ~ pi(a|s)} [nabla_theta log(pi_theta(a|s)) * A_hat(s, a)]"
+  off_policy_aggregation:
+    section: "4.1. Aggregating data using off-policy updates"
+    description: "Update policy pi_i using data from policy pi_j"
+    formula: "L_off(pi_i; pi_j) = E_{s, a ~ pi_j} [min(r_t * A_t, clip(r_t, 1-epsilon, 1+epsilon) * A_t)]"
+    ratio_formula: "r_t = pi_i(a|s) / pi_j(a|s)"
+  symmetric_aggregation:
+    section: "4.2. Symmetric aggregation"
+    description: "Update each policy i in {1, ..., M} using off-policy data from all other policies X = {1, ..., M} \\ {i}"
+    lambda_default: 1.0
+  latent_conditioning:
+    section: "4.4. Encouraging diversity via latent conditioning"
+    description: "Shared backbone parameters theta and psi across leader and followers, with individual parameters phi_j"
+  entropy_regularization:
+    section: "4.5. Enforcing diversity through entropy regularization"
+    description: "Add entropy loss to each of the followers with different coefficients to encourage diversity"
+    formula: "L = L_on + sigma * H(pi(a|s))"
+  experimental_setup:
+    section: "5. Experimental Setup"
+    description: "Collect data from parallel environments, compute on-policy and off-policy losses, and update parameters"
+  ablations:
+    section: "6.3. Ablations"
+    description: "Explore different choices for the scaling coefficient of entropy loss sigma in {0, 0.005, 0.003}"

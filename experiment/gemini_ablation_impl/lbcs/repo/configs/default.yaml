@@ -1,0 +1,79 @@
+# reference_grounding: paperbench_ref_001 README.md
+# Configuration for LBCS (Lexicographic Bilevel Coreset Selection) reproduction.
+
+# Environment/Task Factories
+environments:
+  cifar:
+    alias: cifar
+    setup_metadata: { type: classification, task: image_classification }
+    availability_check: true
+  imagenet:
+    alias: imagenet
+    setup_metadata: { type: classification, task: image_classification }
+    availability_check: true
+  mnist:
+    alias: mnist
+    setup_metadata: { type: classification, task: image_classification }
+    availability_check: true
+  svhn:
+    alias: svhn
+    setup_metadata: { type: classification, task: image_classification }
+    availability_check: true
+
+# Dataset/Benchmark Loaders
+datasets:
+  fmnist:
+    alias: F-MNIST
+    setup_metadata: { name: Fashion-MNIST }
+    validation_check: true
+  cifar10:
+    alias: CIFAR-10
+    setup_metadata: { name: CIFAR-10 }
+    validation_check: true
+  cifar100:
+    alias: CIFAR-100
+    setup_metadata: { name: CIFAR-100 }
+    validation_check: true
+  imagenet_1k:
+    alias: ImageNet-1k
+    setup_metadata: { name: ImageNet-1k }
+    validation_check: true
+
+# Method/Baseline Selectors
+methods:
+  ours:
+    description: LBCS (Lexicographic Bilevel Coreset Selection)
+  oracle:
+    description: Oracle baseline
+  vit:
+    description: ViT baseline
+  ppo:
+    description: PPO baseline
+  resnet:
+    description: ResNet baseline
+
+# Parameter Sweeps
+sweeps:
+  group_size: 100
+  noise_rate: 0.3
+  noise_type: symmetric
+  k_values: [1000, 2000, 3000, 4000]
+  lambda_values: [0, 1]
+  epochs: 100 # Default epochs for training
+
+# Hyperparameter Anchors
+hyperparameters:
+  momentum: 0.9
+
+# Output Paths
+output_paths:
+  metrics: results/metrics.json
+  table2: results/table2_results.json
+  robustness: results/robustness_results.json
+  imagenet: results/imagenet_results.json
+  registry: results/experiment_registry.json
+
+# Active Reproduction Scope
+reproduction_scope:
+  active: true
+  note: "Grouping examples to share masks (group_size=100) significantly reduces computational burden."

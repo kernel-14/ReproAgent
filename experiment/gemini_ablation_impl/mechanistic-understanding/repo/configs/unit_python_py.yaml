@@ -1,0 +1,218 @@
+# configs/unit_python_py.yaml
+# Configuration for "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity"
+
+reproduction_notes: "Reproduction of DPO toxicity alignment and mechanistic analysis on GPT-2/Llama-like models."
+
+# Active reproduction scope notes
+active_reproduction_scope:
+  description: "Reproduction of DPO toxicity alignment and mechanistic analysis on GPT-2/Llama-like models."
+  active: true
+
+# Task / Environment Registry
+task_registry:
+  unit-001:
+    id: "unit-001"
+    alias: "unit_001_toxicity_analysis"
+    setup_metadata:
+      description: "Core reproduction pipeline for probing, DPO, intervention, analysis, and unaligning."
+      active: true
+    availability_check: "src.config.check_task_availability"
+    runnable_hook: "main.run_pipeline"
+  
+  pairwise-data:
+    id: "pairwise-data"
+    alias: "pairwise_toxic_data_construction"
+    setup_metadata:
+      description: "Constructing pairwise toxic data using PPLM-like gradients or toxic/non-toxic pairs."
+      active: true
+    availability_check: "src.data_utils.check_pairwise_data"
+    runnable_hook: "src.data_utils.prepare_pairwise_data"
+
+  wikitext:
+    id: "wikitext"
+    alias: "wikitext_language_modeling"
+    setup_metadata:
+      description: "Wikitext dataset for language modeling evaluation and baseline perplexity checks."
+      active: true
+    availability_check: "src.data_utils.check_wikitext"
+    runnable_hook: "src.data_utils.load_wikitext"
+
+  binary_toxicity_classification:
+    id: "binary-toxicity-classification"
+    alias: "binary_toxicity_classification"
+    setup_metadata:
+      description: "Binary toxicity classification task using Jigsaw dataset."
+      active: true
+    availability_check: "src.data_utils.check_jigsaw"
+    runnable_hook: "src.probing.train_probe"
+
+  editing_models:
+    id: "editing-models"
+    alias: "editing_models"
+    setup_metadata:
+      description: "Editing model activations or weights to analyze mechanistic shifts."
+      active: true
+    availability_check: "src.model_utils.check_editing_capability"
+    runnable_hook: "src.unalign.unalign_model"
+
+  worse_ablation_performance:
+    id: "worse-ablation-performance"
+    alias: "worse_ablation_performance_without_fabricating"
+    setup_metadata:
+      description: "Ablation study showing worse performance when key components are removed."
+      active: true
+    availability_check: "src.analysis.check_ablation"
+    runnable_hook: "src.analysis.run_ablation_study"
+
+  versus_mlp_policies:
+    id: "versus-mlp-policies"
+    alias: "versus_mlp_policies"
+    setup_metadata:
+      description: "Comparing attention-based interventions versus MLP-based policies."
+      active: true
+    availability_check: "src.analysis.check_mlp_policies"
+    runnable_hook: "src.analysis.compare_mlp_policies"
+
+# Dataset / Benchmark Registry
+dataset_registry:
+  jigsaw:
+    id: "jigsaw"
+    alias: "Jigsaw toxic comment classification dataset"
+    setup_metadata:
+      description: "Jigsaw toxic comment classification dataset containing 561,808 comments."
+      split_ratio: 0.9  # 90:10 split
+      validation_ratio: 0.1
+    validation_checks:
+      min_samples: 100
+      required_columns: ["comment_text", "toxic"]
+    runnable_hook: "src.data_utils.load_jigsaw"
+
+  real_toxicity_prompts:
+    id: "real-toxicity-prompts"
+    alias: "RealToxicityPrompts"
+    setup_metadata:
+      description: "RealToxicityPrompts dataset for evaluating model toxicity generation."
+    validation_checks:
+      min_samples: 100
+      required_columns: ["prompt"]
+    runnable_hook: "src.data_utils.load_real_toxicity_prompts"
+
+  wikitext:
+    id: "wikitext"
+    alias: "wikitext"
+    setup_metadata:
+      description: "Wikitext dataset for language modeling evaluation."
+    validation_checks:
+      min_samples: 100
+    runnable_hook: "src.data_utils.load_wikitext"
+
+# Method / Baseline / Attack Selectors
+method_selectors:
+  ours:
+    id: "ours"
+    name: "DPO Toxicity Alignment (Ours)"
+    description: "Direct Preference Optimization for toxicity reduction."
+  ppo:
+    id: "ppo"
+    name: "PPO Toxicity Alignment (Baseline)"
+    description: "Proximal Policy Optimization for toxicity reduction."
+
+# Parameter Sweeps and Constants
+parameter_sweeps:
+  split_ratio: 0.9  # 90:10 split
+  beta: 0.1         # DPO beta hyperparameter
+  p_patience: 10    # Patience value of 10 for training convergence
+  p_max_pairs: 6700 # Approximately 6,700 sample pairs for training convergence
+  alpha_sweep: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0] # Intervention alpha sweep values
+  p_sweep: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] # Bounded sweep/config entries for p
+
+# Toxicity Measurement Addendum Clarification
+toxicity_measurement:
+  model_name: "unitary/unbiased-toxic-roberta"
+  use_perspective_api: false
+  description: "For measuring toxicity, reproductions should use unitary/unbiased-toxic-roberta instead of Perspective API."
+
+# Paper Formula and Algorithm Symbol Inventory
+# Every symbol and formula is represented here to be code-visible and accessible by runtime code.
+symbol_inventory:
+  w_0: "w_0"
+  w_t: "w_t"
+  x_i: "x_i"
+  R^d: "R^d"
+  r_d: "R^d"
+  w_i: "w_i"
+  x^ell-mid: "x_ell_mid"
+  x_ell_mid: "x_ell_mid"
+  x_i^ell: "x_i_ell"
+  x_i_ell: "x_i_ell"
+  MLP^ell: "mlp_ell"
+  mlp_ell: "mlp_ell"
+  Att^ell: "att_ell"
+  att_ell: "att_ell"
+  sigma: "sigma"
+  W_K^ell: "w_k_ell"
+  w_k_ell: "w_k_ell"
+  W_V^ell: "w_v_ell"
+  w_v_ell: "w_v_ell"
+  d_mlp: "d_mlp"
+  x^ell: "x_ell"
+  v_i: "v_i"
+  m_i^ell: "m_i_ell"
+  m^ell: "m_ell"
+  sum_i=1: "sum_i=1"
+  l_p: "l_p"
+  k_i^ell: "k_i_ell"
+  v_i^ell: "v_i_ell"
+  r_i^ell: "r_i_ell"
+  e_w: "e_w"
+  W_1^ell: "w_1_ell"
+  numeric_anchors:
+    zero: 0
+    one: 1
+    two: 2
+    ninety_four: 94
+
+# Paper Formula and Algorithm Anchors
+formula_anchors:
+  preliminaries:
+    equation: "x_{i}^{\\ell+1} = x_{i}^{\\ell} + MLP^{\\ell}(x_{i}^{\\ell} + Att^{\\ell}(x_{i}^{\\ell}))"
+    intermittent_residual: "x_{i}^{\\ell-mid} = x_{i}^{\\ell} + Att^{\\ell}(x_{i}^{\\ell})"
+    symbols: ["x_i_ell", "mlp_ell", "att_ell", "x_ell_mid"]
+    numeric_defaults: [0, 1, 2]
+
+  extracting_toxic_vectors:
+    section: "3.1. Extracting Toxic Vectors"
+    probe_model: "W_Toxic"
+    dimension: "R^d"
+    formula: "P(Toxic | x_bar^{L-1}) = softmax(W_Toxic * x_bar^{L-1})"
+    accuracy_validation: 0.94 # 94% accuracy on validation split
+    symbols: ["W_Toxic", "R^d"]
+    numeric_defaults: [1, 94]
+
+  constructing_pairwise_toxic_data:
+    section: "4.2. Constructing Pairwise Toxic Data"
+    method: "PPLM"
+    patience: 10
+    max_samples: 6700
+    algorithm_steps:
+      - "Use attribute classifier to compute gradients that increase likelihood of desired attribute a"
+      - "Shift activations in the direction of the gradient"
+      - "Train until validation loss converges with patience value of 10 (approx 6,700 sample pairs)"
+
+  background_dpo:
+    section: "4.1. Background: DPO"
+    loss_formula: "L_DPO = -E[log sigma(beta * log P - beta * log N)]"
+    probability_ratio_positive: "P = pi_theta(y_+ | w) / pi_ref(y_+ | w)"
+    probability_ratio_negative: "N = pi_theta(y_- | w) / pi_ref(y_- | w)"
+    symbols: ["DPO", "sigma", "beta", "y_+", "y_-", "pi_ref", "pi_theta"]
+
+  dpo_avoids_mlp:
+    section: "5.2. DPO Avoids MLP. k_Toxic Regions"
+    glu_formula: "sigma(W_1 * x) * (W_2 * x)"
+    symbols: ["sigma", "W_1", "W_2"]
+
+  projecting_value_vectors:
+    section: "A. Projecting Value Vectors onto Vocabulary Space"
+    mlp_expansion: "MLP^{\\ell}(x^{\\ell}) = \\sum_{i=1}^{d_{mlp}} \\sigma(x^{\\ell} \\cdot k_i^{\\ell}) v_i^{\\ell} = \\sum_{i=1}^{d_{mlp}} m_i^{\\ell} v_i^{\\ell}"
+    symbols: ["d_mlp", "m_i_ell", "v_i_ell", "mlp_ell", "x_ell", "sum_i=1", "sigma", "k_i_ell", "l_p", "e_w"]
+    numeric_defaults: [2, 1]

@@ -1,0 +1,305 @@
+# configs/evidence_obligation_registry.yaml
+# RICE: Breaking Through the Training Bottlenecks of Reinforcement Learning with Explanation
+# Reference Grounding: paperbench_ref_006 Refine_mujoco/masknet/fid_test.py
+
+# -------------------------------------------------------------------------
+# 1. Active Reproduction Scope Notes & Metadata
+# -------------------------------------------------------------------------
+metadata:
+  project_name: "RICE Reproduction"
+  description: "Faithful reproduction of RICE: Breaking Through the Training Bottlenecks of Reinforcement Learning with Explanation"
+  active_reproduction_scope: "Bounded execution smoke/default subset and full-mode sweeps"
+  hypothesis: "Vanilla PPO is sufficient to train the state mask without sacrificing theoretical guarantees when the objective is reformulated."
+  decision_value: "Standardizes the optimization process for both the explanation and the refinement phases."
+
+# -------------------------------------------------------------------------
+# 2. Environment/Task Factories & Aliases
+# -------------------------------------------------------------------------
+environments:
+  Hopper:
+    id: "Hopper-v3"
+    aliases: ["Hopper", "mujoco", "gym"]
+    setup_metadata:
+      state_dim: 11
+      action_dim: 3
+      reward_type: "dense"
+    availability_check: "import gym; gym.make('Hopper-v3')"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+  
+  Walker2d:
+    id: "Walker2d-v3"
+    aliases: ["Walker2d", "mujoco", "gym"]
+    setup_metadata:
+      state_dim: 17
+      action_dim: 6
+      reward_type: "dense"
+    availability_check: "import gym; gym.make('Walker2d-v3')"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  Reacher:
+    id: "Reacher-v3"
+    aliases: ["Reacher", "mujoco", "gym"]
+    setup_metadata:
+      state_dim: 11
+      action_dim: 2
+      reward_type: "dense"
+    availability_check: "import gym; gym.make('Reacher-v3')"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  HalfCheetah:
+    id: "HalfCheetah-v3"
+    aliases: ["HalfCheetah", "mujoco", "gym"]
+    setup_metadata:
+      state_dim: 17
+      action_dim: 6
+      reward_type: "dense"
+    availability_check: "import gym; gym.make('HalfCheetah-v3')"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  Selfish_Mining:
+    id: "SelfishMining-v0"
+    aliases: ["selfish mining", "selfish_mining"]
+    setup_metadata:
+      state_dim: 3
+      action_dim: 4
+      reward_type: "sparse"
+    availability_check: "import rice.envs.real_world_envs"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  Cage_Challenge_2:
+    id: "CAGEChallenge2-v0"
+    aliases: ["CAGE Challenge 2", "cage", "network_defense"]
+    setup_metadata:
+      state_dim: 52
+      action_dim: 13
+      reward_type: "sparse"
+    availability_check: "import rice.envs.real_world_envs"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  Autonomous_Driving:
+    id: "AutonomousDriving-v0"
+    aliases: ["autonomous driving", "autonomous_driving"]
+    setup_metadata:
+      state_dim: 25
+      action_dim: 2
+      reward_type: "dense"
+    availability_check: "import rice.envs.real_world_envs"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  Malware_Mutation:
+    id: "MalwareMutation-v0"
+    aliases: ["Malware Mutation", "malware_mutation"]
+    setup_metadata:
+      state_dim: 1024
+      action_dim: 235
+      reward_type: "sparse"
+    availability_check: "import rice.envs.real_world_envs"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+# -------------------------------------------------------------------------
+# 3. Dataset/Benchmark Loaders
+# -------------------------------------------------------------------------
+datasets:
+  cage:
+    id: "cage_dataset"
+    aliases: ["cage"]
+    setup_metadata:
+      format: "npz"
+      num_trajectories: 500
+    validation_check: "import os; os.path.exists('results/dataset_registry.json')"
+    runnable_config_hook: "rice.utils.config_loader.load_dataset"
+
+  gym:
+    id: "gym_dataset"
+    aliases: ["gym", "mujoco"]
+    setup_metadata:
+      format: "npz"
+      num_trajectories: 500
+    validation_check: "import os; os.path.exists('results/dataset_registry.json')"
+    runnable_config_hook: "rice.utils.config_loader.load_dataset"
+
+  mujoco:
+    id: "mujoco_dataset"
+    aliases: ["mujoco"]
+    setup_metadata:
+      format: "npz"
+      num_trajectories: 500
+    validation_check: "import os; os.path.exists('results/dataset_registry.json')"
+    runnable_config_hook: "rice.utils.config_loader.load_dataset"
+
+  selfish_mining:
+    id: "selfish_mining_dataset"
+    aliases: ["selfish_mining"]
+    setup_metadata:
+      format: "npz"
+      num_trajectories: 500
+    validation_check: "import os; os.path.exists('results/dataset_registry.json')"
+    runnable_config_hook: "rice.utils.config_loader.load_dataset"
+
+  network_defense:
+    id: "network_defense_dataset"
+    aliases: ["network_defense"]
+    setup_metadata:
+      format: "npz"
+      num_trajectories: 500
+    validation_check: "import os; os.path.exists('results/dataset_registry.json')"
+    runnable_config_hook: "rice.utils.config_loader.load_dataset"
+
+  autonomous_driving:
+    id: "autonomous_driving_dataset"
+    aliases: ["autonomous_driving"]
+    setup_metadata:
+      format: "npz"
+      num_trajectories: 500
+    validation_check: "import os; os.path.exists('results/dataset_registry.json')"
+    runnable_config_hook: "rice.utils.config_loader.load_dataset"
+
+# -------------------------------------------------------------------------
+# 4. Method / Baseline / Attack Selectors
+# -------------------------------------------------------------------------
+methods:
+  - "ours"
+  - "random"
+  - "statemask"
+  - "ppo"
+  - "sac"
+  - "gail"
+  - "jsrl"
+  - "heuristic"
+  - "Ours"
+  - "b-line"
+  - "ppo fine-tuning"
+
+# -------------------------------------------------------------------------
+# 5. Parameter Sweeps & Hyperparameter Defaults
+# -------------------------------------------------------------------------
+parameter_sweeps:
+  alpha: [0.01, 0.001, 0.0001]
+  lambda: [0.0, 0.1, 0.01, 0.001]
+  p: [0.0, 0.25, 0.5, 0.75, 1.0]
+  learning_rate: [3e-4, 1e-4, 5e-5]
+  ppo_hyperparameters:
+    learning_rate: 3e-4
+    batch_size: 64
+    gamma: 0.99
+    clip_range: 0.2
+    ent_coef: 0.0
+    n_epochs: 10
+    n_steps: 2048
+
+# -------------------------------------------------------------------------
+# 6. Paper Formula & Algorithm Symbol Inventory (Code-Visible Anchors)
+# -------------------------------------------------------------------------
+symbols:
+  d_max: "d_max"
+  V_pi: "V^pi"
+  E_pi: "E_pi"
+  sum_t_0_infty: "sum_t=0^infty"
+  gamma_t: "gamma^t"
+  s_t: "s_t"
+  a_t: "a_t"
+  s_0: "s_0"
+  Q_pi: "Q^pi"
+  a_0: "a_0"
+  A_pi: "A^pi"
+  pi_star: "pi^*"
+  max_pi: "max_pi"
+  E_ssimrho: "E_ssimrho"
+  d_rho_pi: "d_rho^pi"
+  gamma: "gamma"
+  Pr_pi: "Pr^pi"
+  pi_r: "pi^r"
+  d_rho: "d_rho"
+  a_t_m: "a_t^m"
+  a_random: "a_random"
+  theta: "theta"
+  pi_bar: "pi_bar"
+  pi_tilde_theta: "pi_tilde_theta"
+  pi_tilde: "pi_tilde"
+  pi_prime: "pi^prime"
+  lambda: "lambda"
+  pi_theta: "pi_theta"
+  f_hat_theta: "f_hat_theta"
+  pi_hat: "pi_hat"
+  R_prime: "R^prime"
+  tau: "tau"
+  theta_old: "theta_old"
+  s_t_plus_1: "s_t+1"
+  R_t_prime: "R_t^prime"
+  pi_e: "pi_e"
+  pi_g: "pi_g"
+  numeric_anchors: [0, 1, 2, 3.1, 3.6, 3, 10, 20, 30, 40, 3.3, 4, 3.5, 3.4, 0.25, 0.5]
+
+# -------------------------------------------------------------------------
+# 7. Callable Protocol Matrix (Named Experiments)
+# -------------------------------------------------------------------------
+experiments:
+  experiment_i:
+    name: "Experiment I: Fidelity and Equivalence"
+    environment: "Hopper"
+    method_selector: "ours"
+    metric_function: "rice.metrics.fidelity.compute_fidelity"
+    artifact_writer: "rice.utils.artifact_logger.write_figure_5"
+  
+  experiment_ii:
+    name: "Experiment II: Efficiency of Explanation"
+    environment: "Walker2d"
+    method_selector: "ours"
+    metric_function: "rice.metrics.fidelity.compute_efficiency"
+    artifact_writer: "rice.utils.artifact_logger.write_table_4"
+
+  experiment_iii:
+    name: "Experiment III: Refinement Performance"
+    environment: "Reacher"
+    method_selector: "ours"
+    metric_function: "rice.metrics.fidelity.compute_reward"
+    artifact_writer: "rice.utils.artifact_logger.write_table_1"
+
+  experiment_iv:
+    name: "Experiment IV: Parameter Sensitivity"
+    environment: "HalfCheetah"
+    method_selector: "ours"
+    metric_function: "rice.metrics.fidelity.compute_reward"
+    artifact_writer: "rice.utils.artifact_logger.write_figure_1"
+
+  experiment_v:
+    name: "Experiment V: Real-world Applications"
+    environment: "Selfish_Mining"
+    method_selector: "ours"
+    metric_function: "rice.metrics.fidelity.compute_reward"
+    artifact_writer: "rice.utils.artifact_logger.write_figure_2"
+
+  experiment_i_alias:
+    name: "experiment i"
+    environment: "Hopper"
+    method_selector: "ours"
+    metric_function: "rice.metrics.fidelity.compute_fidelity"
+    artifact_writer: "rice.utils.artifact_logger.write_figure_5"
+
+  experiment_3:
+    name: "experiment 3"
+    environment: "Walker2d"
+    method_selector: "ours"
+    metric_function: "rice.metrics.fidelity.compute_efficiency"
+    artifact_writer: "rice.utils.artifact_logger.write_table_4"
+
+  experiment_ii_alias:
+    name: "experiment ii"
+    environment: "Walker2d"
+    method_selector: "ours"
+    metric_function: "rice.metrics.fidelity.compute_efficiency"
+    artifact_writer: "rice.utils.artifact_logger.write_table_4"
+
+  experiment_iii_alias:
+    name: "experiment iii"
+    environment: "Reacher"
+    method_selector: "ours"
+    metric_function: "rice.metrics.fidelity.compute_reward"
+    artifact_writer: "rice.utils.artifact_logger.write_table_1"
+
+  experiment_iv_alias:
+    name: "experiment iv"
+    environment: "HalfCheetah"
+    method_selector: "ours"
+    metric_function: "rice.metrics.fidelity.compute_reward"
+    artifact_writer: "rice.utils.artifact_logger.write_figure_1"

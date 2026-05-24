@@ -1,0 +1,124 @@
+# configs/semantic_chunk_numerical.yaml
+# Reference Grounding: paper:chunk_010 (Section 4. Numerical experiments)
+
+metadata:
+  paper_title: "Stochastic Interpolants with Data-Dependent Couplings"
+  reproduction_scope: "Numerical experiments on conditional image generation (In-painting, Super-resolution)"
+  trust_remote_code: true
+  active_reproduction_scope_notes: "This configuration focuses on scaling interpolants to high-resolution images in pixel space using ImageNet. It implements the data-dependent coupling framework for conditional tasks."
+  huggingface_instructions: |
+    You should download ImageNet using HuggingFace. 
+    Example: load_dataset("imagenet-1k", trust_remote_code=True)
+  keep_all_paper_visible: true
+
+environment_task_factories:
+  unit-006:
+    id: "unit-006"
+    alias: "unit_006_fast_test"
+    description: "Fast smoke test environment with synthetic shapes"
+    availability_check: "src.data.pipeline.check_synthetic_available"
+    setup_metadata:
+      resolution: [32, 32]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    description: "ImageNet-1k dataset from HuggingFace. The task is determined by the conditioning variable xi."
+    dataset_name: "imagenet-1k"
+    trust_remote_code: true
+    availability_check: "src.data.pipeline.check_imagenet_available"
+    setup_metadata:
+      resolution: [256, 256]
+      channels: 3
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  low-resolution-image:
+    id: "low-resolution-image"
+    alias: "imagenet_c"
+    description: "Low-resolution or corrupted ImageNet subset for downstream tasks like super-resolution."
+    availability_check: "src.data.pipeline.check_imagenet_c_available"
+    setup_metadata:
+      resolution: [64, 64]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  downstream_tasks:
+    id: "downstream_tasks"
+    alias: "perform_various_downstream"
+    description: "Determines which downstream task (inpainting, super-resolution) to perform based on mask/conditioning."
+    runnable_config_hook: "src.data.pipeline.setup_downstream_task"
+
+dataset_loaders:
+  synthetic_shapes:
+    id: "synthetic_shapes"
+    name: "Synthetic shapes or a small subset of ImageNet/CIFAR-10"
+    validation_check: "src.data.pipeline.validate_synthetic"
+    setup_metadata:
+      num_samples: 100
+  imagenet:
+    id: "imagenet"
+    name: "imagenet"
+    validation_check: "src.data.pipeline.validate_imagenet"
+    setup_metadata:
+      split: "train"
+      trust_remote_code: true
+  imagenet_1k:
+    id: "imagenet_1k"
+    name: "imagenet_1k"
+    validation_check: "src.data.pipeline.validate_imagenet"
+    setup_metadata:
+      split: "train"
+      trust_remote_code: true
+  imagenet_c:
+    id: "imagenet_c"
+    name: "imagenet_c"
+    validation_check: "src.data.pipeline.validate_imagenet_c"
+    setup_metadata:
+      split: "validation"
+
+parameter_sweeps:
+  interpolant_coefficients:
+    alpha_t: "1 - t"
+    beta_t: "t"
+    dot_alpha_t: -1.0
+    dot_beta_t: 1.0
+  training_hyperparameters:
+    batch_size: [32, 64, 128]
+    learning_rate: [1e-4, 2e-4, 5e-4]
+    epochs: [10, 20, 50]
+  inference_parameters:
+    num_integration_steps: [20, 50, 100]
+    solver_type: ["euler", "rk4"]
+  coupling_gamma:
+    gamma_values: [0, 1] # 0: independent, 1: data-dependent
+
+fixed_hyperparameters:
+  batch_size_32: 32
+  mask_tiles_64: 64
+  mask_probability_0.3: 0.3
+
+method_selectors:
+  ours: "src.methods.semantic_chunk_numerical.StochasticInterpolantMethod"
+  resnet: "src.models.resnet.ResNetBackbone"
+  ddpm: "src.methods.baselines.DDPMBaseline"
+  diffusion_model: "src.methods.baselines.DiffusionModelBaseline"
+
+measurement_collection:
+  metrics: ["runtime", "mse", "lpips", "fid"]
+  aggregation_function: "src.evaluation.metrics.aggregate_results"
+  runtime_tracking: true
+
+artifact_paths:
+  config_resolved: "results/config_resolved.json"
+  figure_1: "results/figures/figure_1.png"
+  figure_2: "results/figures/figure_2.png"
+  figure_3: "results/figures/figure_3.png"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+  figure_4: "results/figures/figure_4.png"
+  figure_6: "results/figures/figure_6.png"
+
+registry_configuration_artifact:
+  id: "numerical_experiment_registry"
+  path: "results/experiment_registry.json"
+  factory: "src.data.task_setup_factory.make_task_setup_factory"

@@ -1,0 +1,197 @@
+# reference_grounding: paperbench_ref_001 envs.py
+
+project_metadata:
+  name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+
+# 1. Environment & Task Registry
+# Expose paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks
+environment_registry:
+  NetHack:
+    id: "NetHack-v0"
+    aliases:
+      - "nethack learning"
+      - "nle"
+      - "unit-001"
+      - "fine-tuning + bc"
+    setup_metadata:
+      eval_rollout_limit: 100000
+      eval_no_progress_limit: 150
+      eval_death_termination: true
+      fisher_matrix_batches: 10000
+      dataset_name: "NLD-AA"
+      ttyrec_dataset: "nld-aa-v0"
+    availability_check:
+      package: "nle"
+      import_test: "nle.env.NLE"
+    runnable_config_hooks:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+    metrics:
+      - "gold score"
+      - "eating score"
+      - "staircase score"
+      - "scout score"
+      - "experience points"
+      - "dungeon depth"
+
+  RoboticSequence:
+    id: "RoboticSequence-v0"
+    aliases:
+      - "robotics"
+      - "push-wall"
+      - "peg-unplug-side"
+      - "them were originally introduced"
+    setup_metadata:
+      num_stages: 4
+      stage_success_threshold: 0.9
+      random_start_goal: true
+      observation_space: "robot_config + stage_one_hot"
+      policy_network:
+        hidden_layers: 4
+        neurons_per_layer: 256
+    availability_check:
+      package: "metaworld"
+      import_test: "metaworld.envs.ALL_V2_ENVIRONMENTS"
+    runnable_config_hooks:
+      beta: 1.5
+      max_path_length: 200
+    metrics:
+      - "success_rate"
+      - "stage_success_rate"
+      - "Forward Transfer"
+      - "AUC"
+      - "AUC_b"
+
+# 2. Dataset & Benchmark Loaders
+# Expose paper-derived dataset/benchmark loaders with ids, setup metadata, validation checks, and runnable config hooks
+dataset_registry:
+  robotics:
+    id: "RoboticSequenceDataset"
+    aliases:
+      - "metaworld_trajectories"
+      - "robotics"
+    setup_metadata:
+      source: "MetaWorld"
+      type: "expert_trajectories"
+    validation_checks:
+      - "check_file_exists"
+      - "check_trajectory_length"
+    runnable_config_hooks:
+      batch_size: 128
+    factory: "src.data.rl_task_registry.make_dataset"
+    readiness_check: "src.data.rl_task_registry.check_dataset_readiness"
+
+  nethack:
+    id: "TtyrecDataset"
+    aliases:
+      - "nld-aa-v0"
+      - "nle_data"
+    setup_metadata:
+      source: "NLD-AA"
+      type: "ttyrec"
+    validation_checks:
+      - "check_directory_exists"
+    runnable_config_hooks:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+      batch_size: 128
+      ttyrecdataset_nld_aa_v0_batch_size_128: 128
+    factory: "src.data.rl_task_registry.make_dataset"
+    readiness_check: "src.data.rl_task_registry.check_dataset_readiness"
+
+# 3. Method / Baseline / Attack Selectors
+# Expose method/baseline/attack selectors for ours, ppo, sac, bc, oracle, nle, ewc
+method_selectors:
+  ours:
+    id: "ours"
+    aliases: ["Ours", "scaled-bc + fine-tuning + ks"]
+    factory: "src.methods.core_callable_component.OursMethod"
+  ppo:
+    id: "ppo"
+    aliases: ["PPO"]
+    factory: "src.methods.unit_python_py.PPOMethod"
+  sac:
+    id: "sac"
+    aliases: ["SAC"]
+    factory: "src.methods.unit_python_py.SACMethod"
+  bc:
+    id: "bc"
+    aliases: ["Behavioral Cloning", "Fine-tuning + BC"]
+    factory: "src.methods.unit_bc_loss.BCMethod"
+  oracle:
+    id: "oracle"
+    aliases: ["Oracle"]
+    factory: "src.methods.core_callable_component.OracleMethod"
+  nle:
+    id: "nle"
+    aliases: ["NLE Baseline"]
+    factory: "src.methods.unit_python_py.NLEMethod"
+  ewc:
+    id: "ewc"
+    aliases: ["Fine-tuning + EWC"]
+    factory: "src.methods.unit_ewc_penalty.EWCMethod"
+
+# 4. Bounded Sweep & Config Entries
+# Expose bounded sweep/config entries for learning_rate; batch_size
+parameter_sweep:
+  learning_rate:
+    sweep_values: [0.0001, 0.0003, 0.001]
+    default: 0.0003
+  batch_size:
+    sweep_values: [64, 128, 256]
+    default: 128
+  fixed_hyperparameters:
+    batch_size_128: 128
+
+# 5. Paper Formula & Algorithm Symbol Inventory
+# Every paper-visible formula, numeric anchor, hyperparameter default, algorithm step, dataset/model route, metric aggregation, and table/figure writer named must be represented
+symbol_inventory:
+  add_nledata_directory: "/tmp/nle_data"
+  add_altorg_directory: "/tmp/altorg_data"
+  ttyrec_dataset_name: "nld-aa-v0"
+  batch_size: 128
+  L_aux: "auxiliary loss term"
+  theta: "current policy parameters"
+  sum_i: "summation index over parameters"
+  F_i: "Fisher information matrix diagonal element"
+  theta_star_i: "pre-trained policy parameter i"
+  theta_i: "current policy parameter i"
+  theta_star: "pre-trained policy parameters"
+  L_BC: "behavioral cloning loss"
+  B_BC: "behavioral cloning buffer"
+  D_KL: "Kullback-Leibler divergence"
+  pi_star: "pre-trained policy"
+  pi_theta: "current policy parameterized by theta"
+  L_KS: "kickstarting loss"
+  s_0: "initial state in two-state MDP"
+  v_0: "value of state s_0"
+  gamma: 0.99
+  r_0: 0.0
+  f_theta: "transition probability parameterized by theta"
+  r_1: 1.0
+  epsilon: 0.1
+  # Numeric/default anchors: 128, 2, 0, 9, 1, 0.11, 2.22, 0.5, 10, 0.08, 9.93, 13, 11, 30, 200, 1.5
+  numeric_anchors:
+    batch_size: 128
+    num_states: 2
+    min_reward: 0
+    max_reward: 9
+    step_size: 1
+    epsilon_val: 0.11
+    beta_val: 2.22
+    alpha_val: 0.5
+    max_turns: 10
+    learning_rate_default: 0.08
+    success_rate_threshold: 9.93
+    num_rooms: 13
+    num_stages: 11
+    eval_episodes: 30
+    max_path_length: 200
+    beta_meta_world: 1.5
+
+# 6. Interface Contract Declarations
+interface_contract:
+  task_registry: "src.data.rl_task_registry.make_rl_task_registry"
+  make_environment: "src.data.rl_task_registry.make_environment"
+  compute_task_metric: "src.data.rl_task_registry.compute_task_metric"

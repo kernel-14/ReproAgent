@@ -1,0 +1,118 @@
+# configs/default.yaml
+# Reference Grounding: paper:unit_001 (chunk_005, chunk_007)
+
+metadata:
+  paper_title: "Stochastic Interpolants with Data-Dependent Couplings"
+  reproduction_scope: "Faithful reproduction of stochastic interpolants with data-dependent couplings vs independent Gaussian baselines"
+  trust_remote_code: true
+  seed: 42
+  output_dir: "results"
+
+environment_task_factories:
+  unit-006:
+    id: "unit-006"
+    alias: "unit_006_fast_test"
+    description: "Fast smoke test environment with synthetic shapes"
+    availability_check: "src.data.pipeline.check_synthetic_available"
+    setup_metadata:
+      resolution: [32, 32]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    description: "ImageNet-1k dataset from HuggingFace"
+    dataset_name: "imagenet-1k"
+    trust_remote_code: true
+    availability_check: "src.data.pipeline.check_imagenet_available"
+    setup_metadata:
+      resolution: [256, 256]
+      channels: 3
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  low-resolution-image:
+    id: "low-resolution-image"
+    alias: "imagenet_c"
+    description: "Low-resolution or corrupted ImageNet subset for downstream tasks"
+    availability_check: "src.data.pipeline.check_imagenet_c_available"
+    setup_metadata:
+      resolution: [64, 64]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+dataset_loaders:
+  synthetic_shapes:
+    id: "synthetic_shapes"
+    name: "Synthetic shapes or a small subset of ImageNet/CIFAR-10"
+    validation_check: "src.data.pipeline.validate_synthetic"
+    setup_metadata:
+      num_samples: 100
+  imagenet_1k:
+    id: "imagenet_1k"
+    name: "imagenet"
+    validation_check: "src.data.pipeline.validate_imagenet"
+    setup_metadata:
+      trust_remote_code: true
+  imagenet_c:
+    id: "imagenet_c"
+    name: "imagenet_c"
+    validation_check: "src.data.pipeline.validate_imagenet_c"
+    setup_metadata:
+      corruption_type: "blur"
+
+method_selectors:
+  ours:
+    id: "ours"
+    name: "Stochastic Interpolants with Data-Dependent Couplings"
+    description: "Proposed method with data-dependent coupling rho_0(x_0 | x_1)"
+  resnet:
+    id: "resnet"
+    name: "resnet"
+    description: "ResNet baseline"
+  ddpm:
+    id: "ddpm"
+    name: "ddpm"
+    description: "Denoising Diffusion Probabilistic Models baseline"
+  diffusion_model:
+    id: "diffusion_model"
+    name: "diffusion_model"
+    description: "Standard diffusion model baseline"
+
+hyperparameters:
+  fixed_anchors:
+    batch_size_32: 32
+    mask_tiles_64: 64
+    mask_probability_0.3: 0.3
+  
+  sweeps:
+    gamma_values: [0.0, 1.0]
+    learning_rate: [1e-4, 2e-4, 5e-4]
+    batch_size: [16, 32, 64]
+    epochs: [10, 20, 50]
+    num_integration_steps: [10, 20, 50, 100]
+    solver_type: ["euler", "rk4"]
+
+  defaults:
+    gamma: 1.0
+    learning_rate: 2e-4
+    batch_size: 32
+    epochs: 10
+    num_integration_steps: 50
+    solver_type: "euler"
+    mask_probability: 0.3
+    mask_tiles: 64
+
+interpolant_parameters:
+  # I_t = alpha_t * x_0 + beta_t * x_1
+  # alpha_t = 1 - t, beta_t = t
+  # dot_alpha_t = -1, dot_beta_t = 1
+  alpha_t: "1.0 - t"
+  beta_t: "t"
+  dot_alpha_t: "-1.0"
+  dot_beta_t: "1.0"
+
+active_reproduction_scope:
+  mode: "fast_test" # [fast_test, full]
+  coupling: "dependent" # [independent, dependent]
+  active_task: "unit-006"
+  active_method: "ours"

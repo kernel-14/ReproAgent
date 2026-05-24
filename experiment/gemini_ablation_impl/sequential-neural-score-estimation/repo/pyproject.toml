@@ -1,0 +1,105 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "snpse"
+version = "0.1.0"
+description = "Sequential Neural Score Estimation: Likelihood-Free Inference with Conditional Score Based Diffusion Models"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "Reproduction Agent", email = "agent@paperbench.org" }
+]
+dependencies = [
+    "torch>=1.12.0",
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+simulators = [
+    "sbi>=0.21.0",
+]
+evaluation = [
+    "scikit-learn>=1.0.0",
+    "matplotlib>=3.5.0",
+    "pandas>=1.3.0",
+]
+dev = [
+    "pytest>=7.0.0",
+]
+
+[tool.setuptools]
+packages = ["snpse"]
+package-dir = {"" = "src"}
+
+# Expose paper-derived environment/task factories, registries, and method obligations
+[tool.snpse.environment_factories]
+pytorch = { id = "pytorch", alias = "PyTorch", availability_check = "import torch", setup_metadata = { version = ">=1.12.0" } }
+sbi = { id = "sbi", alias = "sbi package", availability_check = "import sbi", setup_metadata = { version = ">=0.21.0" } }
+
+[tool.snpse.task_factories.slcp]
+id = "slcp"
+alias = "SLCP"
+setup_metadata = { difficulty = "challenging", description = "Two most challenging tasks including both SLCP and Lotka-Volterra", determines_which = "prior truncation boundary", can_fluctuate_based = "simulation budget" }
+availability_check = "import sbi; import torch"
+runnable_config_hook = "configs/slcp.yaml"
+data_pipeline = "src/snpse/simulators.py"
+
+[tool.snpse.task_factories.lotka_volterra]
+id = "lotka_volterra"
+alias = "Lotka-Volterra"
+setup_metadata = { difficulty = "challenging", description = "Two most challenging tasks including both SLCP and Lotka-Volterra", determines_which = "prior truncation boundary", can_fluctuate_based = "simulation budget" }
+availability_check = "import sbi; import torch"
+runnable_config_hook = "configs/lotka_volterra.yaml"
+data_pipeline = "src/snpse/simulators.py"
+
+[tool.snpse.dataset]
+explicit_paper_derived = true
+protocols_consuming_it = ["sequential training", "C2ST evaluation"]
+
+[tool.snpse.method_registry]
+make_method = "src.snpse.registry.make_method"
+callable_method_component = "src.snpse.methods.TSNPSE"
+ours = "TSNPSE"
+npe = "NPE"
+nle = "NLE"
+nre = "NRE"
+diffusion_model = "Conditional Score-based Diffusion"
+
+[tool.snpse.baseline_registry]
+snpse = { name = "SNPSE", type = "baseline_or_ablation" }
+tsnpse = { name = "TSNPSE (Algorithm 1)", type = "model_or_method" }
+conditional_score_diffusion = { name = "Conditional Score-based Diffusion", type = "model_or_method" }
+
+[tool.snpse.model_obligations.score_network]
+signature = "ScoreNetwork(theta_dim, x_dim, embed_dim=256)"
+theta_t_embedding = "实现 theta_t 的 MLP 嵌入网络（3层，每层256神经元，SiLU激活）"
+x_embedding = "实现 x 的 MLP 嵌入网络（3层，每层256神经元，SiLU激活）"
+t_embedding = "实现 t 的正弦时间嵌入（sinusoidal embedding）"
+loss_formula = "compute_dsm_loss(score_network, theta, x, t, noise)"
+loss_type = "Fisher divergence loss for score matching"
+noise_process = "实现加噪过程：根据时间 t 对 theta 进行加噪得到 theta_t"
+
+[tool.snpse.evidence_obligation_matrix]
+method_core = "src/models/score_network.py"
+tsnpse_logic = "src/methods/tsnpse.py"
+
+[tool.snpse.parameter_sweeps]
+layers = 3
+hidden_dim = 256
+activation = "SiLU"
+optimizer = "Adam"
+lr = 1e-4
+
+[tool.snpse.result_trends]
+assertions = [
+    "Loss should decrease during training"
+]
+
+[tool.snpse.reproduction_artifacts]
+method_registry = "results/method_registry.json"
+ablation_registry = "results/ablation_registry.json"

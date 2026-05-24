@@ -1,0 +1,251 @@
+# reference_grounding: paperbench_ref_001 README.md
+# reference_grounding: paperbench_ref_001 utils.py
+# reference_grounding: paperbench_ref_001 agents.py
+
+project_metadata:
+  name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+
+# 1. Entropy Schedule Config
+entropy_schedule:
+  initial_entropy_coef: 0.01
+  min_entropy_coef: 0.0001
+  decay_rate: 0.99
+  schedule_type: "exponential" # or "linear", "fixed"
+  sigma: 0.11 # A.2. Synthetic example: Appleretrieval sigma anchor
+
+# 2. Policy Loss with Entropy Configuration
+policy_loss_with_entropy:
+  formula: "L_policy = L_rl - entropy_coef * H(pi_theta)"
+  policy_index: 0
+  config:
+    entropy_coef: 0.01
+
+# 3. Sweep Registry & Bounded Sweep Entries
+sweep_registry:
+  learning_rate:
+    sweep_values: [0.0001, 0.0003, 0.001]
+    default: 0.0003
+  batch_size:
+    sweep_values: [64, 128, 256]
+    default: 128
+  fixed_hyperparameters:
+    batch_size_128: 128
+
+# 4. Method / Baseline / Attack Selectors
+method_selectors:
+  ours:
+    id: "ours"
+    aliases: ["Ours", "scaled-bc + fine-tuning + ks"]
+    description: "Proposed forgetting mitigation method"
+  ppo:
+    id: "ppo"
+    aliases: ["PPO"]
+    description: "Proximal Policy Optimization baseline"
+  sac:
+    id: "sac"
+    aliases: ["SAC"]
+    description: "Soft Actor-Critic baseline"
+  bc:
+    id: "bc"
+    aliases: ["Behavioral Cloning"]
+    description: "Behavioral Cloning baseline"
+  oracle:
+    id: "oracle"
+    description: "Oracle baseline"
+  nle:
+    id: "nle"
+    description: "NetHack Learning Environment baseline"
+  ewc:
+    id: "ewc"
+    aliases: ["Fine-tuning + EWC"]
+    description: "Elastic Weight Consolidation baseline"
+
+# 5. Environment & Task Factories
+environments:
+  NetHack:
+    id: "NetHack-v0"
+    aliases: ["nethack learning", "nle", "unit-001", "fine-tuning + bc", "arcade learning"]
+    setup_metadata:
+      eval_rollout_limit: 100000
+      eval_no_progress_limit: 150
+      eval_death_termination: true
+      fisher_matrix_batches: 10000
+      dataset_name: "NLD-AA"
+      ttyrec_dataset: "nld-aa-v0"
+    availability_check:
+      package: "nle"
+      import_test: "nle.env.NLE"
+    runnable_config_hooks:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+    metrics:
+      - "gold score"
+      - "eating score"
+      - "staircase score"
+      - "scout score"
+      - "experience points"
+      - "dungeon depth"
+
+  RoboticSequence:
+    id: "RoboticSequence-v0"
+    aliases: ["robotics", "push-wall", "peg-unplug-side", "them were originally introduced"]
+    setup_metadata:
+      num_stages: 4
+      stage_success_threshold: 0.9
+      random_start_goal: true
+      observation_space: "robot_config + stage_one_hot"
+      policy_network:
+        hidden_layers: 4
+        neurons_per_layer: 256
+    availability_check:
+      package: "metaworld"
+      import_test: "metaworld.envs.ALL_V2_ENVIRONMENTS"
+    runnable_config_hooks:
+      beta: 1.5
+      max_path_length: 200
+    metrics:
+      - "success_rate"
+      - "stage_success_rate"
+      - "Forward Transfer"
+      - "AUC"
+      - "AUC_b"
+
+# 6. Dataset & Benchmark Loaders
+datasets:
+  robotics:
+    id: "RoboticSequenceDataset"
+    aliases: ["metaworld_trajectories", "robotics"]
+    setup_metadata:
+      source: "MetaWorld"
+      type: "expert_trajectories"
+    validation_checks:
+      - "check_file_exists"
+      - "check_trajectory_length"
+    runnable_config_hooks:
+      batch_size: 128
+      batch_size_128: 128
+
+  nethack:
+    id: "TtyrecDataset"
+    aliases: ["nld-aa-v0", "nle_data"]
+    setup_metadata:
+      source: "NLD-AA"
+      type: "ttyrec"
+    validation_checks:
+      - "check_directory_exists"
+    runnable_config_hooks:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+      batch_size: 128
+      ttyrecdataset_nld_aa_v0_batch_size_128: 128
+
+# 7. Paper Formula & Algorithm Symbol Inventory
+symbol_inventory:
+  # Directories & Datasets
+  add_nledata_directory: "/tmp/nle_data"
+  add_altorg_directory: "/tmp/altorg_data"
+  TtyrecDataset_nld_aa_v0: "nld-aa-v0"
+  batch_size_128: 128
+  batch_size: 128
+
+  # Loss & Parameters
+  L_aux: "auxiliary loss term"
+  theta: "current policy parameters"
+  sum_i: "summation index over parameters"
+  F_i: "Fisher information matrix diagonal element"
+  theta_star_i: "pre-trained policy parameter i"
+  theta_i: "current policy parameter i"
+  theta_star: "pre-trained policy parameters"
+  L_BC: "behavioral cloning loss"
+  B_BC: "behavioral cloning buffer"
+  D_KL: "Kullback-Leibler divergence"
+  pi_star: "pre-trained policy"
+  pi_theta: "current policy"
+  L_KS: "kickstarting loss"
+
+  # Two-state MDPs & Synthetic example
+  s_0: 0
+  v_0: 9
+  gamma: 0.99
+  r_0: 1
+  f_theta: 0.11
+  r_1: 2.22
+  epsilon: 0.5
+  theta_mdp: 10
+  f_0: 0.08
+  f_1: 9.93
+  pi_w_b: 13
+  sigma: 11
+  asset_13: 30
+  E_k: 200
+  E_i: 1.5
+  r_t: 1.0
+  r_t_prime: 1.0
+  beta: 1.5
+  K_ij: 1.0
+  x_i: 1.0
+  x_j: 1.0
+  L_ij: 1.0
+  y_i: 1.0
+  y_j: 1.0
+  CKA: 1.0
+  HSIC: 1.0
+
+  # Numeric / Default Anchors
+  numeric_anchors:
+    anchor_128: 128
+    anchor_2: 2
+    anchor_0: 0
+    anchor_9: 9
+    anchor_1: 1
+    anchor_0_11: 0.11
+    anchor_2_22: 2.22
+    anchor_0_5: 0.5
+    anchor_10: 10
+    anchor_0_08: 0.08
+    anchor_9_93: 9.93
+    anchor_13: 13
+    anchor_11: 11
+    anchor_30: 30
+    anchor_200: 200
+    anchor_1_5: 1.5
+
+# 8. Executable Algorithm Steps & Formulas
+algorithms:
+  two_state_mdp:
+    formula: "v_0(theta) = (1 / (1 - gamma)) * (theta + r_0 * (1 - theta) * (1 - gamma * f_theta) + gamma * theta * r_1 * (1 - f_theta)) / (1 - gamma * f_theta + gamma * theta)"
+    gradient_step: "adjust theta towards the gradient"
+  forgetting_mitigation:
+    L_BC_formula: "E_{s ~ B_BC} [ D_KL( pi_*(s) || pi_theta(s) ) ]"
+    L_KS_formula: "E_{s ~ pi_theta} [ D_KL( pi_*(s) || pi_theta(s) ) ]"
+  meta_world:
+    CKA_HSIC_formula: "Compute CKA and HSIC similarity between layers"
+    random_start_goal: "randomly sample the start and goal conditions"
+  distillation:
+    L_BC_distill: "E_{s ~ B} [ D_KL^s( pi_theta || pi_* ) ]"
+  apple_retrieval:
+    linear_model: "pi_w,b with gradient descent tending towards low weight norm guided by c parameter"
+
+# 9. Output Artifacts
+artifacts:
+  sensitivity_report: "results/sensitivity_report.json"
+  config_resolved: "results/config_resolved.json"
+  figures:
+    figure_1: "results/figures/figure_1.png"
+    figure_2: "results/figures/figure_2.png"
+    figure_4: "results/figures/figure_4.png"
+    figure_12: "results/figures/figure_12.png"
+    figure_3a: "results/figures/figure_3a.png"
+    figure_3: "results/figures/figure_3.png"
+    figure_3b: "results/figures/figure_3b.png"
+    figure_3c: "results/figures/figure_3c.png"
+    figure_7: "results/figures/figure_7.png"
+    figure_5: "results/figures/figure_5.png"
+    figure_6: "results/figures/figure_6.png"
+    figure_8: "results/figures/figure_8.png"
+    figure_14: "results/figures/figure_14.png"
+    figure_15: "results/figures/figure_15.png"
+  tables:
+    table_4: "results/tables/table_4.csv"
+    table_5: "results/tables/table_5.csv"

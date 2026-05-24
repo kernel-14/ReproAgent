@@ -1,0 +1,200 @@
+# reference_grounding: paperbench_ref_001 utils.py
+
+project_metadata:
+  name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+
+# 1. Baseline Registry (Interface Contract: baseline registry)
+baseline_registry:
+  ours:
+    id: "ours"
+    aliases: ["Ours", "scaled-bc + fine-tuning + ks"]
+    factory: "src.experiments.rl_comparison_registry.make_baseline"
+    config:
+      method: "ours"
+      use_ks: true
+      use_bc: true
+  ppo:
+    id: "ppo"
+    aliases: ["PPO"]
+    factory: "src.experiments.rl_comparison_registry.make_baseline"
+    config:
+      method: "ppo"
+  sac:
+    id: "sac"
+    aliases: ["SAC"]
+    factory: "src.experiments.rl_comparison_registry.make_baseline"
+    config:
+      method: "sac"
+  bc:
+    id: "bc"
+    aliases: ["Behavioral Cloning"]
+    factory: "src.experiments.rl_comparison_registry.make_baseline"
+    config:
+      method: "bc"
+  oracle:
+    id: "oracle"
+    factory: "src.experiments.rl_comparison_registry.make_baseline"
+  nle:
+    id: "nle"
+    factory: "src.experiments.rl_comparison_registry.make_baseline"
+  ewc:
+    id: "ewc"
+    aliases: ["Fine-tuning + EWC"]
+    factory: "src.experiments.rl_comparison_registry.make_baseline"
+    config:
+      method: "ewc"
+
+# 2. Environment & Task Factories
+environment_factories:
+  NetHack:
+    id: "NetHack-v0"
+    aliases: ["nethack learning", "nle", "unit-001", "fine-tuning + bc"]
+    setup_metadata:
+      eval_rollout_limit: 100000
+      eval_no_progress_limit: 150
+      eval_death_termination: true
+    availability_check: "nle"
+    runnable_config_hooks:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+    metrics:
+      - "gold score"
+      - "eating score"
+      - "staircase score"
+      - "scout score"
+      - "experience points"
+      - "dungeon depth"
+      - "score"
+      - "turns"
+  RoboticSequence:
+    id: "RoboticSequence-v0"
+    aliases: ["robotics", "push-wall", "them were originally introduced"]
+    setup_metadata:
+      num_stages: 4
+      stage_success_threshold: 0.9
+      random_start_goal: true
+      observation_space: "robot_config + stage_one_hot"
+      policy_network:
+        hidden_layers: 4
+        neurons_per_layer: 256
+    availability_check: "metaworld"
+    runnable_config_hooks:
+      beta: 1.5
+      max_path_length: 200
+    metrics:
+      - "success rate"
+      - "return"
+      - "Forward Transfer"
+      - "AUC"
+      - "AUC_b"
+
+# 3. Dataset & Benchmark Loaders
+dataset_loaders:
+  robotics:
+    id: "robotics"
+    aliases: ["RoboticSequenceDataset", "metaworld_trajectories"]
+    setup_metadata:
+      source: "MetaWorld"
+      type: "expert_trajectories"
+    validation_checks: ["check_file_exists", "check_trajectory_length"]
+    factory: "src.data.inventory_registry_make.make_dataset"
+  nethack:
+    id: "nethack"
+    aliases: ["TtyrecDataset", "nld-aa-v0", "nle_data"]
+    setup_metadata:
+      source: "NLD-AA"
+      type: "ttyrec"
+    validation_checks: ["check_directory_exists"]
+    factory: "src.data.inventory_registry_make.make_dataset"
+
+# 4. Comparison Protocols (Interface Contract: run_comparison(config))
+comparison_protocols:
+  main_comparison:
+    id: "run_comparison"
+    runner: "src.experiments.rl_comparison_registry.run_comparison"
+    baselines: ["ours", "ppo", "sac", "bc", "ewc"]
+    environments: ["NetHack", "RoboticSequence"]
+
+# 5. Hyperparameter Anchors & Sweeps
+hyperparameters:
+  fixed_anchors:
+    batch_size_128: 128
+    gamma: 0.99
+    beta: 1.5
+    max_path_length: 200
+  sweeps:
+    learning_rate: [0.0001, 0.0003, 0.001]
+    batch_size: [64, 128, 256]
+
+# 6. Paper Formula & Algorithm Symbol Inventory (Defines Symbols)
+symbol_inventory:
+  add_nledata_directory: "/tmp/nle_data"
+  add_altorg_directory: "/tmp/altorg_data"
+  ttyrecdataset_nld_aa_v0_batch_size_128: 128
+  batch_size: 128
+  algorithm: "Algorithm 1: RoboticSequence construction"
+  distill: "Distillation-based methods"
+  compute: "Compute auxiliary loss"
+  l_aux: "Auxiliary loss term"
+  theta: "Policy parameters"
+  sum_i: "Summation index"
+  f_i: "Fisher information matrix diagonal"
+  theta_i: "Current policy parameter"
+  theta_star: "Pre-trained policy parameters"
+  L_BC: "Behavioral Cloning loss"
+  B_BC: "BC buffer"
+  D_KL: "KL divergence"
+  pi_star: "Pre-trained policy"
+  pi_theta: "Current policy"
+  L_KS: "Kickstarting loss"
+  s_0: "Initial state"
+  v_0: "Value of state s_0"
+  gamma: 0.99
+  r_0: "Reward 0"
+  f_theta: "Transition probability"
+  r_1: "Reward 1"
+  epsilon: 0.1
+  # Numeric anchors
+  numeric_anchors:
+    batch_size: 128
+    num_phases: 2
+    home_x: 0
+    max_x: 9
+    reward_correct: 1
+    reward_incorrect: -1
+    obs_phase_1: -0.11
+    obs_phase_2: 2.22
+    alpha: 0.5
+    beta: 1.5
+    max_steps_robotics: 200
+    success_threshold: 0.9
+    CKA_threshold: 0.08
+    HSIC_threshold: 9.93
+    num_hidden_layers: 4
+    neurons_per_layer: 256
+    num_stages: 4
+    eval_rollout_limit: 100000
+    eval_no_progress_limit: 150
+    asset_13: 13
+    sigma: 11
+    c_param: 30
+
+# 7. Artifact Writers (Calls Symbols)
+artifact_writers:
+  baseline_registry: "src.reporting.rl_comparison_registry.write_baseline_registry_artifact"
+  baseline_comparison: "src.reporting.rl_comparison_registry.write_baseline_comparison_artifact"
+  metrics: "src.reporting.rl_comparison_registry.write_metrics_artifact"
+  figure_1: "src.reporting.rl_comparison_registry.write_figure_1_artifact"
+  figure_2: "src.reporting.rl_comparison_registry.write_figure_2_artifact"
+  figure_4: "src.reporting.rl_comparison_registry.write_figure_4_artifact"
+  figure_12: "src.reporting.rl_comparison_registry.write_figure_12_artifact"
+  figure_3a: "src.reporting.rl_comparison_registry.write_figure_3a_artifact"
+  figure_6: "src.reporting.rl_comparison_registry.write_figure_6_artifact"
+  figure_14: "src.reporting.rl_comparison_registry.write_figure_14_artifact"
+  table_4: "src.reporting.rl_comparison_registry.write_table_4_artifact"
+  table_5: "src.reporting.rl_comparison_registry.write_table_5_artifact"
+  # Routes
+  run_figure_4_route: "src.experiments.rl_comparison_registry.run_figure_4_route"
+  run_figure_6_route: "src.experiments.rl_comparison_registry.run_figure_6_route"
+  run_figure_9_route: "src.experiments.rl_comparison_registry.run_figure_9_route"

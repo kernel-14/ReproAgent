@@ -1,0 +1,262 @@
+# reference_grounding: paperbench_ref_001 README.md
+# Evidence Obligation Registry for LBCS (Lexicographic Bilevel Coreset Selection) reproduction.
+
+# Environment/Task Factories
+environments:
+  unit_001:
+    id: "unit-001"
+    alias: "unit-001"
+    setup_metadata:
+      type: "unit_test"
+      description: "Unit 001 environment setup"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_unit_001"
+  unit_005_protocol_implement_main:
+    id: "unit-005 protocol implement main"
+    alias: "unit-005"
+    setup_metadata:
+      type: "protocol"
+      description: "Unit 005 protocol implementation main"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_unit_005"
+  cifar:
+    id: "cifar"
+    alias: "cifar"
+    setup_metadata:
+      type: "classification"
+      task: "image_classification"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_cifar"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    setup_metadata:
+      type: "classification"
+      task: "image_classification"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_imagenet"
+  mnist:
+    id: "mnist"
+    alias: "mnist"
+    setup_metadata:
+      type: "classification"
+      task: "image_classification"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_mnist"
+  svhn:
+    id: "svhn"
+    alias: "svhn"
+    setup_metadata:
+      type: "classification"
+      task: "image_classification"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_svhn"
+  is_no_explicit_concept:
+    id: "is no explicit concept"
+    alias: "no_explicit_concept"
+    setup_metadata:
+      type: "ablation"
+      description: "No explicit concept ablation"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_no_explicit_concept"
+  bind_each_baseline:
+    id: "bind each baseline"
+    alias: "bind_each_baseline"
+    setup_metadata:
+      type: "baseline_binding"
+      description: "Bind each baseline setup"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_bind_each_baseline"
+  worse_ablation_performance_without_fabricating:
+    id: "worse ablation performance without fabricating"
+    alias: "worse_ablation"
+    setup_metadata:
+      type: "ablation"
+      description: "Worse ablation performance without fabricating"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_worse_ablation"
+  versus_mlp_policies_when_paper:
+    id: "versus mlp policies when paper"
+    alias: "versus_mlp"
+    setup_metadata:
+      type: "comparison"
+      description: "Versus MLP policies when paper"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_versus_mlp"
+  determines_which:
+    id: "determines which"
+    alias: "determines_which"
+    setup_metadata:
+      type: "analysis"
+      description: "Determines which analysis"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_determines_which"
+  keep_all_paper_visible:
+    id: "keep all paper-visible"
+    alias: "keep_all_paper_visible"
+    setup_metadata:
+      type: "registry"
+      description: "Keep all paper-visible"
+    availability_check: true
+    runnable_config_hook: "src.experiment_registry.setup_keep_all_paper_visible"
+
+# Dataset/Benchmark Loaders
+datasets:
+  fmnist:
+    id: "F-MNIST"
+    alias: "mnist"
+    setup_metadata:
+      name: "Fashion-MNIST"
+      num_classes: 10
+    validation_check: true
+    runnable_config_hook: "src.data.load_fmnist"
+  cifar10:
+    id: "CIFAR-10"
+    alias: "cifar"
+    setup_metadata:
+      name: "CIFAR-10"
+      num_classes: 10
+    validation_check: true
+    runnable_config_hook: "src.data.load_cifar10"
+  cifar100:
+    id: "CIFAR-100"
+    alias: "cifar"
+    setup_metadata:
+      name: "CIFAR-100"
+      num_classes: 100
+    validation_check: true
+    runnable_config_hook: "src.data.load_cifar100"
+  imagenet_1k:
+    id: "ImageNet-1k"
+    alias: "imagenet_1k"
+    setup_metadata:
+      name: "ImageNet-1k"
+      num_classes: 1000
+    validation_check: true
+    runnable_config_hook: "src.data.load_imagenet_1k"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    setup_metadata:
+      name: "ImageNet"
+      num_classes: 1000
+    validation_check: true
+    runnable_config_hook: "src.data.load_imagenet"
+  mnist:
+    id: "mnist"
+    alias: "mnist"
+    setup_metadata:
+      name: "MNIST"
+      num_classes: 10
+    validation_check: true
+    runnable_config_hook: "src.data.load_mnist"
+  svhn:
+    id: "svhn"
+    alias: "svhn"
+    setup_metadata:
+      name: "SVHN"
+      num_classes: 10
+    validation_check: true
+    runnable_config_hook: "src.data.load_svhn"
+
+# Method/Baseline/Attack Selectors
+methods:
+  ours:
+    id: "ours"
+    alias: "LBCS"
+    description: "LBCS (Lexicographic Bilevel Coreset Selection)"
+  oracle:
+    id: "oracle"
+    alias: "oracle"
+    description: "Oracle baseline"
+  vit:
+    id: "vit"
+    alias: "vit"
+    description: "ViT baseline"
+  ppo:
+    id: "ppo"
+    alias: "ppo"
+    description: "PPO baseline"
+  resnet:
+    id: "resnet"
+    alias: "resnet"
+    description: "ResNet baseline"
+
+# Parameter Sweeps
+sweeps:
+  group_size:
+    default: 100
+    values: [100]
+  noise_rate:
+    default: 0.3
+    values: [0.3]
+  noise_type:
+    default: "symmetric"
+    values: ["symmetric"]
+  k:
+    default: 1000
+    values: [1000, 2000, 3000, 4000]
+  lambda_values:
+    default: 0
+    values: [0, 1]
+  epochs:
+    default: 100
+    values: [10, 50, 100]
+
+# Fixed Hyperparameter Anchors
+hyperparameters:
+  momentum_0_9:
+    name: "momentum"
+    value: 0.9
+
+# Result Trend Assertions
+result_trends:
+  baseline_outperformance:
+    description: "proposed method should be compared against explicit baselines"
+    assertion: "ours_accuracy > baseline_accuracy"
+
+# Reproduction Artifacts
+artifacts:
+  evidence_contract_matrix:
+    path: "results/evidence_contract_matrix.json"
+    writer: "write_evidence_contract_matrix_artifact"
+  experiment_registry:
+    path: "results/experiment_registry.json"
+    writer: "write_experiment_registry_artifact"
+  metrics:
+    path: "results/metrics.json"
+    writer: "write_metrics_artifact"
+  environment_registry:
+    path: "results/environment_registry.json"
+    writer: "write_environment_registry_artifact"
+  dataset_registry:
+    path: "results/dataset_registry.json"
+    writer: "write_dataset_registry_artifact"
+  artifact_manifest:
+    path: "results/artifact_manifest.json"
+    writer: "write_artifact_manifest"
+  sensitivity_report:
+    path: "results/sensitivity_report.json"
+    writer: "write_sensitivity_report"
+  table2_results:
+    path: "results/table2_results.json"
+    writer: "write_table2_results_artifact"
+  robustness_results:
+    path: "results/robustness_results.json"
+    writer: "write_robustness_results_artifact"
+  imagenet_results:
+    path: "results/imagenet_results.json"
+    writer: "write_imagenet_results_artifact"
+  figure_1:
+    path: "results/figures/figure_1.png"
+    writer: "write_figure_1_artifact"
+    runner: "run_figure_1_route"
+  table_1:
+    path: "results/tables/table_1.csv"
+    writer: "write_table_1_artifact"
+    runner: "run_table_1_route"
+
+# Active Reproduction Scope Notes
+reproduction_scope:
+  notes: "Faithful reproduction of LBCS coreset selection under model performance constraints."
+  seeds: [42, 100, 2023]

@@ -1,0 +1,251 @@
+# configs/fare_config.yaml
+# Reference Grounding: paperbench_ref_001 README.md, paperbench_ref_002 open_flamingo/eval/README.md, paperbench_ref_003 train.py
+
+reproduction_scope:
+  active_scope_note: "Unsupervised Adversarial Fine-Tuning of Vision Encoders (FARE) and Robustness Evaluation on Zero-Shot and LVLM tasks."
+  seed: 42
+  output_dir: "results"
+  summary_path: "results/summary.json"
+
+# Paper-derived environment/task factories and aliases
+environments:
+  aliases:
+    cifar: "cifar"
+    imagenet: "imagenet"
+    coco: "coco"
+    flickr30k: "flickr30k"
+    stl10: "stl10"
+  tasks:
+    unit-001:
+      id: "unit-001"
+      name: "FARE Unsupervised Adversarial Fine-Tuning"
+      setup_metadata:
+        description: "Unsupervised adversarial fine-tuning framework for vision encoders"
+      availability_check: "src.fare.utils.check_environment"
+    zero-shot:
+      id: "zero-shot"
+      name: "Zero-Shot Classification"
+      setup_metadata:
+        description: "Zero-shot classification evaluation on robust vision encoders"
+      availability_check: "src.fare.utils.check_environment"
+    lvlm_tasks:
+      id: "lvlm tasks"
+      name: "Large Vision-Language Model Tasks"
+      setup_metadata:
+        description: "Evaluation of LVLMs with robust vision encoders"
+      availability_check: "src.fare.utils.check_environment"
+    cifar:
+      id: "cifar"
+      name: "CIFAR-10/100 Classification"
+      setup_metadata:
+        description: "Zero-shot evaluation on CIFAR datasets"
+      availability_check: "src.fare.utils.check_environment"
+    imagenet:
+      id: "imagenet"
+      name: "ImageNet Classification"
+      setup_metadata:
+        description: "Zero-shot evaluation on ImageNet-1k and variants"
+      availability_check: "src.fare.utils.check_environment"
+    coco:
+      id: "coco"
+      name: "COCO Captioning / Retrieval"
+      setup_metadata:
+        description: "Evaluation on COCO dataset"
+      availability_check: "src.fare.utils.check_environment"
+    flickr30k:
+      id: "flickr30k"
+      name: "Flickr30k Captioning / Retrieval"
+      setup_metadata:
+        description: "Evaluation on Flickr30k dataset"
+      availability_check: "src.fare.utils.check_environment"
+    stl10:
+      id: "stl10"
+      name: "STL-10 Classification"
+      setup_metadata:
+        description: "Zero-shot evaluation on STL-10 dataset"
+      availability_check: "src.fare.utils.check_environment"
+    visual_question_answering:
+      id: "visual-question answering"
+      name: "Visual Question Answering"
+      setup_metadata:
+        description: "Evaluation on VQA datasets"
+      availability_check: "src.fare.utils.check_environment"
+
+# Paper-derived dataset/benchmark loaders
+datasets:
+  aliases:
+    cifar: "cifar10"
+    imagenet: "imagenet_1k"
+    coco: "coco"
+    flickr30k: "flickr30k"
+    stl10: "stl10"
+    imagenet_r: "imagenet_r"
+    imagenet_sketch: "imagenet_sketch"
+    vqav2: "vqav2"
+    textvqa: "textvqa"
+    pope: "pope"
+    sqa_i: "sqa_i"
+    caltech101: "caltech101"
+    stanford_cars: "stanford_cars"
+    fgvc_aircraft: "fgvc_aircraft"
+    flowers: "flowers"
+    pcam: "pcam"
+    oxford_pets: "oxford_pets"
+    imagenet_1k: "imagenet_1k"
+  loaders:
+    imagenet_1k:
+      id: "ImageNet-1k"
+      trust_remote_code: true
+      load_dataset: "huggingface"
+      setup_metadata:
+        path: "imagenet-1k"
+        split: "validation"
+    imagenet_a:
+      id: "ImageNet-A"
+      setup_metadata:
+        path: "imagenet-a"
+    imagenet_r:
+      id: "ImageNet-R"
+      setup_metadata:
+        path: "imagenet-r"
+    imagenet_sketch:
+      id: "ImageNet-Sketch"
+      setup_metadata:
+        path: "imagenet-sketch"
+    imagenet_v2:
+      id: "ImageNet-V2"
+      setup_metadata:
+        path: "imagenet-v2"
+    pope:
+      id: "POPE"
+      setup_metadata:
+        path: "pope"
+    sqa_i:
+      id: "SQA-I"
+      setup_metadata:
+        path: "sqa-i"
+    cifar:
+      id: "cifar"
+      setup_metadata:
+        path: "cifar10"
+    coco:
+      id: "coco"
+      setup_metadata:
+        path: "coco"
+    flickr30k:
+      id: "flickr30k"
+      setup_metadata:
+        path: "flickr30k"
+    stl10:
+      id: "stl10"
+      setup_metadata:
+        path: "stl10"
+    vqav2:
+      id: "vqav2"
+      setup_metadata:
+        path: "vqav2"
+    textvqa:
+      id: "textvqa"
+      setup_metadata:
+        path: "textvqa"
+
+# Method, baseline, and attack selectors
+selectors:
+  methods:
+    - "ours"
+    - "chain_of_thought"
+    - "clip"
+    - "robust_clip"
+    - "vit"
+    - "fine_tuning"
+    - "llava"
+    - "openflamingo"
+    - "tecoa"
+    - "fare"
+    - "apgd"
+    - "autoattack"
+    - "pgd"
+  baselines:
+    - "clip"
+    - "tecoa"
+  attacks:
+    - "apgd"
+    - "autoattack"
+    - "pgd"
+
+# Parameter sweeps and bounded config entries
+sweeps:
+  weight_decay: [1e-4, 1e-5]
+  epsilon: [0.00784313725, 0.0156862745] # 2/255, 4/255
+  epsilon_values: [2, 255, 4]
+  learning_rate: [1e-5, 1e-4]
+  batch_size: [128, 256]
+
+# Fixed hyperparameter anchors
+hyperparameters:
+  iterations_100: 100
+  iterations_10000: 10000
+  iterations_5000: 5000
+  ground_truths_5: 5
+  epochs_2: 2
+  pgd_steps_10: 10
+  epsilon_4_255: 0.01568627450980392 # 4/255
+  epsilon_2_255: 0.00784313725490196 # 2/255
+  alpha_1_255: 0.00392156862745098 # 1/255
+  adamw_betas: [0.9, 0.95]
+  weight_decay_1e_4: 0.0001
+  batch_size_128: 128
+  momentum: 0.9
+  lr_scheduler: "cosine_decay_with_linear_warmup"
+
+# Paper formula/algorithm symbol inventory and numeric/default anchors
+symbols_and_formulas:
+  l_infinity: "l_infinity"
+  ell_infty: "ell_infty"
+  ell_2: "ell_2"
+  ell_1: "ell_1"
+  R_d: "R^d"
+  L_clean: "L_clean"
+  phi_FT: "phi_FT"
+  phi_Org: "phi_Org"
+  FT: "FT"
+  L_adv: "L_adv"
+  varepsilon_infty: "varepsilon_infty"
+  LR: 1e-5
+  WD: 1e-4
+  numeric_anchors:
+    val_5000: 5000
+    val_1: 1
+    val_255: 255
+    val_2: 2
+    val_4: 4
+    val_6: 6
+    val_3: 3
+    val_5: 5
+    val_4_2: 4.2
+    val_10: 10
+    val_32: 32
+    val_15_7: 15.7
+    val_17_4: 17.4
+    val_14_4: 14.4
+    val_5_6: 5.6
+    val_500: 500
+  llava_adversarial_output:
+    target: "EmailAPI(to=<target email>, subject=User(...) ![](assets/asset_6.jpg) CLIP: A piza with pepperoni and mushrooms on it."
+    email_api_to: "EmailAPIto=<targetemail>,subject=User"
+    asset_6: "asset_6"
+    email_api_to_query: "EmailAPIto=<targetemail>,subject=UserQuery,body=attack"
+  embedding_loss_eval:
+    clean_loss_formula: "L_clean(x) = ||phi_FT(x) - phi_Org(x)||_2^2"
+    adv_loss_formula: "L_adv(x) = max_{z: ||z-x||_infty <= epsilon} ||phi_FT(z) - phi_Org(x)||_2^2"
+    num_images: 500
+    apgd_steps: 100
+    epsilon: 0.01568627450980392 # 4/255
+  tecoa_comparison:
+    vit_b32_original_url: "https://github.com/cvlab-columbia/ZSRobust4FoundationModel"
+    cosine_similarity_relation: "||u/||u||_2 - v/||v||_2||_2^2 = 2 - 2 cos(u, v)"
+    table_10_title: "Comparison of ViT-B/32 CLIP models for image classification."
+  ablation_hyperparameters:
+    selected_lr: 1e-5
+    selected_wd: 1e-4
+    clean_gain_pct: 4.2

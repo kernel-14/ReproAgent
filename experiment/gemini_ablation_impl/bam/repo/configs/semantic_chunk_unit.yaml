@@ -1,0 +1,173 @@
+# configs/semantic_chunk_unit.yaml
+# reference_grounding: paperbench_ref_008 docs/jep/12049-type-annotations.md
+# reference_grounding: paperbench_ref_005 doc/use_cases.md
+
+metadata:
+  name: "Semantic Chunk Unit Configuration"
+  description: "Configuration for evaluation metrics, environment factories, dataset loaders, parameter sweeps, and formula anchors."
+
+# Paper evidence contract: explicitly register environment/task aliases for cifar.
+environment_factories:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10", "cifar_keep_external"]
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+      kernel_size: 3
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  determines_which:
+    id: "determines_which"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  keep_all_paper_visible:
+    id: "keep_all_paper_visible"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  config_data_pipeline:
+    id: "config_data_pipeline"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  config_factory:
+    id: "config_factory"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  registry_configuration_artifact:
+    id: "registry_configuration_artifact"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  implement_explicit_paper_derived_dataset:
+    id: "implement_explicit_paper_derived_dataset"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  protocols_that_consume_it:
+    id: "protocols_that_consume_it"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  represent_full:
+    id: "represent_full"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  determines_which_adapters:
+    id: "determines_which_adapters"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  data_pipeline_evaluation_config_tests_expose:
+    id: "data_pipeline_evaluation_config_tests_expose"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+  cifar_keep_external:
+    id: "cifar_keep_external"
+    factory: "src.data.task_setup_factory.make_task_setup_factory"
+
+# Paper-derived dataset/benchmark loaders
+dataset_loaders:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar10", "cifar-10"]
+    setup_metadata:
+      in_channels: 3
+      c_hid: 64
+      latent_dim: 128
+    validation_checks:
+      - "check_channels"
+      - "check_resolution"
+    runnable_config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+
+# Method/baseline/attack selectors
+method_selectors:
+  ours:
+    id: "ours"
+    class_path: "src.methods.semantic_chunk_loss.BaMMethod"
+    description: "Batch and Match (BaM) Variational Inference"
+  baseline:
+    id: "baseline"
+    class_path: "src.methods.semantic_chunk_loss.ADVIMethod"
+    description: "Automatic Differentiation Variational Inference (ADVI)"
+  100_iterations:
+    id: "100_iterations"
+    class_path: "src.methods.semantic_chunk_loss.BaMMethod"
+    description: "BaM run with 100 iterations limit"
+
+# Parameter sweeps
+parameter_sweeps:
+  lambda:
+    default: 1.0
+    values: [0.1, 1.0, 10.0, 100.0]
+  p:
+    default: 2.0
+    values: [1.0, 2.0]
+  learning_rate:
+    default: 0.001
+    values: [0.0001, 0.001, 0.01, 0.1]
+  batch_size:
+    default: 64
+    values: [16, 32, 64, 128]
+
+# Metric registry
+metric_registry:
+  kl_divergence:
+    name: "KL Divergence"
+    formula: "reverse_kl"
+    target_id: "measurement:kl_divergence"
+  score_divergence:
+    name: "Score-based Divergence"
+    formula: "score_divergence"
+    target_id: "measurement:score_divergence"
+  loss:
+    name: "Loss"
+    formula: "compute_paper_loss"
+  mse:
+    name: "Mean Squared Error"
+    formula: "mean_squared_error"
+  accuracy:
+    name: "Accuracy"
+    formula: "compute_accuracy"
+
+# Paper formula/algorithm symbol inventory
+formula_symbols:
+  convin_channels_3_out_channels_c_hid_kernel_size_3_stride_2: "Convin_channels=3,out_channels=c_hid,kernel_size=3,stride=2"
+  in_channels: 3
+  out_channels: 64
+  c_hid: 64
+  kernel_size: 3
+  convin_channels_c_hid_out_channels_c_hid_kernel_size_3_stride_1: "Convin_channels=c_hid,out_channels=c_hid,kernel_size=3,stride=1"
+  convin_channels_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2: "Convin_channels=c_hid,out_channels=2×c_hid,kernel_size=3,stride=2"
+  convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_1: "Convin_channels=2×c_hid,out_channels=2×c_hid,kernel_size=3,stride=1"
+  convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2: "Convin_channels=2×c_hid,out_channels=2×c_hid,kernel_size=3,stride=2"
+  denseoutput_latent_dim: "Denseoutput=latent_dim"
+  latent_dim: 128
+  KL: "KL"
+  S_plus_plus_D: "S_++^D"
+  R_DtimesD: "R^DtimesD"
+  Sigma_top: "Sigma^top"
+  sum_d_1_D: "sum_d=1^D"
+  gradient: "gradient"
+
+# Algorithm steps and anchors
+algorithm_anchors:
+  bam_algorithm:
+    section: "3.1. Algorithm"
+    steps:
+      - "Sample z_1, ..., z_B ~ q_t"
+      - "Compute scores g_b = nabla log p(z_b)"
+      - "Calculate batch statistics z_bar, g_bar, C, Gamma"
+      - "Update variational parameters mu_t+1, Sigma_t+1 using learning rate lambda_t"
+    defaults:
+      iterations: 100
+      batch_size: 64
+      learning_rate: 0.001
+
+  advi_baseline:
+    section: "E.1. Implementation of baselines"
+    steps:
+      - "Sample z_1, ..., z_B ~ q_t"
+      - "Compute ELBO gradient w.r.t. variational parameters"
+      - "Update parameters using learning rate lambda_t"
+    defaults:
+      iterations: 100
+      batch_size: 64
+      learning_rate: 0.001
+
+  gsm_baseline:
+    section: "E.1. Implementation of baselines"
+    steps:
+      - "Sample z_1, ..., z_B ~ q_t"
+      - "Compute score matching objective gradient"
+      - "Update parameters"
+    defaults:
+      iterations: 100
+      batch_size: 64
+      learning_rate: 0.001

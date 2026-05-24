@@ -1,0 +1,183 @@
+# configs/evidence_obligation_registry.yaml
+# Reference Grounding: paper_evidence_matrix (chunk_005, chunk_007, chunk_008)
+
+metadata:
+  paper_title: "Stochastic Interpolants with Data-Dependent Couplings"
+  reproduction_scope: "Faithful reproduction of stochastic interpolants with data-dependent couplings vs independent Gaussian baselines"
+  trust_remote_code: true
+  seed: 42
+  output_dir: "results"
+
+environment_task_factories:
+  unit-006:
+    id: "unit-006"
+    alias: "unit_006_fast_test"
+    description: "Fast smoke test environment with synthetic shapes"
+    availability_check: "src.data.pipeline.check_synthetic_available"
+    setup_metadata:
+      resolution: [32, 32]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    description: "ImageNet-1k dataset from HuggingFace"
+    dataset_name: "imagenet-1k"
+    trust_remote_code: true
+    availability_check: "src.data.pipeline.check_imagenet_available"
+    setup_metadata:
+      resolution: [256, 256]
+      channels: 3
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  low-resolution-image:
+    id: "low-resolution-image"
+    alias: "imagenet_c"
+    description: "Low-resolution or corrupted ImageNet subset for downstream tasks"
+    availability_check: "src.data.pipeline.check_imagenet_c_available"
+    setup_metadata:
+      resolution: [64, 64]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+dataset_loaders:
+  synthetic_shapes:
+    id: "synthetic_shapes"
+    name: "Synthetic shapes or a small subset of ImageNet/CIFAR-10"
+    validation_check: "src.data.pipeline.validate_synthetic"
+    setup_metadata:
+      num_samples: 100
+  imagenet_1k:
+    id: "imagenet_1k"
+    name: "imagenet"
+    validation_check: "src.data.pipeline.validate_imagenet"
+    setup_metadata:
+      trust_remote_code: true
+      split: "validation"
+  imagenet_c:
+    id: "imagenet_c"
+    name: "imagenet_c"
+    validation_check: "src.data.pipeline.validate_imagenet_c"
+    setup_metadata:
+      corruption: "gaussian_noise"
+      severity: 1
+
+method_baseline_selectors:
+  ours:
+    id: "ours"
+    name: "Stochastic Interpolants with Data-Dependent Couplings"
+    class_path: "src.interpolants.stochastic_interpolant.StochasticInterpolant"
+    coupling: "dependent"
+  resnet:
+    id: "resnet"
+    name: "ResNet Baseline"
+    class_path: "src.models.unet.UNet"
+  ddpm:
+    id: "ddpm"
+    name: "Denoising Diffusion Probabilistic Models"
+    class_path: "src.models.unet.UNet"
+  diffusion_model:
+    id: "diffusion_model"
+    name: "Standard Diffusion Model"
+    class_path: "src.models.unet.UNet"
+
+fixed_hyperparameters:
+  batch_size_32:
+    batch_size: 32
+  mask_tiles_64:
+    mask_tiles: 64
+  mask_probability_0.3:
+    mask_probability: 0.3
+
+parameter_sweeps:
+  gamma:
+    name: "gamma"
+    values: [0.0, 1.0]
+    default: 1.0
+  learning_rate:
+    name: "learning_rate"
+    values: [0.0001, 0.0002, 0.0005]
+    default: 0.0002
+  batch_size:
+    name: "batch_size"
+    values: [16, 32, 64]
+    default: 32
+  alpha_t:
+    name: "alpha_t"
+    description: "alpha_t coefficient and its derivative"
+    formula: "1 - t"
+    derivative: "-1"
+  beta_t:
+    name: "beta_t"
+    description: "beta_t coefficient and its derivative"
+    formula: "t"
+    derivative: "1"
+  num_integration_steps:
+    name: "num_integration_steps"
+    values: [10, 20, 50, 100]
+    default: 50
+  solver_type:
+    name: "solver_type"
+    values: ["euler", "rk4"]
+    default: "euler"
+  epochs:
+    name: "epochs"
+    values: [1, 5, 10]
+    default: 1
+
+measurement_collection:
+  metrics:
+    - id: "fid"
+      name: "Fréchet Inception Distance"
+      formula: "src.evaluation.metrics.calculate_fid"
+      target: 0.0
+  aggregations:
+    - id: "mean"
+      function: "numpy.mean"
+
+reproduction_artifacts:
+  evidence_contract_matrix:
+    path: "results/evidence_contract_matrix.json"
+    writer: "src.reporting.evidence_obligation_registry.write_evidence_contract_matrix_artifact"
+  experiment_registry:
+    path: "results/experiment_registry.json"
+    writer: "src.reporting.evidence_obligation_registry.write_experiment_registry_artifact"
+  metrics:
+    path: "results/metrics.json"
+    writer: "src.reporting.evidence_obligation_registry.write_metrics_artifact"
+  environment_registry:
+    path: "results/environment_registry.json"
+    writer: "src.reporting.evidence_obligation_registry.write_environment_registry_artifact"
+  dataset_registry:
+    path: "results/dataset_registry.json"
+    writer: "src.reporting.evidence_obligation_registry.write_dataset_registry_artifact"
+  artifact_manifest:
+    path: "results/artifact_manifest.json"
+    writer: "src.reporting.evidence_obligation_registry.write_artifact_manifest_artifact"
+  sensitivity_report:
+    path: "results/sensitivity_report.json"
+    writer: "src.reporting.evidence_obligation_registry.write_sensitivity_report_artifact"
+  figure_1:
+    path: "results/figures/figure_1.png"
+    writer: "src.reporting.evidence_obligation_registry.write_figure_1_artifact"
+    route: "src.reporting.evidence_obligation_registry.run_figure_1_route"
+  figure_2:
+    path: "results/figures/figure_2.png"
+    writer: "src.reporting.evidence_obligation_registry.write_figure_2_artifact"
+    route: "src.reporting.evidence_obligation_registry.run_figure_2_route"
+  figure_3:
+    path: "results/figures/figure_3.png"
+    writer: "src.reporting.evidence_obligation_registry.write_figure_3_artifact"
+    route: "src.reporting.evidence_obligation_registry.run_figure_3_route"
+  table_2:
+    path: "results/tables/table_2.csv"
+    writer: "src.reporting.evidence_obligation_registry.write_table_2_artifact"
+  table_3:
+    path: "results/tables/table_3.csv"
+    writer: "src.reporting.evidence_obligation_registry.write_table_3_artifact"
+  figure_4:
+    path: "results/figures/figure_4.png"
+    writer: "src.reporting.evidence_obligation_registry.write_figure_4_artifact"
+  figure_6:
+    path: "results/figures/figure_6.png"
+    writer: "src.reporting.evidence_obligation_registry.write_figure_6_artifact"

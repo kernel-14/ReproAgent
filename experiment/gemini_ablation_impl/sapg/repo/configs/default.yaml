@@ -1,0 +1,408 @@
+# configs/default.yaml
+# SAPG: Split and Aggregate Policy Gradients - Default Configuration
+# Reference Grounding: paper_contract_sweep_hyperparameter_protocol, paper_task_environment_setup, paper_training_or_optimization_loop
+
+project:
+  name: "sapg_reproduction"
+  description: "Faithful reproduction of Split and Aggregate Policy Gradients (SAPG)"
+
+# 3. Preliminaries & Algorithm Symbols Inventory
+symbols:
+  s_0: "initial_state"
+  a_t: "action_at_t"
+  s_t: "state_at_t"
+  sum_t_0_T_1: "sum_{t=0}^{T-1}"
+  gamma_t: "gamma^t"
+  A_hat: "advantage_estimate"
+  pi_theta: "policy_parameterized_by_theta"
+  nabla_theta: "policy_gradient"
+  rho_d: "state_visitation_distribution"
+  Q_hat: "action_value_estimate"
+  V_hat: "state_value_estimate"
+  L_on: "on_policy_loss"
+  pi_old: "old_policy"
+  r_t: "reward_at_t"
+  epsilon: "ppo_clip_parameter"
+  A_t: "advantage_at_t"
+  pi_1: "policy_1"
+  pi_M: "policy_M"
+  pi_i: "policy_i"
+  pi_j: "policy_j"
+  L_off: "off_policy_loss"
+  mu: "importance_weight_threshold"
+  pi_i_old: "old_policy_i"
+  lambda: "aggregation_weight"
+
+numeric_anchors:
+  zero: 0
+  one: 1
+  two: 2
+  three: 3
+  six: 6
+  seven: 7
+  twenty_three: 23
+  thirty: 30
+  entropy_coef_default: 0.005
+  num_environments: 24576
+
+# Expose required parameter sweeps as executable constants/default accessors
+sweeps:
+  M:
+    default: 4
+    values: [2, 4, 8]
+    description: "Number of parallel policies (leader + followers)"
+  lambda:
+    default: 1.0
+    values: [0.1, 0.5, 1.0, 2.0]
+    description: "Aggregation weight for off-policy updates"
+  mu:
+    default: 0.1
+    values: [0.01, 0.05, 0.1, 0.2]
+    description: "Importance weight threshold"
+  sigma:
+    default: 0.003
+    values: [0.0, 0.003, 0.005]
+    description: "Entropy coefficients for followers to enforce diversity"
+  epochs:
+    default: 100
+    values: [50, 100, 200]
+    description: "Number of training epochs"
+  batch_size:
+    default: 4096
+    values: [1024, 2048, 4096, 8192]
+    description: "Batch size for policy updates"
+
+# Method/Baseline selectors
+methods:
+  selectors:
+    - "ours"
+    - "sapg"
+    - "ppo"
+    - "pbt"
+    - "pql"
+    - "ddpg"
+  default_method: "sapg"
+
+# Environment registry and factories
+environments:
+  registry:
+    AllegroKuka-Throw:
+      id: "AllegroKuka-Throw"
+      alias: "kuka_throw"
+      difficulty: "hard"
+      dof: 23 # 16 hand + 7 arm
+      observation_space: ["q", "q_dot", "x_t", "v_t", "omega_t", "g_t", "z_t"]
+      exploration_noise: 0.2
+      setup_metadata:
+        task: "throwing a cuboidal object to a target"
+        simulator: "IsaacGym"
+      availability_check: "check_allegrokuka_throw_available"
+      runnable_config_hook: "setup_allegrokuka_throw"
+    AllegroKuka-Regrasping:
+      id: "AllegroKuka-Regrasping"
+      alias: "kuka_regrasping"
+      difficulty: "hard"
+      dof: 23
+      observation_space: ["q", "q_dot", "x_t", "v_t", "omega_t", "g_t", "z_t"]
+      exploration_noise: 0.15
+      setup_metadata:
+        task: "regrasping a cuboidal object on a table"
+        simulator: "IsaacGym"
+      availability_check: "check_allegrokuka_regrasping_available"
+      runnable_config_hook: "setup_allegrokuka_regrasping"
+    AllegroKuka-Reorientation:
+      id: "AllegroKuka-Reorientation"
+      alias: "kuka_reorientation"
+      difficulty: "hard"
+      dof: 23
+      observation_space: ["q", "q_dot", "x_t", "v_t", "omega_t", "g_t", "z_t"]
+      exploration_noise: 0.1
+      setup_metadata:
+        task: "reorienting a cuboidal object on a table"
+        simulator: "IsaacGym"
+      availability_check: "check_allegrokuka_reorientation_available"
+      runnable_config_hook: "setup_allegrokuka_reorientation"
+    AllegroHand-Reorient:
+      id: "AllegroHand-Reorient"
+      alias: "hand_reorient"
+      difficulty: "easy"
+      dof: 16
+      observation_space: ["q", "q_dot", "x_t", "v_t", "omega_t", "g_t"]
+      exploration_noise: 0.05
+      setup_metadata:
+        task: "in-hand reorientation of a cube"
+        simulator: "IsaacGym"
+      availability_check: "check_allegrohand_reorient_available"
+      runnable_config_hook: "setup_allegrohand_reorient"
+    ShadowHand-Reorient:
+      id: "ShadowHand-Reorient"
+      alias: "shadow_reorient"
+      difficulty: "easy"
+      dof: 24
+      observation_space: ["q", "q_dot", "x_t", "v_t", "omega_t", "g_t"]
+      exploration_noise: 0.05
+      setup_metadata:
+        task: "in-hand reorientation of a cube"
+        simulator: "IsaacGym"
+      availability_check: "check_shadowhand_reorient_available"
+      runnable_config_hook: "setup_shadowhand_reorient"
+
+# Callable protocol matrix linking named experiments to environments, methods, metrics, and artifact writers
+experiment_matrix:
+  Experiment_I:
+    name: "Experiment I: AllegroKuka (Throw, Regrasping, Reorientation)"
+    environments:
+      - "AllegroKuka-Throw"
+      - "AllegroKuka-Regrasping"
+      - "AllegroKuka-Reorientation"
+    methods:
+      - "sapg"
+      - "ppo"
+      - "pbt"
+      - "pql"
+      - "ddpg"
+    metrics:
+      - "success_rate"
+      - "mean_reward"
+      - "sample_efficiency"
+    artifact_writers:
+      - "write_table_1"
+      - "write_table_2"
+      - "write_table_3"
+      - "write_table_4"
+      - "write_figure_2"
+      - "write_figure_7"
+  Experiment_II:
+    name: "Experiment II: Easy Tasks (AllegroHand, ShadowHand)"
+    environments:
+      - "AllegroHand-Reorient"
+      - "ShadowHand-Reorient"
+    methods:
+      - "sapg"
+      - "ppo"
+      - "pbt"
+      - "pql"
+      - "ddpg"
+    metrics:
+      - "success_rate"
+      - "mean_reward"
+    artifact_writers:
+      - "write_table_1"
+      - "write_table_2"
+      - "write_table_3"
+      - "write_table_4"
+      - "write_figure_2"
+
+# Evidence obligation matrix rows as callable experiment specs
+evidence_obligation_matrix:
+  - row_id: "sapg_method_metrics"
+    spec_name: "SAPG Method -> results/metrics.json"
+    environment: "AllegroKuka-Reorientation"
+    method: "sapg"
+    params:
+      M: 4
+      lambda: 1.0
+      mu: 0.1
+      sigma: 0.003
+      epochs: 100
+      batch_size: 4096
+    metric_function: "compute_metrics"
+    artifact_writer: "write_metrics_json"
+    output_path: "results/metrics.json"
+
+  - row_id: "ddpg_baseline_table_1"
+    spec_name: "DDPG Baseline -> results/tables/table_1.csv"
+    environment: "AllegroKuka-Reorientation"
+    method: "ddpg"
+    params:
+      epochs: 100
+      batch_size: 4096
+    metric_function: "compute_metrics"
+    artifact_writer: "write_table_1_csv"
+    output_path: "results/tables/table_1.csv"
+
+  - row_id: "leader_follower_aggregation_table_1"
+    spec_name: "Leader-Follower Aggregation -> results/tables/table_1.csv"
+    environment: "AllegroKuka-Reorientation"
+    method: "sapg"
+    params:
+      M: 4
+      lambda: 1.0
+      mu: 0.1
+      sigma: 0.003
+      epochs: 100
+      batch_size: 4096
+    metric_function: "compute_metrics"
+    artifact_writer: "write_table_1_csv"
+    output_path: "results/tables/table_1.csv"
+
+  - row_id: "latent_conditioning_diversity_fig_2"
+    spec_name: "Latent Conditioning Diversity -> results/figures/fig_2.png"
+    environment: "AllegroKuka-Reorientation"
+    method: "sapg"
+    params:
+      M: 4
+      lambda: 1.0
+      mu: 0.1
+      sigma: 0.003
+      epochs: 100
+      batch_size: 4096
+    metric_function: "compute_diversity_metrics"
+    artifact_writer: "write_figure_2_png"
+    output_path: "results/figures/fig_2.png"
+
+  - row_id: "training_schedule_epochs_metrics"
+    spec_name: "Training Schedule (epochs) -> results/metrics.json"
+    environment: "AllegroKuka-Reorientation"
+    method: "sapg"
+    params:
+      M: 4
+      lambda: 1.0
+      mu: 0.1
+      sigma: 0.003
+      epochs: 100
+      batch_size: 4096
+    metric_function: "compute_metrics"
+    artifact_writer: "write_metrics_json"
+    output_path: "results/metrics.json"
+
+  - row_id: "allegrokuka_hard_tasks_results"
+    spec_name: "AllegroKuka Hard Tasks -> results/tables/experiment_results.csv"
+    environment: "AllegroKuka-Reorientation"
+    method: "sapg"
+    params:
+      M: 4
+      lambda: 1.0
+      mu: 0.1
+      sigma: 0.003
+      epochs: 100
+      batch_size: 4096
+    metric_function: "compute_metrics"
+    artifact_writer: "write_experiment_results_csv"
+    output_path: "results/tables/experiment_results.csv"
+
+  - row_id: "in_hand_reorientation_easy_tasks_results"
+    spec_name: "In-hand Reorientation Easy Tasks -> results/tables/experiment_results.csv"
+    environment: "AllegroHand-Reorient"
+    method: "sapg"
+    params:
+      M: 4
+      lambda: 1.0
+      mu: 0.1
+      sigma: 0.003
+      epochs: 100
+      batch_size: 4096
+    metric_function: "compute_metrics"
+    artifact_writer: "write_experiment_results_csv"
+    output_path: "results/tables/experiment_results.csv"
+
+  - row_id: "main_comparison_table_1"
+    spec_name: "Main Comparison -> results/tables/table_1.csv"
+    environment: "AllegroKuka-Reorientation"
+    method: "sapg"
+    params:
+      M: 4
+      lambda: 1.0
+      mu: 0.1
+      sigma: 0.003
+      epochs: 100
+      batch_size: 4096
+    metric_function: "compute_metrics"
+    artifact_writer: "write_table_1_csv"
+    output_path: "results/tables/table_1.csv"
+
+  - row_id: "hyperparameters_table_2"
+    spec_name: "Hyperparameters -> results/tables/table_2.csv"
+    environment: "AllegroKuka-Reorientation"
+    method: "sapg"
+    params:
+      M: 4
+      lambda: 1.0
+      mu: 0.1
+      sigma: 0.003
+      epochs: 100
+      batch_size: 4096
+    metric_function: "get_hyperparameters"
+    artifact_writer: "write_table_2_csv"
+    output_path: "results/tables/table_2.csv"
+
+  - row_id: "task_details_table_3"
+    spec_name: "Task Details -> results/tables/table_3.csv"
+    environment: "AllegroKuka-Reorientation"
+    method: "sapg"
+    params:
+      M: 4
+      lambda: 1.0
+      mu: 0.1
+      sigma: 0.003
+      epochs: 100
+      batch_size: 4096
+    metric_function: "get_task_details"
+    artifact_writer: "write_table_3_csv"
+    output_path: "results/tables/table_3.csv"
+
+  - row_id: "ablation_results_table_4"
+    spec_name: "Ablation Results -> results/tables/table_4.csv"
+    environment: "AllegroKuka-Reorientation"
+    method: "sapg"
+    params:
+      M: 4
+      lambda: 1.0
+      mu: 0.1
+      sigma: 0.003
+      epochs: 100
+      batch_size: 4096
+    metric_function: "compute_ablation_metrics"
+    artifact_writer: "write_table_4_csv"
+    output_path: "results/tables/table_4.csv"
+
+  - row_id: "training_curves_fig_2"
+    spec_name: "Training Curves -> results/figures/fig_2.png"
+    environment: "AllegroKuka-Reorientation"
+    method: "sapg"
+    params:
+      M: 4
+      lambda: 1.0
+      mu: 0.1
+      sigma: 0.003
+      epochs: 100
+      batch_size: 4096
+    metric_function: "compute_metrics"
+    artifact_writer: "write_figure_2_png"
+    output_path: "results/figures/fig_2.png"
+
+# Baseline default hyperparameters (Binding addendum clarification)
+baseline_hyperparameters:
+  ppo:
+    lr: 0.0003
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.2
+    ent_coef: 0.0
+    vf_coef: 0.5
+    max_grad_norm: 0.5
+    batch_size: 24576
+  ddpg:
+    lr_actor: 0.0001
+    lr_critic: 0.001
+    gamma: 0.99
+    tau: 0.005
+    batch_size: 24576
+  pbt:
+    population_size: 8
+    mutation_rate: 0.2
+    batch_size: 24576
+  pql:
+    lr: 0.0003
+    gamma: 0.99
+    batch_size: 24576
+
+# Training loop and data buffer routing configuration
+training_loop:
+  parallel_rollouts: true
+  route_followers_to_leader: true
+  off_policy_aggregation: true
+  symmetric_aggregation: false # If true, all policies update symmetrically
+  diversity_regularization:
+    entropy_loss: true
+    latent_conditioning: true

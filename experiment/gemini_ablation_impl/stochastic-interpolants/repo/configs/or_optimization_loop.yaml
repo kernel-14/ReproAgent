@@ -1,0 +1,154 @@
+# configs/or_optimization_loop.yaml
+# Reference Grounding: paper_training_or_optimization_loop (chunk_008, chunk_009)
+
+metadata:
+  paper_title: "Stochastic Interpolants with Data-Dependent Couplings"
+  reproduction_scope: "Faithful reproduction of stochastic interpolants with data-dependent couplings vs independent Gaussian baselines"
+  trust_remote_code: true
+  seed: 42
+  output_dir: "results"
+  active_reproduction_scope_notes: "This configuration defines the optimization loop, dataset registry, environment/task factories, and parameter sweeps for the stochastic interpolants reproduction."
+
+environment_task_factories:
+  unit-006:
+    id: "unit-006"
+    alias: "unit_006_fast_test"
+    description: "Fast smoke test environment with synthetic shapes"
+    availability_check: "src.data.pipeline.check_synthetic_available"
+    setup_metadata:
+      resolution: [32, 32]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    description: "ImageNet-1k dataset from HuggingFace"
+    dataset_name: "imagenet-1k"
+    trust_remote_code: true
+    availability_check: "src.data.pipeline.check_imagenet_available"
+    setup_metadata:
+      resolution: [256, 256]
+      channels: 3
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  low-resolution-image:
+    id: "low-resolution-image"
+    alias: "imagenet_c"
+    description: "Low-resolution or corrupted ImageNet subset for downstream tasks"
+    availability_check: "src.data.pipeline.check_imagenet_c_available"
+    setup_metadata:
+      resolution: [64, 64]
+      channels: 3
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  downstream_tasks:
+    id: "downstream_tasks"
+    alias: "perform_various_downstream"
+    description: "Downstream tasks such as inpainting and super-resolution"
+    availability_check: "src.data.pipeline.check_downstream_available"
+    setup_metadata:
+      tasks: ["inpainting", "super_resolution"]
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+dataset_loaders:
+  synthetic_shapes:
+    id: "synthetic_shapes"
+    name: "Synthetic shapes or a small subset of ImageNet/CIFAR-10"
+    validation_check: "src.data.pipeline.validate_synthetic"
+    setup_metadata:
+      num_samples: 100
+    runnable_config_hook: "src.data.pipeline.prepare_pipeline"
+  imagenet_1k:
+    id: "imagenet_1k"
+    name: "imagenet"
+    validation_check: "src.data.pipeline.validate_imagenet"
+    setup_metadata:
+      dataset_name: "imagenet-1k"
+      trust_remote_code: true
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+  imagenet_c:
+    id: "imagenet_c"
+    name: "imagenet_c"
+    validation_check: "src.data.pipeline.validate_imagenet_c"
+    setup_metadata:
+      corruption: "low-resolution"
+    runnable_config_hook: "src.data.pipeline.load_pipeline"
+
+methods_and_baselines:
+  ours:
+    id: "ours"
+    name: "Stochastic Interpolants with Data-Dependent Couplings"
+    class_path: "src.interpolants.stochastic_interpolant.StochasticInterpolant"
+    coupling_type: "dependent"
+  resnet:
+    id: "resnet"
+    name: "ResNet Baseline"
+    class_path: "src.models.unet.ResNetBaseline"
+  ddpm:
+    id: "ddpm"
+    name: "DDPM Baseline"
+    class_path: "src.models.unet.DDPMBaseline"
+  diffusion_model:
+    id: "diffusion_model"
+    name: "Standard Diffusion Model"
+    class_path: "src.models.unet.StandardDiffusion"
+  independent_gaussian_coupling:
+    id: "independent_gaussian_coupling"
+    name: "Independent Gaussian Coupling"
+    class_path: "src.interpolants.couplings.IndependentGaussianCoupling"
+    coupling_type: "independent"
+
+fixed_hyperparameters:
+  batch_size_32: 32
+  mask_tiles_64: 64
+  mask_probability_0.3: 0.3
+
+parameter_sweeps:
+  gamma: [0.0, 1.0]
+  learning_rate: [1e-4, 3e-4, 1e-3]
+  batch_size: [16, 32, 64]
+  epochs: [1, 5, 10]
+  alpha_t_beta_t:
+    description: "alpha_t, beta_t coefficients and their derivatives"
+    alpha_t: "1 - t"
+    beta_t: "t"
+    d_alpha_t: "-1"
+    d_beta_t: "1"
+  ode_solver:
+    num_integration_steps: [10, 20, 50]
+    solver_type: ["euler", "rk4"]
+
+experiment_matrix:
+  datasets_or_tasks: ["unit-006", "imagenet", "low-resolution-image"]
+  methods_or_models: ["ours", "resnet", "ddpm", "independent_gaussian_coupling"]
+  parameters:
+    gamma: [0.0, 1.0]
+    learning_rate: [1e-4, 3e-4]
+    batch_size: [32]
+    solver_type: ["euler", "rk4"]
+
+active_route_closure:
+  build_unet: "src.models.unet.build_unet"
+  load_pipeline: "src.data.pipeline.load_pipeline"
+  prepare_pipeline: "src.data.pipeline.prepare_pipeline"
+  compute_reward: "src.reporting.evidence_obligation_registry.compute_reward"
+  aggregate_reward: "src.reporting.evidence_obligation_registry.aggregate_reward"
+  compute_f1: "src.reporting.evidence_obligation_registry.compute_f1"
+  aggregate_f1: "src.reporting.evidence_obligation_registry.aggregate_f1"
+  compute_mse: "src.evaluation.metrics.compute_mse"
+  aggregate_mse: "src.evaluation.metrics.aggregate_mse"
+  compute_evaluation_metric_evaluation_artifact_writer_objective: "src.evaluation.metrics.compute_evaluation_metric_evaluation_artifact_writer_objective"
+  compute_evaluation_metric_evaluation_artifact_writer_score: "src.evaluation.metrics.compute_evaluation_metric_evaluation_artifact_writer_score"
+  evaluate_metrics: "src.evaluation.metrics.evaluate_metrics"
+
+training_loop:
+  algorithm: "Algorithm 1 Training"
+  input:
+    interpolant_coefficients: "alpha_t, beta_t"
+    velocity_model: "b_hat"
+    batch_size: 32
+  steps:
+    - "Draw x1 ~ rho1, zeta ~ N(0, Id), t ~ U(0, 1)"
+    - "Compute x0 = m(x1) + sigma * zeta"
+    - "Compute I_t = alpha_t * x0 + beta_t * x1"
+    - "Compute empirical loss L_b(b_hat) = mean(|b_hat(I_t)|^2 - 2 * d_I_t * b_hat(I_t))"
+    - "Optimize using SGD/Adam"

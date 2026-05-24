@@ -1,0 +1,209 @@
+# configs/default.yaml
+# Configuration for Sample-specific Masks for Visual Reprogramming-based Prompting (SMM)
+
+# 1. Environment & Task Factories
+task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "unit_smoke_test"
+    setup_metadata: "Smoke test environment"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  cifar-10:
+    id: "cifar-10"
+    alias: "cifar10"
+    setup_metadata: "CIFAR-10 target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  cifar:
+    id: "cifar"
+    alias: "cifar100"
+    setup_metadata: "CIFAR-100 target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    setup_metadata: "ImageNet-1K pre-training source"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  svhn:
+    id: "svhn"
+    alias: "svhn"
+    setup_metadata: "SVHN target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  ucf101:
+    id: "ucf101"
+    alias: "ucf101"
+    setup_metadata: "UCF101 target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  food101:
+    id: "food101"
+    alias: "food101"
+    setup_metadata: "Food-101 target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  sun397:
+    id: "sun397"
+    alias: "sun397"
+    setup_metadata: "SUN397 target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  one_can_address_new:
+    id: "one_can_address_new"
+    alias: "address_new_tasks"
+    setup_metadata: "Address new target tasks"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  target_tasks:
+    id: "target_tasks"
+    alias: "target_tasks"
+    setup_metadata: "Target tasks suite"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  across_some:
+    id: "across_some"
+    alias: "across_some"
+    setup_metadata: "Across some datasets"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  paper-semantic-chunk-046-dataset-registry-additional-visualization-additional-visualization-figure:
+    id: "paper-semantic-chunk-046-dataset-registry-additional-visualization-additional-visualization-figure"
+    alias: "dataset_registry_visualization"
+    setup_metadata: "Dataset registry additional visualization figure"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+
+# 2. Dataset & Benchmark Loaders
+dataset_loaders:
+  CIFAR10:
+    id: "CIFAR10"
+    alias: "cifar10"
+    setup_metadata: "CIFAR-10 dataset loader"
+    validation_check: "check_cifar10"
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  SVHN:
+    id: "SVHN"
+    alias: "svhn"
+    setup_metadata: "SVHN dataset loader"
+    validation_check: "check_svhn"
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  cifar:
+    id: "cifar"
+    alias: "cifar100"
+    setup_metadata: "CIFAR-100 dataset loader"
+    validation_check: "check_cifar100"
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_1k"
+    setup_metadata: "ImageNet dataset loader"
+    validation_check: "check_imagenet"
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  imagenet_1k:
+    id: "imagenet_1k"
+    alias: "imagenet_1k"
+    setup_metadata: "ImageNet-1K dataset loader"
+    validation_check: "check_imagenet_1k"
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  dtd:
+    id: "dtd"
+    alias: "dtd"
+    setup_metadata: "Describable Textures Dataset loader"
+    validation_check: "check_dtd"
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  eurosat:
+    id: "eurosat"
+    alias: "eurosat"
+    setup_metadata: "EuroSAT dataset loader"
+    validation_check: "check_eurosat"
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  flowers:
+    id: "flowers"
+    alias: "flowers"
+    setup_metadata: "Flowers102 dataset loader"
+    validation_check: "check_flowers"
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  oxford_pets:
+    id: "oxford_pets"
+    alias: "oxford_pets"
+    setup_metadata: "Oxford-IIIT Pets dataset loader"
+    validation_check: "check_oxford_pets"
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+
+# 3. Method, Baseline, and Attack Selectors
+methods:
+  ours: "smm"
+  vit: "vit_b32"
+  resnet: "resnet18"
+  lora: "lora"
+  baselines:
+    - PAD
+    - NARROW
+    - MEDIUM
+    - FULL
+  ablations:
+    - ONLY_delta
+    - ONLY_f_mask
+    - SINGLE_CHANNEL_f_mask_s
+    - standard_visual_reprogramming
+
+# 4. Parameter Sweeps & Bounded Config Entries
+sweeps:
+  p: [0.0, 0.1, 0.5, 1.0]
+  learning_rate: [0.001, 0.01, 0.1]
+  patch_size: [4, 2, 1]
+  epochs: [1, 10, 50, 100]
+  mask_generator_cnn_architecture: "5-layer CNN"
+  interpolation_scale_factor_l: [1, 2, 3]
+  weight_decay: [0.0001, 0.0005, 0.001]
+
+# 5. Fixed Hyperparameter Anchors
+fixed_hyperparameters:
+  three_seed_protocol: [42, 100, 2024]
+  imagenet_normalize:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+  vit_b32_imgsize: 384
+  resnet_imgsize: 224
+  ucf101_optimal:
+    alpha: 0.001
+    gamma: 1.0
+
+# 6. Paper Formula & Algorithm Symbol Inventory (Code-Visible Anchors)
+symbols:
+  ViT_B32: "ViT_B32"
+  train_preprocess: "Compose[transforms.Resize(imgsize+32, imgsize+32), transforms.RandomCrop(imgsize), transforms.Lambda(lambda x: x.convert('RGB')), transforms.Normalize(IMAGENETNORMALIZE['mean'], IMAGENETNORMALIZE['std'])]"
+  test_preprocess: "Compose[transforms.Resize(imgsize, imgsize), transforms.Normalize(IMAGENETNORMALIZE['mean'], IMAGENETNORMALIZE['std'])]"
+  d_T: 3
+  k_T: 10
+  x_i: "x_i"
+  y_i: "y_i"
+  f_P: "f_P"
+  f_out: "f_out"
+  f_in: "f_in"
+  Y_sub: "Y_sub"
+  min_thetainTheta: "min_theta_in_Theta"
+  omegainOmega: "omega_in_Omega"
+  sum_i_1_n: "sum_i_1_to_n"
+  theta: "theta"
+  R_plus: "R^+"
+  Theta: "Theta"
+  delta: "delta"
+  f_mask: "f_mask"
+  d_P: 3
+  numeric_anchors:
+    mean_0: 0.485
+    mean_1: 0.456
+    mean_2: 0.406
+    std_0: 0.229
+    std_1: 0.224
+    std_2: 0.225
+    vit_size: 384
+    resnet_size: 224
+    cifar_size: 32
+    one: 1
+    zero: 0
+    two: 2

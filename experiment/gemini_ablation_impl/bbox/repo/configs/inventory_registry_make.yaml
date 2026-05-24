@@ -1,0 +1,135 @@
+# configs/inventory_registry_make.yaml
+# reference_grounding: paperbench_ref_030 readme.md
+
+metadata:
+  title: "BBox-Adapter: Lightweight Adapting for Black-Box Large Language Models"
+  reproduction_scope: "Faithful reproduction of BBox-Adapter environment, dataset, method, and parameter registries."
+  hypothesis: "The core method claim must be testable on the paper's in-scope environment families through one registry contract."
+  decision_value: "Decides which environment adapters and lazy dependency checks are required before generation can be judged."
+  seed: 42
+
+environment_task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "question-answering"
+    setup_metadata:
+      positive_source: "ground_truth"
+      cache_path: "results/cache"
+      source_adapter_checkpoint: "results/adapter_checkpoint"
+      target_base_model: "gpt-3.5-turbo"
+      achieving_improvements: true
+      determines_which: "adapter_scores"
+      keep_all_paper_visible: true
+    availability_checks:
+      - "import bbox_adapter"
+    runnable_config_hooks:
+      data_pipeline: "bbox_adapter.datasets.build_datasets"
+      config_factory: "bbox_adapter.config.resolve_batch_size_defaults"
+      registry_configuration_artifact: "configs/inventory_registry_make.yaml"
+
+dataset_loaders:
+  gsm8k:
+    id: "gsm8k"
+    aliases: ["GSM8K", "gsm8k"]
+    setup_metadata:
+      task_type: "mathematical"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  strategyqa:
+    id: "strategyqa"
+    aliases: ["StrategyQA", "strategyqa"]
+    setup_metadata:
+      task_type: "implicit_reasoning"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  truthfulqa:
+    id: "truthfulqa"
+    aliases: ["TruthfulQA", "truthfulqa"]
+    setup_metadata:
+      task_type: "truthful"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  scienceqa:
+    id: "scienceqa"
+    aliases: ["ScienceQA", "scienceqa"]
+    setup_metadata:
+      task_type: "scientific"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  toxigen:
+    id: "toxigen"
+    aliases: ["ToxiGen", "toxigen"]
+    setup_metadata:
+      task_type: "toxicity"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+
+method_selectors:
+  ours: "bbox_adapter"
+  chain_of_thought: "cot"
+  oracle: "oracle"
+  heuristic: "heuristic"
+  roberta: "roberta"
+  fine_tuning: "sft"
+  lora: "lora"
+  sft_lora: "sft_lora"
+  azure_sft: "azure_sft"
+  mlm: "mlm"
+  bbox_adapter: "bbox_adapter"
+  ranking_nce: "ranking_nce"
+  online_adaptation: "online_adaptation"
+  single_step_inference: "single_step"
+  full_step_inference: "full_step"
+  ai_feedback: "ai_feedback"
+  energy_based_model: "ebm"
+
+parameter_sweeps:
+  positive_sample_source:
+    values: ["ground_truth", "ai_feedback", "human_feedback"]
+    default: "ground_truth"
+  beam_size:
+    values: [1, 3, 5]
+    default: 3
+  iteration_count:
+    values: [3, 0, 1, 2, 4]
+    default: 3
+  adapter_size:
+    values: [0.1, 0.3]
+    default: 0.1
+  batch_size:
+    values: [8, 16, 32, 64]
+    default: 64
+
+fixed_hyperparameters:
+  batch_size_64: 64
+  nearest_neighbor_upsample: true
+
+expected_artifacts:
+  - "results/environment_registry.json"
+  - "results/scope_report.json"
+  - "results/adapter_checkpoint"
+  - "results/figures/figure_1.png"
+  - "results/tables/table_1.csv"
+  - "results/figures/figure_2.png"
+  - "results/tables/table_2.csv"
+  - "results/tables/table_3.csv"
+  - "results/tables/table_4.csv"
+  - "results/tables/table_5.csv"
+  - "results/figures/figure_3.png"
+  - "results/tables/table_6.csv"
+  - "results/figures/figure_4.png"
+  - "results/tables/table_7.csv"
+  - "results/tables/table_8.csv"
+  - "results/figures/figure_5.png"
+  - "results/tables/table_9.csv"
+  - "results/figures/figure_6.png"

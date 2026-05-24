@@ -1,0 +1,183 @@
+# configs/default_config.yaml
+# Configuration for "What Will My Model Forget? Forecasting Forgotten Examples in Language Model Refinement"
+
+metadata:
+  project_name: "what-will-my-model-forget"
+  description: "Forecasting Forgotten Examples in Language Model Refinement"
+  paper_reference: "What Will My Model Forget? Forecasting Forgotten Examples in Language Model Refinement"
+
+# Environment Registry
+environment_registry:
+  environments:
+    - id: "P3-Upstream"
+      alias: "p3_upstream"
+      description: "Upstream pre-training dataset from P3"
+      setup_metadata:
+        tasks_count: 36
+        examples_per_task: 100
+      availability_check: "src.data.loader.check_p3_upstream_available"
+    - id: "P3-Test (ID/OOD)"
+      alias: "p3_test"
+      description: "In-domain and Out-of-domain test splits of P3"
+      setup_metadata:
+        id_tasks: ["task_1", "task_2"]
+        ood_tasks: ["task_3", "task_4"]
+      availability_check: "src.data.loader.check_p3_test_available"
+    - id: "SQuAD"
+      alias: "squad"
+      description: "SQuAD dataset for refinement evaluation"
+      setup_metadata:
+        task_type: "SEQ_2_SEQ_LM"
+      availability_check: "src.data.loader.check_squad_available"
+    - id: "GLUE"
+      alias: "glue"
+      description: "GLUE benchmark tasks for refinement evaluation"
+      setup_metadata:
+        task_type: "SEQ_2_SEQ_LM"
+      availability_check: "src.data.loader.check_glue_available"
+
+# Dataset Registry
+dataset_registry:
+  datasets:
+    - id: "p3"
+      alias: "p3"
+      loader_factory: "src.data.loader.make_p3_dataset"
+      readiness_check: "src.data.loader.check_p3_ready"
+    - id: "squad"
+      alias: "squad"
+      loader_factory: "src.data.loader.make_squad_dataset"
+      readiness_check: "src.data.loader.check_squad_ready"
+    - id: "glue"
+      alias: "glue"
+      loader_factory: "src.data.loader.make_glue_dataset"
+      readiness_check: "src.data.loader.check_glue_ready"
+
+# Method / Baseline / Attack Selectors
+method_selectors:
+  methods:
+    - id: "ours"
+      alias: "representation_based"
+      class_path: "src.methods.forecasters.RepresentationForecaster"
+    - id: "t5"
+      alias: "t5_baseline"
+      class_path: "src.methods.baselines.T5Baseline"
+    - id: "fine_tuning"
+      alias: "vanilla_ft"
+      class_path: "src.methods.baselines.FineTuningBaseline"
+    - id: "lora"
+      alias: "lora_refinement"
+      class_path: "src.methods.baselines.LoraBaseline"
+    - id: "logit_change"
+      alias: "logit_change_based"
+      class_path: "src.methods.forecasters.LogitChangeForecaster"
+    - id: "frequency_threshold"
+      alias: "frequency_threshold_baseline"
+      class_path: "src.methods.baselines.FrequencyThresholdBaseline"
+
+# Parameter Sweeps and Defaults
+parameter_sweeps:
+  learning_rate:
+    default: 3e-5
+    sweep: [1e-5, 3e-5, 5e-5, 1e-4]
+  batch_size:
+    default: 8
+    sweep: [2, 4, 8, 16, 32]
+  threshold_gamma:
+    default: 0.5
+    sweep: [0.1, 0.3, 0.5, 0.7, 0.9]
+  representation_dimension_H:
+    default: 768
+    sweep: [128, 256, 512, 768, 1024]
+  buffer_size:
+    default: 100
+    sweep: [10, 50, 100, 200, 500]
+  refinement_steps:
+    default: 3
+    sweep: [1, 2, 3, 4, 5]
+
+# Paper Formula and Algorithm Symbols & Constants
+formula_symbols:
+  D_hat_PT: "pretraining_dataset_filtered"
+  D_PT: "pretraining_dataset_full"
+  D_R: "refinement_dataset"
+  PT: "pretraining"
+  f_0: "initial_model"
+  f_i: "updated_model_at_step_i"
+  D_hat: "filtered_dataset"
+  x_i: "refinement_input"
+  y_i: "refinement_target"
+  x_j: "upstream_input"
+  y_j: "upstream_target"
+  z_ij: "forgetting_label"
+  gamma: 0.5
+  Delta: "parameter_change"
+  theta_i: "parameters_at_step_i"
+  theta_0: "initial_parameters"
+  EM_D_f: "exact_match_metric"
+  lora_config:
+    task_type: "SEQ_2_SEQ_LM"
+    inference_mode: false
+    r: 16
+    lora_alpha: 32
+    lora_dropout: 0.1
+    target_modules: ["q", "v"]
+  numeric_anchors:
+    zero: 0
+    one: 1
+    two: 2
+    three: 3
+    four: 4
+    sixteen: 16
+    thirty_two: 32
+    one_hundred: 100
+    point_one: 0.1
+
+# Callable Protocol Matrix linking named experiments to environments, methods, metrics, and artifact writers
+protocol_matrix:
+  experiments:
+    - name: "Forecasting Performance (Table 1)"
+      environment: "p3_test"
+      methods: ["representation_based", "logit_change_based", "frequency_threshold_baseline"]
+      metrics: ["accuracy", "f1", "auc"]
+      artifact_writer: "src.reporting.exp_forecasting.write_table_1"
+      output_path: "results/tables/experiment_results.csv"
+    - name: "ID vs OOD Analysis (Table 2)"
+      environment: "p3_test"
+      methods: ["representation_based", "logit_change_based", "frequency_threshold_baseline"]
+      metrics: ["accuracy", "f1", "auc"]
+      artifact_writer: "src.reporting.exp_forecasting.write_table_2"
+      output_path: "results/tables/table_2.csv"
+    - name: "Computational Efficiency Analysis (Sec 5.3)"
+      environment: "p3_upstream"
+      methods: ["representation_based", "logit_change_based"]
+      metrics: ["training_cost"]
+      artifact_writer: "src.reporting.exp_forecasting.write_efficiency_analysis"
+      output_path: "results/tables/table_4.csv"
+    - name: "Sequential Model Refinement (Sec 5.2)"
+      environment: "squad"
+      methods: ["vanilla_ft", "lora_refinement", "ours"]
+      metrics: ["em_drop_ratio", "edit_success_rate"]
+      artifact_writer: "src.reporting.exp_refinement.write_refinement_results"
+      output_path: "results/metrics.json"
+    - name: "Replay Selection Protocol Analysis"
+      environment: "glue"
+      methods: ["vanilla_ft", "lora_refinement", "ours"]
+      metrics: ["em_drop_ratio", "edit_success_rate"]
+      artifact_writer: "src.reporting.exp_refinement.write_replay_selection_results"
+      output_path: "results/tables/table_7.csv"
+
+# Canonical Artifacts to be generated
+canonical_artifacts:
+  - "results/dataset_registry.json"
+  - "results/environment_registry.json"
+  - "results/environment_readiness.json"
+  - "results/config_resolved.json"
+  - "results/sensitivity_report.json"
+  - "results/data_manifest.json"
+
+# Configuration Flags and Setup Commands
+setup_commands:
+  - "python main.py --mode setup_config"
+  - "python main.py --mode data_generation"
+  - "python main.py --mode forecasting_training"
+  - "python main.py --mode evaluation_protocol"

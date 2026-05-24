@@ -1,0 +1,156 @@
+# configs/unit_run_table2.yaml
+# reference_grounding: paperbench_ref_030 readme.md
+
+metadata:
+  title: "BBox-Adapter: Lightweight Adapting for Black-Box Large Language Models"
+  reproduction_scope: "Faithful reproduction of BBox-Adapter Table 2 main results, training, inference, and evaluation routes."
+  hypothesis: "BBox-Adapter 能在多个 QA 数据集上稳定优于 gpt-3.5-turbo，且 AI Feedback 版本接近 Ground-Truth 版本，体现黑盒适配泛化能力。"
+  decision_value: "该单元是核心贡献评审依据，决定是否认为方法在主要下游任务上有效，而不仅是实现了训练和推理流程。"
+  seed: 42
+
+cli_template: "python -m bbox_adapter.run --experiment table2_main_results"
+callable_entrypoint: "run_table2_main_results"
+
+environment_task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "question-answering"
+    setup_metadata:
+      positive_source: "ground_truth"
+      cache_path: "results/cache"
+      source_adapter_checkpoint: "results/adapter_checkpoint"
+      target_base_model: "gpt-3.5-turbo"
+      achieving_improvements: true
+      determines_which: "adapter_scores"
+      keep_all_paper_visible: true
+    availability_checks:
+      - "import bbox_adapter"
+    runnable_config_hooks:
+      data_pipeline: "bbox_adapter.datasets.build_datasets"
+      config_factory: "bbox_adapter.config.resolve_batch_size_defaults"
+      registry_configuration_artifact: "configs/unit_run_table2.yaml"
+
+dataset_loaders:
+  gsm8k:
+    id: "gsm8k"
+    aliases: ["GSM8K", "gsm8k"]
+    setup_metadata:
+      task_type: "mathematical"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  strategyqa:
+    id: "strategyqa"
+    aliases: ["StrategyQA", "strategyqa"]
+    setup_metadata:
+      task_type: "implicit_reasoning"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  truthfulqa:
+    id: "truthfulqa"
+    aliases: ["TruthfulQA", "truthfulqa"]
+    setup_metadata:
+      task_type: "truthful"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  scienceqa:
+    id: "scienceqa"
+    aliases: ["ScienceQA", "scienceqa"]
+    setup_metadata:
+      task_type: "scientific"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  toxigen:
+    id: "toxigen"
+    aliases: ["ToxiGen", "toxigen"]
+    setup_metadata:
+      task_type: "toxicity"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+
+parameter_sweeps:
+  positive_sources:
+    - "ground_truth"
+    - "ai_feedback"
+    - "human_feedback"
+  beam_sizes:
+    - 1
+    - 3
+    - 5
+  adapter_sizes:
+    - 0.1
+    - 0.3
+  iteration_counts:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+  batch_sizes:
+    - 64
+  fixed_hyperparameters:
+    batch_size_64: 64
+    nearest_neighbor_upsample: true
+
+method_baseline_selectors:
+  - "ours"
+  - "chain_of_thought"
+  - "oracle"
+  - "heuristic"
+  - "roberta"
+  - "fine_tuning"
+  - "lora"
+  - "sft_lora"
+  - "azure_sft"
+  - "mlm"
+  - "bbox_adapter"
+  - "ranking_nce"
+  - "online_adaptation"
+  - "single_step_inference"
+  - "full_step_inference"
+  - "ai_feedback"
+  - "energy_based_model"
+
+metrics:
+  - "accuracy"
+  - "absolute_improvement"
+  - "average_improvement"
+
+result_trend_assertions:
+  outperformance: "BBOX-ADAPTER outperforms gpt-3.5-turbo by average 6.39%"
+  ai_feedback_competitiveness: "AI Feedback competitive with Ground-Truth"
+
+output_paths:
+  table2_main_results_csv: "results/table2_main_results.csv"
+  table2_main_results_json: "results/table2_main_results.json"
+  table2_predictions_jsonl: "results/table2_predictions.jsonl"
+  adapter_checkpoint: "results/adapter_checkpoint"
+  figure_1: "results/figures/figure_1.png"
+  table_1: "results/tables/table_1.csv"
+  figure_2: "results/figures/figure_2.png"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+  table_4: "results/tables/table_4.csv"
+  table_5: "results/tables/table_5.csv"
+  figure_3: "results/figures/figure_3.png"
+  table_6: "results/tables/table_6.csv"
+  figure_4: "results/figures/figure_4.png"
+  table_7: "results/tables/table_7.csv"
+  table_8: "results/tables/table_8.csv"
+  figure_5: "results/figures/figure_5.png"
+  table_9: "results/tables/table_9.csv"
+
+dry_run_smoke_mode:
+  enabled: true
+  write_readiness_manifest: true
+  readiness_path: "results/readiness.json"
+  evaluation_result_path: "results/evaluation_result.json"

@@ -1,0 +1,194 @@
+# configs/addendum_constraints_flags.yaml
+# reference_grounding: paperbench_ref_030 readme.md
+
+metadata:
+  title: "BBox-Adapter: Lightweight Adapting for Black-Box Large Language Models"
+  reproduction_scope: "Faithful reproduction of BBox-Adapter training, inference, and evaluation routes under addendum constraints."
+
+setup_commands:
+  - "pip install -e ."
+  - "pip install -e .[heavy]"
+
+addendum_constraints:
+  spectral_normalization:
+    description: "Spectral normalization in Section 3.2 is implemented as l2 regularization of the energies (alpha * E[g_theta(x, y_+)^2] + alpha * E[g_theta(x, y_-)^2]) as shown in Equation 3, rather than using power iteration methods."
+    regularization_coefficient_alpha: 0.01
+  vram_evaluation:
+    description: "VRAM measurements reported in Table 6 are only for the 0.1B adapter version, not the 0.3B version. For reproduction purposes, only the VRAM measurements for the 0.1B version need to be evaluated."
+    target_adapter_size: 0.1
+
+environment_task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "question-answering"
+    setup_metadata:
+      positive_source: "ground_truth"
+      cache_path: "results/cache"
+      source_adapter_checkpoint: "results/adapter_checkpoint"
+      target_base_model: "gpt-3.5-turbo"
+      achieving_improvements: true
+      determines_which: "adapter_scores"
+      keep_all_paper_visible: true
+    availability_checks:
+      - "import bbox_adapter"
+    runnable_config_hooks:
+      data_pipeline: "bbox_adapter.datasets.build_datasets"
+      config_factory: "bbox_adapter.config.resolve_batch_size_defaults"
+      registry_configuration_artifact: "configs/addendum_constraints_flags.yaml"
+
+dataset_loaders:
+  gsm8k:
+    id: "gsm8k"
+    aliases: ["GSM8K"]
+    setup_metadata:
+      task_type: "mathematical"
+      metric: "accuracy"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      loader: "bbox_adapter.datasets.load_dataset"
+  strategyqa:
+    id: "strategyqa"
+    aliases: ["StrategyQA"]
+    setup_metadata:
+      task_type: "implicit_reasoning"
+      metric: "accuracy"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      loader: "bbox_adapter.datasets.load_dataset"
+  truthfulqa:
+    id: "truthfulqa"
+    aliases: ["TruthfulQA"]
+    setup_metadata:
+      task_type: "truthful"
+      metric: "accuracy"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      loader: "bbox_adapter.datasets.load_dataset"
+  scienceqa:
+    id: "scienceqa"
+    aliases: ["ScienceQA"]
+    setup_metadata:
+      task_type: "scientific"
+      metric: "accuracy"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      loader: "bbox_adapter.datasets.load_dataset"
+  toxigen:
+    id: "toxigen"
+    aliases: ["ToxiGen"]
+    setup_metadata:
+      task_type: "toxicity"
+      metric: "toxicity"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      loader: "bbox_adapter.datasets.load_dataset"
+
+method_factories:
+  ours:
+    class_path: "bbox_adapter.adapter.BBoxAdapter"
+    description: "Proposed BBox-Adapter method"
+  chain_of_thought:
+    class_path: "bbox_adapter.baselines.ChainOfThought"
+    description: "Chain-of-Thought baseline without adaptation"
+  oracle:
+    class_path: "bbox_adapter.baselines.Oracle"
+    description: "Oracle upper bound baseline"
+  heuristic:
+    class_path: "bbox_adapter.baselines.Heuristic"
+    description: "Heuristic baseline"
+  roberta:
+    class_path: "bbox_adapter.baselines.Roberta"
+    description: "RoBERTa baseline"
+  fine_tuning:
+    class_path: "bbox_adapter.baselines.FineTuning"
+    description: "Supervised Fine-Tuning baseline"
+  lora:
+    class_path: "bbox_adapter.baselines.LoRA"
+    description: "LoRA baseline"
+  sft_lora:
+    class_path: "bbox_adapter.baselines.SFTLoRA"
+    description: "SFT-LoRA baseline"
+  azure_sft:
+    class_path: "bbox_adapter.baselines.AzureSFT"
+    description: "Azure OpenAI SFT baseline"
+  mlm:
+    class_path: "bbox_adapter.baselines.MLM"
+    description: "Masked Language Modeling loss baseline"
+  bbox_adapter:
+    class_path: "bbox_adapter.adapter.BBoxAdapter"
+    description: "BBox-Adapter method"
+  ranking_nce:
+    class_path: "bbox_adapter.adapter.RankingNCE"
+    description: "Ranking-based NCE loss"
+  online_adaptation:
+    class_path: "bbox_adapter.adapter.OnlineAdaptation"
+    description: "Online adaptation framework"
+  single_step_inference:
+    class_path: "bbox_adapter.inference.SingleStepInference"
+    description: "Single-step inference mode"
+  full_step_inference:
+    class_path: "bbox_adapter.inference.FullStepInference"
+    description: "Full-step inference mode"
+  ai_feedback:
+    class_path: "bbox_adapter.adapter.AIFeedback"
+    description: "AI Feedback positive source"
+  energy_based_model:
+    class_path: "bbox_adapter.adapter.EnergyBasedModel"
+    description: "Energy-based model formulation"
+
+parameter_sweeps:
+  beam_size:
+    values: [1, 3, 5]
+    default: 3
+    description: "Beam sizes for Figure 3(a) scale analysis"
+  iteration_count:
+    values: [3, 0, 1, 2, 4]
+    default: 3
+    description: "Iterations of online adaptation for Figure 3(b)"
+  adapter_size:
+    values: [0.1, 0.3]
+    default: 0.1
+    description: "Adapter sizes (0.1B and 0.3B versions)"
+  batch_size:
+    values: [64]
+    default: 64
+    description: "Batch size for training"
+  positive_sample_source:
+    values: ["Ground-Truth", "AI Feedback", "Human Feedback"]
+    default: "Ground-Truth"
+    description: "Explicitly supported positive sample sources"
+
+experiment_matrix:
+  datasets: ["gsm8k", "strategyqa", "truthfulqa", "scienceqa", "toxigen"]
+  methods: ["ours", "chain_of_thought", "oracle", "heuristic", "roberta", "fine_tuning", "lora", "sft_lora", "azure_sft", "mlm", "bbox_adapter", "ranking_nce", "online_adaptation", "single_step_inference", "full_step_inference", "ai_feedback", "energy_based_model"]
+  sweeps: ["beam_size", "iteration_count", "adapter_size", "batch_size", "positive_sample_source"]
+
+reproduction_artifacts:
+  readme:
+    path: "README.md"
+    description: "README documentation"
+  configuration_artifact:
+    path: "configs/addendum_constraints_flags.yaml"
+    description: "Configuration artifact"
+  table_6:
+    path: "results/tables/table_6.csv"
+    description: "Table 6 reproduction artifact (VRAM and accuracy on adapting Mixtral-8x7B to StrategyQA)"
+
+calls_symbols_mapping:
+  compute_accuracy: "bbox_adapter.metrics.compute_accuracy"
+  aggregate_accuracy: "bbox_adapter.metrics.aggregate_accuracy"
+  compute_loss: "bbox_adapter.metrics.compute_loss"
+  aggregate_loss: "bbox_adapter.metrics.aggregate_loss"
+  compute_metric_manifest_and_config_snapshot_entrypoint_metric_entrypoint_objective: "bbox_adapter.metrics.compute_metric_manifest_and_config_snapshot_entrypoint_metric_entrypoint_objective"
+  compute_metric_manifest_and_config_snapshot_entrypoint_metric_entrypoint_score: "bbox_adapter.metrics.compute_metric_manifest_and_config_snapshot_entrypoint_metric_entrypoint_score"
+  train_main: "bbox_adapter.run.train_main"
+  run_training_loop: "bbox_adapter.run.run_training_loop"
+  evaluate_main: "bbox_adapter.run.evaluate_main"
+  compute_main_metrics: "bbox_adapter.metrics.compute_main_metrics"
+  aggregate_metrics: "bbox_adapter.metrics.aggregate_metrics"
+  load_unit_run_plug: "bbox_adapter.run.load_unit_run_plug"

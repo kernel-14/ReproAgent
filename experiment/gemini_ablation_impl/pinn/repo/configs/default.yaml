@@ -1,0 +1,257 @@
+# configs/default.yaml
+# Configuration for Challenges in Training PINNs: A Loss Landscape Perspective
+
+global:
+  device: "cpu"
+  seed: 42
+  output_dir: "results"
+  artifact_manifest_path: "results/artifact_manifest.json"
+  evidence_matrix_path: "results/evidence_contract_matrix.json"
+  experiment_registry_path: "results/experiment_registry.json"
+  method_registry_path: "results/method_registry.json"
+  ablation_registry_path: "results/ablation_registry.json"
+  config_resolved_path: "results/config_resolved.json"
+
+# Model Architecture Defaults
+model:
+  input_dim: 2
+  output_dim: 1
+  hidden_layers: 4
+  hidden_dim: 50
+  activation: "tanh"
+
+# PDE Environment/Task Factories Configuration
+environments:
+  convection:
+    id: "convection_pde"
+    alias: "Convection"
+    beta: 30.0
+    domain:
+      x: [0.0, 2.0]
+      t: [0.0, 1.0]
+    n_res: 1000
+    n_bc: 100
+    exact_solution: "sine_wave"
+  wave:
+    id: "wave_pde"
+    alias: "Wave"
+    c: 1.0
+    domain:
+      x: [0.0, 1.0]
+      t: [0.0, 1.0]
+    n_res: 1000
+    n_bc: 100
+    exact_solution: "damped_sine"
+  reaction:
+    id: "reaction_ode"
+    alias: "Reaction"
+    rho: 5.0
+    domain:
+      x: [0.0, 1.0]
+    n_res: 1000
+    n_bc: 2
+    exact_solution: "exponential"
+
+# Method and Baseline Registry
+methods:
+  ours:
+    id: "adam_lbfgs_hybrid"
+    name: "Adam+L-BFGS Hybrid"
+    adam_steps: 11000
+    lbfgs_steps: 1000
+    learning_rate: 1e-3
+  oracle:
+    id: "oracle_selection"
+    name: "Oracle Selection"
+    per_sample_lowest_score_selection: true
+  adam:
+    id: "adam_only"
+    name: "Adam Optimizer"
+    steps: 12000
+    learning_rate: 1e-3
+  lbfgs:
+    id: "lbfgs_only"
+    name: "L-BFGS Optimizer"
+    steps: 2000
+    learning_rate: 1.0
+  nncg:
+    id: "nys_newton_cg"
+    name: "NysNewton-CG"
+    rank: 16
+    damping: 0.1
+    max_iter: 1000
+    armijo_beta: 0.5
+    armijo_alpha: 0.1
+
+# Parameter Sweeps Configuration
+sweeps:
+  network_widths: [20, 50, 100, 200]
+  learning_rates: [1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
+  beta_values: [0.0, 1.0, 2.0, 30.0, 40.0]
+  per_sample_lowest_score_selection: [true, false]
+  nncg_ranks: [8, 16, 32]
+  damping_factors: [0.01, 0.1, 1.0]
+
+# Experiment Registry & Evidence Obligation Matrix
+experiments:
+  experiment_1:
+    id: "optimizer_comparison"
+    name: "Experiment I: Optimizer Comparison"
+    environment: "convection"
+    methods: ["adam", "lbfgs", "ours"]
+    metrics: ["loss", "l2re"]
+    artifact_writer: "write_optimizer_comparison_artifact"
+    output_path: "results/optimizer_comparison.png"
+  experiment_3:
+    id: "loss_vs_l2re"
+    name: "Experiment III: Loss vs L2RE Correlation"
+    environment: "wave"
+    methods: ["ours"]
+    metrics: ["loss", "l2re"]
+    artifact_writer: "write_figure_3_artifact"
+    output_path: "results/figures/figure_3.png"
+  experiment_4:
+    id: "hessian_spectral_analysis"
+    name: "Experiment IV: Hessian Spectral Analysis"
+    environment: "convection"
+    methods: ["ours"]
+    metrics: ["hessian_eigenvalues", "spectral_density"]
+    artifact_writer: "write_sensitivity_report_artifact"
+    output_path: "results/sensitivity_report.json"
+  experiment_5:
+    id: "nncg_vs_lbfgs"
+    name: "Experiment V: NNCG vs L-BFGS"
+    environment: "reaction"
+    methods: ["lbfgs", "nncg"]
+    metrics: ["loss", "l2re"]
+    artifact_writer: "write_summary_artifact"
+    output_path: "results/tables/summary.csv"
+  experiment_6:
+    id: "precision_selection"
+    name: "Experiment VI: Precision and Selection Protocol"
+    environment: "convection"
+    methods: ["ours", "oracle"]
+    metrics: ["precision", "l2re"]
+    artifact_writer: "write_table_3_artifact"
+    output_path: "results/tables/table_3.csv"
+  experiment_7:
+    id: "landscape_visualization"
+    name: "Experiment VII: Landscape Visualization"
+    environment: "wave"
+    methods: ["ours"]
+    metrics: ["loss_grid"]
+    artifact_writer: "write_figure_6_artifact"
+    output_path: "results/figures/figure_6.png"
+  experiment_8:
+    id: "nncg_progress"
+    name: "Experiment VIII: NNCG Progress Visualization"
+    environment: "reaction"
+    methods: ["nncg"]
+    metrics: ["loss_trace"]
+    artifact_writer: "write_figure_5_artifact"
+    output_path: "results/figures/figure_5.png"
+  full_reproduction:
+    id: "full_reproduction"
+    name: "Full Paper Reproduction Suite"
+    environment: "all"
+    methods: ["all"]
+    metrics: ["all"]
+    artifact_writer: "write_artifact_manifest_artifact"
+    output_path: "results/artifact_manifest.json"
+
+# Paper Formula and Algorithm Symbol Inventory (Code-Visible Anchors)
+paper_constants:
+  symbols:
+    R_p: "R^p"
+    H_f: "H_f"
+    w_i: "w_i"
+    R_d: "R^d"
+    PDE: "PDE"
+    n_res: "n_res"
+    sum_i_1: "sum_i=1"
+    x_r_i: "x_r^i"
+    n_bc: "n_bc"
+    x_b_j: "x_b^j"
+    y_i: "y_i"
+    y_prime: "y^prime"
+    y_i_prime: "y_i^prime"
+    RE: "RE"
+    sum_i_1_n: "sum_i=1^n"
+    y_i_prime2: "y_i^prime2"
+    H_L: "H_L"
+    epsilon: "epsilon"
+    kappa_f: "kappa_f"
+    K_GD: "K_GD"
+    GD: "GD"
+    eta_GD: "eta_GD"
+    K_DN: "K_DN"
+    DN: "DN"
+  numeric_anchors:
+    zero: 0
+    one: 1
+    two: 2
+    three: 3
+    four: 4
+    five: 5
+    six: 6
+    seven: 7
+    eight: 8
+    eight_point_one: 8.1
+    eight_point_four: 8.4
+    ten: 10
+    forty: 40
+    sixty: 60
+    hundred: 100
+    two_hundred: 200
+
+# Section E.2 NysNewton-CG (NNCG) Algorithm Parameters & Anchors
+nncg_algorithm:
+  symbols:
+    eta_k: "eta_k"
+    epsilon: "epsilon"
+    beta: "beta"
+    d_k_minus_1: "d_k-1"
+    alpha: "alpha"
+    mu: "mu"
+    w_0: "w_0"
+    CGNNCG: "CGNNCG"
+    d_minus_1: "d_-1"
+    Lambda_hat: "Lambda_hat"
+    H_L: "H_L"
+    w_k: "w_k"
+    d_k: "d_k"
+    w_k_plus_1: "w_k+1"
+  defaults:
+    eta_k: 0.1
+    epsilon: 1.0
+    beta: 60.0
+    alpha: 20.0
+    mu: 10.0
+    rank: 16
+    max_iter: 1000
+    armijo_decay: 0.5
+
+# Section C.2 Preconditioned Spectral Density Computation Parameters & Anchors
+spectral_density:
+  symbols:
+    rho_k: "rho_k"
+    sum_l_2_m: "sum_l=2^m"
+    rho_k_minus_l: "rho_k-l"
+    rho_k_minus_1: "rho_k-1"
+    H_k: "H_k"
+    s_k: "s_k"
+    x_k_plus_1: "x_k+1"
+    x_k: "x_k"
+    y_k: "y_k"
+    f_k_plus_1: "f_k+1"
+    f_k: "f_k"
+    y_k_T: "y_k^T"
+    gamma_k: "gamma_k"
+    s_k_minus_1_T: "s_k-1^T"
+  defaults:
+    m: 100
+    one: 1
+    zero: 0
+    two: 2
+    seven: 7
+    three: 3

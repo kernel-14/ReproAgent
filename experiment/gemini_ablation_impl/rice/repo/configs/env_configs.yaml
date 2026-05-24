@@ -1,0 +1,319 @@
+# configs/env_configs.yaml
+# RICE: Breaking Through the Training Bottlenecks of Reinforcement Learning with Explanation
+# Reference Grounding: paperbench_ref_006 Refine_mujoco/masknet/readme.md
+
+# -------------------------------------------------------------------------
+# 1. Active Reproduction Scope Notes & Metadata
+# -------------------------------------------------------------------------
+metadata:
+  project_name: "RICE Reproduction"
+  description: "Faithful reproduction of RICE: Breaking Through the Training Bottlenecks of Reinforcement Learning with Explanation"
+  active_reproduction_scope: "Bounded execution smoke/default subset and full-mode sweeps"
+  hypothesis: "Vanilla PPO is sufficient to train the state mask without sacrificing theoretical guarantees when the objective is reformulated."
+  decision_value: "Standardizes the optimization process for both the explanation and the refinement phases."
+
+# -------------------------------------------------------------------------
+# 2. Environment/Task Factories & Aliases
+# -------------------------------------------------------------------------
+environments:
+  Hopper-v3:
+    id: "Hopper-v3"
+    aliases: ["Hopper", "mujoco", "gym"]
+    setup_metadata:
+      state_dim: 11
+      action_dim: 3
+      reward_type: "dense"
+    availability_check: "import gym; gym.make('Hopper-v3')"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+  
+  Walker2d-v3:
+    id: "Walker2d-v3"
+    aliases: ["Walker2d", "mujoco", "gym"]
+    setup_metadata:
+      state_dim: 17
+      action_dim: 6
+      reward_type: "dense"
+    availability_check: "import gym; gym.make('Walker2d-v3')"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  Reacher-v3:
+    id: "Reacher-v3"
+    aliases: ["Reacher", "mujoco", "gym"]
+    setup_metadata:
+      state_dim: 11
+      action_dim: 2
+      reward_type: "dense"
+    availability_check: "import gym; gym.make('Reacher-v3')"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  HalfCheetah-v3:
+    id: "HalfCheetah-v3"
+    aliases: ["HalfCheetah", "mujoco", "gym"]
+    setup_metadata:
+      state_dim: 17
+      action_dim: 6
+      reward_type: "dense"
+    availability_check: "import gym; gym.make('HalfCheetah-v3')"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  SelfishMining-v0:
+    id: "SelfishMining-v0"
+    aliases: ["Selfish Mining", "selfish mining", "selfish_mining"]
+    setup_metadata:
+      state_dim: 3
+      action_dim: 4
+      reward_type: "sparse"
+    availability_check: "import rice.envs.real_world_envs"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  CageChallenge2-v0:
+    id: "CageChallenge2-v0"
+    aliases: ["Cage Challenge 2", "CAGE Challenge 2", "cage", "network_defense"]
+    setup_metadata:
+      state_dim: 52
+      action_dim: 4
+      reward_type: "dense"
+    availability_check: "import rice.envs.real_world_envs"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  AutonomousDriving-v0:
+    id: "AutonomousDriving-v0"
+    aliases: ["Autonomous Driving", "autonomous driving", "autonomous_driving"]
+    setup_metadata:
+      state_dim: 25
+      action_dim: 2
+      reward_type: "dense"
+    availability_check: "import rice.envs.real_world_envs"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+  MalwareMutation-v0:
+    id: "MalwareMutation-v0"
+    aliases: ["Malware Mutation", "Malware Mutation", "network_defense"]
+    setup_metadata:
+      state_dim: 1024
+      action_dim: 23
+      reward_type: "sparse"
+    availability_check: "import rice.envs.real_world_envs"
+    runnable_config_hook: "rice.envs.env_factory.make_env"
+
+# -------------------------------------------------------------------------
+# 3. Dataset/Benchmark Loaders
+# -------------------------------------------------------------------------
+datasets:
+  cage:
+    id: "cage"
+    aliases: ["cage", "network_defense"]
+    setup_metadata:
+      source: "CybORG Challenge 2"
+      validation_check: "import cyborg"
+      runnable_config_hook: "rice.envs.env_factory.load_dataset"
+  gym:
+    id: "gym"
+    aliases: ["gym", "mujoco"]
+    setup_metadata:
+      source: "OpenAI Gym MuJoCo"
+      validation_check: "import gym"
+      runnable_config_hook: "rice.envs.env_factory.load_dataset"
+  mujoco:
+    id: "mujoco"
+    aliases: ["mujoco", "gym"]
+    setup_metadata:
+      source: "MuJoCo Benchmarks"
+      validation_check: "import gym"
+      runnable_config_hook: "rice.envs.env_factory.load_dataset"
+  selfish_mining:
+    id: "selfish_mining"
+    aliases: ["selfish_mining", "selfish mining"]
+    setup_metadata:
+      source: "Bitcoin Bare Fee Model MDP"
+      validation_check: "import numpy"
+      runnable_config_hook: "rice.envs.env_factory.load_dataset"
+  network_defense:
+    id: "network_defense"
+    aliases: ["network_defense", "cage", "Malware Mutation"]
+    setup_metadata:
+      source: "CybORG / Malware RL"
+      validation_check: "import numpy"
+      runnable_config_hook: "rice.envs.env_factory.load_dataset"
+  autonomous_driving:
+    id: "autonomous_driving"
+    aliases: ["autonomous_driving", "autonomous driving"]
+    setup_metadata:
+      source: "MetaDrive Simulator"
+      validation_check: "import metadrive"
+      runnable_config_hook: "rice.envs.env_factory.load_dataset"
+
+# -------------------------------------------------------------------------
+# 4. Method / Baseline / Attack Selectors
+# -------------------------------------------------------------------------
+methods:
+  selectors:
+    - "ours"
+    - "random"
+    - "statemask"
+    - "ppo"
+    - "sac"
+    - "gail"
+    - "jsrl"
+    - "heuristic"
+    - "Ours"
+    - "b-line"
+    - "ppo fine-tuning"
+    - "statemask-r"
+
+# -------------------------------------------------------------------------
+# 5. Parameter Sweeps & Hyperparameter Defaults
+# -------------------------------------------------------------------------
+parameter_sweeps:
+  alpha: [0.01, 0.001, 0.0001]
+  lambda: [0.0, 0.1, 0.01, 0.001]
+  p: [0.0, 0.25, 0.5, 0.75, 1.0]
+  learning_rate: [3e-4, 1e-4, 5e-5]
+  ppo_hyperparameters:
+    learning_rate: 3e-4
+    batch_size: 64
+    gamma: 0.99
+    clip_range: 0.2
+    ent_coef: 0.0
+    n_epochs: 10
+    n_steps: 2048
+
+# -------------------------------------------------------------------------
+# 6. Callable Protocol Matrix (Experiment Matrix)
+# -------------------------------------------------------------------------
+experiment_protocol_matrix:
+  experiment_i:
+    aliases: ["experiment_i", "experiment i"]
+    env: "Hopper-v3"
+    method: "ours"
+    metric_function: "rice.metrics.fidelity.calculate_fidelity"
+    artifact_writer: "rice.utils.artifact_logger.write_figure_5"
+  experiment_ii:
+    aliases: ["experiment_ii", "experiment ii"]
+    env: "Walker2d-v3"
+    method: "ours"
+    metric_function: "rice.metrics.fidelity.calculate_fidelity"
+    artifact_writer: "rice.utils.artifact_logger.write_table_4"
+  experiment_iii:
+    aliases: ["experiment_iii", "experiment iii", "experiment 3"]
+    env: "Reacher-v3"
+    method: "ours"
+    metric_function: "rice.metrics.fidelity.calculate_fidelity"
+    artifact_writer: "rice.utils.artifact_logger.write_figure_1"
+  experiment_iv:
+    aliases: ["experiment_iv", "experiment iv"]
+    env: "HalfCheetah-v3"
+    method: "ours"
+    metric_function: "rice.metrics.fidelity.calculate_fidelity"
+    artifact_writer: "rice.utils.artifact_logger.write_table_1"
+  experiment_v:
+    aliases: ["experiment_v", "experiment v"]
+    env: "SelfishMining-v0"
+    method: "ours"
+    metric_function: "rice.metrics.fidelity.calculate_fidelity"
+    artifact_writer: "rice.utils.artifact_logger.write_table_3"
+
+# -------------------------------------------------------------------------
+# 7. Paper Formula & Algorithm Symbol Inventory (Code-Visible Anchors)
+# -------------------------------------------------------------------------
+symbol_inventory:
+  d_max: "d_max"
+  V_pi: "V^pi"
+  E_pi: "E_pi"
+  sum_t_0_infty: "sum_t=0^infty"
+  gamma_t: "gamma^t"
+  s_t: "s_t"
+  a_t: "a_t"
+  s_0: "s_0"
+  Q_pi: "Q^pi"
+  a_0: "a_0"
+  A_pi: "A^pi"
+  pi_star: "pi^*"
+  max_pi: "max_pi"
+  E_ssimrho: "E_ssimrho"
+  d_rho_pi: "d_rho^pi"
+  gamma: "gamma"
+  Pr_pi: "Pr^pi"
+  pi_r: "pi^r"
+  d_rho: "d_rho"
+  a_t_m: "a_t^m"
+  a_random: "a_random"
+  theta: "theta"
+  pi_bar: "pi_bar"
+  pi_tilde_theta: "pi_tilde_theta"
+  pi_tilde: "pi_tilde"
+  pi_prime: "pi^prime"
+  lambda: "lambda"
+  pi_theta: "pi_theta"
+  f_hat_theta: "f_hat_theta"
+  pi_hat: "pi_hat"
+  R_prime: "R^prime"
+  tau: "tau"
+  theta_old: "theta_old"
+  s_t_plus_1: "s_t+1"
+  R_t_prime: "R_t^prime"
+  a_prime: "a^prime"
+  epsilon_hat: "epsilon_hat"
+  kappa_hat: "kappa_hat"
+  pi_e: "pi_e"
+  pi_g: "pi_g"
+  numeric_anchors: [0, 1, 2, 3.1, 3.6, 3, 10, 20, 30, 40, 3.3, 4, 3.5, 3.4, 0.25, 0.5]
+
+# -------------------------------------------------------------------------
+# 8. Technique Details & Proof Anchors
+# -------------------------------------------------------------------------
+formula_anchors:
+  section_3_3:
+    title: "3.3. Technique Detail"
+    symbols: ["theta", "pi_bar", "alpha", "pi_tilde", "pi_prime", "lambda", "pi_theta", "f_hat_theta", "pi_hat", "R_prime", "s_t", "a_t", "a_t_m", "tau", "a_random", "theta_old", "s_0", "s_t_plus_1", "R_t_prime"]
+    numeric_defaults: [0, 1, 2, 3.1]
+    algorithm_terms: ["equation", "algorithm", "objective", "mask", "ema", "compute", "update", "sample", "loss", "calculate"]
+    steps:
+      - "With this reformulation, we can utilize the vanilla PPO algorithm to train the state mask without sacrificing the theoretical guarantee."
+      - "To tackle this problem, we add an additional reward by giving an extra bonus when the mask net outputs 1."
+      - "We leverage a state-of-the-art explanation method StateMask (Cheng et al., 2023)."
+      - "At a high level, StateMask parameterizes the importance of the target agent's current time step as a neural network model (i.e., mask network)."
+
+  section_4_2:
+    title: "4.2. Experiment Design"
+    symbols: ["alpha"]
+    numeric_defaults: [10, 20, 30, 40]
+    algorithm_terms: ["mask", "rank", "ema", "compute", "select", "sample"]
+    steps:
+      - "To show the equivalence of our explanation method with StateMask, we compare the fidelity of our method with StateMask."
+      - "We compute the fidelity score of each explanation method as mentioned in StateMask across 500 trajectories."
+
+  section_b_2:
+    title: "B.2. Proof of Lemma 3.5"
+    symbols: ["d_rho", "pi_hat", "d_rho_pi", "Q_pi", "V_pi", "asset_4", "Q_diff", "a_prime", "epsilon_hat", "kappa_hat"]
+    numeric_defaults: [4]
+    algorithm_terms: ["formula", "mask", "ema"]
+    steps:
+      - "where \\hat{\\pi} is the equivalent policy of reweighting the original policy \\pi and w(s) is the weight provided by the mask network."
+      - "Although the mask network takes the current input state as input, it implicitly considers the current action as well, as detailed by StateMask (Cheng et al., 2023)."
+
+  section_c_3:
+    title: "C.3. Additional Experiment Results"
+    symbols: ["alpha"]
+    numeric_defaults: [0.25, 0.5]
+    algorithm_terms: ["mask", "ema", "sample"]
+    steps:
+      - "For all applications, we choose the coefficient of the intrinsic reward for training the mask network \\alpha as 0.01."
+      - "First, We observe that our explanation method has similar fidelity scores with StateMask across all applications, empirically indicating the equivalence of our explanation method with StateMask."
+
+  section_c_4:
+    title: "C.4. Evaluation Results of MuJoCo Games with Sparse Rewards"
+    symbols: ["alpha"]
+    numeric_defaults: [0, 1]
+    algorithm_terms: ["mask", "ema"]
+    steps:
+      - "First, we compare our refining method with other baseline methods (i.e., PPO fine-tuning, StateMask-R, and JSRL) in the SparseWalker2d game."
+      - "We vary the hyper-parameter \\alpha from \\{0.01,0.001,0.0001\\} and record the fidelity scores of the mask network trained under different settings of \\alpha."
+
+  section_4_1:
+    title: "4.1. Experiment Setup"
+    symbols: ["pi_e", "pi_g"]
+    algorithm_terms: ["mask", "ema", "select"]
+    steps:
+      - "Since our explanation method proposes an alternative design of StateMask, the first baseline is StateMask."
+      - "We compare our explanation method with StateMask to show the equivalence and efficiency of our method."

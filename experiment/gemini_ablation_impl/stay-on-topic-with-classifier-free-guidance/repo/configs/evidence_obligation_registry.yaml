@@ -1,0 +1,271 @@
+# configs/evidence_obligation_registry.yaml
+# Faithful reproduction evidence obligation registry for "Stay on topic with Classifier-Free Guidance"
+
+# -------------------------------------------------------------------------
+# 1. Defined Symbols & Formula/Algorithm Symbol Inventory
+# -------------------------------------------------------------------------
+defines_symbols:
+  w_p: "prompt"
+  flops_computation: "flops_computation_formula"
+  sum_k: "sum_k_formula"
+  p_k: "p_k_formula"
+  x_i: "x_i_formula"
+  x_less_than_i: "x_<i"
+  sum_i_1_n: "sum_i=1^n"
+  P_theta: "P_theta"
+  P_phi: "P_phi"
+  gamma: "gamma"
+  theta: "theta"
+  epsilon_t: "epsilon_t"
+  x_t_plus_1: "x_t+1"
+  prod_i_1_T: "prod_i=1^T"
+  w_i: "w_i"
+  w_j_less_than_i: "w_j<i"
+  prod_i_T: "prod_i^T"
+  c_bar: "c_bar"
+  n_c: "n_c"
+  n_p: "n_p"
+  w_t: "w_t"
+  w_less_than_t: "w_<t"
+  w_T: "w_T"
+  w_hat: "w_hat"
+
+# -------------------------------------------------------------------------
+# 2. Numeric & Default Anchors
+# -------------------------------------------------------------------------
+numeric_anchors:
+  anchor_5_1: 5.1
+  anchor_1: 1
+  anchor_0: 0
+  anchor_3: 3
+  anchor_4: 4
+  anchor_6: 6
+  anchor_7: 7
+  anchor_5: 5
+  anchor_3_4: 3.4
+  anchor_81: 81
+  anchor_1_5: 1.5
+  anchor_77_9: 77.9
+  anchor_2: 2
+  anchor_10: 10
+  anchor_100: 100
+  anchor_0_2: 0.2
+
+# -------------------------------------------------------------------------
+# 3. Environment/Task Factories
+# -------------------------------------------------------------------------
+environment_task_factories:
+  - id: "unit-002"
+    aliases: ["zero_shot_eval"]
+    setup_metadata:
+      description: "Zero-shot evaluation environment"
+    availability_check: "check_zero_shot_available"
+    runnable_config_hook: "setup_zero_shot_config"
+  - id: "unit-003"
+    aliases: ["cot_eval"]
+    setup_metadata:
+      description: "Chain-of-Thought evaluation environment"
+    availability_check: "check_cot_available"
+    runnable_config_hook: "setup_cot_config"
+  - id: "unit-004"
+    aliases: ["program_synthesis_eval"]
+    setup_metadata:
+      description: "Program synthesis evaluation environment"
+    availability_check: "check_program_synthesis_available"
+    runnable_config_hook: "setup_program_synthesis_config"
+  - id: "unit-007"
+    aliases: ["negative_prompting_eval"]
+    setup_metadata:
+      description: "Negative prompting evaluation environment"
+    availability_check: "check_negative_prompting_available"
+    runnable_config_hook: "setup_negative_prompting_config"
+  - id: "glue"
+    aliases: ["glue_benchmark", "glue_tasks"]
+    setup_metadata:
+      description: "GLUE benchmark tasks for language models"
+    availability_check: "check_glue_available"
+    runnable_config_hook: "setup_glue_config"
+  - id: "significantly different"
+    aliases: ["sig_diff_eval"]
+    setup_metadata:
+      description: "Significantly different task distributions"
+    availability_check: "check_sig_diff_available"
+    runnable_config_hook: "setup_sig_diff_config"
+  - id: "underperform distributions among all"
+    aliases: ["underperform_dist"]
+    setup_metadata:
+      description: "Evaluation of underperforming distributions among all baselines"
+    availability_check: "check_underperform_available"
+    runnable_config_hook: "setup_underperform_config"
+  - id: "humanoid"
+    aliases: ["humanoid_eval"]
+    setup_metadata:
+      description: "Humanoid or human-like evaluation tasks"
+    availability_check: "check_humanoid_available"
+    runnable_config_hook: "setup_humanoid_config"
+  - id: "decides which"
+    aliases: ["decides_which_eval"]
+    setup_metadata:
+      description: "Decides which model or prompt variant to use dynamically"
+    availability_check: "check_decides_which_available"
+    runnable_config_hook: "setup_decides_which_config"
+  - id: "config tests artifact-writer expose explicit"
+    aliases: ["explicit_config_tests"]
+    setup_metadata:
+      description: "Explicit config tests and artifact-writer verification environment"
+    availability_check: "check_explicit_config_tests_available"
+    runnable_config_hook: "setup_explicit_config_tests_config"
+  - id: "common sense reasoning"
+    aliases: ["common_sense_reasoning_tasks"]
+    setup_metadata:
+      description: "Common sense reasoning benchmark suite"
+    availability_check: "check_common_sense_available"
+    runnable_config_hook: "setup_common_sense_config"
+  - id: "diverse array"
+    aliases: ["diverse_array_tasks"]
+    setup_metadata:
+      description: "Diverse array of NLP tasks"
+    availability_check: "check_diverse_array_available"
+    runnable_config_hook: "setup_diverse_array_config"
+
+# -------------------------------------------------------------------------
+# 4. Dataset/Benchmark Loaders
+# -------------------------------------------------------------------------
+dataset_benchmark_loaders:
+  - id: "LAMBADA"
+    aliases: ["lambada_dataset", "lambada_openai"]
+    setup_metadata:
+      description: "LAMBADA word prediction dataset"
+    validation_check: "validate_lambada"
+    runnable_config_hook: "load_lambada_config"
+  - id: "Closebook QA"
+    aliases: ["closebook_qa_dataset", "trivia_qa", "web_questions"]
+    setup_metadata:
+      description: "Closebook Question Answering datasets"
+    validation_check: "validate_closebook_qa"
+    runnable_config_hook: "load_closebook_qa_config"
+  - id: "Common Sense Reasoning"
+    aliases: ["common_sense_reasoning_dataset", "hellaswag", "piqa", "winogrande", "arc"]
+    setup_metadata:
+      description: "Common sense reasoning datasets"
+    validation_check: "validate_common_sense"
+    runnable_config_hook: "load_common_sense_config"
+  - id: "Open-Assistant"
+    aliases: ["open_assistant_dataset", "oasst1"]
+    setup_metadata:
+      description: "Open-Assistant conversational dataset"
+    validation_check: "validate_open_assistant"
+    runnable_config_hook: "load_open_assistant_config"
+  - id: "glue"
+    aliases: ["glue_dataset"]
+    setup_metadata:
+      description: "GLUE dataset loader"
+    validation_check: "validate_glue"
+    runnable_config_hook: "load_glue_config"
+
+# -------------------------------------------------------------------------
+# 5. Parameter Sweeps
+# -------------------------------------------------------------------------
+parameter_sweeps:
+  guidance_scale_gamma:
+    name: "guidance scale gamma"
+    default: 1.5
+    sweep_values: [1.0, 1.25, 1.5, 1.75, 2.0, 3.0, 4.0, 5.0, 8.0]
+  top_p:
+    name: "top-p"
+    default: 0.9
+    sweep_values: [0.5, 0.8, 0.9, 0.95, 1.0]
+  temperature:
+    name: "temperature"
+    default: 0.8
+    sweep_values: [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5]
+
+# -------------------------------------------------------------------------
+# 6. Method/Baseline/Attack Selectors
+# -------------------------------------------------------------------------
+method_baseline_attack_selectors:
+  ours:
+    id: "ours"
+    description: "Classifier-Free Guidance for Language Models (Proposed)"
+    default_gamma: 1.5
+  chain_of_thought:
+    id: "chain_of_thought"
+    description: "Chain-of-Thought prompting baseline"
+    default_gamma: 1.0
+  bert:
+    id: "bert"
+    description: "BERT-style bidirectional baseline"
+    default_gamma: 1.0
+  ppo:
+    id: "ppo"
+    description: "Reinforcement Learning from Human Feedback via PPO baseline"
+    default_gamma: 1.0
+
+# -------------------------------------------------------------------------
+# 7. Fixed Hyperparameter Anchors
+# -------------------------------------------------------------------------
+fixed_hyperparameter_anchors:
+  gamma_5:
+    name: "gamma_5"
+    value: 5.0
+    description: "Fixed guidance scale anchor of 5.0"
+
+# -------------------------------------------------------------------------
+# 8. Referenced Baseline Default Hyperparameters
+# -------------------------------------------------------------------------
+referenced_baseline_default_hyperparameters:
+  ours:
+    gamma: 1.5
+    temperature: 0.8
+    top_p: 0.9
+  chain_of_thought:
+    gamma: 1.0
+    temperature: 0.8
+    top_p: 0.9
+  bert:
+    gamma: 1.0
+    temperature: 1.0
+    top_p: 1.0
+  ppo:
+    gamma: 1.0
+    temperature: 0.7
+    top_p: 0.9
+
+# -------------------------------------------------------------------------
+# 9. Formula & Algorithm Anchors
+# -------------------------------------------------------------------------
+formula_algorithm_anchors:
+  - id: "2.1. Classifier Guidance in Text-to-Image Models"
+    reference_grounding: "chunk_004"
+    symbols: ["P_theta", "P_phi", "gamma", "theta", "epsilon_t", "x_t+1"]
+    numeric_defaults: [4, 1, 0, 3]
+    algorithm_terms: ["equation", "ema", "sample"]
+    steps: "log P_hat(epsilon_t | x_t+1, c) = gamma * log P_theta(epsilon_t | x_t+1, c) - (gamma - 1) * log P_theta(epsilon_t | x_t+1)"
+  - id: "2.2. Classifier-Free Guidance of Language Models"
+    reference_grounding: "chunk_004"
+    symbols: ["P_theta", "prod_i=1^T", "gamma", "prod_i^T", "w_i", "w_j<i"]
+    numeric_defaults: [1, 6, 7, 5, 3.4]
+    algorithm_terms: ["equation", "formula", "sample"]
+    steps: "log P_hat(w_i | w_j<i, c) = log P_theta(w_i | w_j<i) + gamma * (log P_theta(w_i | w_j<i, c) - log P_theta(w_i | w_j<i))"
+  - id: "addendum"
+    reference_grounding: "addendum"
+    symbols: ["flops_computation", "sum_k", "sum_i=1^n", "w_p", "p_k", "x_i", "x_<i"]
+    numeric_defaults: [5.1, 1]
+    algorithm_terms: ["equation", "formula", "search"]
+    steps: "FLOPs are measured using flops_computation.py from ELECTRA repository. Falcon-7b-Base model is used."
+  - id: "C.5. Deliberative Prompting: Chain-of-Thought"
+    reference_grounding: "C.5"
+    symbols: ["gamma"]
+    numeric_defaults: [1, 1.5, 14, 0.8, 15, 0.6]
+    formula: "In each cell, the first value is the result for gamma=1 (baseline) and the second value is the result for gamma=1.5 (ours)."
+  - id: "3.1. Basic Prompting: Zero-Shot Prompts"
+    reference_grounding: "chunk_007"
+    symbols: ["gamma"]
+    numeric_defaults: [81, 1.5, 77.9]
+    formula: "LLaMA 7B model achieves 81% accuracy in Lambada (OpenAI) zero-shot benchmark with gamma=1.5, outperforming the current SOTA (zero-shot) of PaLM-540B (77.9%)."
+  - id: "3.3.1. PROGRAM SYNTHESIS EVALUATIONS"
+    reference_grounding: "3.3.1"
+    symbols: ["gamma"]
+    numeric_defaults: [4, 8, 2, 3, 1, 10, 100, 0.2]
+    algorithm_terms: ["increase"]
+    formula: "We test different CFG strength gamma and different temperatures, evaluating at pass@k for k=1, 10, 100."

@@ -1,0 +1,156 @@
+# reference_grounding: paperbench_ref_001 make_animation.py
+
+project_metadata:
+  name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+
+# 1. Dataset Registry (Interface Contract: dataset registry)
+dataset_registry:
+  robotics:
+    id: "RoboticSequenceDataset"
+    aliases: ["metaworld_trajectories", "robotics"]
+    setup_metadata:
+      source: "MetaWorld"
+      type: "expert_trajectories"
+    validation_checks:
+      - "check_file_exists"
+      - "check_trajectory_length"
+    runnable_config_hooks:
+      batch_size: 128
+    # Interface Contract: make_dataset(config)
+    factory: "src.data.inventory_registry_make.make_dataset"
+    # Interface Contract: dataset readiness check
+    readiness_check: "src.data.inventory_registry_make.check_dataset_readiness"
+
+  nethack:
+    id: "TtyrecDataset"
+    aliases: ["nld-aa-v0", "nle_data"]
+    setup_metadata:
+      source: "NLD-AA"
+      type: "ttyrec"
+    validation_checks:
+      - "check_directory_exists"
+    runnable_config_hooks:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+      batch_size: 128
+      ttyrecdataset_nld_aa_v0_batch_size_128: 128
+    factory: "src.data.inventory_registry_make.make_dataset"
+    readiness_check: "src.data.inventory_registry_make.check_dataset_readiness"
+
+# 2. Environment/Task Factories
+environment_factories:
+  NetHack:
+    id: "NetHack-v0"
+    aliases: ["nethack learning", "nle", "unit-001", "fine-tuning + bc"]
+    metrics:
+      - "gold score"
+      - "eating score"
+      - "staircase score"
+      - "scout score"
+      - "experience points"
+      - "dungeon depth"
+    availability_check: "nle"
+
+  RoboticSequence:
+    id: "RoboticSequence-v0"
+    aliases: ["robotics", "push-wall", "them were originally introduced"]
+    metrics:
+      - "success_rate"
+      - "stage_success_rate"
+      - "Forward Transfer"
+      - "AUC"
+    availability_check: "metaworld"
+
+# 3. Method/Baseline Selectors
+method_selectors:
+  ours: "Proposed knowledge retention method"
+  ppo: "Proximal Policy Optimization"
+  sac: "Soft Actor-Critic"
+  bc: "Behavioral Cloning"
+  oracle: "Oracle baseline"
+  nle: "NetHack Learning Environment baseline"
+  ewc: "Elastic Weight Consolidation"
+
+# 4. Hyperparameter Anchors & Sweeps
+hyperparameters:
+  anchors:
+    batch_size_128: 128
+  sweeps:
+    learning_rate: [0.0001, 0.0003, 0.001]
+    batch_size: [64, 128, 256]
+
+# 5. Paper Formula & Algorithm Symbol Inventory (defines_symbols)
+symbol_inventory:
+  add_nledata_directory: "/tmp/nle_data"
+  add_altorg_directory: "/tmp/altorg_data"
+  ttyrecdataset_nld_aa_v0_batch_size_128: 128
+  batch_size: 128
+  algorithm: "General training loop"
+  distill: "Knowledge distillation process"
+  compute: "Loss computation step"
+  l_aux: "auxiliary loss term"
+  theta: "current policy parameters"
+  sum_i: "summation index over parameters"
+  f_i: "Fisher information matrix diagonal element"
+  theta_i: "current policy parameter i"
+  
+  # Additional symbols from method obligations
+  theta_star: "pre-trained policy parameters"
+  l_bc: "Behavioral Cloning loss"
+  b_bc: "BC buffer"
+  d_kl: "Kullback-Leibler divergence"
+  pi_star: "pre-trained policy"
+  pi_theta: "current policy"
+  l_ks: "Kickstarting loss"
+  s_0: "initial state"
+  v_0: "value of state s0"
+  gamma: "discount factor"
+  r_0: "reward 0"
+  f_theta: "transition probability"
+  r_1: "reward 1"
+  epsilon: "threshold parameter"
+
+# 6. Numeric/Default Anchors
+numeric_anchors:
+  batch_size: 128
+  num_phases: 2
+  start_x: 0
+  max_x: 9
+  reward_correct: 1
+  epsilon_val: 0.11
+  v0_visual_val: 2.22
+  gamma_val: 0.5
+  m_val: 10
+  grad_val: 0.08
+  v0_eq_val: 9.93
+  asset_13_val: 13
+  sigma_val: 11
+  ema_val: 30
+  max_path_length: 200
+  beta_val: 1.5
+
+# 7. Algorithm Steps
+algorithm_registry:
+  bc_loss:
+    formula: "E_{s ~ B_BC} [D_KL(pi_*(s) || pi_theta(s))]"
+    terms: ["loss", "sample", "initialize"]
+  ks_loss:
+    formula: "E_{s ~ pi_theta} [D_KL(pi_*(s) || pi_theta(s))]"
+    terms: ["loss", "teacher", "student"]
+  two_state_mdp:
+    v0_formula: "(1/(1-gamma)) * (theta + r0(1-theta)(1-gamma*f_theta) + gamma*theta*r1(1-f_theta)) / (1 - gamma*f_theta + gamma*theta)"
+    numeric_defaults: [0, 9, 1, 2, 0.11, 2.22, 0.5, 10]
+  meta_world_sampling:
+    steps: "randomly sample start and goal conditions"
+    numeric_defaults: [1, 200, 1.5]
+
+# 8. Artifact Generation Config
+artifact_writer:
+  dataset_registry_path: "results/dataset_registry.json"
+  data_manifest_path: "results/data_manifest.json"
+  figures:
+    figure_1: "results/figures/figure_1.png"
+    figure_2: "results/figures/figure_2.png"
+    figure_4: "results/figures/figure_4.png"
+    figure_12: "results/figures/figure_12.png"

@@ -1,0 +1,180 @@
+# configs/addendum_constraints_flags.yaml
+# Configuration flags, sweeps, factories, and anchors for SMM reproduction.
+
+# 1. Priority Methods & Baselines
+methods:
+  ours: "SMM (Sample-specific Multi-channel Masks)"
+  vit: "ViT-B32 pre-trained on ImageNet-1K"
+  resnet: "ResNet-18 / ResNet-50 pre-trained on ImageNet-1K"
+  lora: "Low-Rank Adaptation baseline"
+  baselines:
+    - PAD
+    - NARROW
+    - MEDIUM
+    - FULL
+  ablations:
+    - ONLY_delta
+    - ONLY_f_mask
+    - SINGLE_CHANNEL_f_mask_s
+    - standard_visual_reprogramming
+  random_label_mapping: "Random Label Mapping (Rlm)"
+
+# 2. Priority Sweeps & Hyperparameters
+sweeps:
+  p: [0.0, 0.1, 0.5, 1.0]
+  learning_rate: [0.001, 0.01, 0.1]
+  patch_size: [4, 2, 1]
+  epochs: [1, 10, 50, 100]
+  mask_generator_cnn_architecture: "5-layer CNN"
+  interpolation_scale_factor_l: [1, 2, 3]
+  weight_decay: [0.0001, 0.0005, 0.001]
+
+# 3. Fixed Hyperparameters & Protocols
+fixed_hyperparameters:
+  three_seed_protocol: [42, 100, 2024]
+  imagenet_normalize:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+  vit_b32_imgsize: 384
+  resnet_imgsize: 224
+  ucf101_optimal:
+    alpha: 0.001
+    gamma: 1.0
+
+# 4. Environment & Task Factories
+task_factories:
+  unit-001:
+    alias: "unit_smoke_test"
+    setup_metadata: "Smoke test environment"
+    available: true
+  cifar-10:
+    alias: "cifar10"
+    setup_metadata: "CIFAR-10 target task"
+    available: true
+  cifar:
+    alias: "cifar100"
+    setup_metadata: "CIFAR-100 target task"
+    available: true
+  imagenet:
+    alias: "imagenet_1k"
+    setup_metadata: "ImageNet-1K pre-training source"
+    available: true
+  svhn:
+    alias: "svhn"
+    setup_metadata: "SVHN target task"
+    available: true
+  ucf101:
+    alias: "ucf101"
+    setup_metadata: "UCF101 target task"
+    available: true
+  food101:
+    alias: "food101"
+    setup_metadata: "Food101 target task"
+    available: true
+  sun397:
+    alias: "sun397"
+    setup_metadata: "SUN397 target task"
+    available: true
+  one_can_address_new:
+    alias: "new_target_tasks"
+    setup_metadata: "Generic target task adapter"
+    available: true
+
+# 5. Dataset & Benchmark Loaders
+dataset_loaders:
+  CIFAR10:
+    id: "cifar10"
+    validation_check: "check_cifar10_exists"
+  SVHN:
+    id: "svhn"
+    validation_check: "check_svhn_exists"
+  imagenet_1k:
+    id: "imagenet_1k"
+    validation_check: "check_imagenet_exists"
+  dtd:
+    id: "dtd"
+    validation_check: "check_dtd_exists"
+  eurosat:
+    id: "eurosat"
+    validation_check: "check_eurosat_exists"
+  flowers:
+    id: "flowers102"
+    validation_check: "check_flowers_exists"
+  oxford_pets:
+    id: "oxford_pets"
+    validation_check: "check_oxford_pets_exists"
+
+# 6. Executable Algorithm & Formula Anchors
+anchors:
+  framework_of_smm:
+    section: "3.1. Framework of SMM"
+    symbols: ["delta", "f_mask", "f_in", "delta_star", "d_P", "d_T", "x_i", "phi", "theta", "phi_star", "f_out", "f_P", "R_d", "y_i"]
+    algorithm_terms: ["objective", "mask", "sample"]
+    steps:
+      - "Both methods use a pre-determined shared mask to indicate the valid location of pattern delta."
+      - "We resize each target image and apply a different three-channel mask accordingly, driven by a lightweight f_mask with an interpolation up-scaling module, allowing for more dynamic and tailored approach."
+  patch_wise_interpolation:
+    section: "3.3. Patch-wise Interpolation Module"
+    symbols: ["delta", "delta_star", "f_in", "f_mask", "f_P", "f_out", "x_i", "y_i", "alpha_1", "alpha_2", "phi", "phi_star", "d_P", "sum_i_1_n"]
+    numeric_defaults:
+      l: 2
+      min_val: 0
+      max_val: 1
+    algorithm_terms: ["algorithm", "loss", "gradient", "mask", "compute", "initialize"]
+    steps:
+      - "The patch-wise interpolation module upscales CNN-generated masks from floor(H/2^l) x floor(W/2^l) back to H x W."
+  understanding_masks:
+    section: "4. Understanding Masks in Visual Reprogramming for Classification"
+    symbols: ["delta", "R_plus", "R_D", "int_X", "p_X", "F_1", "F_2", "x_i", "d_P", "f_P", "f_out"]
+    numeric_defaults:
+      zero: 0
+      one: 1
+      two: 2
+    algorithm_terms: ["loss", "mask", "sample"]
+    steps:
+      - "SMM enables stronger model learning capacity than previous representative VR methods, via showing reduced approximation error in the probability space."
+  mask_generator_architecture:
+    section: "A.2. Architecture of the Mask Generator and Parameter Statistics"
+    symbols: ["f_mask", "asset_8"]
+    numeric_defaults:
+      channels: 3
+      layers: 5
+      kernel_size: 3
+      stride: 1
+      padding: 1
+    algorithm_terms: ["mask", "ema"]
+    steps:
+      - "Architecture of the 5-layer mask generator designed for ResNet."
+  problem_setting:
+    section: "2.1. Problem Setting of Model Reprogramming"
+    symbols: ["d_T", "k_T", "x_i", "y_i", "f_P", "f_out", "f_in", "Y_sub", "min_theta", "omega", "sum_i_1_n", "theta", "R_plus"]
+    numeric_defaults:
+      one: 1
+    algorithm_terms: ["formula", "objective", "loss"]
+    steps:
+      - "Loss function maps target class predictions to target labels."
+  addendum_transforms:
+    section: "addendum"
+    symbols: ["Compose", "Resize", "RandomCrop", "RandomHorizontalFlip", "Lambda", "ToTensor", "Normalize", "IMAGENETNORMALIZE", "ViT_B32", "train_preprocess", "test_preprocess"]
+    numeric_defaults:
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+      vit_size: 384
+      resnet_size: 224
+    formula: |
+      IMAGENETNORMALIZE = {
+          'mean': [0.485, 0.456, 0.406],
+          'std': [0.229, 0.224, 0.225],
+      }
+      if model == "ViT_B32":
+          imgsize = 384
+      else:
+          imgsize = 224
+      train_preprocess = transforms.Compose([
+          transforms.Resize((imgsize + 32, imgsize + 32)),
+          transforms.RandomCrop(imgsize),
+          transforms.RandomHorizontalFlip(),
+          transforms.Lambda(lambda x: x.convert('RGB') if hasattr(x, 'convert') else x),
+          transforms.ToTensor(),
+          transforms.Normalize(IMAGENETNORMALIZE['mean'], IMAGENETNORMALIZE['std'])
+      ])

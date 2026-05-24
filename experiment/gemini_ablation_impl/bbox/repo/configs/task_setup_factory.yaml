@@ -1,0 +1,130 @@
+# configs/task_setup_factory.yaml
+# reference_grounding: paperbench_ref_030 readme.md
+
+metadata:
+  title: "BBox-Adapter: Lightweight Adapting for Black-Box Large Language Models"
+  reproduction_scope: "Faithful reproduction of BBox-Adapter task setup, environment factories, and dataset loaders."
+  hypothesis: "Environment setup is required only where it enables the paper's decisive method and metric comparisons."
+  decision_value: "Determines which task/config surfaces must be implemented before training or evaluation can be meaningful."
+  seed: 42
+
+environment_task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "question-answering"
+    setup_metadata:
+      positive_source: "ground_truth"
+      cache_path: "results/cache"
+      source_adapter_checkpoint: "results/adapter_checkpoint"
+      target_base_model: "gpt-3.5-turbo"
+      achieving_improvements: true
+      determines_which: "adapter_scores"
+      keep_all_paper_visible: true
+    availability_checks:
+      - "import bbox_adapter"
+    runnable_config_hooks:
+      data_pipeline: "bbox_adapter.datasets.build_datasets"
+      config_factory: "bbox_adapter.config.resolve_batch_size_defaults"
+      registry_configuration_artifact: "configs/task_setup_factory.yaml"
+
+dataset_loaders:
+  gsm8k:
+    id: "gsm8k"
+    aliases: ["GSM8K", "gsm8k"]
+    setup_metadata:
+      task_type: "mathematical"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  strategyqa:
+    id: "strategyqa"
+    aliases: ["StrategyQA", "strategyqa"]
+    setup_metadata:
+      task_type: "implicit_reasoning"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  truthfulqa:
+    id: "truthfulqa"
+    aliases: ["TruthfulQA", "truthfulqa"]
+    setup_metadata:
+      task_type: "truthful"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  scienceqa:
+    id: "scienceqa"
+    aliases: ["ScienceQA", "scienceqa"]
+    setup_metadata:
+      task_type: "scientific"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  toxigen:
+    id: "toxigen"
+    aliases: ["ToxiGen", "toxigen"]
+    setup_metadata:
+      task_type: "toxicity"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+
+parameter_sweeps:
+  positive_sample_sources:
+    - "Ground-Truth"
+    - "AI Feedback"
+    - "Human Feedback"
+    - "ground_truth"
+    - "ai_feedback"
+    - "human_feedback"
+  beam_sizes:
+    values: [1, 3, 5]
+    figure_3a_scale_analysis: true
+  iteration_counts:
+    values: [3, 0, 1, 2, 4]
+  adapter_sizes:
+    values: [0.1, 0.3]
+    labels: ["0.1B", "0.3B"]
+  batch_sizes:
+    values: [64]
+    batch_size_64: true
+
+fixed_hyperparameters:
+  batch_size_64: 64
+  nearest_neighbor_upsample: true
+
+method_selectors:
+  - "ours"
+  - "chain_of_thought"
+  - "oracle"
+  - "heuristic"
+  - "roberta"
+  - "fine_tuning"
+  - "lora"
+  - "sft_lora"
+  - "azure_sft"
+  - "mlm"
+  - "bbox_adapter"
+  - "ranking_nce"
+  - "online_adaptation"
+  - "single_step_inference"
+  - "full_step_inference"
+  - "ai_feedback"
+  - "energy_based_model"
+
+reproduction_artifacts:
+  table_1:
+    id: "table_1"
+    caption: "Comparison of existing LLM adaptation methods based on five aspects"
+    path: "results/tables/table_1.csv"
+    reproduction_artifact: "table 1 reproduction artifact"
+  figure_2:
+    id: "figure_2"
+    caption: "Overview of BBox-ADAPTER for black-box LLM adaptation"
+    path: "results/figures/figure_2.png"
+    reproduction_artifact: "figure 2 reproduction artifact"

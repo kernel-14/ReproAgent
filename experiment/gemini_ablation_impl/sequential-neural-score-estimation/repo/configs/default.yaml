@@ -1,0 +1,323 @@
+# configs/default.yaml
+# Sequential Neural Score Estimation (SNPSE / TSNPSE) Default Configuration
+# Reference Grounding: paperbench_repro configs/default.yaml
+
+# Global Experiment Settings
+experiment:
+  name: "snpse_reproduction"
+  seed: 123
+  device: "cpu" # or "cuda" if available
+  results_dir: "results"
+  checkpoints_dir: "results/checkpoints"
+  plots_dir: "results/figures"
+  tables_dir: "results/tables"
+
+# Active Route Contracts (Chinese Symbol Mappings)
+active_route_contracts:
+  SLCP 基准实验: "slcp_tsnpse"
+  Lotka-Volterra 基准实验: "lotka_volterra_tsnpse"
+  TSNPSE 核心算法模块: "src/methods/tsnpse.py"
+  评分网络架构模块: "src/models/score_network.py"
+  扩散模型训练模块: "train.py"
+  扩散模型采样模块: "src/snpse/models.py"
+  数据流水线模块: "src/snpse/simulators.py"
+  评估与指标模块: "src/snpse/metrics.py"
+  TSNPSE 轮次更新函数: "tsnpse_round_update"
+  DSM 损失计算函数: "dsm_loss"
+  C2ST 评分计算函数: "c2st_score"
+
+# Paper Evidence Obligation Matrix
+evidence_obligation_matrix:
+  method_core:
+    name: "Method Core"
+    source_path: "models/score_network.py"
+    description: "Implements the score network using MLP embedding networks for theta, x, and sinusoidal embeddings for t."
+  tsnpse_logic:
+    name: "TSNPSE Logic"
+    source_path: "methods/tsnpse.py"
+    description: "Implements the Truncated SNPSE (TSNPSE) algorithm with proposal prior score estimation."
+  experiment_1:
+    name: "Experiment I: SLCP comparison"
+    artifact_path: "results/experiment_registry.json"
+    description: "Sequential training and evaluation on the SLCP task."
+  experiment_2:
+    name: "Experiment II: Lotka-Volterra comparison"
+    artifact_path: "results/experiment_registry.json"
+    description: "Sequential training and evaluation on the Lotka-Volterra task."
+  c2st_evaluation:
+    name: "C2ST Evaluation"
+    artifact_path: "results/c2st_report.json"
+    description: "Classifier 2-Sample Test (C2ST) evaluation of posterior samples."
+  baseline_comparison:
+    name: "Baseline Comparison"
+    artifact_path: "results/tables/experiment_results.csv"
+    description: "Comparison of TSNPSE against NPE, NLE, NRE, and non-sequential diffusion models."
+  appendix_d_comparison:
+    name: "Appendix D Comparison"
+    artifact_path: "results/figures/figure_9.png"
+    description: "C2ST comparison across rounds for SLCP and Lotka-Volterra."
+
+# Environment & Task Factories
+environment_factories:
+  pytorch:
+    id: "pytorch"
+    alias: "PyTorch"
+    availability_check: "import torch"
+    setup_metadata:
+      version: ">=1.12.0"
+  sbi_package:
+    id: "sbi"
+    alias: "sbi package"
+    availability_check: "import sbi"
+    setup_metadata:
+      version: ">=0.21.0"
+  slcp:
+    id: "slcp"
+    alias: "SLCP"
+    difficulty: "challenging"
+    description: "SLCP task with 5-dimensional theta and 8-dimensional x."
+    availability_check: "import sbi; import torch"
+    runnable_config_hook: "configs/slcp.yaml"
+    data_pipeline: "src/snpse/simulators.py"
+  lotka_volterra:
+    id: "lotka_volterra"
+    alias: "Lotka-Volterra"
+    difficulty: "challenging"
+    description: "Lotka-Volterra task with 4-dimensional theta and 9-dimensional x."
+    availability_check: "import sbi; import torch"
+    runnable_config_hook: "configs/lotka_volterra.yaml"
+    data_pipeline: "src/snpse/simulators.py"
+
+# Dataset & Benchmark Loaders
+dataset_loaders:
+  slcp:
+    id: "slcp"
+    alias: "slcp"
+    setup_metadata:
+      theta_dim: 5
+      x_dim: 8
+      prior: "Uniform"
+    validation_checks:
+      - "check_theta_bounds"
+      - "check_x_shape"
+    runnable_config_hook: "configs/slcp.yaml"
+  lotka_volterra:
+    id: "lotka_volterra"
+    alias: "lotka_volterra"
+    setup_metadata:
+      theta_dim: 4
+      x_dim: 9
+      prior: "LogNormal"
+    validation_checks:
+      - "check_theta_positive"
+      - "check_x_shape"
+    runnable_config_hook: "configs/lotka_volterra.yaml"
+
+# Method, Baseline, and Attack Selectors
+selectors:
+  methods:
+    - "ours"             # TSNPSE
+    - "npe"              # Neural Posterior Estimation
+    - "nle"              # Neural Likelihood Estimation
+    - "nre"              # Neural Ratio Estimation
+    - "diffusion_model"  # Non-sequential Diffusion Model
+  active_method: "ours"
+
+# Hyperparameters & Parameter Sweeps
+hyperparameters:
+  # Score Network Architecture (Section E.3.2)
+  score_network:
+    layers: 3
+    hidden_dim: 256
+    activation: "SiLU"
+    time_embedding: "Sinusoidal"
+    time_embedding_dim: 64
+    theta_emb_dim: 30 # max(30, 4 * d)
+    x_emb_dim: 30     # max(30, 4 * p)
+
+  # Training & Optimization
+  training:
+    optimizer: "Adam"
+    learning_rate: 1.0e-4
+    batch_size: 128
+    num_epochs: 100
+    weight_decay: 0.0
+    ema_decay: 0.999
+
+  # Sequential Loop Settings
+  sequential:
+    num_rounds: 10
+    budget_per_round: 1000
+    total_budget: 10000
+    keep_all_data: true # Maintain data buffer across sequential rounds
+
+  # C2ST Evaluation Settings
+  evaluation:
+    c2st_classifier: "mlp" # "mlp" (2-layer MLP) or "rf" (Random Forest)
+    c2st_mlp_hidden_dim: 64
+    c2st_mlp_layers: 2
+    num_evaluation_samples: 1000
+
+  # Baseline Default Hyperparameters (Binding addendum clarification)
+  baselines:
+    npe:
+      neural_net: "maf"
+      hidden_features: 50
+      num_transforms: 5
+      learning_rate: 5.0e-4
+      batch_size: 100
+    nle:
+      neural_net: "maf"
+      hidden_features: 50
+      num_transforms: 5
+      learning_rate: 5.0e-4
+      batch_size: 100
+    nre:
+      classifier: "resnet"
+      hidden_features: 50
+      learning_rate: 5.0e-4
+      batch_size: 100
+
+# Parameter Sweeps Registry
+parameter_sweeps:
+  learning_rate:
+    values: [1.0e-4, 5.0e-4, 1.0e-3]
+    default: 1.0e-4
+  batch_size:
+    values: [64, 128, 256]
+    default: 128
+
+# Callable Experiment Specs
+experiment_specs:
+  slcp_tsnpse:
+    environment: "slcp"
+    method: "ours"
+    parameters:
+      layers: 3
+      hidden_dim: 256
+      activation: "SiLU"
+      learning_rate: 1.0e-4
+      batch_size: 128
+      num_rounds: 10
+      budget_per_round: 1000
+    metrics:
+      - "loss"
+      - "c2st"
+    artifact_writers:
+      - "write_last_artifact"
+      - "write_experiment_registry_artifact"
+      - "write_dataset_registry_artifact"
+      - "write_evidence_contract_matrix_artifact"
+      - "write_artifact_manifest_artifact"
+      - "write_metrics_artifact"
+      - "write_sensitivity_report_artifact"
+      - "write_config_resolved_artifact"
+      - "run_figure_1_route"
+      - "write_figure_1_artifact"
+      - "run_figure_2_route"
+      - "write_figure_2_artifact"
+  lotka_volterra_tsnpse:
+    environment: "lotka_volterra"
+    method: "ours"
+    parameters:
+      layers: 3
+      hidden_dim: 256
+      activation: "SiLU"
+      learning_rate: 1.0e-4
+      batch_size: 128
+      num_rounds: 10
+      budget_per_round: 1000
+    metrics:
+      - "loss"
+      - "c2st"
+    artifact_writers:
+      - "write_last_artifact"
+      - "write_experiment_registry_artifact"
+      - "write_dataset_registry_artifact"
+      - "write_evidence_contract_matrix_artifact"
+      - "write_artifact_manifest_artifact"
+      - "write_metrics_artifact"
+      - "write_sensitivity_report_artifact"
+      - "write_config_resolved_artifact"
+      - "run_figure_1_route"
+      - "write_figure_1_artifact"
+      - "run_figure_2_route"
+      - "write_figure_2_artifact"
+
+# Paper Formula & Algorithm Symbol Inventory (Code-Visible Anchors)
+symbol_inventory:
+  symbols:
+    theta: "Parameters of interest"
+    theta_t: "Perturbed parameters at time t"
+    theta_0: "Initial parameters (clean)"
+    R_d: "d-dimensional real space"
+    R_plus: "Positive real space"
+    w_t: "Standard Brownian motion"
+    theta_bar_0: "Mean of theta_0"
+    p_T: "Prior or terminal perturbation distribution"
+    theta_bar_t: "Mean of theta_t"
+    g_squared: "Diffusion coefficient g^2(t)"
+    p_t: "Perturbed distribution at time t"
+    p_tmid0: "Transition kernel p(theta_t | theta_0)"
+    nabla_theta: "Score function gradient w.r.t theta"
+    p_T_minus_t: "Time-reversed process distribution"
+    lambda_t: "Loss weighting function"
+    J_post: "Posterior score matching objective"
+    SM: "Score Matching"
+    int_0_T: "Integral from 0 to T"
+    s_psi: "Score network approximation"
+    DSM: "Denoising Score Matching"
+    R_p: "p-dimensional observation space"
+    x_obs: "Observed data"
+    p_tilde: "Proposal distribution"
+    N_r: "Number of simulations in round r"
+  numeric_anchors:
+    zero: 0
+    one: 1
+    two: 2
+    three: 3
+    four: 4
+    six: 6
+    seven: 7
+    nine: 9
+    twelve: 12
+    thirteen: 13
+    fourteen: 14
+    eighteen: 18
+    nineteen: 19
+    two_point_one: 2.1
+    fifty_four: 54
+    two_point_one_one_five: 2.115
+
+# Algorithm Steps & Objectives (Section B.1, C.2.1, C.3.1, C.4.1, C.4.3, 3.2)
+algorithms:
+  B_1_overview:
+    objective: "Train score network s_psi_lik(theta_t, x, t) approx nabla_theta log p_t(x | theta_t)"
+    steps:
+      - "Decompose posterior score into likelihood and prior score"
+      - "Train score network using Denoising Score Matching (DSM)"
+  C_2_1_overview:
+    objective: "Sequential training with proposal prior score estimation"
+    steps:
+      - "For r=1, sample parameters from the prior theta_0_i_1 ~ p(theta)"
+      - "Concatenate samples across rounds to form proposal dataset"
+  C_3_1_overview:
+    objective: "TSNPSE sequential posterior score matching"
+    steps:
+      - "For r=1, sample parameters from the prior theta_0_i_1 ~ p(theta)"
+      - "Concatenate samples and train score network s_psi using J_post"
+  C_4_1_overview:
+    objective: "Proposal prior score estimation overview"
+    steps:
+      - "For r=1, sample parameters from the prior theta_0_i_1 ~ p(theta)"
+      - "Concatenate samples and compute proposal prior score s_tilde_psi_r"
+  C_4_3_estimating_proposal_prior_score:
+    objective: "Estimate the score of the proposal prior p_tilde^r(theta)"
+    steps:
+      - "Define score network s_tilde_psi_r(theta_t, x, t)"
+      - "Train using DSM objective over the mixture of proposal distributions"
+  alternative_approaches_3_2:
+    objective: "Alternative sequential approaches (SNPE-A, B, C analogues)"
+    steps:
+      - "In round r, sample new parameters theta_0_i_r ~ p_psi^(r-1)(theta | x_obs)"
+      - "Concatenate samples and update posterior approximation"

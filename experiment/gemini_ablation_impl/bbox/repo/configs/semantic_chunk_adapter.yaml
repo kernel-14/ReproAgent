@@ -1,0 +1,214 @@
+# configs/semantic_chunk_adapter.yaml
+# reference_grounding: paperbench_ref_030 readme.md
+
+metadata:
+  title: "BBox-Adapter: Lightweight Adapting for Black-Box Large Language Models"
+  reproduction_scope: "Faithful reproduction of BBox-Adapter training, inference, and evaluation routes."
+  hypothesis: "EBM-based adapter with ranking NCE loss enables black-box LLM adaptation."
+  seed: 42
+
+interface_contract:
+  make_adapter: "bbox_adapter.adapter.make_adapter"
+  apply_shift_module: "bbox_adapter.adapter.apply_shift_module"
+
+environment_task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "question-answering"
+    setup_metadata:
+      positive_source: "ground_truth"
+      cache_path: "results/cache"
+      source_adapter_checkpoint: "results/adapter_checkpoint"
+      target_base_model: "gpt-3.5-turbo"
+      achieving_improvements: true
+      determines_which: "adapter_scores"
+      keep_all_paper_visible: true
+    availability_checks:
+      - "import bbox_adapter"
+    runnable_config_hooks:
+      data_pipeline: "bbox_adapter.datasets.build_datasets"
+      config_factory: "bbox_adapter.config.resolve_batch_size_defaults"
+      registry_configuration_artifact: "configs/semantic_chunk_adapter.yaml"
+
+dataset_loaders:
+  gsm8k:
+    id: "gsm8k"
+    aliases: ["GSM8K", "gsm8k"]
+    setup_metadata:
+      task_type: "mathematical"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  strategyqa:
+    id: "strategyqa"
+    aliases: ["StrategyQA", "strategyqa"]
+    setup_metadata:
+      task_type: "implicit_reasoning"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  truthfulqa:
+    id: "truthfulqa"
+    aliases: ["TruthfulQA", "truthfulqa"]
+    setup_metadata:
+      task_type: "truthful"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  scienceqa:
+    id: "scienceqa"
+    aliases: ["ScienceQA", "scienceqa"]
+    setup_metadata:
+      task_type: "scientific"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  toxigen:
+    id: "toxigen"
+    aliases: ["ToxiGen", "toxigen"]
+    setup_metadata:
+      task_type: "toxicity"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+
+selectable_methods:
+  ours:
+    id: "ours"
+    alias: "BBOX-ADAPTER"
+    class: "bbox_adapter.adapter.BBoxAdapter"
+  chain_of_thought:
+    id: "chain_of_thought"
+    alias: "CoT"
+    class: "bbox_adapter.baselines.ChainOfThought"
+  oracle:
+    id: "oracle"
+    alias: "Oracle"
+    class: "bbox_adapter.baselines.Oracle"
+  heuristic:
+    id: "heuristic"
+    alias: "Heuristic"
+    class: "bbox_adapter.baselines.Heuristic"
+  roberta:
+    id: "roberta"
+    alias: "RoBERTa"
+    class: "bbox_adapter.baselines.RoBERTa"
+  fine_tuning:
+    id: "fine_tuning"
+    alias: "SFT"
+    class: "bbox_adapter.baselines.FineTuning"
+  lora:
+    id: "lora"
+    alias: "LoRA"
+    class: "bbox_adapter.baselines.LoRA"
+  sft_lora:
+    id: "sft_lora"
+    alias: "SFT-LoRA"
+    class: "bbox_adapter.baselines.SFTLoRA"
+  azure_sft:
+    id: "azure_sft"
+    alias: "Azure-SFT"
+    class: "bbox_adapter.baselines.AzureSFT"
+  mlm:
+    id: "mlm"
+    alias: "MLM loss baseline"
+    class: "bbox_adapter.baselines.MLMLoss"
+  bbox_adapter:
+    id: "bbox_adapter"
+    alias: "BBOX-ADAPTER"
+    class: "bbox_adapter.adapter.BBoxAdapter"
+  ranking_nce:
+    id: "ranking_nce"
+    alias: "Ranking NCE"
+    class: "bbox_adapter.adapter.RankingNCE"
+  online_adaptation:
+    id: "online_adaptation"
+    alias: "Online Adaptation"
+    class: "bbox_adapter.adapter.OnlineAdaptation"
+  single_step_inference:
+    id: "single_step_inference"
+    alias: "BBOX-ADAPTER single-step"
+    class: "bbox_adapter.adapter.SingleStepInference"
+  full_step_inference:
+    id: "full_step_inference"
+    alias: "BBOX-ADAPTER full-step"
+    class: "bbox_adapter.adapter.FullStepInference"
+  ai_feedback:
+    id: "ai_feedback"
+    alias: "AI Feedback"
+    class: "bbox_adapter.adapter.AIFeedback"
+  energy_based_model:
+    id: "energy_based_model"
+    alias: "EBM"
+    class: "bbox_adapter.adapter.EnergyBasedModel"
+
+parameter_sweeps:
+  positive_source:
+    values: ["ground_truth", "ai_feedback", "human_feedback"]
+    default: "ground_truth"
+  beam_size:
+    values: [1, 3, 5]
+    default: 3
+  iteration_count:
+    values: [3, 0, 1, 2, 4]
+    default: 3
+  adapter_size:
+    values: [0.1, 0.3]
+    default: 0.1
+  batch_size:
+    values: [8, 16, 32, 64]
+    default: 64
+  nearest_neighbor_upsample:
+    default: true
+
+experiment_matrix:
+  datasets: ["gsm8k", "strategyqa", "truthfulqa", "scienceqa", "toxigen"]
+  methods: ["ours", "chain_of_thought", "oracle", "heuristic", "roberta", "fine_tuning", "lora", "sft_lora", "azure_sft", "mlm", "bbox_adapter", "ranking_nce", "online_adaptation", "single_step_inference", "full_step_inference", "ai_feedback", "energy_based_model"]
+  sweeps:
+    beam_size: [1, 3, 5]
+    iteration_count: [3, 0, 1, 2, 4]
+    adapter_size: [0.1, 0.3]
+    batch_size: [64]
+
+reproduction_artifacts:
+  results/model_registry.json:
+    description: "Registry of all models and adapters."
+  results/adapter_checkpoint:
+    description: "Trained adapter checkpoint directory."
+  results/figures/figure_1.png:
+    description: "Illustration of white-box, grey-box, and black-box LLM adaptation."
+  results/tables/table_1.csv:
+    description: "Comparison of existing LLM adaptation methods based on five aspects."
+  results/figures/figure_2.png:
+    description: "Overview of BBox-ADAPTER for black-box LLM adaptation."
+  results/tables/table_2.csv:
+    description: "Main results of adapting gpt-3.5-turbo on downstream tasks."
+  results/tables/table_3.csv:
+    description: "Results of plug-and-play adaptation on davinci-002 and Mixtral-8x7B."
+  results/tables/table_4.csv:
+    description: "Comparison of performance and cost for base model, SFT, and BBox-Adapter."
+  results/tables/table_5.csv:
+    description: "Accuracy of BBox-Adapter fine-tuned with MLM vs ranking-based NCE loss."
+  results/figures/figure_3.png:
+    description: "Scale analysis on StrategyQA with different beam sizes and iterations."
+  results/tables/table_6.csv:
+    description: "Accuracy and GPU memory usage on adapting Mixtral-8x7B to StrategyQA."
+  results/figures/figure_4.png:
+    description: "Case study of BBox-Adapter on GSM8K."
+  results/tables/table_7.csv:
+    description: "Results of adapting Mixtral-8x7B-v0.1 on the ToxiGen dataset."
+  results/tables/table_8.csv:
+    description: "Hyperparameter settings of SFT-LoRA."
+  results/figures/figure_5.png:
+    description: "Ablation study or additional analysis figure."
+  results/tables/table_9.csv:
+    description: "Additional results or ablation table."
+  results/figures/figure_6.png:
+    description: "Additional analysis figure."
+  results/tables/table_10.csv:
+    description: "Additional results or cost table."

@@ -1,0 +1,285 @@
+# configs/experiment_config.yaml
+# Faithful reproduction experiment configuration for "Stay on topic with Classifier-Free Guidance"
+
+# -------------------------------------------------------------------------
+# 1. Defined Symbols (defines_symbols)
+# -------------------------------------------------------------------------
+多任务数据流水线: "src.cfg_guidance.data_utils.multitask_data_pipeline"
+w_p: "prompt"
+flops_computation: "flops_computation_formula"
+sum_k: "sum_k_formula"
+p_k: "p_k_formula"
+x_i: "x_i_formula"
+sum_i_1_n: "sum_i_1_n_formula"
+equation: "equation_formula"
+formula: "formula_definition"
+search: "search_algorithm"
+p_theta: "p_theta_model"
+p_phi: "p_phi_classifier"
+
+# -------------------------------------------------------------------------
+# 2. Calls Symbols (calls_symbols)
+# -------------------------------------------------------------------------
+calls_symbols:
+  compute_loss: "src.cfg_guidance.metrics.compute_loss"
+  aggregate_loss: "src.cfg_guidance.metrics.aggregate_loss"
+  compute_reward: "src.cfg_guidance.metrics.compute_reward"
+  aggregate_reward: "src.cfg_guidance.metrics.aggregate_reward"
+  compute_ours_oradaptersby_inventory_objective: "src.cfg_guidance.metrics.compute_ours_oradaptersby_inventory_objective"
+  compute_ours_oradaptersby_inventory_score: "src.cfg_guidance.metrics.compute_ours_oradaptersby_inventory_score"
+  compute_accuracy: "src.cfg_guidance.metrics.compute_accuracy"
+  aggregate_accuracy: "src.cfg_guidance.metrics.aggregate_accuracy"
+  compute_metric_shannon_entropy_accuracy_countcomparisonbetween_objective: "src.cfg_guidance.metrics.compute_metric_shannon_entropy_accuracy_countcomparisonbetween_objective"
+  compute_metric_shannon_entropy_accuracy_countcomparisonbetween_score: "src.cfg_guidance.metrics.compute_metric_shannon_entropy_accuracy_countcomparisonbetween_score"
+  load_data_utils: "src.cfg_guidance.data_utils.load_data_utils"
+  prepare_data_utils: "src.cfg_guidance.data_utils.prepare_data_utils"
+
+# -------------------------------------------------------------------------
+# 3. Environment/Task Factories
+# -------------------------------------------------------------------------
+environment_task_factories:
+  - id: "unit-002"
+    aliases: ["zero_shot_eval"]
+    setup_metadata:
+      description: "Zero-shot evaluation environment"
+    availability_check: "src.cfg_guidance.wrapper.check_zero_shot_available"
+    runnable_config_hook: "setup_zero_shot_config"
+  - id: "unit-003"
+    aliases: ["cot_eval"]
+    setup_metadata:
+      description: "Chain-of-Thought evaluation environment"
+    availability_check: "src.cfg_guidance.wrapper.check_cot_available"
+    runnable_config_hook: "setup_cot_config"
+  - id: "unit-004"
+    aliases: ["program_synthesis_eval"]
+    setup_metadata:
+      description: "Program synthesis evaluation environment"
+    availability_check: "src.cfg_guidance.wrapper.check_program_synthesis_available"
+    runnable_config_hook: "setup_program_synthesis_config"
+  - id: "unit-007"
+    aliases: ["negative_prompting_eval"]
+    setup_metadata:
+      description: "Negative prompting evaluation environment"
+    availability_check: "src.cfg_guidance.wrapper.check_negative_prompting_available"
+    runnable_config_hook: "setup_negative_prompting_config"
+  - id: "glue"
+    aliases: ["glue_benchmark"]
+    setup_metadata:
+      description: "GLUE benchmark tasks"
+    availability_check: "src.cfg_guidance.wrapper.check_glue_available"
+    runnable_config_hook: "setup_glue_config"
+  - id: "significantly different"
+    aliases: ["significantly_different_eval"]
+    setup_metadata:
+      description: "Significantly different evaluation distributions"
+    availability_check: "src.cfg_guidance.wrapper.check_significantly_different_available"
+    runnable_config_hook: "setup_significantly_different_config"
+  - id: "underperform distributions among all"
+    aliases: ["underperform_distributions_eval"]
+    setup_metadata:
+      description: "Underperforming distributions among all baselines"
+    availability_check: "src.cfg_guidance.wrapper.check_underperform_distributions_available"
+    runnable_config_hook: "setup_underperform_distributions_config"
+  - id: "humanoid"
+    aliases: ["humanoid_eval"]
+    setup_metadata:
+      description: "Humanoid evaluation tasks"
+    availability_check: "src.cfg_guidance.wrapper.check_humanoid_available"
+    runnable_config_hook: "setup_humanoid_config"
+  - id: "decides which"
+    aliases: ["decides_which_eval"]
+    setup_metadata:
+      description: "Decides which adapter or method to use"
+    availability_check: "src.cfg_guidance.wrapper.check_decides_which_available"
+    runnable_config_hook: "setup_decides_which_config"
+  - id: "config tests artifact-writer expose explicit"
+    aliases: ["config_tests_artifact_writer_expose_explicit_eval"]
+    setup_metadata:
+      description: "Config tests artifact-writer expose explicit environment"
+    availability_check: "src.cfg_guidance.wrapper.check_config_tests_artifact_writer_expose_explicit_available"
+    runnable_config_hook: "setup_config_tests_artifact_writer_expose_explicit_config"
+  - id: "common sense reasoning"
+    aliases: ["common_sense_reasoning_eval"]
+    setup_metadata:
+      description: "Common sense reasoning tasks"
+    availability_check: "src.cfg_guidance.wrapper.check_common_sense_reasoning_available"
+    runnable_config_hook: "setup_common_sense_reasoning_config"
+  - id: "diverse array"
+    aliases: ["diverse_array_eval"]
+    setup_metadata:
+      description: "Diverse array of evaluation tasks"
+    availability_check: "src.cfg_guidance.wrapper.check_diverse_array_available"
+    runnable_config_hook: "setup_diverse_array_config"
+
+# -------------------------------------------------------------------------
+# 4. Dataset/Benchmark Loaders
+# -------------------------------------------------------------------------
+dataset_loaders:
+  - id: "LAMBADA"
+    setup_metadata:
+      description: "LAMBADA dataset loader"
+    validation_check: "src.cfg_guidance.data_utils.validate_lambada"
+    runnable_config_hook: "src.cfg_guidance.data_utils.load_lambada"
+  - id: "Closebook QA"
+    setup_metadata:
+      description: "Closebook QA dataset loader"
+    validation_check: "src.cfg_guidance.data_utils.validate_closebook_qa"
+    runnable_config_hook: "src.cfg_guidance.data_utils.load_closebook_qa"
+  - id: "Common Sense Reasoning"
+    setup_metadata:
+      description: "Common Sense Reasoning dataset loader"
+    validation_check: "src.cfg_guidance.data_utils.validate_common_sense_reasoning"
+    runnable_config_hook: "src.cfg_guidance.data_utils.load_common_sense_reasoning"
+  - id: "Open-Assistant"
+    setup_metadata:
+      description: "Open-Assistant dataset loader"
+    validation_check: "src.cfg_guidance.data_utils.validate_open_assistant"
+    runnable_config_hook: "src.cfg_guidance.data_utils.load_open_assistant"
+
+# -------------------------------------------------------------------------
+# 5. Metric Formulas & Aggregation Functions
+# -------------------------------------------------------------------------
+metrics:
+  accuracy:
+    formula: "correct_predictions / total_predictions"
+    aggregation: "src.cfg_guidance.metrics.aggregate_accuracy"
+    result_field_writer: "src.cfg_guidance.metrics.write_accuracy"
+    canonical_identifier: "metric_accuracy"
+  shannon_entropy_logit_difference:
+    formula: "-sum(p * log(p)) and log(P(w_t | w_<t)) - log(P(w_T | w_hat))"
+    aggregation: "src.cfg_guidance.metrics.aggregate_shannon_entropy_logit_difference"
+    result_field_writer: "src.cfg_guidance.metrics.write_shannon_entropy_logit_difference"
+    canonical_identifier: "metric_shannon_entropy_logit_difference"
+  perplexity:
+    formula: "exp(cross_entropy_loss)"
+    aggregation: "src.cfg_guidance.metrics.aggregate_perplexity"
+    result_field_writer: "src.cfg_guidance.metrics.write_perplexity"
+    canonical_identifier: "metric_perplexity"
+  return:
+    formula: "sum(rewards)"
+    aggregation: "src.cfg_guidance.metrics.aggregate_return"
+    result_field_writer: "src.cfg_guidance.metrics.write_return"
+    canonical_identifier: "metric_return"
+  fidelity_score:
+    formula: "fidelity_metric_formula"
+    aggregation: "src.cfg_guidance.metrics.aggregate_fidelity_score"
+    result_field_writer: "src.cfg_guidance.metrics.write_fidelity_score"
+    canonical_identifier: "metric_fidelity_score"
+  training_cost:
+    formula: "flops_computation_formula"
+    aggregation: "src.cfg_guidance.metrics.aggregate_training_cost"
+    result_field_writer: "src.cfg_guidance.metrics.write_training_cost"
+    canonical_identifier: "metric_training_cost"
+  toxicity:
+    formula: "toxicity_classifier_score"
+    aggregation: "src.cfg_guidance.metrics.aggregate_toxicity"
+    result_field_writer: "src.cfg_guidance.metrics.write_toxicity"
+    canonical_identifier: "metric_toxicity"
+  figure_1_reproduction_artifact:
+    formula: "latent_space_visualization"
+    aggregation: "src.cfg_guidance.metrics.aggregate_figure_1"
+    result_field_writer: "src.cfg_guidance.metrics.write_figure_1"
+    canonical_identifier: "metric_figure_1_reproduction_artifact"
+  table_11_reproduction_artifact:
+    formula: "code_completion_image_generation_task"
+    aggregation: "src.cfg_guidance.metrics.aggregate_table_11"
+    result_field_writer: "src.cfg_guidance.metrics.write_table_11"
+    canonical_identifier: "metric_table_11_reproduction_artifact"
+
+# -------------------------------------------------------------------------
+# 6. Parameter Sweeps
+# -------------------------------------------------------------------------
+parameter_sweeps:
+  guidance_scale_gamma:
+    default: 1.5
+    values: [1.0, 1.25, 1.5, 1.75, 2.0, 3.0, 5.0]
+  top_p:
+    default: 0.9
+    values: [0.9]
+  temperature:
+    default: 0.2
+    values: [0.2, 0.6, 0.8]
+
+# -------------------------------------------------------------------------
+# 7. Result-Trend Assertions
+# -------------------------------------------------------------------------
+result_trend_assertions:
+  baseline_outperformance:
+    description: "Proposed method (CFG) should be compared against explicit baselines (Vanilla sampling, instruction-tuned models) and show improvement."
+    assertion_hook: "src.cfg_guidance.metrics.assert_baseline_outperformance"
+
+# -------------------------------------------------------------------------
+# 8. Result Artifact Paths & Writers
+# -------------------------------------------------------------------------
+artifacts:
+  figure_1:
+    path: "results/figures/figure_1.png"
+    caption: "An illustration in latent space showing how increasing the guidance weight gamma increases the importance of the prompt 'Today in France,'."
+    writer: "src.cfg_guidance.metrics.write_figure_1_artifact"
+    canonical_identifier: "artifact_figure_1"
+  table_11:
+    path: "results/tables/table_11.csv"
+    caption: "Different gamma for code completion performing the image generation task."
+    writer: "src.cfg_guidance.metrics.write_table_11_artifact"
+    canonical_identifier: "artifact_table_11"
+  table_1:
+    path: "results/tables/table_1.csv"
+    caption: "Demonstration of CFG-guided generation for an assistant-style prompt (using GPT4All with gamma=5)."
+    writer: "src.cfg_guidance.metrics.write_table_1_artifact"
+    canonical_identifier: "artifact_table_1"
+  table_5:
+    path: "results/tables/table_5.csv"
+    caption: "Results of general natural language benchmarks. In each cell, the first value is the result for gamma=1 (baseline) and the second value is the result for gamma=1.5 (ours)."
+    writer: "src.cfg_guidance.metrics.write_table_5_artifact"
+    canonical_identifier: "artifact_table_5"
+  figure_6:
+    path: "results/figures/figure_6.png"
+    caption: "Standard benchmarks over various CFG strengths for GPT2 models."
+    writer: "src.cfg_guidance.metrics.write_figure_6_artifact"
+    canonical_identifier: "artifact_figure_6"
+  figure_2:
+    path: "results/figures/figure_2.png"
+    caption: "CFG's impact on chain-of-thought prompting (GSM8K dataset). Top: accuracy on task. Bottom: invalidly formatted answers."
+    writer: "src.cfg_guidance.metrics.write_figure_2_artifact"
+    canonical_identifier: "artifact_figure_2"
+  table_1615:
+    path: "results/tables/table_1615.csv"
+    caption: "Table 1615 reproduction artifact."
+    writer: "src.cfg_guidance.metrics.write_table_1615_artifact"
+    canonical_identifier: "artifact_table_1615"
+  figure_3:
+    path: "results/figures/figure_3.png"
+    caption: "HumanEval task count comparison between gamma=1, 1.25 for CodeGen-350M-mono."
+    writer: "src.cfg_guidance.metrics.write_figure_3_artifact"
+    canonical_identifier: "artifact_figure_3"
+  table_2:
+    path: "results/tables/table_2.csv"
+    caption: "CodeGen results with temperature=0.2. CFG in nearly all cases increases performance, but the optimal gamma value varies."
+    writer: "src.cfg_guidance.metrics.write_table_2_artifact"
+    canonical_identifier: "artifact_table_2"
+  table_3:
+    path: "results/tables/table_3.csv"
+    caption: "Given the prompt 'The dragon flew over Paris, France' we display, at each sampling step, the vocabulary ranked for P(w_t | w_<t) - log P(w_T | w_hat)."
+    writer: "src.cfg_guidance.metrics.write_table_3_artifact"
+    canonical_identifier: "artifact_table_3"
+  table_7:
+    path: "results/tables/table_7.csv"
+    caption: "CodeGen-350M-mono results."
+    writer: "src.cfg_guidance.metrics.write_table_7_artifact"
+    canonical_identifier: "artifact_table_7"
+  figure_11:
+    path: "results/figures/figure_11.png"
+    caption: "CodeGen-350M-mono performance on HumanEval with various CFG strengths."
+    writer: "src.cfg_guidance.metrics.write_figure_11_artifact"
+    canonical_identifier: "artifact_figure_11"
+
+# -------------------------------------------------------------------------
+# 9. Canonical Artifact Registry Paths
+# -------------------------------------------------------------------------
+canonical_artifacts:
+  evidence_contract_matrix: "results/evidence_contract_matrix.json"
+  experiment_registry: "results/experiment_registry.json"
+  metrics: "results/metrics.json"
+  environment_registry: "results/environment_registry.json"
+  artifact_manifest: "results/artifact_manifest.json"
+  sensitivity_report: "results/sensitivity_report.json"

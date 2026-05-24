@@ -1,0 +1,203 @@
+# configs/default.yaml
+# Configuration for "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity"
+
+# Active reproduction scope notes
+reproduction_notes: "Reproduction of DPO toxicity alignment and mechanistic analysis on GPT-2/Llama-like models."
+
+# Task / Environment Registry
+task_registry:
+  unit-001:
+    id: "unit-001"
+    alias: "unit_001_toxicity_analysis"
+    setup_metadata:
+      description: "Core reproduction pipeline for probing, DPO, intervention, analysis, and unaligning."
+      active: true
+    availability_check: "src.config.check_task_availability"
+    runnable_hook: "main.run_pipeline"
+  
+  pairwise-data:
+    id: "pairwise-data"
+    alias: "pairwise_toxic_data_construction"
+    setup_metadata:
+      description: "Constructing pairwise toxic data using PPLM-like gradients or toxic/non-toxic pairs."
+      active: true
+    availability_check: "src.data_utils.check_pairwise_data"
+    runnable_hook: "src.data_utils.prepare_pairwise_data"
+
+  wikitext:
+    id: "wikitext"
+    alias: "wikitext_language_modeling"
+    setup_metadata:
+      description: "Wikitext dataset for language modeling evaluation and baseline perplexity checks."
+      active: true
+    availability_check: "src.data_utils.check_wikitext"
+    runnable_hook: "src.data_utils.load_wikitext"
+
+  binary_toxicity_classification:
+    id: "binary-toxicity-classification"
+    alias: "binary_toxicity_classification"
+    setup_metadata:
+      description: "Binary toxicity classification task using Jigsaw dataset."
+      active: true
+    availability_check: "src.data_utils.check_jigsaw"
+    runnable_hook: "src.probing.train_probe"
+
+  editing_models:
+    id: "editing-models"
+    alias: "editing_models"
+    setup_metadata:
+      description: "Editing model activations or weights (e.g., gate override or offset reversal)."
+      active: true
+    availability_check: "src.unalign.check_editing"
+    runnable_hook: "src.unalign.unalign_model"
+
+  worse_ablation_performance:
+    id: "worse-ablation-performance"
+    alias: "worse_ablation_performance_without_fabricating"
+    setup_metadata:
+      description: "Ablation studies showing worse performance without fabricating results."
+      active: true
+    availability_check: "src.analysis.check_ablation"
+    runnable_hook: "src.analysis.run_ablation"
+
+  versus_mlp_policies:
+    id: "versus-mlp-policies"
+    alias: "versus_mlp_policies_when_paper"
+    setup_metadata:
+      description: "Comparing DPO effects on MLP vs Attention layers as determined by the paper."
+      active: true
+    availability_check: "src.analysis.check_mlp_policies"
+    runnable_hook: "src.analysis.compare_mlp_policies"
+
+# Dataset / Benchmark Loaders Registry
+dataset_registry:
+  jigsaw:
+    id: "Jigsaw toxic comment classification dataset"
+    alias: "jigsaw_toxicity"
+    setup_metadata:
+      url: "https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge"
+      split_ratio: 0.90  # 90:10 split for training and validation
+      train_split: 0.90
+      val_split: 0.10
+    validation_checks:
+      - "check_file_exists"
+      - "check_labels_binary"
+    runnable_hook: "src.data_utils.load_jigsaw"
+
+  real_toxicity_prompts:
+    id: "RealToxicityPrompts"
+    alias: "real_toxicity_prompts"
+    setup_metadata:
+      url: "https://allenai.org/data/real-toxicity-prompts"
+      num_prompts: 295
+    validation_checks:
+      - "check_prompts_nonempty"
+    runnable_hook: "src.data_utils.load_real_toxicity_prompts"
+
+  wikitext:
+    id: "wikitext"
+    alias: "wikitext"
+    setup_metadata:
+      url: "https://huggingface.co/datasets/wikitext"
+    validation_checks:
+      - "check_wikitext_format"
+    runnable_hook: "src.data_utils.load_wikitext"
+
+# Toxicity Evaluator Configuration
+toxicity_evaluator:
+  model_name: "unitary/unbiased-toxic-roberta"  # Binding addendum clarification: use this instead of Perspective API
+  device: "cuda"
+  batch_size: 32
+
+# Method / Baseline / Attack Selectors
+method_selectors:
+  active_method: "ours"  # Options: ours, ppo
+  ours:
+    name: "DPO Toxicity Alignment (Ours)"
+    description: "Direct Preference Optimization for toxicity reduction."
+  ppo:
+    name: "PPO Toxicity Alignment (Baseline)"
+    description: "Proximal Policy Optimization baseline."
+
+# Parameter Sweeps and Hyperparameters
+hyperparameters:
+  beta: 0.1  # DPO beta parameter sweep default
+  beta_sweep: [0.01, 0.05, 0.1, 0.2, 0.5]
+  patience: 10  # Patience value of 10 for validation loss convergence
+  max_steps: 6700  # Convergence occurs after approximately 6,700 sample pairs
+  split_ratio: 0.90  # 90:10 split
+  p_sweep: [0.1, 0.5, 0.9]  # Bounded sweep/config entries for p
+
+# Paper Formula and Algorithm Symbol Inventory (Code-Visible Registry)
+symbol_inventory:
+  w_0: "w_0"  # First token in input sequence
+  w_t: "w_t"  # Last token in input sequence
+  x_i: "x_i"  # Embedding for token w_i
+  R_d: "R^d"  # Residual stream space dimension d
+  w_i: "w_i"  # Token at index i
+  x_ell_mid: "x^ell-mid"  # Intermittent residual stream at layer ell after attention
+  x_i_ell: "x_i^ell"  # Residual stream at layer ell for token i
+  mlp_ell: "MLP^ell"  # MLP block at layer ell
+  att_ell: "Att^ell"  # Attention block at layer ell
+  sigma: "sigma"  # Activation function (e.g., SiLU or element-wise product component)
+  W_K_ell: "W_K^ell"  # Key projection matrix at layer ell
+  W_V_ell: "W_V^ell"  # Value projection matrix at layer ell
+  d_mlp: "d_mlp"  # Dimension of MLP hidden layer
+  x_ell: "x^ell"  # Residual stream at layer ell
+  v_i: "v_i"  # Value vector
+  m_i_ell: "m_i^ell"  # Scale of value vector v_i^ell
+  m_ell: "m^ell"  # Scale vector at layer ell
+  sum_i_1: "sum_i=1"  # Summation over MLP hidden dimension
+  l_p: "l_p"  # L_p norm or projection parameter
+  k_i_ell: "k_i^ell"  # Key vector at layer ell
+  v_i_ell: "v_i^ell"  # Value vector at layer ell
+  r_i_ell: "r_i^ell"  # Residual contribution or projection
+  e_w: "e_w"  # Vocabulary projection vector
+  W_1_ell: "W_1^ell"  # First weight matrix of GLU at layer ell
+  W_2_ell: "W_2^ell"  # Second weight matrix of GLU at layer ell
+  W_Toxic: "W_Toxic"  # Toxicity probe weight matrix
+  numeric_anchors:
+    anchor_0: 0
+    anchor_1: 1
+    anchor_2: 2
+    anchor_94: 94  # Probe vector achieves 94% accuracy on validation split
+
+# Paper Formula and Algorithm Anchors
+formula_anchors:
+  preliminaries:
+    equation_2: "x_{i}^{\\ell+1} = x_{i}^{\\ell} + MLP^{\\ell}(x_{i}^{\\ell} + Att^{\\ell}(x_{i}^{\\ell}))"
+  extracting_toxic_vectors:
+    equation_probe: "P(Toxic | x^{L-1}) = softmax(W_{Toxic} x^{L-1})"
+    probe_accuracy: 0.94
+  constructing_pairwise_toxic_data:
+    patience: 10
+    max_steps: 6700
+  dpo_background:
+    loss_formula: "L_{DPO} = -E[log sigma(beta * log P - beta * log N)]"
+    p_ratio: "P = pi_theta(y_+ | w) / pi_ref(y_+ | w)"
+    n_ratio: "N = pi_theta(y_- | w) / pi_ref(y_- | w)"
+  dpo_avoids_mlp:
+    glu_formula: "sigma(W_1 x) * (W_2 x)"
+  projecting_value_vectors:
+    mlp_expansion: "MLP^{ell}(x^{ell}) = sum_{i=1}^{d_mlp} sigma(x^{ell} * k_i^{ell}) v_i^{ell} = sum_{i=1}^{d_mlp} m_i^{ell} v_i^{ell}"
+
+# Output Artifact Paths
+artifacts:
+  summary_metrics: "results/summary_metrics.json"
+  activation_analysis: "results/activation_analysis.json"
+  cosine_similarities: "results/cosine_similarities.json"
+  unalign_results: "results/unalign_results.json"
+  toxic_probe: "checkpoints/toxic_probe.pt"
+  toxic_vectors: "results/toxic_vectors.json"
+  intervention_results: "results/intervention_results.json"
+  dpo_aligned_model: "checkpoints/dpo_aligned_model.pt"
+  evidence_contract_matrix: "results/evidence_contract_matrix.json"
+  experiment_registry: "results/experiment_registry.json"
+  metrics: "results/metrics.json"
+  environment_registry: "results/environment_registry.json"
+  dataset_registry: "results/dataset_registry.json"
+  artifact_manifest: "results/artifact_manifest.json"
+  experiment_results_csv: "results/tables/experiment_results.csv"
+  table_1_csv: "results/tables/table_1.csv"
+  figure_2_png: "results/figures/figure_2.png"
+  table_2_csv: "results/tables/table_2.csv"

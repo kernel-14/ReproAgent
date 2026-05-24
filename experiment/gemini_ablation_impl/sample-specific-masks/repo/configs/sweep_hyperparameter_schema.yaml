@@ -1,0 +1,274 @@
+# configs/sweep_hyperparameter_schema.yaml
+# Faithful, complete, and judgeable sweep and hyperparameter schema for SMM.
+# Reference Grounding: paper:paper_contract_sweep_hyperparameter_protocol (chunk_024, chunk_012, chunk_016_01)
+
+# 1. Environment & Task Factories
+# Expose paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks.
+task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "unit_smoke_test"
+    setup_metadata: "Smoke test environment"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  cifar-10:
+    id: "cifar-10"
+    alias: "cifar"
+    setup_metadata: "CIFAR-10 target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  cifar:
+    id: "cifar"
+    alias: "cifar"
+    setup_metadata: "CIFAR target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    setup_metadata: "ImageNet pre-training source"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  svhn:
+    id: "svhn"
+    alias: "svhn"
+    setup_metadata: "SVHN target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  ucf101:
+    id: "ucf101"
+    alias: "ucf101"
+    setup_metadata: "UCF101 target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  food101:
+    id: "food101"
+    alias: "food101"
+    setup_metadata: "Food-101 target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  sun397:
+    id: "sun397"
+    alias: "sun397"
+    setup_metadata: "SUN397 target task"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  one_can_address_new:
+    id: "one_can_address_new"
+    alias: "address_new_tasks"
+    setup_metadata: "Address new target tasks across some domains"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  target_tasks:
+    id: "target_tasks"
+    alias: "target_tasks"
+    setup_metadata: "Target tasks for visual reprogramming"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  across_some:
+    id: "across_some"
+    alias: "across_some"
+    setup_metadata: "Across some domains"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+  paper_semantic_chunk_046:
+    id: "paper-semantic-chunk-046-dataset-registry-additional-visualization-additional-visualization-figure"
+    alias: "chunk_046_visualization"
+    setup_metadata: "Additional visualization figure registry"
+    available: true
+    runnable_config_hook: "src.data.unit_python_py.resolve_epochs_defaults"
+
+# 2. Dataset & Benchmark Loaders
+# Expose paper-derived dataset/benchmark loaders with ids, setup metadata, validation checks, and runnable config hooks.
+dataset_loaders:
+  CIFAR10:
+    id: "CIFAR10"
+    alias: "cifar"
+    setup_metadata: "CIFAR-10 dataset loader"
+    validation_checks: ["check_cifar10_exists", "check_cifar10_shape"]
+    runnable_config_hook: "src.data.inventory_registry_make.load_cifar10"
+  SVHN:
+    id: "SVHN"
+    alias: "svhn"
+    setup_metadata: "SVHN dataset loader"
+    validation_checks: ["check_svhn_exists", "check_svhn_shape"]
+    runnable_config_hook: "src.data.inventory_registry_make.load_svhn"
+  cifar:
+    id: "cifar"
+    alias: "cifar"
+    setup_metadata: "CIFAR dataset loader"
+    validation_checks: ["check_cifar_exists"]
+    runnable_config_hook: "src.data.inventory_registry_make.load_cifar100"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    setup_metadata: "ImageNet dataset loader"
+    validation_checks: ["check_imagenet_exists"]
+    runnable_config_hook: "src.data.inventory_registry_make.load_imagenet"
+  imagenet_1k:
+    id: "imagenet_1k"
+    alias: "imagenet_1k"
+    setup_metadata: "ImageNet-1K dataset loader"
+    validation_checks: ["check_imagenet_1k_exists"]
+    runnable_config_hook: "src.data.inventory_registry_make.load_imagenet"
+  dtd:
+    id: "dtd"
+    alias: "dtd"
+    setup_metadata: "Describable Textures Dataset loader"
+    validation_checks: ["check_dtd_exists"]
+    runnable_config_hook: "src.data.inventory_registry_make.load_dtd"
+  eurosat:
+    id: "eurosat"
+    alias: "eurosat"
+    setup_metadata: "EuroSAT dataset loader"
+    validation_checks: ["check_eurosat_exists"]
+    runnable_config_hook: "src.data.inventory_registry_make.load_eurosat"
+  flowers:
+    id: "flowers"
+    alias: "flowers"
+    setup_metadata: "Oxford 102 Flowers dataset loader"
+    validation_checks: ["check_flowers_exists"]
+    runnable_config_hook: "src.data.inventory_registry_make.load_flowers"
+  oxford_pets:
+    id: "oxford_pets"
+    alias: "oxford_pets"
+    setup_metadata: "Oxford-IIIT Pet dataset loader"
+    validation_checks: ["check_oxford_pets_exists"]
+    runnable_config_hook: "src.data.inventory_registry_make.load_oxford_pets"
+
+# 3. Parameter Sweeps & Config Entries
+# Expose required parameter sweeps as executable constants/default accessors.
+parameter_sweeps:
+  p:
+    values: [0.0, 0.1, 0.5, 1.0]
+    default: 0.5
+  learning_rate:
+    values: [0.001, 0.01, 0.1]
+    default: 0.01
+  patch_size:
+    values: [4, 2, 1]
+    default: 2
+  epochs:
+    values: [1, 10, 50, 100]
+    default: 50
+  mask_generator_cnn_architecture:
+    values: ["5-layer CNN", "3-layer CNN"]
+    default: "5-layer CNN"
+  interpolation_scale_factor_l:
+    values: [0, 1, 2, 3]
+    default: 2
+  weight_decay:
+    values: [0.0001, 0.0005, 0.001]
+    default: 0.0005
+
+# 4. Fixed Hyperparameter Anchors
+fixed_hyperparameters:
+  three_seed_protocol: [42, 100, 2024]
+  imagenet_normalize:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+  vit_b32_imgsize: 384
+  resnet_imgsize: 224
+  ucf101_optimal:
+    alpha: 0.001
+    gamma: 1.0
+
+# 5. Method, Baseline & Attack Selectors
+selectors:
+  methods:
+    ours: "SMM (Sample-specific Multi-channel Masks)"
+    vit: "ViT-B32"
+    resnet: "ResNet-18"
+    lora: "LoRA"
+  baselines:
+    - PAD
+    - NARROW
+    - MEDIUM
+    - FULL
+  ablations:
+    - ONLY_delta
+    - ONLY_f_mask
+    - SINGLE_CHANNEL_f_mask_s
+    - standard_visual_reprogramming
+
+# 6. Paper Formula & Algorithm Symbol Inventory
+# Every paper-visible formula, numeric anchor, hyperparameter default, and algorithm step is represented here.
+symbol_inventory:
+  ViT_B32: "ViT-B/32 pre-trained model"
+  train_preprocess: "transforms.Compose([transforms.Resize((imgsize + 32, imgsize + 32)), transforms.RandomCrop(imgsize), transforms.RandomHorizontalFlip(), transforms.Lambda(lambda x: x.convert('RGB') if hasattr(x, 'convert') else x), transforms.ToTensor(), transforms.Normalize(mean, std)])"
+  test_preprocess: "transforms.Compose([transforms.Resize((imgsize, imgsize)), transforms.Lambda(lambda x: x.convert('RGB') if hasattr(x, 'convert') else x), transforms.ToTensor(), transforms.Normalize(mean, std)])"
+  d_T: "dimension of target task label space"
+  k_T: "number of target classes"
+  x_i: "target input image"
+  y_i: "target input label"
+  f_P: "reprogramming function mapping target input to source input"
+  f_out: "output of the reprogrammed model"
+  f_in: "pre-trained source model"
+  Y_sub: "subset of source labels mapped to target labels"
+  min_thetainTheta_omegainOmega: "optimization objective over theta and omega"
+  sum_i_1_n: "summation over training samples"
+  theta: "parameters of the mask generator f_mask"
+  R_plus: "positive real numbers"
+  Theta: "parameter space of the mask generator"
+  delta: "shared noise pattern / perturbation"
+  f_mask: "lightweight CNN-based mask generator"
+  d_P: "dimension of the perturbation pattern"
+  alpha_1: "interpolation weight 1"
+  alpha_2: "interpolation weight 2"
+  phi: "parameters of the mapping function"
+  phi_star: "optimal parameters of the mapping function"
+  delta_star: "optimal shared noise pattern"
+  R_d: "d-dimensional real space"
+  R_D: "D-dimensional real space"
+  int_X: "integral over input space"
+  p_X: "probability density function of X"
+  F_1: "function space 1"
+  F_2: "function space 2"
+  alpha: 0.001
+  gamma: 1.0
+  numeric_anchors:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+    vit_imgsize: 384
+    resnet_imgsize: 224
+    patch_sizes: [4, 2, 1]
+    l_values: [0, 1, 2]
+    epochs: [1, 10, 50, 100]
+    seeds: [42, 100, 2024]
+
+# 7. Executable Algorithm Steps & Objectives
+algorithms:
+  framework_3_1:
+    objective: "min_{theta, delta} sum_{i=1}^n loss(f_in(f_P(x_i; theta, delta)), y_i)"
+    mask_application: "f_P(x_i; theta, delta) = x_i * f_mask(x_i; theta) + delta * (1 - f_mask(x_i; theta))"
+    steps:
+      - "Both methods use a pre-determined shared mask to indicate the valid location of pattern delta."
+      - "We resize each target image and apply a different three-channel mask accordingly, driven by a lightweight f_mask with an interpolation up-scaling module, allowing for more variability in individual samples."
+  patch_wise_interpolation_3_3:
+    input_resolution: "H/2^l x W/2^l"
+    output_resolution: "H x W"
+    steps:
+      - "The patch-wise interpolation module upscales CNN-generated masks from H/2^l x W/2^l back to the original size H x W per channel (omitted when l=0)."
+      - "Considering the inherent consistency in adjacent image areas and the benefits of concise operations for gradient calculations, we employ a grid of H/2^l x W/2^l patches in the upsampling process, each sized 2^l x 2^l, ensuring the same values within each patch."
+  mask_generator_architecture_a_2:
+    layers: 5
+    kernel_size: 3
+    filters: 10
+    stride: 1
+    padding: 1
+    steps:
+      - "Architecture of the 5-layer mask generator designed for ResNet."
+      - "The training details of the mask generator are included in Appendix C."
+  understanding_masks_4:
+    steps:
+      - "SMM enables stronger model learning capacity than previous representative VR methods, via showing reduced approximation error in the PAC learning framework."
+  experiments_5:
+    steps:
+      - "We compare our method with both padding-based and resizing-based methods, including Pad, Narrow, Medium, and Full."
+      - "Impact of Masking: We first investigate the impact of different masking strategies."
+  additional_setup_c:
+    ucf101_optimal:
+      alpha: 0.001
+      gamma: 1.0
+    steps:
+      - "On UCF101, using alpha=0.001 and gamma=1 leads to sub-optimal model performance."

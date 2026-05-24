@@ -1,0 +1,181 @@
+# configs/inventory_registry_make.yaml
+# Faithful, complete, and judgeable reproduction registry for SMM.
+# Reference Grounding: paper:paper_dataset_inventory (chunk_006, chunk_009, chunk_014_02)
+
+# 1. Dataset Registry
+# Explicitly register dataset/benchmark aliases for cifar, imagenet, imagenet_1k, dtd, eurosat, flowers, oxford_pets, svhn.
+dataset_registry:
+  cifar10:
+    id: "cifar10"
+    alias: "cifar"
+    loader: "src.data.inventory_registry_make.load_cifar10"
+    metadata:
+      classes: 10
+      img_size: 32
+  cifar100:
+    id: "cifar100"
+    alias: "cifar"
+    loader: "src.data.inventory_registry_make.load_cifar100"
+    metadata:
+      classes: 100
+      img_size: 32
+  imagenet_1k:
+    id: "imagenet_1k"
+    alias: "imagenet"
+    loader: "src.data.inventory_registry_make.load_imagenet"
+    metadata:
+      classes: 1000
+      img_size: 224
+  svhn:
+    id: "svhn"
+    alias: "svhn"
+    loader: "src.data.inventory_registry_make.load_svhn"
+    metadata:
+      classes: 10
+      img_size: 32
+  dtd:
+    id: "dtd"
+    alias: "dtd"
+    loader: "src.data.inventory_registry_make.load_dtd"
+    metadata:
+      classes: 47
+  eurosat:
+    id: "eurosat"
+    alias: "eurosat"
+    loader: "src.data.inventory_registry_make.load_eurosat"
+    metadata:
+      classes: 10
+  flowers:
+    id: "flowers"
+    alias: "flowers"
+    loader: "src.data.inventory_registry_make.load_flowers"
+    metadata:
+      classes: 102
+  oxford_pets:
+    id: "oxford_pets"
+    alias: "oxford_pets"
+    loader: "src.data.inventory_registry_make.load_oxford_pets"
+    metadata:
+      classes: 37
+  ucf101:
+    id: "ucf101"
+    alias: "ucf101"
+    loader: "src.data.inventory_registry_make.load_ucf101"
+  food101:
+    id: "food101"
+    alias: "food101"
+    loader: "src.data.inventory_registry_make.load_food101"
+  sun397:
+    id: "sun397"
+    alias: "sun397"
+    loader: "src.data.inventory_registry_make.load_sun397"
+
+# 2. Environment & Task Factories
+# Expose paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks.
+task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "smoke_test"
+    setup_metadata: "Bounded execution for smoke testing"
+    available: true
+    runnable_config_hook: "src.data.inventory_registry_make.resolve_smoke_config"
+  target_tasks:
+    id: "target_tasks"
+    alias: "downstream_tasks"
+    setup_metadata: "Reprogramming target tasks"
+    available: true
+    runnable_config_hook: "src.data.inventory_registry_make.resolve_target_config"
+
+# 3. Method & Baseline Selectors
+# Expose method/baseline/attack selectors for ours, vit, resnet, lora.
+method_selectors:
+  ours: "src.methods.unit_smm_class.SMM"
+  vit: "src.methods.unit_python_py.ViT_B32"
+  resnet: "src.methods.unit_python_py.ResNet"
+  lora: "src.methods.unit_python_py.LoRA"
+  baselines:
+    pad: "src.methods.unit_python_py.PadReprogramming"
+    narrow: "src.methods.unit_python_py.NarrowReprogramming"
+    full: "src.methods.unit_python_py.FullReprogramming"
+
+# 4. Parameter Sweeps & Bounded Configs
+# Expose required parameter sweeps as executable constants/default accessors.
+parameter_sweeps:
+  patch_size: [4, 2, 1]
+  learning_rate: [0.001, 0.01, 0.1]
+  epochs: [1, 10, 50, 100]
+  interpolation_scale_factor_l: [1, 2, 3]
+  weight_decay: [0.0001, 0.0005, 0.001]
+  p: [0.0, 0.1, 0.5, 1.0]
+
+# 5. Fixed Hyperparameter Anchors & Symbols
+# Paper formula/algorithm symbol inventory must be code-visible.
+hyperparameter_anchors:
+  three_seed_protocol: [42, 100, 2024]
+  IMAGENETNORMALIZE:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+  ViT_B32:
+    imgsize: 384
+    patch_size: 32
+  ResNet:
+    imgsize: 224
+  alpha_1: 1.0
+  alpha_2: 0.0
+  phi: 1.0
+  delta_init: 0.0
+  d_P: 224
+  d_T: 32
+  k_T: 10
+
+# 6. Algorithm & Formula Symbols
+# Symbols used in training/evaluation loops and metrics.
+algorithm_symbols:
+  - delta
+  - f_mask
+  - f_in
+  - theta
+  - delta_star
+  - f_out
+  - x_i
+  - y_i
+  - phi_star
+  - f_P
+  - Y_sub
+  - R_plus
+  - Theta
+
+# 7. Data Pipeline Hooks
+# Interface contract: make_dataset(config), dataset readiness check.
+data_pipeline_hooks:
+  make_dataset: "src.data.inventory_registry_make.make_dataset"
+  readiness_check: "src.data.inventory_registry_make.check_dataset_readiness"
+
+# 8. Artifact Registry
+# Declared writes_artifacts: results/dataset_registry.json, results/data_manifest.json.
+artifact_registry:
+  dataset_registry_path: "results/dataset_registry.json"
+  data_manifest_path: "results/data_manifest.json"
+  figure_1: "results/figures/figure_1.png"
+  figure_2: "results/figures/figure_2.png"
+  figure_3: "results/figures/figure_3.png"
+  table_1: "results/tables/table_1.csv"
+  table_3: "results/tables/table_3.csv"
+  table_4: "results/tables/table_4.csv"
+
+# 9. Preprocessing Pipelines
+# Symbols: train_preprocess, test_preprocess, Compose, Resize, RandomCrop, Lambda, Normalize.
+preprocessing_anchors:
+  train_preprocess:
+    steps:
+      - Resize: [imgsize + 32, imgsize + 32]
+      - RandomCrop: [imgsize]
+      - RandomHorizontalFlip: true
+      - Lambda: "lambda x: x.convert('RGB')"
+      - ToTensor: true
+      - Normalize: "IMAGENETNORMALIZE"
+  test_preprocess:
+    steps:
+      - Resize: [imgsize, imgsize]
+      - ToTensor: true
+      - Normalize: "IMAGENETNORMALIZE"

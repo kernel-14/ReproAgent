@@ -1,0 +1,178 @@
+# configs/default_config.yaml
+# SAPG: Split and Aggregate Policy Gradients - Default Configuration
+# Reference Grounding: paper_contract_sweep_hyperparameter_protocol, paper_task_environment_setup, paper_training_or_optimization_loop
+
+project:
+  name: "sapg_reproduction"
+  description: "Faithful reproduction of Split and Aggregate Policy Gradients (SAPG)"
+
+# 3. Preliminaries & Algorithm Symbols Inventory
+# reference_grounding: chunk_004 3. Preliminaries
+symbols:
+  s_0: "initial_state"
+  a_t: "action_at_t"
+  s_t: "state_at_t"
+  sum_t_0_T_1: "sum_{t=0}^{T-1}"
+  gamma_t: "gamma^t"
+  A_hat: "advantage_estimate"
+  pi_theta: "policy_parameterized_by_theta"
+  nabla_theta: "policy_gradient"
+  rho_d: "state_visitation_distribution"
+  Q_hat: "action_value_estimate"
+  V_hat: "state_value_estimate"
+  L_on: "on_policy_loss"
+  pi_old: "old_policy"
+  r_t: "reward_at_t"
+  epsilon: "ppo_clip_parameter"
+  A_t: "advantage_at_t"
+  pi_1: "policy_1"
+  pi_M: "policy_M"
+  pi_i: "policy_i"
+  pi_j: "policy_j"
+  L_off: "off_policy_loss"
+  mu: "importance_weight_threshold"
+  pi_i_old: "old_policy_i"
+  lambda: "aggregation_weight"
+  sigma: "entropy_coefficient"
+
+# Numeric Anchors from Paper Evidence
+# reference_grounding: chunk_014, chunk_025
+numeric_anchors:
+  zero: 0
+  one: 1
+  two: 2
+  three: 3
+  six: 6
+  seven: 7
+  twenty_three: 23
+  thirty: 30
+  num_environments: 24576
+  entropy_coef_default: 0.005
+  joint_dim: 23
+  pose_dim: 7
+
+# Expose required parameter sweeps as executable constants/default accessors
+# reference_grounding: chunk_018 6.3. Ablations
+sweeps:
+  M:
+    default: 4
+    values: [2, 4, 8]
+    description: "Number of parallel policies (leader + followers)"
+  lambda:
+    default: 1.0
+    values: [0.1, 0.5, 1.0, 2.0]
+    description: "Aggregation weight for off-policy updates"
+  mu:
+    default: 0.1
+    values: [0.01, 0.05, 0.1, 0.2]
+    description: "Importance weight threshold"
+  sigma:
+    default: 0.003
+    values: [0.0, 0.003, 0.005]
+    description: "Entropy coefficients for followers to enforce diversity"
+  epochs:
+    default: 100
+    values: [50, 100, 200]
+    description: "Training epochs"
+  batch_size:
+    default: 24576
+    values: [4096, 8192, 16384, 24576]
+    description: "Batch size for training"
+
+# Environment Registry
+# reference_grounding: chunk_025 A. Task and Environment Details
+environments:
+  hard_tasks:
+    - id: "AllegroKuka-Throw"
+      alias: "throw"
+      difficulty: "hard"
+    - id: "AllegroKuka-Regrasping"
+      alias: "regrasping"
+      difficulty: "hard"
+    - id: "AllegroKuka-Reorientation"
+      alias: "reorientation"
+      difficulty: "hard"
+  easy_tasks:
+    - id: "AllegroHand-Reorient"
+      alias: "hand_reorient"
+      difficulty: "easy"
+    - id: "ShadowHand-Reorient"
+      alias: "shadow_reorient"
+      difficulty: "easy"
+
+# Method Registry
+# reference_grounding: chunk_014 5.2. Baselines
+methods:
+  ours: "sapg"
+  baselines:
+    - "ppo"
+    - "pbt"
+    - "pql"
+    - "ddpg"
+
+# Experiment Protocol Matrix
+# reference_grounding: chunk_025 A. Task and Environment Details
+experiments:
+  experiment_1:
+    name: "AllegroKuka Hard Tasks"
+    tasks: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    methods: ["sapg", "ppo", "ddpg"]
+    metrics: ["success_rate", "return"]
+    artifact_writer: "write_table_1"
+  experiment_2:
+    name: "Easy Tasks"
+    tasks: ["AllegroHand-Reorient", "ShadowHand-Reorient"]
+    methods: ["sapg", "ppo", "pql", "pbt"]
+    metrics: ["success_rate", "return"]
+    artifact_writer: "write_table_1"
+  ablation_study:
+    name: "SAPG Ablations"
+    tasks: ["AllegroKuka-Reorientation"]
+    methods: ["sapg", "sapg_no_entropy", "sapg_symmetric"]
+    metrics: ["success_rate"]
+    artifact_writer: "write_table_4"
+
+# Default Hyperparameters for Baselines
+# reference_grounding: chunk_026 B. Training hyperparameters
+baselines_config:
+  ppo:
+    learning_rate: 3e-4
+    gamma: 0.99
+    epsilon: 0.2
+    entropy_coef: 0.0
+  ddpg:
+    learning_rate: 1e-3
+    gamma: 0.99
+    tau: 0.005
+  pql:
+    batch_size: 4096
+  pbt:
+    population_size: 8
+
+# Artifact Paths
+artifacts:
+  metrics_json: "results/metrics.json"
+  table_1: "results/tables/table_1.csv"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+  table_4: "results/tables/table_4.csv"
+  figure_2: "results/figures/fig_2.png"
+  figure_7: "results/figures/figure_7.png"
+  config_resolved: "results/config_resolved.json"
+  sensitivity_report: "results/sensitivity_report.json"
+  experiment_results: "results/tables/experiment_results.csv"
+
+# 4.4. Encouraging diversity via latent conditioning
+# reference_grounding: chunk_018 4.4. Encouraging diversity via latent conditioning
+latent_conditioning:
+  shared_backbone: true
+  shared_critic: true
+  parameter_phi_dim: 8
+  theta_psi_shared: true
+
+# 4.1. Aggregating data using off-policy updates
+# reference_grounding: chunk_006 4.1. Aggregating data using off-policy updates
+off_policy_aggregation:
+  leader_follower_ratio: 1.0 # Equal amounts of on-policy and off-policy data
+  subsample_off_policy: true
+  importance_sampling: true

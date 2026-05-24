@@ -1,0 +1,252 @@
+# reference_grounding: paperbench_ref_001 README.md
+
+project_metadata:
+  name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+  cli_command_template: "python main.py --env [env_name] --method [method_name]"
+  metrics_output_path: "results/metrics.json"
+
+# Active reproduction scope notes
+reproduction_scope:
+  hypothesis: "一个统一的入口点能够协调环境初始化、模型加载、微调协议执行以及结果记录，从而验证知识保留方法在不同任务中的有效性。"
+  decision_value: "决定了下游实验流水线能否自动化执行 vanilla fine-tuning 与 BC/EWC/EM 方法的对比实验。"
+  active_reproduction_scope: "unit-001 | fine-tuning + bc"
+
+# Expose paper-derived environment/task factories
+environments:
+  NetHack:
+    id: "NetHack-v0"
+    aliases:
+      - "nethack learning"
+      - "nle"
+      - "unit-001"
+      - "fine-tuning + bc"
+    setup_metadata:
+      eval_rollout_limit: 100000
+      eval_no_progress_limit: 150
+      eval_death_termination: true
+      fisher_matrix_batches: 10000
+      dataset_name: "NLD-AA"
+      ttyrec_dataset: "nld-aa-v0"
+    availability_check:
+      package: "nle"
+      import_test: "nle.env.NLE"
+    runnable_config_hooks:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+    metrics:
+      - "gold score"
+      - "eating score"
+      - "staircase score"
+      - "scout score"
+      - "experience points"
+      - "dungeon depth"
+
+  RoboticSequence:
+    id: "RoboticSequence-v0"
+    aliases:
+      - "robotics"
+      - "push-wall"
+      - "peg-unplug-side"
+      - "them were originally introduced"
+    setup_metadata:
+      num_stages: 4
+      stage_success_threshold: 0.9
+      random_start_goal: true
+      observation_space: "robot_config + stage_one_hot"
+      policy_network:
+        hidden_layers: 4
+        neurons_per_layer: 256
+    availability_check:
+      package: "metaworld"
+      import_test: "metaworld.envs.ALL_V2_ENVIRONMENTS"
+    runnable_config_hooks:
+      beta: 1.5
+      max_path_length: 200
+    metrics:
+      - "success_rate"
+      - "stage_success_rate"
+      - "Forward Transfer"
+      - "AUC"
+      - "AUC_b"
+
+# Expose paper-derived dataset/benchmark loaders
+datasets:
+  robotics:
+    id: "robotics_dataset"
+    aliases:
+      - "robotics"
+      - "push-wall"
+    setup_metadata:
+      source: "metaworld"
+      validation_checks:
+        - "check_stage_success_rate"
+        - "check_observation_space"
+    runnable_config_hooks:
+      batch_size: 128
+      learning_rate: 0.0003
+
+# Method/baseline/attack selectors
+method_selectors:
+  methods:
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+  baselines:
+    - "Ours"
+    - "scaled-bc + fine-tuning + ks"
+    - "batch_size_128"
+
+# Bounded sweep/config entries
+hyperparameter_sweeps:
+  learning_rate:
+    default: 0.0003
+    sweep_values: [0.0001, 0.0003, 0.001]
+  batch_size:
+    default: 128
+    sweep_values: [64, 128, 256]
+
+# Fixed hyperparameter anchors
+fixed_hyperparameters:
+  batch_size_128: 128
+  learning_rate: 0.0003
+
+# Paper formula/algorithm symbol inventory and numeric/default anchors
+formula_symbols:
+  addendum:
+    symbols:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+      TtyrecDataset_nld_aa_v0: "nld-aa-v0"
+      batch_size: 128
+    numeric_defaults:
+      batch_size: 128
+    algorithm_terms:
+      - "algorithm"
+      - "distill"
+      - "compute"
+    steps: "The 'from scratch' model doesn't use any behavioral cloning. PPO RND with the environment should be implemented using the code at https://github.com/jcwleo/random-network-distillation-pytorch. In Figure 6, the success rate should be computed every 5 million training steps."
+
+  two_state_mdp:
+    symbols:
+      theta: 0.5
+      gamma: 0.9
+      f_theta: 0.5
+      epsilon: 0.11
+      indicator_thetaleq: "1_thetaleq1-epsilon/2"
+      indicator_thetagt: "1_theta>1-epsilon/2"
+      s_0: 0.0
+      v_0: 9.93
+      r_0: 1.0
+      r_1: 10.0
+      s_1: 1.0
+      f_0: 0.0
+      f_1: 1.0
+    numeric_defaults:
+      theta_init: 0
+      r_1: 9
+      r_0: 1
+      gamma: 2
+      epsilon: 0.11
+      v_0_target: 2.22
+      f_theta_init: 0.5
+      max_steps: 10
+    algorithm_terms:
+      - "gradient"
+    steps: "The value of state s_0 equals v_0(theta) = (1 / (1 - gamma)) * (theta + r_0 * (1 - theta) * (1 - gamma * f_theta) + gamma * theta * r_1 * (1 - f_theta)) / (1 - gamma * f_theta + gamma * theta). Fine-tuning is the process of adjusting theta towards the gradient."
+
+  apple_retrieval:
+    symbols:
+      pi_w_b: "pi_w,b"
+      asset_13: 13
+      sigma: 2.0
+    numeric_defaults:
+      reward_correct: 1
+      reward_incorrect: 0
+      sigma: 2
+      asset_13: 13
+      c_param: 11
+      max_steps: 30
+    algorithm_terms:
+      - "algorithm"
+      - "gradient"
+      - "ema"
+      - "increase"
+    steps: "We can guide the model towards focusing on one or the other by setting the c parameter since the linear model trained with gradient descent will tend towards a solution with a low weight norm."
+
+  forgetting_capabilities:
+    symbols:
+      theta_star: "theta_*"
+      L_BC: "L_BC"
+      theta: "theta"
+      B_BC: "B_BC"
+      D_KL: "D_KL"
+      pi_star: "pi_*"
+      pi_theta: "pi_theta"
+      L_KS: "L_KS"
+    algorithm_terms:
+      - "objective"
+      - "loss"
+      - "sample"
+      - "initialize"
+    steps: "For the fine-tuning phase, we initialize the policy with theta_* and we apply an auxiliary loss of the form L_BC(theta) = E_{s ~ B_BC}[D_KL(pi_*(s) || pi_theta(s))] alongside the RL objective. Kickstarting applies KL of a similar form, but the expectation is over data sampled by the current policy, i.e., L_KS(theta) = E_{s ~ pi_theta}[D_KL(pi_*(s) || pi_theta(s))]."
+
+  distillation_methods:
+    symbols:
+      D_KL_s: "D_KL^s"
+      pi_theta: "pi_theta"
+      theta: "theta"
+      pi_star: "pi_*"
+      L_BC: "L_BC"
+      B_theta: "B_theta"
+      L_KS: "L_KS"
+      E_asimpcdotmids: "E_asimpcdotmids"
+    algorithm_terms:
+      - "loss"
+      - "teacher"
+      - "student"
+    steps: "In behavioral cloning, we apply the following loss: L_BC(theta) = E_{s ~ B}[D_KL^s(pi_theta || pi_*)] where B is a buffer of data containing states from pre-training."
+
+  ewc_regularization:
+    symbols:
+      L_aux: "L_aux"
+      theta: "theta"
+      sum_i: "sum_i"
+      theta_star_i: "theta_*^i"
+      theta_i: "theta^i"
+      theta_star: "theta_*"
+      F_i: "F^i"
+    numeric_defaults:
+      penalty_weight: 2
+    algorithm_terms:
+      - "loss"
+    steps: "EWC is a regularization-based approach that applies a penalty on parameter changes by introducing an auxiliary loss: L_aux(theta) = sum_i F^i * (theta_*^i - theta^i)^2, where theta (resp theta_*) are the weights of the current (resp pre-trained) model."
+
+  nethack_finetuning:
+    algorithm_terms:
+      - "loss"
+      - "compute"
+    steps: "In Fine-tuning + KS we compute the auxiliary loss on data generated by the online policy. In Fine-tuning + BC we compute the auxiliary loss by utilizing the trajectories generated by the expert."
+
+# Numeric anchors mapping
+numeric_anchors:
+  128: 128
+  2: 2
+  0: 0
+  9: 9
+  1: 1
+  0.11: 0.11
+  2.22: 2.22
+  0.5: 0.5
+  10: 10
+  0.08: 0.08
+  9.93: 9.93
+  13: 13
+  11: 11
+  30: 30
+  200: 200
+  1.5: 1.5

@@ -1,0 +1,190 @@
+# configs/bbox_sentence_beam.yaml
+# reference_grounding: paperbench_ref_030 research/readme_exp.md
+
+metadata:
+  title: "BBox-Adapter: Lightweight Adapting for Black-Box Large Language Models"
+  reproduction_scope: "Faithful reproduction of BBox-Adapter sentence-level beam search inference and evaluation routes."
+  hypothesis: "Adapted inference is performed by adapter-guided candidate selection, not by modifying the black-box LLM."
+  decision_value: "Determines whether downstream evaluation can reproduce the paper's inference-time mechanism."
+  seed: 42
+
+environment_task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "question-answering"
+    setup_metadata:
+      positive_source: "ground_truth"
+      cache_path: "results/cache"
+      source_adapter_checkpoint: "results/adapter_checkpoint"
+      target_base_model: "gpt-3.5-turbo"
+      achieving_improvements: true
+      determines_which: "adapter_scores"
+      keep_all_paper_visible: true
+    availability_checks:
+      - "import bbox_adapter"
+    runnable_config_hooks:
+      data_pipeline: "bbox_adapter.datasets.build_datasets"
+      config_factory: "bbox_adapter.config.resolve_batch_size_defaults"
+      registry_configuration_artifact: "configs/bbox_sentence_beam.yaml"
+
+dataset_loaders:
+  gsm8k:
+    id: "gsm8k"
+    aliases: ["GSM8K", "gsm8k"]
+    setup_metadata:
+      task_type: "mathematical"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  strategyqa:
+    id: "strategyqa"
+    aliases: ["StrategyQA", "strategyqa"]
+    setup_metadata:
+      task_type: "implicit_reasoning"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  truthfulqa:
+    id: "truthfulqa"
+    aliases: ["TruthfulQA", "truthfulqa"]
+    setup_metadata:
+      task_type: "truthful"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  scienceqa:
+    id: "scienceqa"
+    aliases: ["ScienceQA", "scienceqa"]
+    setup_metadata:
+      task_type: "scientific"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+  toxigen:
+    id: "toxigen"
+    aliases: ["ToxiGen", "toxigen"]
+    setup_metadata:
+      task_type: "toxicity"
+    validation_checks:
+      - "check_dataset_exists"
+    runnable_config_hooks:
+      load_route: "bbox_adapter.datasets.load_dataset"
+
+method_baseline_selectors:
+  ours:
+    id: "ours"
+    description: "BBox-Adapter proposed method"
+  chain_of_thought:
+    id: "chain_of_thought"
+    description: "Chain-of-Thought prompting baseline"
+  oracle:
+    id: "oracle"
+    description: "Oracle baseline"
+  heuristic:
+    id: "heuristic"
+    description: "Heuristic baseline"
+  roberta:
+    id: "roberta"
+    description: "RoBERTa baseline"
+  fine_tuning:
+    id: "fine_tuning"
+    description: "Supervised Fine-Tuning baseline"
+  lora:
+    id: "lora"
+    description: "LoRA baseline"
+  sft_lora:
+    id: "sft_lora"
+    description: "SFT-LoRA baseline"
+  azure_sft:
+    id: "azure_sft"
+    description: "Azure OpenAI SFT baseline"
+  mlm:
+    id: "mlm"
+    description: "MLM loss baseline"
+  bbox_adapter:
+    id: "bbox_adapter"
+    description: "BBox-Adapter baseline"
+  ranking_nce:
+    id: "ranking_nce"
+    description: "Ranking NCE loss baseline"
+  online_adaptation:
+    id: "online_adaptation"
+    description: "Online adaptation baseline"
+  single_step_inference:
+    id: "single_step_inference"
+    description: "Single-step inference baseline"
+  full_step_inference:
+    id: "full_step_inference"
+    description: "Full-step inference baseline"
+  ai_feedback:
+    id: "ai_feedback"
+    description: "AI Feedback baseline"
+  energy_based_model:
+    id: "energy_based_model"
+    description: "Energy-Based Model baseline"
+
+parameter_sweeps:
+  positive_sample_sources:
+    - "ground_truth"
+    - "ai_feedback"
+    - "human_feedback"
+  beam_sizes: [1, 3, 5]
+  adapter_sizes: [0.1, 0.3]
+  iteration_counts: [3, 0, 1, 2, 4]
+  batch_sizes: [64]
+
+fixed_hyperparameters:
+  batch_size_64: 64
+  nearest_neighbor_upsample: true
+
+interface_contract:
+  generate_candidates: "generate_candidates(prompt, prefix, n)"
+  beam_search_with_adapter: "beam_search_with_adapter(prompt, config)"
+
+reproduction_artifacts:
+  figure_2:
+    id: "figure_2"
+    caption: "Overview of BBox-ADAPTER for black-box LLM adaptation from the source to the target domain."
+    path: "results/figures/figure_2.png"
+    measurements:
+      - "figure 2 reproduction artifact"
+    writers:
+      - "write_figure_2_artifact"
+      - "run_figure_2_route"
+
+output_paths:
+  beam_search_traces: "results/beam_search_traces.json"
+  predictions: "results/predictions.jsonl"
+  metrics: "results/metrics.json"
+  adapter_scores: "results/adapter_scores.jsonl"
+  adapter_checkpoint: "results/adapter_checkpoint"
+  figure_1: "results/figures/figure_1.png"
+  table_1: "results/tables/table_1.csv"
+  figure_2: "results/figures/figure_2.png"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+  table_4: "results/tables/table_4.csv"
+  table_5: "results/tables/table_5.csv"
+  figure_3: "results/figures/figure_3.png"
+  table_6: "results/tables/table_6.csv"
+  figure_4: "results/figures/figure_4.png"
+  table_7: "results/tables/table_7.csv"
+  table_8: "results/tables/table_8.csv"
+  figure_5: "results/figures/figure_5.png"
+
+calls_symbols:
+  - "write_beam_search_traces_artifact"
+  - "write_predictions_artifact"
+  - "write_metrics_artifact"
+  - "write_adapter_scores_artifact"
+  - "write_adapter_checkpoint_artifact"
+  - "write_figure_1_artifact"
+  - "write_table_1_artifact"
+  - "write_figure_2_artifact"
+  - "run_figure_3_route"
+  - "write_figure_3_artifact"
+  - "run_figure_2_route"

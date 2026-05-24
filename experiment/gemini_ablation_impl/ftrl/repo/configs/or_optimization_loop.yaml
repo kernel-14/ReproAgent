@@ -1,0 +1,196 @@
+# reference_grounding: paperbench_ref_001 README.md
+# reference_grounding: paperbench_ref_001 config.py
+
+project_metadata:
+  name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+
+# 1. Optimization Loop Configuration (Implementation Surface: training_loop | config)
+optimization_loop:
+  mode: "smoke" # "smoke" or "full"
+  seed: 42
+  device: "cpu"
+  max_steps: 100000
+  eval_interval: 50
+  log_interval: 10
+  save_interval: 100
+  # Paper evidence contract priority sweeps: complete bounded parameter sweeps must include learning_rate; batch_size.
+  learning_rate: 0.0003
+  batch_size: 128
+
+# 2. Experiment Matrix (Full experiment-matrix route contract)
+# implement executable orchestration over the declared paper-derived dimensions
+experiment_matrix:
+  datasets_or_tasks:
+    - "unit-001"
+    - "fine-tuning + bc"
+    - "NetHack"
+    - "nethack learning"
+    - "RoboticSequence"
+    - "robotics"
+    - "push-wall"
+    - "them were originally introduced"
+    - "gold score"
+    - "eating score"
+    - "staircase score"
+    - "scout score"
+  methods_or_models:
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+    - "batch_size_128"
+    - "Ours"
+    - "scaled-bc + fine-tuning + ks"
+    - "Fine-tuning + BC"
+    - "Fine-tuning + EWC"
+
+# 3. Parameter Sweeps
+sweeps:
+  learning_rate: [0.0001, 0.0003, 0.001]
+  batch_size: [64, 128, 256]
+
+# 4. Method Obligations & Factories (Selectable method/baseline/variant factories)
+methods:
+  ours:
+    id: "ours"
+    factory: "src.methods.core_callable_component.OursMethod"
+    params:
+      alpha: 0.5
+  ppo:
+    id: "ppo"
+    factory: "src.methods.unit_python_py.PPOMethod"
+  sac:
+    id: "sac"
+    factory: "src.methods.unit_python_py.SACMethod"
+  bc:
+    id: "bc"
+    factory: "src.methods.unit_bc_loss.BCMethod"
+  oracle:
+    id: "oracle"
+    factory: "src.methods.unit_python_py.OracleMethod"
+  nle:
+    id: "nle"
+    factory: "src.methods.unit_python_py.NLEMethod"
+  ewc:
+    id: "ewc"
+    factory: "src.methods.unit_ewc_penalty.EWCMethod"
+  batch_size_128:
+    id: "batch_size_128"
+    params:
+      batch_size: 128
+  scaled_bc_ks:
+    id: "scaled-bc + fine-tuning + ks"
+    factory: "src.methods.unit_bc_loss.ScaledBCKSMethod"
+  fine_tuning_bc:
+    id: "Fine-tuning + BC"
+    factory: "src.methods.unit_bc_loss.BCMethod"
+  fine_tuning_ewc:
+    id: "Fine-tuning + EWC"
+    factory: "src.methods.unit_ewc_penalty.EWCMethod"
+
+# 5. Environment & Task Factories (Paper-derived environment/task factories)
+environments:
+  NetHack:
+    id: "NetHack-v0"
+    aliases: ["nethack learning", "nle", "unit-001", "fine-tuning + bc"]
+    setup_metadata:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+      ttyrecdataset_nld_aa_v0_batch_size_128: 128
+    metrics: ["gold score", "eating score", "staircase score", "scout score"]
+    availability_check: "nle"
+  RoboticSequence:
+    id: "RoboticSequence-v0"
+    aliases: ["robotics", "push-wall", "them were originally introduced"]
+    setup_metadata:
+      beta: 1.5
+      max_path_length: 200
+      num_stages: 4
+    metrics: ["success_rate", "stage_success_rate"]
+    availability_check: "metaworld"
+
+# 6. Executable Algorithm & Formula Anchors (Defines Symbols)
+# Executable anchor contract: exact numeric constants, defaults, sweep values, formulas, objectives
+algorithm_anchors:
+  add_nledata_directory: "/tmp/nle_data"
+  add_altorg_directory: "/tmp/altorg_data"
+  ttyrecdataset_nld_aa_v0_batch_size_128: 128
+  batch_size: 128
+  algorithm: "distill"
+  distill: "compute_distillation_loss"
+  compute: "compute_loss"
+  l_aux: "auxiliary_loss"
+  theta: "policy_parameters"
+  theta_star: "pretrained_policy_parameters"
+  sum_i: "parameter_summation"
+  f_i: "fisher_information_diagonal"
+  theta_i: "parameter_index"
+  l_bc: "behavioral_cloning_loss"
+  b_bc: "bc_buffer"
+  l_ks: "kickstarting_loss"
+  d_kl: "kl_divergence"
+  pi_star: "pretrained_policy"
+  pi_theta: "current_policy"
+  e_k: "environment_k"
+  e_i: "environment_i"
+  r_t: "reward_t"
+  r_t_prime: "modified_reward_t"
+  beta: 1.5
+  k_ij: "kernel_ij"
+  x_i: "input_i"
+  x_j: "input_j"
+  l_ij: "loss_ij"
+  y_i: "output_i"
+  y_j: "output_j"
+  cka: "centered_kernel_alignment"
+  hsic: "hilbert_schmidt_independence_criterion"
+  numeric_defaults:
+    batch_size: 128
+    ewc_lambda: 2
+    sac_beta: 1.5
+    max_path_length: 200
+    num_stages: 1
+    sigma: 0
+    asset_13: 13
+    gamma: 0.9
+    epsilon: 0.11
+
+# 7. Artifact Writers (Executable artifact contract)
+artifact_writers:
+  figure_1: "results/figures/figure_1.png"
+  figure_2: "results/figures/figure_2.png"
+  figure_4: "results/figures/figure_4.png"
+  figure_12: "results/figures/figure_12.png"
+  figure_3a: "results/figures/figure_3a.png"
+  figure_3: "results/figures/figure_3.png"
+  figure_3b: "results/figures/figure_3b.png"
+  figure_3c: "results/figures/figure_3c.png"
+  figure_7: "results/figures/figure_7.png"
+  figure_5: "results/figures/figure_5.png"
+  figure_6: "results/figures/figure_6.png"
+  figure_8: "results/figures/figure_8.png"
+  figure_14: "results/figures/figure_14.png"
+  table_4: "results/tables/table_4.csv"
+  table_5: "results/tables/table_5.csv"
+  figure_15: "results/figures/figure_15.png"
+  figure_16: "results/figures/figure_16.png"
+  figure_17: "results/figures/figure_17.png"
+
+# 8. Dependency Wiring (Calls Symbols)
+calls:
+  run_experiment: "src.experiments.or_optimization_loop.run_experiment"
+  compute_loss: "src.methods.unit_bc_loss.compute_loss"
+  aggregate_loss: "src.reporting.or_optimization_loop.aggregate_loss"
+  compute_reward: "src.data.unit_step_returning.compute_reward"
+  aggregate_reward: "src.reporting.or_optimization_loop.aggregate_reward"
+  compute_entrypoint_metric_entrypoint_objective: "src.data.task_setup_factory.compute_objective"
+  compute_entrypoint_metric_entrypoint_score: "src.data.task_setup_factory.compute_score"
+  write_main_artifact: "src.reporting.or_optimization_loop.write_main_artifact"
+  write_artifact_manifest: "src.reporting.or_optimization_loop.write_artifact_manifest"
+  write_figure_4_artifact: "src.reporting.or_optimization_loop.write_figure_4_artifact"
+  run_figure_4_route: "src.experiments.or_optimization_loop.run_figure_4_route"
+  write_table_4_artifact: "src.reporting.or_optimization_loop.write_table_4_artifact"

@@ -1,0 +1,305 @@
+# reference_grounding: paperbench_ref_001 config.py
+
+project_metadata:
+  name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+
+# 1. Training & Evaluation Pipeline
+pipeline:
+  mode: "smoke" # or "full"
+  seed: 42
+  device: "cpu"
+  log_interval: 10
+  save_interval: 100
+  eval_interval: 50
+  max_steps: 100000
+
+# 2. Environment Registry & Wrappers
+environments:
+  NetHack:
+    id: "NetHack-v0"
+    aliases: ["nethack learning", "nle", "unit-001", "fine-tuning + bc"]
+    setup_metadata:
+      eval_rollout_limit: 100000
+      eval_no_progress_limit: 150
+      eval_death_termination: true
+      fisher_matrix_batches: 10000
+      dataset_name: "NLD-AA"
+      ttyrec_dataset: "nld-aa-v0"
+    availability_check:
+      package: "nle"
+      import_test: "nle.env.NLE"
+    runnable_config_hooks:
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+    metrics:
+      - "gold score"
+      - "eating score"
+      - "staircase score"
+      - "scout score"
+      - "experience points"
+      - "dungeon depth"
+
+  RoboticSequence:
+    id: "RoboticSequence-v0"
+    aliases: ["robotics", "push-wall", "peg-unplug-side", "them were originally introduced"]
+    setup_metadata:
+      num_stages: 4
+      stage_success_threshold: 0.9
+      random_start_goal: true
+      observation_space: "robot_config + stage_one_hot"
+      policy_network:
+        hidden_layers: 4
+        neurons_per_layer: 256
+    availability_check:
+      package: "metaworld"
+      import_test: "metaworld.envs.ALL_V2_ENVIRONMENTS"
+    runnable_config_hooks:
+      beta: 1.5
+      max_path_length: 200
+    metrics:
+      - "success_rate"
+      - "stage_success_rate"
+      - "Forward Transfer"
+      - "AUC"
+      - "AUC_b"
+
+# 3. Dataset & Benchmark Loaders
+datasets:
+  robotics:
+    id: "robotics_dataset"
+    aliases: ["robotics"]
+    setup_metadata:
+      format: "hdf5"
+      validation_split: 0.2
+    validation_checks:
+      required_keys: ["observations", "actions", "rewards", "terminals"]
+    runnable_config_hooks:
+      batch_size: 128
+
+# 4. Selectable Method/Baseline/Variant Factories
+methods:
+  ours:
+    class_path: "src.methods.unit_bc_loss.OursMethod"
+    aliases: ["Ours", "scaled-bc + fine-tuning + ks"]
+    hyperparameters:
+      learning_rate: 0.0001
+      batch_size: 128
+      aux_loss_weight: 1.0
+  ppo:
+    class_path: "src.methods.unit_python_py.PPOMethod"
+    aliases: ["ppo"]
+    hyperparameters:
+      learning_rate: 0.0003
+      batch_size: 64
+  sac:
+    class_path: "src.methods.unit_python_py.SACMethod"
+    aliases: ["sac"]
+    hyperparameters:
+      learning_rate: 0.0003
+      batch_size: 256
+  bc:
+    class_path: "src.methods.unit_bc_loss.BCMethod"
+    aliases: ["bc", "Fine-tuning + BC"]
+    hyperparameters:
+      learning_rate: 0.0001
+      batch_size: 128
+  oracle:
+    class_path: "src.methods.unit_python_py.OracleMethod"
+    aliases: ["oracle"]
+    hyperparameters:
+      learning_rate: 0.0001
+      batch_size: 128
+  nle:
+    class_path: "src.methods.unit_python_py.NLEMethod"
+    aliases: ["nle"]
+    hyperparameters:
+      learning_rate: 0.0001
+      batch_size: 128
+  ewc:
+    class_path: "src.methods.unit_ewc_penalty.EWCMethod"
+    aliases: ["ewc", "Fine-tuning + EWC"]
+    hyperparameters:
+      learning_rate: 0.0001
+      batch_size: 128
+      ewc_lambda: 5000.0
+  batch_size_128:
+    class_path: "src.methods.unit_bc_loss.BCMethod"
+    aliases: ["batch_size_128"]
+    hyperparameters:
+      learning_rate: 0.0001
+      batch_size: 128
+
+# 5. Bounded Parameter Sweeps
+sweeps:
+  learning_rate: [0.0001, 0.0003, 0.001]
+  batch_size: [64, 128, 256]
+
+# 6. Full Experiment-Matrix Route Contract
+experiment_matrix:
+  datasets_or_tasks:
+    - "unit-001"
+    - "fine-tuning + bc"
+    - "NetHack"
+    - "nethack learning"
+    - "RoboticSequence"
+    - "robotics"
+    - "push-wall"
+    - "them were originally introduced"
+    - "gold score"
+    - "eating score"
+  methods_or_models:
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+    - "batch_size_128"
+    - "Ours"
+    - "scaled-bc + fine-tuning + ks"
+
+# 7. Executable Formula & Algorithm Anchors
+formula_anchors:
+  nethack_addendum:
+    symbols:
+      ttyrec_dataset: "nld-aa-v0"
+      batch_size: 128
+      add_nledata_directory: "/tmp/nle_data"
+      add_altorg_directory: "/tmp/altorg_data"
+    numeric_defaults:
+      batch_size: 128
+    algorithm_terms: ["algorithm", "distill", "compute"]
+    steps:
+      - "The 'from scratch' model doesn't use any behavioral cloning."
+      - "Existing implementations that should be used: PPO RND with the environment should be implemented using the code at https://github.com/jcwleo/random-network-distillation-pytorch"
+      - "Figure 4 is not required to be reproduced."
+      - "In Figure 6, the success rate should be computed every 5 million training steps."
+
+  forgetting_pretrained_capabilities:
+    symbols:
+      L_BC: "loss_bc"
+      B_BC: "buffer_bc"
+      L_KS: "loss_ks"
+      theta_star: "theta_*"
+      theta: "theta"
+      D_KL: "kl_divergence"
+      pi_star: "pi_*"
+      pi_theta: "pi_theta"
+    algorithm_terms: ["objective", "loss", "sample", "initialize"]
+    steps:
+      - "For the fine-tuning phase, we initialize the policy with theta_*."
+      - "We apply an auxiliary loss of the form L_BC(theta) = E_{s ~ B_BC}[D_KL(pi_*(s) || pi_theta(s))] alongside the RL objective."
+      - "Kickstarting uses online policy trajectories for auxiliary loss computation."
+
+  nethack_losses:
+    algorithm_terms: ["loss", "compute"]
+    steps:
+      - "In Fine-tuning + KS we compute the auxiliary loss on data generated by the online policy."
+      - "In Fine-tuning + BC we compute the auxiliary loss by utilizing the trajectories generated by the expert."
+
+  ewc_regularization:
+    symbols:
+      L_aux: "loss_aux"
+      theta: "theta"
+      sum_i: "sum_i"
+      F_i: "F^i"
+      theta_star_i: "theta_*^i"
+      theta_i: "theta^i"
+      theta_star: "theta_*"
+    numeric_defaults:
+      lambda_ewc: 2
+    algorithm_terms: ["loss"]
+    steps:
+      - "EWC is a regularization-based approach that applies a penalty on parameter changes by introducing an auxiliary loss: L_aux(theta) = sum_i F^i (theta_*^i - theta^i)^2."
+
+  forward_transfer_metric:
+    symbols:
+      AUC: "auc"
+      AUC_b: "auc_b"
+      p_b: "p^b"
+      int_0_T: "int_0^T"
+    numeric_defaults:
+      forward_transfer_max: 1
+      forward_transfer_min: 0
+    formula: "Forward Transfer := (AUC - AUC^b) / (1 - AUC^b), AUC := 1/T * int_0^T p(t) dt, AUC^b := 1/T * int_0^T p^b(t) dt"
+
+  meta_world_details:
+    symbols:
+      E_k: "E_k"
+      E_i: "E_i"
+      r_t: "r_t"
+      r_t_prime: "r_t^prime"
+      beta: "beta"
+      K_ij: "K_ij"
+      x_i: "x_i"
+      x_j: "x_j"
+      L_ij: "L_ij"
+      y_i: "y_i"
+      y_j: "y_j"
+      CKA: "CKA"
+      HSIC: "HSIC"
+    numeric_defaults:
+      beta_default: 1.5
+      max_path_length: 200
+      num_stages: 1
+    algorithm_terms: ["algorithm", "formula", "sample", "initialize"]
+    steps:
+      - "t=1 {Move to the next env, reset timestep counter} end if end while Return i-1"
+      - "In order to make the problem more challenging, we randomly sample the start and goal conditions, similarly as in (Wołczyk et al., 2021)."
+
+  distillation_based_methods:
+    symbols:
+      D_KL_s: "D_KL^s"
+      pi_theta: "pi_theta"
+      theta: "theta"
+      pi_star: "pi_*"
+      L_BC: "L_BC"
+      B_theta: "B_theta"
+      L_KS: "L_KS"
+      E_asimpcdotmids: "E_asimpcdotmids"
+    algorithm_terms: ["loss", "teacher", "student"]
+    steps:
+      - "In behavioral cloning, we apply the following loss: L_BC(theta) = E_{s ~ B}[D_KL^s(pi_theta || pi_*)] where B is a buffer of data containing states from pre-training."
+
+# 8. Artifact Generation & Plotting
+artifacts:
+  figures:
+    - path: "results/figures/figure_1.png"
+      description: "Figure 1 reproduction artifact"
+    - path: "results/figures/figure_2.png"
+      description: "Figure 2 reproduction artifact"
+    - path: "results/figures/figure_4.png"
+      description: "Figure 4 reproduction artifact"
+    - path: "results/figures/figure_12.png"
+      description: "Figure 12 reproduction artifact"
+    - path: "results/figures/figure_3a.png"
+      description: "Figure 3a reproduction artifact"
+    - path: "results/figures/figure_3.png"
+      description: "Figure 3 reproduction artifact"
+    - path: "results/figures/figure_3b.png"
+      description: "Figure 3b reproduction artifact"
+    - path: "results/figures/figure_3c.png"
+      description: "Figure 3c reproduction artifact"
+    - path: "results/figures/figure_7.png"
+      description: "Figure 7 reproduction artifact"
+    - path: "results/figures/figure_5.png"
+      description: "Figure 5 reproduction artifact"
+    - path: "results/figures/figure_6.png"
+      description: "Figure 6 reproduction artifact"
+    - path: "results/figures/figure_8.png"
+      description: "Figure 8 reproduction artifact"
+    - path: "results/figures/figure_14.png"
+      description: "Figure 14 reproduction artifact"
+    - path: "results/figures/figure_15.png"
+      description: "Figure 15 reproduction artifact"
+    - path: "results/figures/figure_16.png"
+      description: "Figure 16 reproduction artifact"
+    - path: "results/figures/figure_17.png"
+      description: "Figure 17 reproduction artifact"
+  tables:
+    - path: "results/tables/table_4.csv"
+      description: "Table 4 reproduction artifact"
+    - path: "results/tables/table_5.csv"
+      description: "Table 5 reproduction artifact"
