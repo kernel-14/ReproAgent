@@ -1,0 +1,220 @@
+# configs/sr_256.yaml
+# Stochastic Interpolants with Data-Dependent Couplings
+# Super-resolution 256x256 Configuration and Experiment Specification
+
+# Grounding marker: reference_grounding: paper_method_core chunk_002 chunk_005 chunk_006 chunk_011
+
+metadata:
+  project_name: "Stochastic Interpolants with Data-Dependent Couplings"
+  task_name: "Super-resolution on ImageNet (256x256)"
+  description: "Reproduction of super-resolution task using data-dependent couplings on ImageNet 256x256."
+  version: "1.0.0"
+
+# 1. Dataset Registry
+dataset_registry:
+  imagenet:
+    id: "imagenet"
+    aliases: ["imagenet", "imagenet_1k", "imagenet-1k", "imagenet_c"]
+    loader_factory: "data_pipeline.imagenet.load_imagenet"
+    trust_remote_code: true
+    resolutions: [256, 512]
+    validation_checks:
+      - "check_dataset_exists"
+      - "check_resolution_valid"
+    setup_metadata:
+      huggingface_path: "imagenet-1k"
+      split: "validation"
+  imagenet_1k:
+    id: "imagenet_1k"
+    aliases: ["imagenet_1k", "imagenet-1k"]
+    loader_factory: "data_pipeline.imagenet.load_imagenet"
+    trust_remote_code: true
+    resolutions: [256, 512]
+    setup_metadata:
+      huggingface_path: "imagenet-1k"
+      split: "validation"
+  imagenet_c:
+    id: "imagenet_c"
+    aliases: ["imagenet_c"]
+    loader_factory: "data_pipeline.imagenet.load_imagenet"
+    trust_remote_code: true
+    resolutions: [256, 512]
+    setup_metadata:
+      huggingface_path: "imagenet-1k"
+      split: "validation"
+
+# 2. Environment Registry
+environment_registry:
+  imagenet_256:
+    id: "imagenet_256"
+    aliases: ["imagenet-256", "ImageNet (256x256)"]
+    task_family: "image_restoration"
+    resolution: 256
+    channels: 3
+    availability_check: "data_pipeline.tasks.check_tasks_available"
+    setup_metadata:
+      trust_remote_code: true
+      size: [256, 256]
+  imagenet_512:
+    id: "imagenet_512"
+    aliases: ["imagenet-512", "ImageNet (512x512)"]
+    task_family: "image_restoration"
+    resolution: 512
+    channels: 3
+    availability_check: "data_pipeline.tasks.check_tasks_available"
+    setup_metadata:
+      trust_remote_code: true
+      size: [512, 512]
+
+# 3. Method Registry
+method_registry:
+  ours:
+    id: "ours"
+    name: "Stochastic Interpolant with Data-Dependent Coupling"
+    class_path: "model_or_method.coupling.DataDependentCoupling"
+    selector: "ours"
+  resnet:
+    id: "resnet"
+    name: "ResNet Baseline"
+    class_path: "src.stochastic_interpolants.model.ResNetBaseline"
+    selector: "resnet"
+  ddpm:
+    id: "ddpm"
+    name: "DDPM Baseline"
+    class_path: "src.stochastic_interpolants.model.DDPMBaseline"
+    selector: "ddpm"
+  diffusion_model:
+    id: "diffusion_model"
+    name: "Standard Diffusion Model"
+    class_path: "src.stochastic_interpolants.model.StandardDiffusion"
+    selector: "diffusion_model"
+  gaussian_independent:
+    id: "gaussian_independent"
+    name: "Gaussian with independent coupling"
+    class_path: "model_or_method.coupling.GaussianIndependentCoupling"
+    selector: "Gaussian with independent coupling"
+
+# 4. Fixed Hyperparameters & Sweeps
+hyperparameters:
+  fixed:
+    batch_size_32: 32
+    mask_tiles_64: 64
+    mask_probability_0.3: 0.3
+  sweeps:
+    gamma: [0.0, 1.0]
+    batch_size: [32, 64]
+  interpolant:
+    alpha_t: "linear" # or "trig"
+    beta_t: "linear"  # or "trig"
+    time_distribution: "U(0,1)"
+
+# 5. Callable Protocol Matrix / Experiment Specs
+experiment_specs:
+  inpainting_imagenet:
+    id: "inpainting_imagenet"
+    name: "In-painting task (Section 4.1)"
+    environment: "imagenet_256"
+    method: "ours"
+    baseline: "gaussian_independent"
+    parameters:
+      batch_size: 32
+      mask_tiles: 64
+      mask_probability: 0.3
+      gamma: 0.0
+    metrics:
+      fid: "evaluation.metrics.compute_fid"
+    artifact_writers:
+      samples: "reproduce_results.write_inpainting_samples_artifact"
+      metrics: "reproduce_results.write_metrics_artifact"
+    outputs:
+      metrics_json: "results/metrics.json"
+      samples_png: "results/inpainting_samples.png"
+
+  super_resolution_imagenet:
+    id: "super_resolution_imagenet"
+    name: "Super-resolution task (Section 4.2)"
+    environment: "imagenet_256"
+    method: "ours"
+    baseline: "gaussian_independent"
+    parameters:
+      batch_size: 32
+      gamma: 0.0
+    metrics:
+      fid: "evaluation.metrics.compute_fid"
+    artifact_writers:
+      samples: "reproduce_results.write_sr_samples_artifact"
+      metrics: "reproduce_results.write_metrics_artifact"
+      figure_5: "reproduce_results.write_figure_5_artifact"
+    outputs:
+      metrics_json: "results/metrics.json"
+      samples_png: "results/sr_samples.png"
+      figure_5_png: "results/figures/figure_5.png"
+
+# 6. Paper Formula and Algorithm Anchors
+formula_anchors:
+  section_1_introduction:
+    description: "Transport from base density rho_0 to target density rho_1 via ODE/SDE."
+    symbols:
+      rho_0: "base density"
+      rho_1: "target density"
+    numeric_defaults:
+      t_start: 0.0
+      t_end: 1.0
+    algorithm_terms: ["equation", "formula", "ema", "compute", "sample"]
+
+  section_3_stochastic_interpolants:
+    description: "Stochastic interpolant definition: I_t = alpha_t * x_0 + beta_t * x_1 + gamma_t * z"
+    symbols:
+      I_t: "interpolant process"
+      alpha_t: "coefficient for x_0"
+      beta_t: "coefficient for x_1"
+      gamma_t: "coefficient for noise z"
+      x_0: "sample from rho_0"
+      x_1: "sample from rho_1"
+      z: "standard Gaussian noise"
+    numeric_defaults:
+      alpha_0: 1.0
+      beta_1: 1.0
+      alpha_1: 0.0
+      beta_0: 0.0
+      gamma_0: 0.0
+      gamma_1: 0.0
+
+  section_3_1_transport_equations:
+    description: "Transport equation and conditional generative model objectives."
+    symbols:
+      rho_t: "interpolant density at time t"
+      b_t: "velocity field"
+      g_t: "score field"
+      L_b: "velocity field loss"
+    numeric_defaults:
+      t_min: 0.0
+      t_max: 1.0
+
+  section_3_3_reducing_transport_costs:
+    description: "Reducing transport costs via coupling algorithm."
+    symbols:
+      x_0_i: "coupled base sample"
+      x_1_i: "target sample"
+      zeta_i: "noise sample"
+      sigma: "noise scale"
+      n_b: "batch size"
+    algorithm_steps:
+      step_1: "Compute x_0_i = m(x_1_i) + sigma * zeta_i"
+      step_2: "Compute I_t_i = alpha_t_i * x_0_i + beta_t_i * x_1_i"
+
+  section_4_1_inpainting:
+    description: "In-painting task formulation: x_0 = xi * x_1 + (1 - xi) * zeta"
+    symbols:
+      xi: "binary mask"
+      x_1: "original image"
+      zeta: "noise"
+      x_0: "masked base image"
+    numeric_defaults:
+      mask_probability: 0.3
+
+  appendix_a_omitted_proofs:
+    description: "Objectives with conditioning variables incorporated."
+    symbols:
+      xi: "conditioning variable"
+      I_t: "conditional interpolant"

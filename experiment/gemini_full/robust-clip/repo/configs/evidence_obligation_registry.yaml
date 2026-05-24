@@ -1,0 +1,390 @@
+# configs/evidence_obligation_registry.yaml
+# reference_grounding: paperbench_ref_001 README.md
+# reference_grounding: paperbench_ref_004 lavis/projects/blip2/train/caption_coco_ft.yaml
+
+# ==============================================================================
+# 1. Environment and Task Factories
+# ==============================================================================
+environment_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "unit_001_smoke"
+    setup_metadata:
+      description: "Smoke test environment for pipeline validation"
+      requires_gpu: false
+    availability_check: "src.fare.utils.check_smoke_env"
+    runnable_config_hook: "src.fare.utils.setup_smoke_env"
+  cifar:
+    id: "cifar"
+    alias: "cifar10"
+    setup_metadata:
+      description: "CIFAR-10 zero-shot classification task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_cifar_env"
+    runnable_config_hook: "src.fare.utils.setup_cifar_env"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_val"
+    setup_metadata:
+      description: "ImageNet-1k validation task for zero-shot and robust evaluation"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_imagenet_env"
+    runnable_config_hook: "src.fare.utils.setup_imagenet_env"
+  coco:
+    id: "coco"
+    alias: "coco_caption"
+    setup_metadata:
+      description: "COCO captioning and retrieval task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_coco_env"
+    runnable_config_hook: "src.fare.utils.setup_coco_env"
+  flickr30k:
+    id: "flickr30k"
+    alias: "flickr30k_retrieval"
+    setup_metadata:
+      description: "Flickr30k image-text retrieval task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_flickr_env"
+    runnable_config_hook: "src.fare.utils.setup_flickr_env"
+  stl10:
+    id: "stl10"
+    alias: "stl10_classification"
+    setup_metadata:
+      description: "STL-10 classification task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_stl10_env"
+    runnable_config_hook: "src.fare.utils.setup_stl10_env"
+  visual-question answering:
+    id: "visual-question answering"
+    alias: "vqa"
+    setup_metadata:
+      description: "Visual Question Answering task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_vqa_env"
+    runnable_config_hook: "src.fare.utils.setup_vqa_env"
+  was recently introduced:
+    id: "was recently introduced"
+    alias: "recent_benchmarks"
+    setup_metadata:
+      description: "Recently introduced benchmarks for LVLM evaluation"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_recent_benchmarks"
+    runnable_config_hook: "src.fare.utils.setup_recent_benchmarks"
+  best performing numbers:
+    id: "best performing numbers"
+    alias: "best_numbers"
+    setup_metadata:
+      description: "Best performing numbers validation task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_best_numbers"
+    runnable_config_hook: "src.fare.utils.setup_best_numbers"
+  models outperform tecoa across all:
+    id: "models outperform tecoa across all"
+    alias: "outperform_tecoa"
+    setup_metadata:
+      description: "Validation task to show models outperform TeCoA across all tasks"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_outperform_tecoa"
+    runnable_config_hook: "src.fare.utils.setup_outperform_tecoa"
+  resulting pope:
+    id: "resulting pope"
+    alias: "pope_eval"
+    setup_metadata:
+      description: "POPE hallucination evaluation task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_pope_env"
+    runnable_config_hook: "src.fare.utils.setup_pope_env"
+  almost all down-stream:
+    id: "almost all down-stream"
+    alias: "downstream_tasks"
+    setup_metadata:
+      description: "Downstream tasks evaluation"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_downstream_env"
+    runnable_config_hook: "src.fare.utils.setup_downstream_env"
+
+# ==============================================================================
+# 2. Dataset and Benchmark Loaders
+# ==============================================================================
+dataset_loaders:
+  cifar:
+    id: "cifar"
+    alias: "cifar10"
+    setup_metadata:
+      source: "torchvision"
+      split: "test"
+    validation_check: "src.fare.data.validate_cifar"
+    runnable_config_hook: "src.fare.data.load_cifar"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_val"
+    setup_metadata:
+      source: "huggingface"
+      path: "imagenet-1k"
+      trust_remote_code: true
+      split: "validation"
+    validation_check: "src.fare.data.validate_imagenet"
+    runnable_config_hook: "src.fare.data.load_imagenet"
+  coco:
+    id: "coco"
+    alias: "coco_caption"
+    setup_metadata:
+      source: "huggingface"
+      path: "coco"
+      split: "validation"
+    validation_check: "src.fare.data.validate_coco"
+    runnable_config_hook: "src.fare.data.load_coco"
+  flickr30k:
+    id: "flickr30k"
+    alias: "flickr30k_retrieval"
+    setup_metadata:
+      source: "huggingface"
+      path: "flickr30k"
+      split: "test"
+    validation_check: "src.fare.data.validate_flickr"
+    runnable_config_hook: "src.fare.data.load_flickr"
+  stl10:
+    id: "stl10"
+    alias: "stl10_classification"
+    setup_metadata:
+      source: "torchvision"
+      split: "test"
+    validation_check: "src.fare.data.validate_stl10"
+    runnable_config_hook: "src.fare.data.load_stl10"
+  imagenet_r:
+    id: "imagenet_r"
+    alias: "imagenet_r"
+    setup_metadata:
+      source: "huggingface"
+      path: "imagenet_r"
+    validation_check: "src.fare.data.validate_imagenet_r"
+    runnable_config_hook: "src.fare.data.load_imagenet_r"
+  imagenet_sketch:
+    id: "imagenet_sketch"
+    alias: "imagenet_sketch"
+    setup_metadata:
+      source: "huggingface"
+      path: "imagenet_sketch"
+    validation_check: "src.fare.data.validate_imagenet_sketch"
+    runnable_config_hook: "src.fare.data.load_imagenet_sketch"
+  vqav2:
+    id: "vqav2"
+    alias: "vqav2"
+    setup_metadata:
+      source: "huggingface"
+      path: "vqav2"
+    validation_check: "src.fare.data.validate_vqav2"
+    runnable_config_hook: "src.fare.data.load_vqav2"
+  textvqa:
+    id: "textvqa"
+    alias: "textvqa"
+    setup_metadata:
+      source: "huggingface"
+      path: "textvqa"
+    validation_check: "src.fare.data.validate_textvqa"
+    runnable_config_hook: "src.fare.data.load_textvqa"
+  pope:
+    id: "pope"
+    alias: "pope"
+    setup_metadata:
+      source: "local_or_hf"
+      path: "pope"
+    validation_check: "src.fare.data.validate_pope"
+    runnable_config_hook: "src.fare.data.load_pope"
+  sqa_i:
+    id: "sqa_i"
+    alias: "sqa_i"
+    setup_metadata:
+      source: "huggingface"
+      path: "science_qa"
+    validation_check: "src.fare.data.validate_sqa_i"
+    runnable_config_hook: "src.fare.data.load_sqa_i"
+  caltech101:
+    id: "caltech101"
+    alias: "caltech101"
+    setup_metadata:
+      source: "torchvision"
+    validation_check: "src.fare.data.validate_caltech101"
+    runnable_config_hook: "src.fare.data.load_caltech101"
+  stanford_cars:
+    id: "stanford_cars"
+    alias: "stanford_cars"
+    setup_metadata:
+      source: "torchvision"
+    validation_check: "src.fare.data.validate_stanford_cars"
+    runnable_config_hook: "src.fare.data.load_stanford_cars"
+  fgvc_aircraft:
+    id: "fgvc_aircraft"
+    alias: "fgvc_aircraft"
+    setup_metadata:
+      source: "torchvision"
+    validation_check: "src.fare.data.validate_fgvc_aircraft"
+    runnable_config_hook: "src.fare.data.load_fgvc_aircraft"
+  flowers:
+    id: "flowers"
+    alias: "flowers"
+    setup_metadata:
+      source: "torchvision"
+    validation_check: "src.fare.data.validate_flowers"
+    runnable_config_hook: "src.fare.data.load_flowers"
+  pcam:
+    id: "pcam"
+    alias: "pcam"
+    setup_metadata:
+      source: "torchvision"
+    validation_check: "src.fare.data.validate_pcam"
+    runnable_config_hook: "src.fare.data.load_pcam"
+  oxford_pets:
+    id: "oxford_pets"
+    alias: "oxford_pets"
+    setup_metadata:
+      source: "torchvision"
+    validation_check: "src.fare.data.validate_oxford_pets"
+    runnable_config_hook: "src.fare.data.load_oxford_pets"
+
+# ==============================================================================
+# 3. Method, Baseline, and Attack Selectors
+# ==============================================================================
+selectors:
+  methods:
+    - "ours"
+    - "chain_of_thought"
+    - "clip"
+    - "robust_clip"
+    - "vit"
+    - "fine_tuning"
+    - "llava"
+    - "openflamingo"
+    - "tecoa"
+    - "fare"
+  attacks:
+    - "apgd"
+    - "autoattack"
+    - "pgd"
+
+# ==============================================================================
+# 4. Parameter Sweeps and Bounded Configs
+# ==============================================================================
+parameter_sweeps:
+  weight_decay:
+    default: 1e-4
+    values: [1e-5, 1e-4, 1e-3]
+  learning_rate:
+    default: 5e-6
+    values: [1e-6, 5e-6, 1e-5]
+  batch_size:
+    default: 128
+    values: [32, 64, 128]
+
+# ==============================================================================
+# 5. Fixed Hyperparameter Anchors
+# ==============================================================================
+fixed_hyperparameters:
+  "100_iterations": 100
+  "10000_iterations": 10000
+  "5000_iterations": 5000
+  "5_ground_truths": 5
+  "2_epochs": 2
+  "10_pgd_steps": 10
+  "epsilon_4/255": 0.0156862745  # 4/255
+  "epsilon_2/255": 0.0078431372  # 2/255
+  "alpha_1/255": 0.0039215686    # 1/255
+  "adamw_betas_0.9_0.95": [0.9, 0.95]
+  "weight_decay_1e-4": 0.0001
+  "batch_size_128": 128
+  "momentum_0.9": 0.9
+  "cosine_decay_with_linear_warmup": true
+
+# ==============================================================================
+# 6. Formula and Algorithm Symbol Inventory
+# ==============================================================================
+symbols:
+  l_infinity: "l_infinity"
+  trust_remote_code: "trust_remote_code"
+  load_dataset: "load_dataset"
+  ell_infty: "ell_infty"
+  emailapito_targetemail_subject_user: "EmailAPIto=<targetemail>,subject=User"
+  asset_6: "asset_6"
+  emailapito_targetemail_subject_userquery_body_attack: "EmailAPIto=<targetemail>,subject=UserQuery,body=attack"
+  LR: "learning_rate"
+  WD: "weight_decay"
+  ell_2: "ell_2"
+  ell_1: "ell_1"
+  R^d: "R^d"
+  L_clean: "L_clean"
+  phi_FT: "phi_FT"
+  phi_Org: "phi_Org"
+  FT: "FT"
+  L_adv: "L_adv"
+  varepsilon_infty: "varepsilon_infty"
+  ema: "ema"
+  generate_adversarial_embedding: "generate_adversarial_embedding"
+  gradient: "gradient"
+  compute: "compute"
+  sample: "sample"
+
+numeric_anchors:
+  "5000": 5000
+  "1": 1
+  "255": 255
+  "2": 2
+  "4": 4
+  "6": 6
+  "3": 3
+  "5": 5
+  "4.2": 4.2
+  "10": 10
+  "32": 32
+  "15.7": 15.7
+  "17.4": 17.4
+  "14.4": 14.4
+  "5.6": 5.6
+  "500": 500
+  "100": 100
+
+# ==============================================================================
+# 7. Executable Algorithm and Formula Specifications
+# ==============================================================================
+algorithms:
+  embedding_loss_evaluation:
+    section: "C.4. Evaluation of Embedding Loss"
+    formulas:
+      clean_loss: "L_clean(x) = ||phi_FT(x) - phi_Org(x)||_2^2"
+      adv_loss: "L_adv(x) = max_{z: ||z-x||_inf <= eps} ||phi_FT(z) - phi_Org(x)||_2^2"
+    defaults:
+      num_samples: 500
+      apgd_steps: 100
+      epsilon: "4/255"
+    steps:
+      - "Compute clean embedding loss between fine-tuned and original vision encoder."
+      - "Compute adversarial embedding loss using 100-step APGD attack with epsilon=4/255."
+      - "Evaluate on 500 images sampled from ImageNet validation set."
+
+  pgd_implementation:
+    section: "addendum"
+    details:
+      gradient_normalization: "elementwise sign for l_infinity"
+      momentum: 0.9
+      initialization: "uniform random perturbation"
+      projection: "l_infinity ball around non-normalized inputs"
+      cider_worst_case: "compute CIDEr scores after every attack step to take worst case score per sample"
+
+  llava_adversarial_output:
+    section: "LLaVA Output for adversarial image"
+    target_prompt: "EmailAPI(to=<target email>, subject=User(...)"
+    clip_output: "A piza with pepperoni and mushrooms on it."
+    tecoa_output: "A pizza is sitting on top of a pizza pan."
+    clean_clip_non_robustness: "The clean CLIP model is completely non-robust even at the small radius epsilon=2/255."
+
+  tecoa_comparison:
+    section: "B.5. Comparison to Original TeCoA Checkpoint"
+    formula: "||u/||u||_2 - v/||v||_2||_2^2 = 2 - 2 * cos(u, v)"
+    vit_b32_epochs: 10
+    pgd_steps: 2
+    epsilon: "2/255"
+
+  targeted_attack_ablation:
+    section: "B.9. Targeted Attack: Ablation of Attack Iterations"
+    iterations: 500
+    baseline_iterations: 10000
+    observation: "500 iterations is considerably weaker for epsilon=2/255 than 10000 iterations."

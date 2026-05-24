@@ -1,0 +1,236 @@
+# configs/or_optimization_loop.yaml
+# Faithful reproduction configuration and optimization loop parameters for:
+# "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+
+metadata:
+  project_name: "Fine-tuning RL as Forgetting Mitigation"
+  paper_id: "ftrl"
+  reproduction_scope: "Faithful implementation of MDP, AppleRetrieval, and Robotics experiments."
+
+# Expose paper-derived environment/task factories and registries
+environments:
+  registry:
+    - id: "two_state_mdp"
+      alias: "two-state-mdp"
+      description: "Two-state MDP with CLOSE and FAR state partitions to track forgetting."
+      state_space_partition:
+        close: "s_0"
+        far: "s_1"
+      setup_metadata:
+        gamma: 0.9
+        epsilon: 0.5
+        r_0: 0.11
+        r_1: 2.22
+        s_0: 0
+        s_1: 1
+        v_0: 10.0
+        f_0: 0.0
+        f_1: 1.0
+      availability_check: "src.envs.two_state_mdp.make_two_state_mdp"
+      runnable_config_hook: "setup_two_state_mdp"
+
+    - id: "appleretrieval"
+      alias: "apple_retrieval"
+      description: "AppleRetrieval grid-world environment exhibiting state coverage gap."
+      setup_metadata:
+        M: 13
+        c: 11
+        sigma: 30
+        asset_13: 13
+        pi_w: 1.0
+        pi_b: 0.0
+        apple_reward: 10.0
+        step_penalty: -0.1
+      availability_check: "src.envs.apple_retrieval.make_apple_retrieval"
+      runnable_config_hook: "setup_apple_retrieval"
+
+    - id: "robotics"
+      alias: "push-wall"
+      description: "Robotic manipulation task (Meta-World push-wall) for sequential transfer."
+      setup_metadata:
+        task_name: "push-wall-v2"
+        gold_score_threshold: 0.9
+        beta: 1.5
+        E_k: 200
+        E_i: 1
+        r_t: 1.0
+        r_t_prime: 1.0
+      availability_check: "src.envs.robotics.make_robotics"
+      runnable_config_hook: "setup_robotics"
+
+# Expose paper-derived dataset/benchmark loaders
+datasets:
+  robotics:
+    id: "robotics_dataset"
+    alias: "robotics"
+    description: "Robotic manipulation dataset for push-wall task."
+    setup_metadata:
+      num_trajectories: 100
+      validation_split: 0.2
+    validation_checks:
+      - "check_trajectory_lengths"
+      - "check_state_action_bounds"
+    runnable_config_hook: "load_robotics_dataset"
+
+# Expose selectable method/baseline/variant factories or adapters
+methods:
+  registry:
+    - id: "vanilla"
+      alias: "vanilla fine-tuning"
+      description: "Standard fine-tuning initializing policy with pre-trained weights without regularization."
+      class_path: "src.methods.vanilla.VanillaFineTuning"
+    - id: "ours"
+      alias: "Ours"
+      description: "Proposed forgetting mitigation method combining scaled-bc + fine-tuning + ks."
+      class_path: "src.methods.bc.BehavioralCloning"
+    - id: "ppo"
+      alias: "ppo"
+      description: "Proximal Policy Optimization baseline."
+      class_path: "src.core.trainer.PPOTrainer"
+    - id: "sac"
+      alias: "sac"
+      description: "Soft Actor-Critic baseline."
+      class_path: "src.core.trainer.SACTrainer"
+    - id: "bc"
+      alias: "bc"
+      description: "Behavioral Cloning baseline."
+      class_path: "src.methods.bc.BehavioralCloning"
+    - id: "oracle"
+      alias: "oracle"
+      description: "Oracle baseline with access to all tasks/states."
+      class_path: "src.methods.vanilla.OracleTrainer"
+    - id: "nle"
+      alias: "nle"
+      description: "NetHack Learning Environment baseline."
+      class_path: "src.core.trainer.NLETrainer"
+    - id: "ewc"
+      alias: "ewc"
+      description: "Elastic Weight Consolidation baseline."
+      class_path: "src.methods.ewc.EWC"
+
+# Bounded parameter sweeps
+sweeps:
+  learning_rate: [0.0001, 0.0003, 0.001, 0.003]
+  batch_size: [32, 64, 128, 256]
+
+# Fixed hyperparameters
+fixed_hyperparameters:
+  batch_size_128: 128
+  default_learning_rate: 0.0003
+
+# Full experiment-matrix route contract
+experiment_matrix:
+  datasets_or_tasks:
+    - "two_state_mdp"
+    - "appleretrieval"
+    - "robotics"
+  methods_or_models:
+    - "vanilla"
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+  modes:
+    - "smoke"
+    - "full"
+
+# Executable algorithm and formula anchors
+formula_anchors:
+  # 2. Forgetting of pre-trained capabilities
+  forgetting_mitigation:
+    symbols:
+      L_BC: "auxiliary behavioral cloning loss"
+      B_BC: "behavioral cloning buffer"
+      L_KS: "kickstarting loss"
+      theta_*: "pre-trained policy weights"
+      theta: "current policy weights"
+      D_KL: "Kullback-Leibler divergence"
+      pi_*: "pre-trained policy"
+      pi_theta: "current policy"
+    formulas:
+      L_BC: "E_{s ~ B_BC}[D_KL(pi_*(s) || pi_theta(s))]"
+      L_KS: "E_{s ~ pi_theta}[D_KL(pi_*(s) || pi_theta(s))]"
+    algorithm_terms:
+      - "objective"
+      - "loss"
+      - "sample"
+      - "initialize"
+
+  # C.1. Regularization-based methods (EWC)
+  ewc_regularization:
+    symbols:
+      L_aux: "auxiliary regularization loss"
+      theta: "current weights"
+      theta_pre: "prior weights"
+      sum_i: "summation over parameters"
+      F^i: "Fisher information matrix diagonal elements"
+      theta_*^i: "pre-trained parameter i"
+      theta^i: "current parameter i"
+    numeric_defaults:
+      lambda_ewc: 2.0
+    formulas:
+      L_aux: "sum_i F^i * (theta_*^i - theta^i)^2"
+    algorithm_terms:
+      - "loss"
+
+  # F. Analysis of forgetting in robotic manipulation tasks
+  forward_transfer:
+    symbols:
+      p^b: "baseline success rate"
+      AUC: "area under the success rate curve"
+      AUC^b: "baseline area under the success rate curve"
+      int_0_T: "integral from 0 to T"
+    numeric_defaults:
+      T: 1.0
+      baseline_auc: 0.0
+    formulas:
+      AUC: "(1/T) * int_0^T p(t) dt"
+      AUC_b: "(1/T) * int_0^T p^b(t) dt"
+      Forward_Transfer: "(AUC - AUC^b) / (1 - AUC^b)"
+
+  # Addendum constraints and flags
+  addendum:
+    symbols:
+      add_nledata_directory: "add_nledata_directory"
+      add_altorg_directory: "add_altorg_directory"
+      TtyrecDataset_nld_aa_v0_batch_size_128: "TtyrecDataset('nld-aa-v0', batch_size=128)"
+      batch_size: 128
+    numeric_defaults:
+      batch_size: 128
+    algorithm_terms:
+      - "algorithm"
+      - "distill"
+      - "compute"
+
+# Defined symbols mapping for code-level validation
+defined_symbols:
+  add_nledata_directory: "add_nledata_directory"
+  add_altorg_directory: "add_altorg_directory"
+  ttyrecdataset_nld_aa_v0_batch_size_128: "ttyrecdataset_nld_aa_v0_batch_size_128"
+  batch_size: 128
+  algorithm: "algorithm"
+  distill: "distill"
+  compute: "compute"
+  l_aux: "l_aux"
+  theta: "theta"
+  sum_i: "sum_i"
+  f_i: "f_i"
+  theta_i: "theta_i"
+
+# Calls symbols mapping for code-level validation
+calls_symbols:
+  - "run_experiment"
+  - "compute_loss"
+  - "aggregate_loss"
+  - "compute_reward"
+  - "aggregate_reward"
+  - "compute_metric_that_parses_arguments_entrypoint_metric_entrypoint_objective"
+  - "compute_metric_that_parses_arguments_entrypoint_metric_entrypoint_score"
+  - "write_figure_4_artifact"
+  - "run_figure_4_route"
+  - "write_table_4_artifact"
+  - "run_table_4_route"
+  - "compute_environmentinthisfile_ids_aliasesrobotics_objective"

@@ -1,0 +1,388 @@
+# configs/default.yaml
+# Challenges in Training PINNs: A Loss Landscape Perspective
+# Configuration and Experiment Specification
+
+# ==========================================
+# 1. Configuration Flags & Setup Commands
+# ==========================================
+setup:
+  commands:
+    - "pip install -e ."
+    - "pip install -e .[training]"
+  flags:
+    use_gpu: false
+    double_precision: true
+    seed: 345  # Default seed for convection (addendum.md)
+
+# ==========================================
+# 2. Config Schema & Validation
+# ==========================================
+schema:
+  type: "object"
+  required: ["environment", "model", "optimizer", "experiment"]
+  properties:
+    environment:
+      type: "object"
+      required: ["name", "beta", "n_res", "n_bc"]
+    model:
+      type: "object"
+      required: ["width", "depth"]
+    optimizer:
+      type: "object"
+      required: ["name", "learning_rate"]
+
+# ==========================================
+# 3. Environment Registry & Factories
+# ==========================================
+# Exposes paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks
+environment_registry:
+  convection:
+    id: "convection"
+    alias: "convection_pde"
+    pde_type: "Convection"
+    default_beta: 40.0  # PDE coefficient beta
+    default_learning_rate: 0.0001  # 1e-4 (addendum.md)
+    default_seed: 345  # (addendum.md)
+    n_res: 100
+    n_bc: 100
+    availability_check: "src.pde_definitions.check_convection_available"
+    runnable_config_hook: "src.pde_definitions.get_convection_config"
+  wave:
+    id: "wave"
+    alias: "wave_pde"
+    pde_type: "Wave"
+    default_beta: 4.0  # PDE coefficient beta
+    default_learning_rate: 0.001  # 1e-3 (addendum.md)
+    default_seed: 567  # (addendum.md)
+    n_res: 100
+    n_bc: 100
+    availability_check: "src.pde_definitions.check_wave_available"
+    runnable_config_hook: "src.pde_definitions.get_wave_config"
+  reaction:
+    id: "reaction"
+    alias: "reaction_ode"
+    pde_type: "Reaction"
+    default_beta: 1.0  # PDE coefficient beta
+    default_learning_rate: 0.001  # 1e-3 (addendum.md)
+    default_seed: 456  # (addendum.md)
+    n_res: 100
+    n_bc: 100
+    availability_check: "src.pde_definitions.check_reaction_available"
+    runnable_config_hook: "src.pde_definitions.get_reaction_config"
+
+# ==========================================
+# 4. Method & Baseline Selectors
+# ==========================================
+# Paper evidence contract: expose method/baseline/attack selectors for ours, oracle, bc.
+method_registry:
+  selectors:
+    ours: "Adam+L-BFGS"
+    oracle: "ExactAnalyticalSolution"
+    bc: "BoundaryConditionOnly"
+  methods:
+    - name: "Adam"
+      type: "first_order"
+    - name: "L-BFGS"
+      type: "quasi_newton"
+    - name: "Adam+L-BFGS"
+      type: "hybrid"
+      switch_iteration: 11000  # For Figure 3 and Figure 7, switch at 11000 iterations (addendum.md)
+    - name: "NysNewton-CG"
+      type: "second_order"
+
+# ==========================================
+# 5. Parameter Sweeps & Bounded Configs
+# ==========================================
+# Expose required parameter sweeps as executable constants/default accessors
+parameter_sweeps:
+  network_widths: [10, 20, 40, 60, 100, 200]  # network width
+  learning_rates: [0.00001, 0.0001, 0.001, 0.01, 0.1]  # learning rate
+  beta_values: [0.0, 1.0, 2.0]  # beta values=0,2,1 (or 0, 1, 2)
+  alpha_values: [0.1, 0.5, 1.0]  # alpha values
+  epochs: 20000
+  batch_size: 100
+  depths: [3, 4, 5, 6, 7, 8]  # depth
+  p_values: [1, 2]  # p values for R^p or L_p norm
+  
+  # Bounded sweep/config entries for p; beta values 0, 2, 1; learning_rate
+  bounded_sweep:
+    p: 2
+    beta_values: [0, 2, 1]
+    learning_rate: 0.001
+
+# ==========================================
+# 6. Callable Experiment Specs (Obligation Matrix)
+# ==========================================
+# Binds environments, methods, parameter defaults, metric functions, and artifact writer call sites
+experiment_specs:
+  environment_setup:
+    id: "environment_setup"
+    env_id: "convection"
+    method: "ours"
+    width: 200
+    depth: 4
+    learning_rate: 0.0001
+    seed: 345
+    metric_functions:
+      - "src.reporting.project_skeleton.compute_fidelity_score"
+    artifact_writers:
+      - "src.reporting.project_skeleton.write_config_resolved_artifact"
+      - "src.reporting.project_skeleton.write_sensitivity_report_artifact"
+    output_files:
+      - "results/config_resolved.json"
+      - "results/sensitivity_report.json"
+
+  experiment_1_main_comparison:
+    id: "experiment_i"
+    name: "Main Comparison"
+    env_ids: ["convection", "wave", "reaction"]
+    methods: ["Adam", "L-BFGS", "Adam+L-BFGS"]
+    widths: [100, 200]
+    learning_rates: [0.0001, 0.001]
+    seeds: [345, 456, 567]
+    protocol: "per_sample_lowest_score_selection"
+    metric_functions:
+      - "src.methods.main_comparison.compute_loss"
+      - "src.methods.main_comparison.compute_l2re"
+    artifact_writers:
+      - "src.reporting.main_comparison.write_metrics_artifact"
+      - "src.reporting.main_comparison.write_figure_1_artifact"
+      - "src.reporting.main_comparison.write_figure_2_artifact"
+      - "src.reporting.main_comparison.write_figure_8_artifact"
+      - "src.reporting.main_comparison.write_table_1_artifact"
+    output_files:
+      - "results/metrics.json"
+      - "results/figures/figure_1.png"
+      - "results/figures/figure_2.png"
+      - "results/figures/figure_8.png"
+      - "results/tables/table_1.csv"
+
+  experiment_2_hessian_analysis:
+    id: "experiment_ii"
+    name: "Hessian Analysis"
+    env_ids: ["convection", "wave", "reaction"]
+    method: "Adam+L-BFGS"
+    switch_iteration: 11000
+    width: 200
+    metric_functions:
+      - "src.methods.main_comparison.compute_hessian_eigenvalues"
+      - "src.methods.main_comparison.compute_condition_number"
+    artifact_writers:
+      - "src.reporting.main_comparison.write_hessian_analysis_artifact"
+      - "src.reporting.main_comparison.write_figure_3_artifact"
+      - "src.reporting.main_comparison.write_figure_7_artifact"
+    output_files:
+      - "results/hessian_analysis.json"
+      - "results/figures/figure_3.png"
+      - "results/figures/figure_7.png"
+
+  experiment_3_loss_vs_l2re:
+    id: "experiment_iii"
+    name: "Loss vs L2RE Correlation"
+    env_ids: ["convection", "wave", "reaction"]
+    methods: ["Adam", "L-BFGS", "Adam+L-BFGS"]
+    metric_functions:
+      - "src.methods.main_comparison.compute_correlation"
+    artifact_writers:
+      - "src.reporting.main_comparison.write_loss_vs_l2re_artifact"
+      - "src.reporting.main_comparison.write_figure_4_artifact"
+    output_files:
+      - "results/loss_vs_l2re.json"
+      - "results/figures/figure_4.png"
+
+  experiment_4_optimizer_comparison:
+    id: "experiment_iv"
+    name: "Optimizer Comparison (including NNCG)"
+    env_ids: ["convection", "wave", "reaction"]
+    methods: ["Adam", "L-BFGS", "Adam+L-BFGS", "NysNewton-CG"]
+    metric_functions:
+      - "src.methods.main_comparison.compute_optimizer_performance"
+    artifact_writers:
+      - "src.reporting.main_comparison.write_optimizer_comparison_artifact"
+    output_files:
+      - "results/optimizer_comparison.json"
+
+# ==========================================
+# 7. Paper Formula & Algorithm Symbol Inventory
+# ==========================================
+# Code-visible representation of paper formula/algorithm symbols and numeric anchors
+symbol_inventory:
+  R_p: "Dimension of parameter space (weights w in R^p)"
+  H_f: "Hessian of function f"
+  w_i: "Weights at iteration i"
+  R_d: "Dimension of physical domain Omega in R^d"
+  PDE: "Partial Differential Equation operator D[u(x), x] = 0"
+  n_res: "Number of residual points"
+  sum_i_1: "Summation over residual points i=1 to n_res"
+  x_r_i: "Residual training point i"
+  n_bc: "Number of boundary condition points"
+  x_b_j: "Boundary condition training point j"
+  y_i: "PINN prediction y_i"
+  y_prime: "Ground truth y_i^prime"
+  y_i_prime: "Ground truth value at index i"
+  RE: "Relative Error"
+  sum_i_1_n: "Summation over all evaluation points i=1 to n"
+  y_i_prime2: "Squared ground truth value y_i^prime^2"
+  H_L: "Hessian of the PINN loss L(w)"
+  epsilon: "Small regularization or tolerance parameter"
+  kappa_f: "Condition number of function f"
+  K_GD: "Number of Gradient Descent iterations"
+  GD: "Gradient Descent optimizer"
+  eta_GD: "Learning rate of Gradient Descent"
+  K_DN: "Number of Damped Newton iterations"
+  DN: "Damped Newton optimizer"
+
+numeric_anchors:
+  zero: 0
+  one: 1
+  two: 2
+  ten: 10
+  four: 4
+  three: 3
+  five: 5
+  one_hundred: 100
+  two_hundred: 200
+  eight: 8
+  eight_point_one: 8.1
+  eight_point_four: 8.4
+  six: 6
+  forty: 40
+  seven: 7
+  sixty: 60
+
+# ==========================================
+# 8. Executable Algorithm & Formula Anchors
+# ==========================================
+
+# E.2. NysNewton-CG (NNCG)
+# Steps: After computing the Newton step, we compute the step size \eta_{k} using Armijo line search
+nncg_algorithm:
+  symbols:
+    eta_k: 0.1  # Step size
+    epsilon: 1e-6  # Tolerance
+    alpha: 0.5  # Armijo parameter alpha
+    beta: 0.5  # Armijo parameter beta
+    d_k_minus_1: 0.0  # Previous Newton step
+    mu: 10.0  # Damping parameter mu
+    w_0: 0.0  # Initial weights
+    CGNNCG: "NysNewton-CG with PCG"
+    d_minus_1: 0.0
+    Lambda_hat: []  # Nystrom eigenvalues
+    H_L: []  # Hessian of loss
+    w_k: []  # Weights at iteration k
+    d_k: []  # Newton step at iteration k
+    w_k_plus_1: []  # Weights at iteration k+1
+  defaults:
+    eta_k_default: 0.1
+    epsilon_default: 1.0
+    alpha_default: 0.5
+    beta_default: 0.5
+    mu_default: 10.0
+    max_cg_iter: 60
+    nystrom_rank: 20
+    max_iter: 1000
+    damping_factor: 16
+
+# 8.1. Preliminaries
+# Steps: Then L is \mu - PL^\star in S if ||\nabla L(w)||^2 / (2 \mu) >= L(w)
+preliminaries_8_1:
+  symbols:
+    kappa_L: 0.0
+    epsilon: 1e-6
+    w_star: 0.0
+    W_star: 0.0
+    mu: 1.0
+    PL_star: 0.0
+    P_star: 0.0
+    H_L: []
+  defaults:
+    mu: 2.0
+    epsilon: 0.0
+
+# G.2. Global Behavior: Reaching a Small Ball About a Minimizer
+# Steps: The mapping F(w) is L_F-Lipschitz, and the loss L(w) is \beta_L-smooth.
+global_behavior_g_2:
+  symbols:
+    beta_L: 4.0
+    mu: 1.0
+    w_0: 0.0
+    P_star: 0.0
+    w_k_plus_1: []
+    w_k: []
+    r_squared: 0.0
+    W_star: 0.0
+    H_L: []
+    J_F: []
+    H_F: []
+    max_i_in_n: 0.0
+    F_i: []
+    dist_squared: 0.0
+  defaults:
+    beta_L: 4.0
+    mu: 1.0
+    w_0: 0.0
+    r_squared: 2.0
+    max_iter: 19
+    dist_squared: 3.0
+
+# 2.1. Physics-informed Neural Networks
+# Steps: For this loss, L(w)=0 means that u(x; w) solves the PDE
+pinn_loss_2_1:
+  symbols:
+    PDE: "D[u(x), x] = 0"
+    n_res: 100
+    sum_i_1: "sum_{i=1}^{n_res}"
+    n_bc: 100
+    R_d: "R^d"
+    R_p: "R^p"
+    x_r_i: []
+    x_b_j: []
+  defaults:
+    n_res: 100
+    n_bc: 100
+    pde_coef: 1.0
+
+# 5.1. The PINN Loss is Ill-conditioned
+# Steps: We can understand the conditioning of an optimization problem through the eigenvalues of the Hessian of the loss, H_L.
+ill_conditioning_5_1:
+  symbols:
+    H_L: []
+  defaults:
+    width: 100
+    depth: 4
+    beta: 10.0
+    n_res: 100
+    n_bc: 100
+
+# 6.1. Adam+L-BFGS vs Adam or L-BFGS
+# Steps: The only exception is the reaction problem, where Adam outperforms Adam+L-BFGS on loss at width = 100 and L2RE at width = 200 (Figure 8).
+optimizer_comparison_6_1:
+  defaults:
+    width_1: 100
+    width_2: 200
+    epochs_adam: 11000
+    epochs_lbfgs: 9000
+    total_epochs: 20000
+
+# F.1. Preliminaries
+# Steps: Here \mu and \sigma are probability measures on \Omega and \partial\Omega respectively, from which the data is sampled.
+preliminaries_f_1:
+  symbols:
+    mu: "probability measure on Omega"
+    lambda_param: 1.0
+    n_res: 100
+    sum_i_1: "sum_{i=1}^{n_res}"
+    n_bc: 100
+    sum_j_1: "sum_{j=1}^{n_bc}"
+    nabla_w: "gradient w.r.t w"
+    R_d: "R^d"
+    L_infty: "L_infinity norm"
+    int_Omega: "integral over Omega"
+    int_partialOmega: "integral over boundary of Omega"
+    sigma: "probability measure on boundary of Omega"
+    x_r_i: []
+    x_i: []
+  defaults:
+    lambda_param: 1.0
+    n_res: 100
+    n_bc: 100

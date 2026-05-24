@@ -1,0 +1,188 @@
+# configs/semantic_chunk_design.yaml
+# reference_grounding: paper chunk_008, chunk_009, chunk_010_01, chunk_011_02, chunk_015, chunk_035, chunk_039
+# reference_grounding: addendum:formula_algorithm_contract
+
+# Global Constants and Algorithm Symbols
+# reference_grounding: paper chunk_008, chunk_010_01, chunk_011_02
+constants:
+  d_max: 1.0
+  gamma: 0.99
+  alpha_default: 0.01
+  lambda_default: 0.01
+  p_default: 0.5
+  numeric_anchors: [0, 1, 2, 3.1, 3.6, 3, 10, 20, 30, 40, 3.3, 4, 3.5, 3.4, 0.25, 0.5]
+
+symbols:
+  v_pi: "V^pi(s) = E_pi[sum_{t=0}^infty gamma^t R(s_t, a_t) | s_0=s]"
+  q_pi: "Q^pi(s, a) = E_pi[sum_{t=0}^infty gamma^t R(s_t, a_t) | s_0=s, a_0=a]"
+  a_pi: "A^pi(s, a) = Q^pi(s, a) - V^pi(s)"
+  pi_star: "Optimal policy pi^* = max_pi V^pi"
+  theta: "Mask network parameters"
+  pi_bar: "Blinded policy"
+  pi_tilde: "State mask policy"
+  a_t_m: "Mask action (0 or 1)"
+  a_random: "Random action sampled from action space"
+  intrinsic_reward: "R' = R + alpha * a_m"
+  fidelity_score: "E_ssimrho [d_rho^pi]"
+
+# Environment and Task Registry
+# reference_grounding: paper:unit-001
+environment_registry:
+  Hopper-v3:
+    alias: "Hopper"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Walker2d-v3:
+    alias: "Walker2d"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Reacher-v2:
+    alias: "Reacher"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  HalfCheetah-v3:
+    alias: "HalfCheetah"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  SelfishMining:
+    alias: "selfish mining"
+    group: "selfish_mining"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  CageChallenge2:
+    alias: "CAGE Challenge 2"
+    group: "cage"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  AutonomousDriving:
+    alias: "autonomous driving"
+    group: "autonomous_driving"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  MalwareMutation:
+    alias: "Malware Mutation"
+    group: "malware_mutation"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+
+# Dataset and Benchmark Loaders
+# reference_grounding: paper:unit-001
+dataset_registry:
+  cage:
+    alias: "cage"
+    loader: "src.rice.envs.load_cage_dataset"
+  gym:
+    alias: "gym"
+    loader: "src.rice.envs.load_gym_dataset"
+  mujoco:
+    alias: "mujoco"
+    loader: "src.rice.envs.load_mujoco_dataset"
+  selfish_mining:
+    alias: "selfish_mining"
+    loader: "src.rice.envs.load_selfish_mining_dataset"
+  network_defense:
+    alias: "network_defense"
+    loader: "src.rice.envs.load_network_defense_dataset"
+  autonomous_driving:
+    alias: "autonomous_driving"
+    loader: "src.rice.envs.load_autonomous_driving_dataset"
+
+# Method and Baseline Selectors
+# reference_grounding: paper:unit-009
+method_selectors:
+  ours: "src.rice.refining.RICETrainer"
+  random: "src.rice.baselines.RandomBaseline"
+  statemask: "src.rice.explanation.ExplanationGenerator"
+  ppo: "src.rice.ppo.PPOTrainer"
+  sac: "src.rice.baselines.SACBaseline"
+  gail: "src.rice.baselines.GAILBaseline"
+  jsrl: "src.rice.baselines.JSRLTrainer"
+  heuristic: "src.rice.baselines.HeuristicBaseline"
+
+# Parameter Sweeps
+# reference_grounding: paper chunk_035, chunk_016_01
+parameter_sweeps:
+  alpha: [0.01, 0.001, 0.0001]
+  lambda: [0, 0.1, 0.01, 0.001]
+  p: [0, 0.25, 0.5, 0.75, 1]
+  learning_rate: [0.0003, 0.001, 0.002]
+  mask_network_architecture: [[64, 64], [128, 128]]
+  regularization_weight: [0.01, 0.001]
+  clip_ratio: [0.1, 0.2, 0.3]
+  batch_size: [64, 128, 256]
+
+# Experiment Matrix
+# reference_grounding: paper chunk_015, chunk_035
+experiment_matrix:
+  experiment_i:
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "statemask"]
+    metrics: ["compute_fidelity"]
+    artifact_writers: ["write_figure_5_artifact", "write_table_4_artifact"]
+  experiment_ii:
+    tasks: ["SelfishMining", "CageChallenge2", "AutonomousDriving", "MalwareMutation"]
+    methods: ["ours", "ppo", "jsrl", "random"]
+    metrics: ["compute_reward"]
+    artifact_writers: ["write_table_1_artifact", "write_figure_2_artifact"]
+  experiment_iii:
+    tasks: ["MalwareMutation"]
+    methods: ["ours"]
+    sweeps: ["p", "lambda"]
+    metrics: ["compute_reward"]
+    artifact_writers: ["write_figure_3_artifact", "write_table_2_artifact"]
+  experiment_iv:
+    tasks: ["CageChallenge2"]
+    methods: ["ours"]
+    sweeps: ["alpha"]
+    metrics: ["compute_fidelity"]
+    artifact_writers: ["write_figure_1_artifact", "write_table_7_artifact"]
+  experiment_v:
+    tasks: ["Hopper-v3"]
+    methods: ["ours", "ppo", "jsrl"]
+    metrics: ["compute_training_time"]
+    artifact_writers: ["write_metrics_artifact", "write_summary_artifact"]
+
+# Algorithm Anchors
+# reference_grounding: paper chunk_010_01, chunk_011_02
+algorithm_anchors:
+  explanation_generation:
+    terms: ["mask", "ema", "compute", "update", "sample", "initialize"]
+    steps:
+      - "Initialize mask network M_theta"
+      - "Sample trajectory tau from policy pi"
+      - "For each state s_t in tau, sample mask action a_t^m from M_theta(s_t)"
+      - "Apply mask: if a_t^m=1, action is a_random; else action is pi(s_t)"
+      - "Train M_theta using PPO to maximize intrinsic reward R' = R + alpha * a_m"
+  policy_refining:
+    terms: ["rank", "select", "roll_in", "exploration"]
+    steps:
+      - "Identify top-K critical steps using mask importance scores"
+      - "Construct mixed initial state distribution from critical states"
+      - "Reset agent to critical states (Roll-in)"
+      - "Perform exploration from these states and update policy pi"
+
+# Metric Registry
+# reference_grounding: paper chunk_039
+metric_registry:
+  reward: "src.rice.utils.evaluate_reward"
+  fidelity_score: "src.rice.explanation.compute_fidelity"
+  training_time: "src.rice.utils.measure_training_time"
+  evasion_probability: "src.rice.envs.compute_evasion_prob"
+
+# Artifact Registry
+# reference_grounding: paper claim_inventory
+artifact_registry:
+  metrics: "results/metrics.json"
+  summary: "results/tables/summary.csv"
+  figure_1: "results/figures/figure_1.png"
+  figure_5: "results/figures/figure_5.png"
+  table_4: "results/tables/table_4.csv"
+  table_1: "results/tables/table_1.csv"
+  figure_2: "results/figures/figure_2.png"
+  figure_3: "results/figures/figure_3.png"
+  table_7: "results/tables/table_7.csv"
+  table_2: "results/tables/table_2.csv"

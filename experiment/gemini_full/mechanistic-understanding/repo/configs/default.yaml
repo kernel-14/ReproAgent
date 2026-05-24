@@ -1,0 +1,369 @@
+# configs/default.yaml
+# Configuration for reproducing "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity"
+
+project_metadata:
+  name: "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity"
+  hypothesis: "通过线性探测（Linear Probe）和MLP权重分解（SVD）可以识别出模型中负责毒性生成的特定方向，且Oracle分类器可作为评估基准"
+  decision_value: "为后续的干预实验和DPO机制分析提供基础的向量表示与评估基准"
+
+active_routes:
+  toxic_vector_extraction_and_identification:
+    name: "Toxic Vector Extraction and Identification"
+    enabled: true
+    description: "提取并验证预训练模型中的毒性向量（Toxic Vectors）并建立基准分类器"
+  toxicity_intervention_via_vector_subtraction:
+    name: "Toxicity Intervention via Vector Subtraction"
+    enabled: true
+    description: "通过向量减法进行毒性干预实验"
+  dpo_alignment_for_toxicity_reduction:
+    name: "DPO Alignment for Toxicity Reduction"
+    enabled: true
+    description: "构建成对毒性数据并执行DPO对齐训练，并进行超参数敏感性分析"
+  mechanistic_analysis_of_dpo_alignment:
+    name: "Mechanistic Analysis of DPO Alignment"
+    enabled: true
+    description: "通过干预实验和激活分析验证DPO的机制并执行Jailbreak攻击协议"
+  un_aligning_dpo_via_activation_manipulation:
+    name: "Un-aligning DPO via Activation Manipulation"
+    enabled: true
+    description: "通过激活操纵（如门控置1）取消DPO对齐"
+
+environment_registry:
+  gpt2:
+    id: "gpt2"
+    alias: "GPT2"
+    model_name: "gpt2"
+    availability_check: "lazy_import"
+  llama2:
+    id: "llama2"
+    alias: "Llama2"
+    model_name: "meta-llama/Llama-2-7b-hf"
+    availability_check: "lazy_import"
+  wikitext:
+    id: "wikitext"
+    alias: "wikitext"
+    setup_metadata:
+      keep_external: true
+    availability_check: "check_dataset_availability"
+  jigsaw:
+    id: "jigsaw"
+    alias: "Jigsaw dataset"
+    setup_metadata:
+      split_ratio: 0.9  # 90:10 split ratio
+    availability_check: "check_dataset_availability"
+
+dataset_registry:
+  wikitext:
+    id: "wikitext"
+    alias: "wikitext"
+  jigsaw:
+    id: "jigsaw"
+    alias: "Jigsaw"
+  real_toxicity_prompts:
+    id: "real_toxicity_prompts"
+    alias: "RealToxicityPrompts"
+  pplm_pairs:
+    id: "pplm_pairs"
+    alias: "PPLM-generated pairs"
+
+method_registry:
+  ours:
+    id: "ours"
+    alias: "ours"
+    description: "DPO alignment method proposed/analyzed in the paper"
+  ppo:
+    id: "ppo"
+    alias: "ppo"
+    description: "PPO baseline alignment method"
+  activation_subtraction:
+    id: "activation_subtraction"
+    alias: "Activation Subtraction"
+  gating_reactivation:
+    id: "gating_reactivation"
+    alias: "Gating Reactivation"
+  jailbreak_attack_protocol:
+    id: "jailbreak_attack_protocol"
+    alias: "jailbreak_attack_protocol"
+
+parameter_sweeps:
+  split_ratio: 0.9  # 90:10 split ratio
+  last_layer_residual_stream_averaging: true
+  top_k_tokens_validation: 10
+  beta_dpo: 0.1  # beta = 0.1
+  pplm_attribute_classifier: "unitary/unbiased-toxic-roberta"  # Binding addendum clarification
+  sigma_w1x_unalign: 1.0  # sigma(W1x) = 1 for un-aligning
+  patience: 10
+  max_sample_pairs: 6700
+
+formula_algorithm_contract:
+  symbols:
+    w_0: "w_0"
+    w_t: "w_t"
+    x_i: "x_i"
+    R_d: "R^d"
+    w_i: "w_i"
+    x_ell_mid: "x^ell-mid"
+    x_i_ell: "x_i^ell"
+    MLP_ell: "MLP^ell"
+    Att_ell: "Att^ell"
+    sigma: "sigma"
+    W_K_ell: "W_K^ell"
+    W_V_ell: "W_V^ell"
+    d_mlp: "d_mlp"
+    x_ell: "x^ell"
+    v_i: "v_i"
+    m_i_ell: "m_i^ell"
+    m_ell: "m^ell"
+    sum_i_1: "sum_i=1"
+    l_p: "l_p"
+    k_i_ell: "k_i^ell"
+    v_i_ell: "v_i^ell"
+    r_i_ell: "r_i^ell"
+    e_w: "e_w"
+    W_1_ell: "W_1^ell"
+    W_Toxic: "W_Toxic"
+    W_1: "W_1"
+    W_2: "W_2"
+    y_plus: "y_+"
+    y_minus: "y_-"
+    pi_ref: "pi_ref"
+    pi_theta: "pi_theta"
+    DPO: "DPO"
+    beta: "beta"
+  numeric_anchors:
+    zero: 0
+    one: 1
+    two: 2
+    ninety_four: 94
+    ten: 10
+    sixty_seven_hundred: 6700
+  equations:
+    residual_stream_update: "x_i^{l+1} = x_i^l + MLP^l(x_i^l + Att^l(x_i^l))"
+    toxicity_probe: "P(Toxic | x_bar^{L-1}) = softmax(W_Toxic * x_bar^{L-1})"
+    dpo_loss: "L_DPO = -E[log sigma(beta * log(P/N))]"
+    llama2_glu: "sigma(W_1 * x) * (W_2 * x)"
+    mlp_projection: "MLP^l(x^l) = sum_{i=1}^{d_mlp} sigma(x^l * k_i^l) * v_i^l"
+
+toxicity_classifier:
+  model_name: "unitary/unbiased-toxic-roberta"  # Binding addendum clarification
+
+artifact_paths:
+  checkpoints:
+    toxic_probe: "checkpoints/toxic_probe.pt"
+    gpt2_dpo: "checkpoints/gpt2_dpo.pt"
+    llama2_dpo: "checkpoints/llama2_dpo.pt"
+  results:
+    toxic_vectors_metadata: "results/toxic_vectors_metadata.json"
+    intervention_results: "results/intervention_results.json"
+    activation_analysis: "results/activation_analysis.json"
+    unalign_results: "results/unalign_results.json"
+    tables:
+      table_1: "results/tables/table_1.csv"
+      table_2: "results/tables/table_2.csv"
+      table_3: "results/tables/table_3.csv"
+      table_4: "results/tables/table_4.csv"
+      table_5: "results/tables/table_5.csv"
+      table_6: "results/tables/table_6.csv"
+      table_7: "results/tables/table_7.csv"
+      table_8: "results/tables/table_8.csv"
+      table_9: "results/tables/table_9.csv"
+    figures:
+      figure_1: "results/figures/figure_1.png"
+      figure_2: "results/figures/figure_2.png"
+      figure_3: "results/figures/figure_3.png"
+      figure_4: "results/figures/figure_4.png"
+      figure_5: "results/figures/figure_5.png"
+      figure_6: "results/figures/figure_6.png"
+      figure_7: "results/figures/figure_7.png"
+      figure_8: "results/figures/figure_8.png"
+      figure_9: "results/figures/figure_9.png"
+      figure_10: "results/figures/figure_10.png"
+      figure_11: "results/figures/figure_11.png"
+
+experiment_specs:
+  section_3_1_toxicity_probe_vector:
+    name: "Section 3.1: Toxicity Probe Vector"
+    environment: "jigsaw"
+    method: "linear_probing"
+    parameters:
+      split_ratio: 0.9
+      pooling: "last_layer_residual_stream_averaging"
+    metrics: ["accuracy", "loss"]
+    artifact_writer: "write_toxic_probe_artifact"
+    output_path: "checkpoints/toxic_probe.pt"
+
+  section_3_2_toxic_vectors_in_vocabulary_space:
+    name: "Section 3.2: Toxic Vectors in Vocabulary space"
+    environment: "gpt2"
+    method: "mlp_projection"
+    parameters:
+      top_k: 10
+    metrics: ["cosine_similarity"]
+    artifact_writer: "write_toxic_vectors_metadata_artifact"
+    output_path: "results/toxic_vectors_metadata.json"
+
+  figure_4_top_k_tokens_promoted_by_mlp_v_toxic_gpt2:
+    name: "Figure 4: Top-k tokens promoted by MLP.v_Toxic (GPT2)"
+    environment: "gpt2"
+    method: "mlp_projection"
+    parameters:
+      top_k: 10
+    metrics: ["cosine_similarity"]
+    artifact_writer: "write_figure_4_artifact"
+    output_path: "results/figures/figure_4.png"
+
+  figure_6_top_k_tokens_promoted_by_mlp_v_toxic_llama2:
+    name: "Figure 6: Top-k tokens promoted by MLP.v_Toxic (Llama2)"
+    environment: "llama2"
+    method: "mlp_projection"
+    parameters:
+      top_k: 10
+    metrics: ["cosine_similarity"]
+    artifact_writer: "write_figure_6_artifact"
+    output_path: "results/figures/figure_6.png"
+
+  section_4_2_constructing_pairwise_toxic_data:
+    name: "Section 4.2: Constructing Pairwise Toxic Data"
+    environment: "pplm_pairs"
+    method: "pplm"
+    parameters:
+      patience: 10
+      max_sample_pairs: 6700
+    metrics: ["loss"]
+    artifact_writer: "write_pairwise_toxic_data_artifact"
+    output_path: "data/pairwise_toxic_data.json"
+
+  section_5_toxicity_after_dpo:
+    name: "Section 5: Toxicity After DPO"
+    environment: "wikitext"
+    method: "ours"
+    parameters:
+      beta: 0.1
+    metrics: ["toxicity", "perplexity"]
+    artifact_writer: "write_gpt2_dpo_checkpoint"
+    output_path: "checkpoints/gpt2_dpo.pt"
+
+  figure_10_comparison_with_ppo:
+    name: "Figure 10: Comparison with PPO"
+    environment: "wikitext"
+    method: "ppo"
+    parameters:
+      beta: 0.1
+    metrics: ["toxicity", "perplexity"]
+    artifact_writer: "write_figure_10_artifact"
+    output_path: "results/figures/figure_10.png"
+
+  figure_11_hyperparameter_sensitivity:
+    name: "Figure 11: Hyperparameter sensitivity"
+    environment: "wikitext"
+    method: "ours"
+    parameters:
+      beta_sweep: [0.01, 0.05, 0.1, 0.2, 0.5]
+    metrics: ["toxicity", "perplexity"]
+    artifact_writer: "write_figure_11_artifact"
+    output_path: "results/figures/figure_11.png"
+
+  section_3_3_interventions_using_toxic_vectors:
+    name: "Section 3.3: Interventions Using Toxic Vectors"
+    environment: "wikitext"
+    method: "activation_subtraction"
+    parameters:
+      alpha_sweep: [0.0, 0.5, 1.0, 2.0, 5.0]
+    metrics: ["toxicity", "perplexity"]
+    artifact_writer: "write_intervention_results_artifact"
+    output_path: "results/intervention_results.json"
+
+  section_5_2_dpo_avoids_mlp_k_toxic_regions:
+    name: "Section 5.2: DPO Avoids MLP.k_Toxic Regions"
+    environment: "wikitext"
+    method: "activation_analysis"
+    parameters:
+      layers: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    metrics: ["mean_activation"]
+    artifact_writer: "write_activation_analysis_artifact"
+    output_path: "results/activation_analysis.json"
+
+  section_6_un_aligning_dpo:
+    name: "Section 6: Un-aligning DPO"
+    environment: "wikitext"
+    method: "gating_reactivation"
+    parameters:
+      sigma_w1x: 1.0
+    metrics: ["toxicity", "perplexity"]
+    artifact_writer: "write_unalign_results_artifact"
+    output_path: "results/unalign_results.json"
+
+  figure_5_cosine_similarity_between_delta_x_and_delta_mlp_v:
+    name: "Figure 5: Cosine similarity between delta_x and delta_MLP_v"
+    environment: "wikitext"
+    method: "activation_analysis"
+    parameters:
+      layers: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    metrics: ["cosine_similarity"]
+    artifact_writer: "write_figure_5_artifact"
+    output_path: "results/figures/figure_5.png"
+
+environment_factories:
+  gpt2:
+    id: "gpt2"
+    alias: "GPT2"
+    setup_metadata:
+      model_class: "GPT2LMHeadModel"
+      tokenizer_class: "GPT2Tokenizer"
+    availability_check: "check_gpt2_availability"
+    runnable_config_hook: "setup_gpt2_environment"
+  llama2:
+    id: "llama2"
+    alias: "Llama2"
+    setup_metadata:
+      model_class: "LlamaForCausalLM"
+      tokenizer_class: "LlamaTokenizer"
+    availability_check: "check_llama2_availability"
+    runnable_config_hook: "setup_llama2_environment"
+  jigsaw:
+    id: "jigsaw"
+    alias: "Jigsaw dataset"
+    setup_metadata:
+      task_type: "binary_toxicity_classification"
+      split_ratio: 0.9
+    availability_check: "check_jigsaw_availability"
+    runnable_config_hook: "setup_jigsaw_environment"
+  wikitext:
+    id: "wikitext"
+    alias: "wikitext"
+    setup_metadata:
+      keep_external: true
+      task_type: "language_modeling"
+    availability_check: "check_wikitext_availability"
+    runnable_config_hook: "setup_wikitext_environment"
+
+dataset_loaders:
+  wikitext:
+    id: "wikitext"
+    setup_metadata:
+      source: "huggingface"
+      path: "wikitext"
+      name: "wikitext-2-raw-v1"
+    validation_check: "validate_wikitext"
+    runnable_config_hook: "load_wikitext"
+  jigsaw:
+    id: "jigsaw"
+    setup_metadata:
+      source: "local_or_hf"
+      path: "data/jigsaw_split.json"
+    validation_check: "validate_jigsaw"
+    runnable_config_hook: "load_jigsaw"
+  real_toxicity_prompts:
+    id: "real_toxicity_prompts"
+    setup_metadata:
+      source: "huggingface"
+      path: "allenai/real-toxicity-prompts"
+    validation_check: "validate_real_toxicity_prompts"
+    runnable_config_hook: "load_real_toxicity_prompts"
+  pplm_pairs:
+    id: "pplm_pairs"
+    setup_metadata:
+      source: "local"
+      path: "data/pairwise_toxic_data.json"
+    validation_check: "validate_pplm_pairs"
+    runnable_config_hook: "load_pplm_pairs"

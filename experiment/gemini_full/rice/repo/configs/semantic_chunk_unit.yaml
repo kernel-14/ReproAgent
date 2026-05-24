@@ -1,0 +1,248 @@
+# configs/semantic_chunk_unit.yaml
+# reference_grounding: paper chunk_015, chunk_016_01, chunk_035
+# reference_grounding: addendum:formula_algorithm_contract
+
+# Global Constants and Algorithm Anchors
+# reference_grounding: addendum:formula_algorithm_contract
+constants:
+  d_max: 1.0
+  gamma: 0.99
+  alpha_default: 0.01
+  lambda_default: 0.01
+  p_default: 0.5
+  fidelity_trajectories: 500
+  top_k_critical_steps: [10, 20, 30, 40]
+  numeric_anchors:
+    zero: 0
+    one: 1
+    two: 2
+    three_point_one: 3.1
+    three_point_six: 3.6
+    three: 3
+    ten: 10
+    twenty: 20
+    thirty: 30
+    forty: 40
+    three_point_three: 3.3
+    four: 4
+    three_point_five: 3.5
+    three_point_four: 3.4
+    zero_point_two_five: 0.25
+    zero_point_five: 0.5
+
+# Paper-derived Symbols and Formulas
+# reference_grounding: paper chunk_008, chunk_010_01, chunk_011_02
+symbols:
+  v_pi: "V^pi(s) = E_pi[sum_{t=0}^infty gamma^t R(s_t, a_t) | s_0=s]"
+  e_pi: "E_pi"
+  sum_t_0_infty: "sum_t=0^infty"
+  gamma_t: "gamma^t"
+  s_t: "s_t"
+  a_t: "a_t"
+  s_0: "s_0"
+  q_pi: "Q^pi(s, a) = E_pi[sum_{t=0}^infty gamma^t R(s_t, a_t) | s_0=s, a_0=a]"
+  a_0: "a_0"
+  a_pi: "A^pi(s, a) = Q^pi(s, a) - V^pi(s)"
+  pi_star: "pi^*"
+  max_pi: "max_pi"
+  e_ssimrho: "E_ssimrho"
+  d_rho_pi: "d_rho^pi"
+  gamma: "gamma"
+  pr_pi: "Pr^pi"
+  pi_r: "pi^r"
+  d_rho: "d_rho"
+  a_t_m: "a_t^m"
+  a_random: "a_random"
+  theta: "theta"
+  pi_bar: "pi_bar"
+  pi_tilde_theta: "pi_tilde_theta"
+  theta_old: "theta_old"
+  pi_tilde: "pi_tilde"
+  s_t_plus_1: "s_t+1"
+  r_t_prime: "R_t^prime"
+  alpha: "alpha"
+  pi_prime: "pi^prime"
+  lambda: "lambda"
+  pi_theta: "pi_theta"
+  f_hat_theta: "f_hat_theta"
+  pi_hat: "pi_hat"
+  r_prime: "R^prime"
+  tau: "tau"
+  pi_e: "pi_e"
+  pi_g: "pi_g"
+  asset_4: "asset_4"
+  q_diff: "Q_diff"
+  a_prime: "a^prime"
+  epsilon_hat: "epsilon_hat"
+  kappa_hat: "kappa_hat"
+
+# Algorithm Terms and Steps
+# reference_grounding: paper chunk_010_01, chunk_011_02
+algorithms:
+  terms: [algorithm, formula, objective, loss, mask, calculate, sample, rank, ema, compute, select, update, initialize, equation]
+  steps:
+    mask_training:
+      - "Utilize vanilla PPO algorithm to train the state mask"
+      - "Add additional reward bonus when mask net outputs 1"
+      - "Transform objective function to J(theta) = max eta(pi_bar)"
+    fidelity_computation:
+      - "Identify and rank top-K important time steps"
+      - "Compute fidelity score across 500 trajectories"
+    refining_method:
+      - "Identify critical steps using explanation"
+      - "Reset agent to critical states (Roll-in)"
+      - "Perform exploration from critical states"
+
+# Environment and Task Registry
+# reference_grounding: paper:unit-001
+environments:
+  Hopper-v3:
+    alias: "Hopper"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Walker2d-v3:
+    alias: "Walker2d"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Reacher-v2:
+    alias: "Reacher"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  HalfCheetah-v3:
+    alias: "HalfCheetah"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  SelfishMining:
+    alias: "selfish mining"
+    group: "selfish_mining"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  CageChallenge2:
+    alias: "CAGE Challenge 2"
+    group: "network_defense"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  AutonomousDriving:
+    alias: "autonomous driving"
+    group: "autonomous_driving"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  MalwareMutation:
+    alias: "Malware Mutation"
+    group: "malware_mutation"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  # Group Aliases
+  mujoco: { alias: "mujoco", group: "mujoco" }
+  selfish_mining: { alias: "selfish_mining", group: "selfish_mining" }
+  network_defense: { alias: "network_defense", group: "network_defense" }
+  autonomous_driving: { alias: "autonomous_driving", group: "autonomous_driving" }
+  cage: { alias: "cage", group: "network_defense" }
+  gym: { alias: "gym", group: "mujoco" }
+
+# Dataset and Benchmark Loaders
+datasets:
+  cage:
+    id: "cage"
+    loader: "src.rice.envs.load_cage_dataset"
+    alias: "CAGE Challenge 2"
+  gym:
+    id: "gym"
+    loader: "src.rice.envs.load_gym_dataset"
+    alias: "Gym/MuJoCo"
+  mujoco: { alias: "mujoco", group: "mujoco" }
+  selfish_mining: { alias: "selfish_mining", group: "selfish_mining" }
+  network_defense: { alias: "network_defense", group: "network_defense" }
+  autonomous_driving: { alias: "autonomous_driving", group: "autonomous_driving" }
+
+# Method and Baseline Selectors
+methods:
+  ours: "src.rice.explanation.ExplanationGenerator"
+  random: "src.rice.baselines.RandomBaseline"
+  statemask: "src.rice.baselines.StateMaskBaseline"
+  ppo: "src.rice.ppo.PPOTrainer"
+  sac: "src.rice.baselines.SACBaseline"
+  gail: "src.rice.baselines.GAILBaseline"
+  jsrl: "src.rice.baselines.JSRLBaseline"
+  heuristic: "src.rice.baselines.HeuristicBaseline"
+
+# Parameter Sweeps
+sweeps:
+  alpha: [0.01, 0.001, 0.0001]
+  lambda: [0, 0.1, 0.01, 0.001]
+  p: [0, 0.25, 0.5, 0.75, 1]
+  learning_rate: [0.0003, 0.001, 0.002]
+  clip_ratio: [0.1, 0.2, 0.3]
+  batch_size: [64, 128, 256]
+  mask_network_architecture: [[64, 64], [128, 128]]
+  regularization_weight: [0.01, 0.1, 1.0]
+
+# Experiment Protocol Matrix
+experiment_matrix:
+  experiment_i:
+    name: "Fidelity and Efficiency of Explanation"
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "statemask"]
+    metrics: ["compute_fidelity", "training_time"]
+    artifact_writers: ["write_figure_5_artifact", "write_table_4_artifact"]
+  experiment_ii:
+    name: "Effectiveness of Refining Method"
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "random", "jsrl", "ppo"]
+    metrics: ["final_reward"]
+    artifact_writers: ["write_table_1_artifact", "write_figure_2_artifact"]
+  experiment_iii:
+    name: "Refining based on Different Explanations"
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "statemask", "random"]
+    metrics: ["final_reward"]
+    artifact_writers: ["write_figure_3_artifact"]
+  experiment_iv:
+    name: "Ablation Study on Intrinsic Reward"
+    tasks: ["Hopper-v3"]
+    methods: ["ours"]
+    sweeps: ["alpha"]
+    metrics: ["fidelity_score"]
+    artifact_writers: ["write_metrics_artifact"]
+  experiment_v:
+    name: "Sensitivity Analysis"
+    tasks: ["Hopper-v3"]
+    methods: ["ours"]
+    sweeps: ["lambda", "p"]
+    metrics: ["final_reward"]
+    artifact_writers: ["write_summary_artifact"]
+
+# Metric Registry
+metrics:
+  fidelity_score: "src.rice.explanation.compute_fidelity"
+  final_reward: "src.rice.envs.evaluate_policy"
+  training_time: "src.rice.utils.get_training_time"
+
+# Artifact Registry
+artifacts:
+  metrics: "results/metrics.json"
+  summary: "results/tables/summary.csv"
+  figure_1: "results/figures/figure_1.png"
+  figure_5: "results/figures/figure_5.png"
+  table_4: "results/tables/table_4.csv"
+  table_1: "results/tables/table_1.csv"
+  figure_2: "results/figures/figure_2.png"
+  figure_3: "results/figures/figure_3.png"
+  figure_4: "results/figures/figure_4.png"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+  table_5: "results/tables/table_5.csv"
+  table_6: "results/tables/table_6.csv"
+  figure_6: "results/figures/figure_6.png"
+  figure_7: "results/figures/figure_7.png"
+  figure_8: "results/figures/figure_8.png"
+  figure_9: "results/figures/figure_9.png"
+  figure_10: "results/figures/figure_10.png"
+
+# Interface Contract
+interface:
+  evaluate_metrics: "src.reporting.semantic_chunk_unit.evaluate_metrics"

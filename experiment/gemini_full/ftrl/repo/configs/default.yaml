@@ -1,0 +1,45 @@
+# configs/default.yaml
+# Faithful reproduction configuration for:
+# "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+
+# Global metadata and active reproduction scope
+metadata:
+  project_name: "Fine-tuning RL as Forgetting Mitigation"
+  paper_id: "ftrl"
+  reproduction_scope: "Faithful implementation of MDP, AppleRetrieval, and Robotics experiments."
+
+# Paper-derived environment/task factories
+environments:
+  two_state_mdp:
+    id: "two_state_mdp"
+    alias: "two-state-mdp"
+    description: "Two-state MDP with CLOSE and FAR state partitions to track forgetting."
+    state_space_partition:
+      close: "s_0"
+      far: "s_1"
+    # reference_grounding: chunk_018 A.1. Two-state MDPs
+    parameters:
+      s_0: 0
+      s_1: 1
+      theta: 0.0
+      gamma: 0.9
+      r_0: 0.11
+      r_1: 2.22
+      epsilon: 0.5
+      v_0_target: 10.0
+      f_0: 0.0
+      f_1: 1.0
+    availability_check: "src.envs.two_state_mdp.make_two_state_mdp"
+
+  appleretrieval:
+    id: "appleretrieval"
+    alias: "apple_retrieval"
+    description: "AppleRetrieval grid-world environment exhibiting state coverage gap."
+    # reference_grounding: chunk_019 A.2. Synthetic example: Appleretrieval
+    parameters:
+      M: 13
+      c: 11
+      sigma: 30
+      asset_13: 13
+      pi_w: 1.0
+      pi_b: 0.0

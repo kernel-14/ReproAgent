@@ -1,0 +1,388 @@
+# configs/config.yaml
+# Faithful reproduction configuration for DPMs-ANT:
+# "Bridging Data Gaps in Diffusion Models with Adversarial Noise-Based Transfer Learning"
+
+metadata:
+  project_name: "DPMs-ANT Reproduction"
+  hypothesis: "standardized FID and Intra-LPIPS metrics on FFHQ, LSUN, and imagenet will confirm DPMs-ANT superiority"
+  decision_value: "provides the quantitative evidence required to reproduce Table 2, Table 8, and Table 9"
+  reference_grounding: "addendum:formula_algorithm_contract"
+
+# ==========================================
+# Fixed Hyperparameter Anchors
+# ==========================================
+fixed_hyperparameters:
+  iterations_5000: 5000
+  iterations_300: 300
+  shot_setting_10: 10
+  gamma_5: 5.0
+  omega_0_02: 0.02
+  adversarial_inner_steps_10: 10
+  batch_size_64: 64
+  classifier_lr: 0.0001
+  classifier_iterations: 300
+  classifier_batch_size: 64
+
+# ==========================================
+# Parameter Sweeps
+# ==========================================
+parameter_sweeps:
+  shot_count: [10, 50, 100]
+  training_iteration_count: [0, 50, 100, 150, 200, 250, 300, 350]
+  similarity_guidance_scale: [1.0, 3.0, 5.0, 7.0, 9.0]
+  adversarial_noise_scale: [0.01, 0.02, 0.03, 0.04, 0.05]
+  learning_rate: [0.000005, 0.00001, 0.00005, 0.0001]
+  batch_size: [16, 32, 64]
+
+# ==========================================
+# Environment / Task Registry
+# ==========================================
+environment_registry:
+  ant:
+    id: "ant"
+    alias: "ant_transfer_env"
+    setup_metadata:
+      framework: "PyTorch"
+      device: "cuda"
+    availability_check: "src.utils.registry.check_env_availability"
+    runnable_config_hook: "src.utils.registry.setup_ant_env"
+  
+  FFHQ:
+    id: "ffhq_env"
+    alias: "FFHQ"
+    setup_metadata:
+      source_domain: "FFHQ"
+      resolution: 256
+    availability_check: "src.utils.registry.check_env_availability"
+    runnable_config_hook: "src.utils.registry.setup_ffhq_env"
+
+  LSUN_Church:
+    id: "lsun_church_env"
+    alias: "LSUN Church"
+    setup_metadata:
+      source_domain: "LSUN Church"
+      resolution: 256
+    availability_check: "src.utils.registry.check_env_availability"
+    runnable_config_hook: "src.utils.registry.setup_lsun_env"
+
+  imagenet:
+    id: "imagenet_env"
+    alias: "imagenet"
+    setup_metadata:
+      source_domain: "imagenet"
+      resolution: 256
+      keep_external: true
+    availability_check: "src.utils.registry.check_env_availability"
+    runnable_config_hook: "src.utils.registry.setup_imagenet_env"
+
+# ==========================================
+# Dataset / Benchmark Registry
+# ==========================================
+dataset_registry:
+  ffhq:
+    id: "ffhq"
+    alias: "FFHQ Source Dataset"
+    setup_metadata:
+      path: "data/ffhq"
+      num_samples: 70000
+    validation_check: "src.data.loader.validate_ffhq"
+    runnable_config_hook: "src.data.loader.load_ffhq"
+
+  lsun_church:
+    id: "lsun_church"
+    alias: "LSUN Church Source Dataset"
+    setup_metadata:
+      path: "data/lsun_church"
+      num_samples: 126227
+    validation_check: "src.data.loader.validate_lsun"
+    runnable_config_hook: "src.data.loader.load_lsun"
+
+  sunglasses:
+    id: "sunglasses"
+    alias: "10-shot Sunglasses"
+    setup_metadata:
+      path: "data/sunglasses"
+      shot_count: 10
+    validation_check: "src.data.loader.validate_fewshot"
+    runnable_config_hook: "src.data.loader.load_sunglasses"
+
+  babies:
+    id: "babies"
+    alias: "10-shot Babies"
+    setup_metadata:
+      path: "data/babies"
+      shot_count: 10
+    validation_check: "src.data.loader.validate_fewshot"
+    runnable_config_hook: "src.data.loader.load_babies"
+
+  sketches:
+    id: "sketches"
+    alias: "10-shot Sketches"
+    setup_metadata:
+      path: "data/sketches"
+      shot_count: 10
+    validation_check: "src.data.loader.validate_fewshot"
+    runnable_config_hook: "src.data.loader.load_sketches"
+
+  haunted_houses:
+    id: "haunted_houses"
+    alias: "10-shot Haunted Houses"
+    setup_metadata:
+      path: "data/haunted_houses"
+      shot_count: 10
+    validation_check: "src.data.loader.validate_fewshot"
+    runnable_config_hook: "src.data.loader.load_haunted_houses"
+
+  landscape_drawings:
+    id: "landscape_drawings"
+    alias: "10-shot Landscape Drawings"
+    setup_metadata:
+      path: "data/landscape_drawings"
+      shot_count: 10
+    validation_check: "src.data.loader.validate_fewshot"
+    runnable_config_hook: "src.data.loader.load_landscape_drawings"
+
+  imagenet:
+    id: "imagenet"
+    alias: "ImageNet Support Dataset"
+    setup_metadata:
+      path: "data/imagenet"
+      keep_external: true
+    validation_check: "src.data.loader.validate_imagenet"
+    runnable_config_hook: "src.data.loader.load_imagenet"
+
+# ==========================================
+# Method / Baseline / Attack Registry
+# ==========================================
+method_registry:
+  ours:
+    id: "ours"
+    alias: "DPMs-ANT (Ours)"
+    description: "Proposed Adversarial Noise-Based Transfer Learning"
+  
+  diffusion_model:
+    id: "diffusion_model"
+    alias: "Standard Diffusion Model"
+    description: "Vanilla DDPM/LDM without adaptation"
+
+  ddpm:
+    id: "ddpm"
+    alias: "Denoising Diffusion Probabilistic Models"
+    description: "Baseline DDPM framework"
+
+  ldm:
+    id: "ldm"
+    alias: "Latent Diffusion Models"
+    description: "Baseline LDM framework"
+
+  dpms_ant:
+    id: "dpms_ant"
+    alias: "DPMs-ANT"
+    description: "Full DPMs-ANT method"
+
+  similarity_guided_training:
+    id: "similarity_guided_training"
+    alias: "Similarity-Guided Training Only"
+    description: "Ablation variant without adversarial noise selection"
+
+  adversarial_noise_selection:
+    id: "adversarial_noise_selection"
+    alias: "Adversarial Noise Selection Only"
+    description: "Ablation variant without similarity guidance"
+
+  ddpm_pa:
+    id: "ddpm_pa"
+    alias: "DDPM-PA"
+    description: "Prior-guided Adaptation baseline"
+
+  tgan:
+    id: "tgan"
+    alias: "Transferring GANs"
+    description: "GAN-based transfer learning baseline"
+
+  ada:
+    id: "ada"
+    alias: "TGAN + ADA"
+    description: "Adaptive Data Augmentation baseline"
+
+  ewc:
+    id: "ewc"
+    alias: "Elastic Weight Consolidation"
+    description: "Continual learning baseline adapted for diffusion"
+
+  cdc:
+    id: "cdc"
+    alias: "Cross-Domain Consistency"
+    description: "Cross-domain consistency baseline"
+
+  dcl:
+    id: "dcl"
+    alias: "Dual-Contrastive Learning"
+    description: "Dual-contrastive learning baseline"
+
+# ==========================================
+# Metric Registry
+# ==========================================
+metric_registry:
+  fid:
+    id: "fid"
+    alias: "Fréchet Inception Distance"
+    formula: "d^2 = ||mu_1 - mu_2||^2 + Tr(C_1 + C_2 - 2*sqrt(C_1*C_2))"
+    target_protocol: "DDPM-PA"
+  
+  intra_lpips:
+    id: "intra_lpips"
+    alias: "Intra-LPIPS Diversity Score"
+    formula: "Average LPIPS distance between generated samples within the same target domain"
+  
+  fidelity_score:
+    id: "fidelity_score"
+    alias: "Fidelity Score"
+    formula: "Classifier-based target domain probability"
+
+  memory_usage:
+    id: "memory_usage"
+    alias: "Peak RAM Usage"
+    formula: "Measured in Megabytes"
+
+  gpu_memory:
+    id: "gpu_memory"
+    alias: "Peak GPU VRAM Usage"
+    formula: "Measured in Gigabytes"
+
+# ==========================================
+# Experiment Registry & Protocol Matrix
+# ==========================================
+experiment_registry:
+  experiment_did:
+    id: "experiment_did"
+    environment: "ant"
+    dataset_pair: "ffhq_to_sunglasses"
+    method: "dpms_ant"
+    metrics: ["fid", "intra_lpips"]
+    artifact_writer: "write_table_2_reproduction_artifact"
+    hyperparameters:
+      gamma: 5.0
+      omega: 0.02
+      inner_steps: 10
+      batch_size: 64
+      learning_rate: 0.00005
+      iterations: 300
+
+# ==========================================
+# Active Routes
+# ==========================================
+active_routes:
+  FFHQ to 10-shot Target Transfer (Table 2):
+    source: "ffhq"
+    targets: ["babies", "sunglasses", "sketches"]
+    methods: ["ours", "ddpm_pa", "tgan", "ada", "ewc", "cdc", "dcl"]
+    metrics: ["fid", "intra_lpips"]
+    artifact_path: "results/table_2_reproduction.json"
+    route_runner: "run_table_2_route"
+
+  LSUN Church to 10-shot Target Transfer:
+    source: "lsun_church"
+    targets: ["haunted_houses", "landscape_drawings"]
+    methods: ["ours", "ddpm_pa", "tgan", "ada", "ewc", "cdc", "dcl"]
+    metrics: ["fid", "intra_lpips"]
+    artifact_path: "results/table_8.json"
+    route_runner: "run_table_8_route"
+
+  Ablation Study: Adaptor and Adversarial Noise:
+    source: "ffhq"
+    target: "sunglasses"
+    variants:
+      - name: "Full DPMs-ANT"
+        use_adaptor: true
+        use_adversarial_noise: true
+      - name: "w/o AN (Similarity-Guided Only)"
+        use_adaptor: true
+        use_adversarial_noise: false
+      - name: "w/o Adaptor (Full Fine-Tuning)"
+        use_adaptor: false
+        use_adversarial_noise: true
+    artifact_path: "results/ablation_results.json"
+    route_runner: "run_table_9_route"
+
+  Few-shot Data Pipeline:
+    shot_count: 10
+    source_datasets: ["ffhq", "lsun_church"]
+    target_datasets: ["babies", "sunglasses", "sketches", "haunted_houses", "landscape_drawings"]
+    validation_protocol: "ensure_exactly_10_samples"
+
+  DPMs-ANT Model Architecture:
+    backbone: "UNet"
+    frozen_backbone: true
+    adaptor:
+      type: "LightweightAdaptor"
+      trainable: true
+      parameters: "psi"
+      backbone_parameters: "theta"
+
+  ANT Training Loop (Algorithm 1):
+    steps:
+      - "1. Sample target image x_0 from target dataset"
+      - "2. Initialize adversarial noise epsilon^0"
+      - "3. For j = 0 to J-1: Update epsilon^j via Equation 7"
+      - "4. Compute loss L(psi) with epsilon* = epsilon^J via Equation 8"
+      - "5. Update adaptor parameters psi via gradient descent"
+
+  Evaluation Suite:
+    metrics: ["fid", "intra_lpips"]
+    fid_reference: "DDPM-PA"
+    intra_lpips_reference: "LPIPS-AlexNet"
+
+# ==========================================
+# Formula & Algorithm Anchors
+# ==========================================
+formula_algorithm_anchors:
+  similarity_guided_training:
+    section: "4.1. Similarity-Guided Training"
+    symbols: ["gamma", "theta_S", "theta_T", "theta", "epsilon_theta", "min_theta", "phi", "x_t-1", "x_t", "sigma_t^2", "p_phi", "mu", "KL", "x_0"]
+    defaults:
+      gamma: 5.0
+    equation: "p_theta_phi(x_t-1 | x_t, y=Y) approx N(x_t-1; mu_theta + sigma_t^2 * gamma * nabla_x_t log p_phi(y=Y | x_t), sigma_t^2 * I)"
+
+  adversarial_noise_selection:
+    section: "4.2. Adversarial Noise Selection"
+    symbols: ["p_phi", "epsilon_theta", "epsilon^j", "epsilon^star", "epsilon^J", "nabla_psi", "min_theta", "max_epsilon", "epsilon", "sigma_hat_t^2", "gamma", "epsilon^j+1", "alpha_bar_t", "x_0"]
+    defaults:
+      omega: 0.02
+      J: 10
+    equation: "epsilon^j+1 = Norm(epsilon^j + omega * nabla_epsilon^j ||epsilon^j - epsilon_theta(sqrt(alpha_bar_t)*x_0 + sqrt(1-alpha_bar_t)*epsilon^j, t)||^2)"
+
+  optimization:
+    section: "4.3. Optimization"
+    symbols: ["epsilon^star", "epsilon_theta,psi", "x_t^star", "sigma_hat_t^2", "gamma", "p_phi", "alpha_bar_t", "epsilon_mean", "epsilon_std", "max_epsilon", "epsilon", "epsilon_theta", "theta^l", "psi^l"]
+    equation: "L(psi) = E_t,x_0 [ ||epsilon* - epsilon_theta,psi(x_t*, t)||^2 ]"
+
+  toy_data_visualization:
+    section: "5.1. Visualization on Toy Data"
+    description: "Gradient directions comparison on 2D Gaussian toy data"
+    cyan_line: "10,000 samples in one step"
+    blue_line: "Traditional DDPM (10 samples)"
+    red_line: "DDPM-ANT w/o AN (10 samples)"
+    orange_line: "Full DDPM-ANT (10 samples)"
+
+  experimental_setup:
+    section: "5.2. Experimental Setup"
+    symbols: ["psi^l", "gamma", "W_down", "x^l-1", "W_up", "R^wtimeshtimesr"]
+    baselines: ["TGAN", "TGAN+ADA", "EWC", "CDC", "DCL"]
+
+  addendum:
+    section: "addendum"
+    babies_hyperparameters:
+      learning_rate: 0.000005
+      C: 8
+      omega: 0.02
+      J: 10
+      gamma: 3.0
+      training_iterations: 160
+    sunglasses_hyperparameters:
+      learning_rate: 0.00005
+      C: 8
+      omega: 0.02
+      J: 10
+      gamma: 15.0
+      training_iterations: 200

@@ -1,0 +1,288 @@
+# configs/evidence_obligation_registry.yaml
+# reference_grounding: paper chunk_013, chunk_015, chunk_036
+# reference_grounding: addendum:formula_algorithm_contract
+# reference_grounding: paperbench_ref_001 CybORG/CybORG/Tutorial/z. Developer's Guide.md
+# reference_grounding: paperbench_ref_003 main_rl.py
+# reference_grounding: paperbench_ref_005 examples/train_jsrl_on_policy.py
+
+# Environment and Task Registry
+# In this file, expose paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks.
+environments:
+  Hopper-v3:
+    alias: "Hopper"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Walker2d-v3:
+    alias: "Walker2d"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Reacher-v2:
+    alias: "Reacher"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  HalfCheetah-v3:
+    alias: "HalfCheetah"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  SelfishMining:
+    alias: "selfish mining"
+    group: "selfish_mining"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  CageChallenge2:
+    alias: "CAGE Challenge 2"
+    group: "network_defense"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  AutonomousDriving:
+    alias: "autonomous driving"
+    group: "autonomous_driving"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  MalwareMutation:
+    alias: "Malware Mutation"
+    group: "malware_mutation"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  # Explicit aliases for groups
+  mujoco:
+    alias: "mujoco"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+  selfish_mining:
+    alias: "selfish_mining"
+    group: "selfish_mining"
+    factory: "src.rice.envs.make_envs"
+  network_defense:
+    alias: "network_defense"
+    group: "network_defense"
+    factory: "src.rice.envs.make_envs"
+  autonomous_driving:
+    alias: "autonomous_driving"
+    group: "autonomous_driving"
+    factory: "src.rice.envs.make_envs"
+  cage:
+    alias: "cage"
+    group: "network_defense"
+    factory: "src.rice.envs.make_envs"
+  gym:
+    alias: "gym"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+
+# Dataset and Benchmark Loaders
+datasets:
+  cage:
+    alias: "cage"
+    loader: "src.rice.envs.load_cage_dataset"
+    setup_metadata:
+      source: "paperbench_ref_001"
+  gym:
+    alias: "gym"
+    loader: "src.rice.envs.load_gym_dataset"
+  mujoco:
+    alias: "mujoco"
+    loader: "src.rice.envs.load_mujoco_dataset"
+  selfish_mining:
+    alias: "selfish_mining"
+    loader: "src.rice.envs.load_selfish_mining_dataset"
+  network_defense:
+    alias: "network_defense"
+    loader: "src.rice.envs.load_network_defense_dataset"
+  autonomous_driving:
+    alias: "autonomous_driving"
+    loader: "src.rice.envs.load_autonomous_driving_dataset"
+
+# Method and Baseline Selectors
+methods:
+  ours:
+    selector: "src.rice.refining.RICETrainer"
+    description: "RICE: Reinforcement learning with Importance-based Critical-state Exploration"
+  random:
+    selector: "src.rice.baselines.RandomTrainer"
+  statemask:
+    selector: "src.rice.explanation.ExplanationGenerator"
+    description: "StateMask (Cheng et al., 2023)"
+  ppo:
+    selector: "src.rice.ppo.PPOTrainer"
+  sac:
+    selector: "src.rice.baselines.SACTrainer"
+  gail:
+    selector: "src.rice.baselines.GAILTrainer"
+  jsrl:
+    selector: "src.rice.baselines.JSRLTrainer"
+    description: "Jump-Start Reinforcement Learning"
+  heuristic:
+    selector: "src.rice.baselines.HeuristicTrainer"
+
+# Experiment Registry Matrix
+# Materialize a callable protocol matrix linking named experiments to environments, methods, metrics, and artifact writers.
+experiment_matrix:
+  experiment_i:
+    id: "experiment_i"
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "statemask"]
+    metrics: ["fidelity_score"]
+    artifact_writers: ["write_figure_5_artifact", "write_table_4_artifact"]
+  experiment_ii:
+    id: "experiment_ii"
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "ppo", "jsrl", "random"]
+    metrics: ["reward"]
+    artifact_writers: ["write_table_1_artifact", "write_figure_2_artifact"]
+  experiment_iii:
+    id: "experiment_iii"
+    tasks: ["SelfishMining"]
+    methods: ["ours", "ppo", "jsrl", "random"]
+    metrics: ["reward"]
+    artifact_writers: ["write_figure_3_artifact"]
+  experiment_iv:
+    id: "experiment_iv"
+    tasks: ["CageChallenge2"]
+    methods: ["ours", "ppo", "jsrl", "random"]
+    metrics: ["reward"]
+    artifact_writers: ["write_figure_4_artifact"]
+  experiment_v:
+    id: "experiment_v"
+    tasks: ["AutonomousDriving", "MalwareMutation"]
+    methods: ["ours", "ppo", "jsrl", "random"]
+    metrics: ["reward"]
+    artifact_writers: ["write_table_2_artifact", "write_table_7_artifact"]
+  experiment_3:
+    alias: "experiment_iii"
+  experiment_ii_alt:
+    alias: "experiment_ii"
+
+# Parameter Sweep Config
+# Expose required parameter sweeps as executable constants/default accessors.
+parameter_sweeps:
+  alpha:
+    values: [0.01, 0.001, 0.0001]
+    default: 0.01
+    description: "Coefficient of the intrinsic reward for training the mask network"
+  lambda:
+    values: [0, 0.1, 0.01, 0.001]
+    default: 0.01
+    description: "Hyper-parameter for refining method"
+  p:
+    values: [0, 0.25, 0.5, 0.75, 1]
+    default: 0.5
+    description: "Probability of resetting to a critical state"
+  learning_rate:
+    default: 0.0003
+  clip_ratio:
+    default: 0.2
+  batch_size:
+    default: 64
+  mask_network_architecture:
+    default: [64, 64]
+  regularization_weight:
+    default: 0.01
+
+# Paper Formula and Algorithm Symbol Inventory
+# reference_grounding: chunk_008, chunk_010_01, chunk_011_02, addendum:formula_algorithm_contract
+symbol_inventory:
+  d_max: 1.0
+  gamma: 0.99
+  numeric_anchors: [0, 1, 2, 3.1, 3.6, 3, 10, 20, 30, 40, 3.3, 4, 3.5, 3.4, 0.25, 0.5]
+  symbols:
+    - "V^pi"
+    - "E_pi"
+    - "sum_t=0^infty"
+    - "gamma^t"
+    - "s_t"
+    - "a_t"
+    - "s_0"
+    - "Q^pi"
+    - "a_0"
+    - "A^pi"
+    - "pi^*"
+    - "max_pi"
+    - "E_ssimrho"
+    - "d_rho^pi"
+    - "Pr^pi"
+    - "pi^r"
+    - "d_rho"
+    - "a_t^m"
+    - "a_random"
+    - "theta"
+    - "pi_bar"
+    - "pi_tilde_theta"
+    - "theta_old"
+    - "pi_tilde"
+    - "s_t+1"
+    - "R_t^prime"
+    - "pi_e"
+    - "pi_g"
+    - "pi_hat"
+    - "epsilon_hat"
+    - "kappa_hat"
+
+# Metric Definitions
+metrics:
+  reward:
+    formula: "sum_t=0^infty gamma^t R(s_t, a_t)"
+    aggregation: "mean"
+  fidelity_score:
+    formula: "Evaluator.compute_fidelity(trajectory, k)"
+    description: "Measures the contribution of critical steps to the final reward"
+  training_time:
+    description: "Wall-clock time for training"
+
+# Artifact Registry
+artifacts:
+  figure_1:
+    path: "results/figures/figure_1.png"
+    description: "Technical Overview"
+  figure_5:
+    path: "results/figures/figure_5.png"
+    description: "Fidelity score comparison"
+  table_4:
+    path: "results/tables/table_4.csv"
+    description: "Efficiency of explanation method"
+  table_1:
+    path: "results/tables/table_1.csv"
+    description: "Refining results on MuJoCo"
+  figure_2:
+    path: "results/figures/figure_2.png"
+    description: "Learning curves on MuJoCo"
+  figure_3:
+    path: "results/figures/figure_3.png"
+    description: "Learning curves on Selfish Mining"
+  figure_4:
+    path: "results/figures/figure_4.png"
+    description: "Learning curves on CAGE Challenge 2"
+  table_2:
+    path: "results/tables/table_2.csv"
+    description: "Refining results on Autonomous Driving"
+  table_7:
+    path: "results/tables/table_7.csv"
+    description: "Refining results on Malware Mutation"
+  evidence_contract_matrix:
+    path: "results/evidence_contract_matrix.json"
+  experiment_registry:
+    path: "results/experiment_registry.json"
+  metrics:
+    path: "results/metrics.json"
+  environment_registry:
+    path: "results/environment_registry.json"
+  dataset_registry:
+    path: "results/dataset_registry.json"
+  artifact_manifest:
+    path: "results/artifact_manifest.json"
+  sensitivity_report:
+    path: "results/sensitivity_report.json"
+
+# Trend Obligations
+trend_obligations:
+  endpoint_low: "p=0 and p=1 must be represented as lowest/minimum boundary cases"
+  sweep_insensitive: "parameter sweep should preserve stable/insensitive trend claim"
+  baseline_outperformance: "proposed method should be compared against explicit baselines"
+
+# Protocol Obligations
+protocol_obligations:
+  random_sample_manifest: "src.rice.utils.generate_sample_manifest"

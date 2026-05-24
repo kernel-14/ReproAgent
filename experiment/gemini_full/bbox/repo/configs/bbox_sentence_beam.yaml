@@ -1,0 +1,182 @@
+# configs/bbox_sentence_beam.yaml
+# reference_grounding: paperbench_ref_002 lora.ipynb
+
+# ==========================================
+# 1. Environment & Task Factories
+# ==========================================
+environment_factories:
+  unit-001: { id: "unit-001", alias: "cli_entry", setup: "main.py" }
+  unit-006: { id: "unit-006", alias: "data_eval", setup: "src/data/unit_python_pipeline.py" }
+  achieving_improvements: { id: "achieving improvements", alias: "main_hypothesis" }
+  determines_which: { id: "determines which", alias: "selection_logic" }
+  keep_all_paper_visible: { id: "keep all paper-visible", alias: "visibility_contract" }
+  config_data_pipeline: { id: "config data-pipeline", alias: "pipeline_config" }
+  config_factory: { id: "config factory", alias: "factory_config" }
+  registry_configuration_artifact: { id: "registry configuration artifact", alias: "registry_config" }
+  decides_which: { id: "decides which", alias: "decision_logic" }
+  config_tests_artifact_writer_expose_explicit: { id: "config tests artifact-writer expose explicit", alias: "writer_config" }
+  bind_each_baseline: { id: "bind each baseline", alias: "baseline_binding" }
+  worse_ablation_performance_without_fabricating: { id: "worse ablation performance without fabricating", alias: "ablation_logic" }
+
+# ==========================================
+# 2. Dataset & Benchmark Loaders
+# ==========================================
+dataset_loaders:
+  gsm8k: { id: "gsm8k", alias: "gsm8k", setup: "src/data/bbox_qa_benchmark.py", validation: true }
+  strategyqa: { id: "strategyqa", alias: "strategyqa", setup: "src/data/bbox_qa_benchmark.py", validation: true }
+  truthfulqa: { id: "truthfulqa", alias: "truthfulqa", setup: "src/data/bbox_qa_benchmark.py", validation: true }
+  scienceqa: { id: "scienceqa", alias: "scienceqa", setup: "src/data/bbox_qa_benchmark.py", validation: true }
+  toxigen: { id: "toxigen", alias: "toxigen", setup: "src/data/bbox_qa_benchmark.py", validation: true }
+
+# ==========================================
+# 3. Parameter Sweeps
+# ==========================================
+parameter_sweeps:
+  temperature: 0.7
+  learning_rate: 0.0001
+  batch_size: 64
+  beam_size: [1, 3, 5]
+  iteration_count: [3, 0, 1, 2, 4]
+  adapter_size: [0.1, 0.3]
+  epochs: 3
+
+# ==========================================
+# 4. Method & Baseline Selectors
+# ==========================================
+method_selectors:
+  ours: "bbox_adapter"
+  chain_of_thought: "cot"
+  oracle: "oracle"
+  heuristic: "heuristic"
+  roberta: "roberta_base"
+  fine_tuning: "full_ft"
+  lora: "lora_adapter"
+  sft_lora: "sft_lora_adapter"
+  azure_sft: "azure_sft_service"
+  mlm: "masked_language_modeling"
+  bbox_adapter: "bbox_adapter_core"
+  ranking_nce: "ranking_nce_loss"
+  online_adaptation: "online_adaptation_loop"
+  single_step_inference: "single_step"
+  full_step_inference: "full_step"
+  ai_feedback: "rlhf_feedback"
+  ppo: "proximal_policy_optimization"
+  energy_based_model: "ebm_framework"
+
+# ==========================================
+# 5. Fixed Hyperparameter Anchors
+# ==========================================
+fixed_hyperparameters:
+  batch_size_64: 64
+  nearest_neighbor_upsample: true
+  r_sft_lora: 128
+  max_seq_len: 384
+
+# ==========================================
+# 6. Formula & Algorithm Anchors
+# ==========================================
+formula_algorithm_anchors:
+  symbols:
+    ell_2: "l2_regularization"
+    alpha: 0.01
+    theta: "adapter_parameters"
+    y_2: "energy_sq" # Representing y_+^2 and y_-^2
+    x_i: "input_sequence"
+    y_i_t: "target_domain_ground_truth"
+    Y_S: "source_domain_space"
+    Y_T: "target_domain_space"
+    p_LLM: "black_box_llm_distribution"
+    Z_theta: "partition_function"
+    LLM: "black_box_model"
+    g_theta: "energy_function"
+    p_theta: "adapted_distribution"
+    x_k: "sample_k"
+    p_data: "real_data_distribution"
+    p_LM: "language_model_distribution"
+    prod_ineqk: "product_over_i_not_equal_k"
+    sum_k: "sum_over_k"
+    LM: "language_model"
+    min_theta: "minimize_loss"
+    max_theta: "maximize_likelihood"
+    nabla_theta: "gradient_wrt_theta"
+    y_plus: "positive_sample"
+    y_minus: "negative_sample"
+    equation: "ebm_parameterization"
+    gradient: "nabla_theta"
+    search: "beam_search"
+    loss: "ranking_nce_loss"
+    rank: "ranking_priority"
+    update: "adapter_parameter_update"
+  numeric_anchors:
+    val_1: 1
+    val_2: 2
+    val_0: 0
+    val_4: 4
+    val_3: 3
+    val_5: 5
+    val_3_5: 3.5
+    val_44: 44
+    val_88: 88
+    val_66: 66
+    val_11: 11
+    val_128: 128
+    val_0_3: 0.3
+    val_384: 384
+    val_14: 14
+    val_21: 21
+  algorithms:
+    adapter_update_3_2:
+      steps: "Instead, we employ a ranking-based NCE loss that prioritizes ranking true data samples higher than noise (Ma & Collins, 2018)."
+      terms: ["eq.", "loss", "gradient", "rank", "sample"]
+    online_adaptation_3_4:
+      steps: "Online Adaptation} According to the NCE loss function in Eq.(3), it is essential to draw positive samples from the real distribution of the target domain..."
+      terms: ["eq.", "algorithm", "loss", "ema", "compute", "update", "select", "sample"]
+    ablation_nce_vs_mlm_4_5:
+      steps: "Ablation Study: Effect of Ranking-based NCE Loss} We compare the efficacy of ranking-based NCE loss against the Masked Language Modeling (MLM) loss."
+      terms: ["loss", "mask", "rank", "search"]
+    nce_gradients_proof_B:
+      steps: "Proof for Ranking-based NCE Gradients} We can rewrite the loss function in Eq.(2) as..."
+      terms: ["eq.", "loss", "gradient", "rank", "compute"]
+    ebm_adaptation_3_1:
+      steps: "Specifically, given a target domain dataset D, our goal is to steer the output of the black-box LLM towards a transition..."
+      terms: ["equation", "ema"]
+
+# ==========================================
+# 7. Artifact Writers
+# ==========================================
+artifact_writers:
+  beam_search_traces:
+    path: "results/beam_search_traces.json"
+    call_symbol: "write_beam_search_traces_artifact"
+  predictions:
+    path: "results/predictions.jsonl"
+    call_symbol: "write_predictions_artifact"
+  figure_1:
+    path: "results/figures/figure_1.png"
+    call_symbol: "write_figure_1_artifact"
+  table_1:
+    path: "results/tables/table_1.csv"
+    call_symbol: "write_table_1_artifact"
+  figure_2:
+    path: "results/figures/figure_2.png"
+    call_symbol: "write_figure_2_artifact"
+    route_symbol: "run_figure_2_route"
+  table_2:
+    path: "results/tables/table_2.csv"
+    call_symbol: "write_table_2_artifact"
+  table_3:
+    path: "results/tables/table_3.csv"
+    call_symbol: "write_table_3_artifact"
+  table_4:
+    path: "results/tables/table_4.csv"
+    call_symbol: "write_table_4_artifact"
+
+# ==========================================
+# 8. Active Route Contract
+# ==========================================
+active_route:
+  sentence_level_beam_search:
+    interface:
+      generate_candidates: "generate_candidates(prompt, prefix, n)"
+      beam_search_with_adapter: "beam_search_with_adapter(prompt, config)"
+    implementation_surfaces: ["config", "model_or_method", "evaluation", "artifact_writer"]

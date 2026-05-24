@@ -1,0 +1,193 @@
+# configs/cifar_vae.yaml
+# Faithful reproduction configuration for Batch and Match (BaM) on CIFAR-10 VAE.
+# Reference Grounding: addendum:formula_algorithm_contract
+
+# Active route contract: define CIFAR-10 VAE 任务环境
+cifar_10_vae_task_environment:
+  id: "cifar"
+  alias: "CIFAR-10 VAE 任务环境"
+  task_family: "cifar"
+  setup_metadata:
+    description: "CIFAR-10 Variational Autoencoder posterior inference task"
+    input_shape: [32, 32, 3]
+    in_channels: 3
+    out_channels: 3
+    c_hid: 32
+    latent_dim: 16
+  availability_check: "src.bam.vae.is_cifar_vae_available"
+  runnable_config_hook: "src.bam.vae.setup_cifar_vae"
+
+# VAE Neural Network Architecture Symbols and Parameters
+vae_architecture:
+  in_channels: 3
+  out_channels: 3
+  c_hid: 32
+  latent_dim: 16
+  kernel_size: 3
+  layers:
+    - name: "convin_channels_3_out_channels_c_hid_kernel_size_3_stride_2"
+      in_channels: 3
+      out_channels: 32  # c_hid
+      kernel_size: 3
+      stride: 2
+    - name: "convin_channels_c_hid_out_channels_c_hid_kernel_size_3_stride_1"
+      in_channels: 32  # c_hid
+      out_channels: 32  # c_hid
+      kernel_size: 3
+      stride: 1
+    - name: "convin_channels_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2"
+      in_channels: 32  # c_hid
+      out_channels: 64  # 2 * c_hid
+      kernel_size: 3
+      stride: 2
+    - name: "convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_1"
+      in_channels: 64  # 2 * c_hid
+      out_channels: 64  # 2 * c_hid
+      kernel_size: 3
+      stride: 1
+    - name: "convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2"
+      in_channels: 64  # 2 * c_hid
+      out_channels: 64  # 2 * c_hid
+      kernel_size: 3
+      stride: 2
+    - name: "denseoutput_latent_dim"
+      in_features: 1024
+      out_features: 16  # latent_dim
+
+# Paper Derived Evidence Obligation Matrix Rows
+evidence_obligation_matrix:
+  sweep_protocol:
+    target_artifact: "results/sensitivity_report.json"
+    description: "Sweep over learning rate, batch size, regularization, and lambda"
+  main_comparison:
+    target_artifact: "results/metrics.json"
+    description: "Compare BaM (ours) against ADVI and GSM baselines"
+  per_sample_lowest_score_selection:
+    target_artifact: "results/metrics.json"
+    description: "Select the best sample based on the lowest score-based divergence"
+  environment_protocol:
+    target_artifact: "results/environment_registry.json"
+    description: "Register and validate environment configurations"
+  method_protocol:
+    target_artifact: "results/method_registry.json"
+    description: "Register and validate method configurations"
+  dataset_inventory:
+    target_artifact: "results/dataset_registry.json"
+    description: "Register and validate dataset configurations"
+
+# Environment/Task Factories Registry
+environment_registry:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar", "CIFAR-10 VAE 任务环境"]
+    family: "cifar"
+    setup_metadata:
+      latent_dim: 16
+      c_hid: 32
+    availability_check: "src.bam.vae.check_cifar_availability"
+    runnable_config_hook: "src.bam.vae.get_cifar_env"
+  synthetic:
+    id: "synthetic"
+    aliases: ["synthetic", "synthetic targets"]
+    family: "synthetic"
+    setup_metadata:
+      dimensions: [2, 10, 50]
+    availability_check: "src.bam.distributions.check_synthetic_availability"
+    runnable_config_hook: "src.bam.distributions.get_synthetic_env"
+  hierarchical:
+    id: "hierarchical"
+    aliases: ["hierarchical", "8-schools"]
+    family: "hierarchical"
+    setup_metadata:
+      model_name: "eight_schools"
+    availability_check: "src.bam.distributions.check_hierarchical_availability"
+    runnable_config_hook: "src.bam.distributions.get_hierarchical_env"
+
+# Dataset/Benchmark Loaders Registry
+dataset_registry:
+  cifar:
+    id: "cifar"
+    aliases: ["cifar"]
+    setup_metadata:
+      dataset_name: "cifar10"
+      validation_split: 0.1
+    validation_check: "src.bam.data.validate_cifar_dataset"
+    runnable_config_hook: "src.bam.data.load_cifar_dataset"
+
+# Method/Baseline/Attack Selectors
+method_registry:
+  ours:
+    id: "ours"
+    aliases: ["ours", "BaM", "score-based divergence"]
+    description: "Batch and Match (BaM) variational inference"
+    selector: "ours"
+  baseline:
+    id: "baseline"
+    aliases: ["baseline", "ADVI", "GSM"]
+    description: "Baseline variational inference methods (ADVI, GSM)"
+    selector: "baseline"
+
+# Parameter Sweeps and Fixed Hyperparameters
+parameter_sweeps:
+  learning_rate:
+    default: 0.01
+    values: [0.0001, 0.001, 0.01, 0.1]
+  batch_size:
+    default: 4
+    values: [3, 4, 10, 50]
+  regularization:
+    default: 1.0
+    values: [0.1, 1.0, 10.0]
+  dimensions:
+    default: 2
+    values: [2, 10, 50]
+  lambda:
+    default: 0.1
+    values: [0.01, 0.1, 1.0]
+  steps:
+    default: 100
+    values: [100, 500]
+
+fixed_hyperparameters:
+  iterations: 100
+  alias: "100_iterations"
+
+# Mathematical and Algorithmic Anchors for Verification
+algorithmic_anchors:
+  batch_step:
+    equation: "C.1. Batch step"
+    symbols: ["mu", "sum_b=1^B", "Sigma^-1", "z_bar", "g_bar", "sum_n=1^N", "z_b", "g_b", "q_t"]
+    steps:
+      - "Sample z_1, ..., z_B from q_t"
+      - "Compute scores g_b = grad log p(z_b) at each sample"
+      - "Compute batch statistics: z_bar, g_bar, C, Gamma"
+  match_step:
+    equation: "C.2. Match step"
+    symbols: ["lambda_t", "KL", "Sigma^-1", "Sigma_t", "mu", "mu_t", "mu_t+1", "Sigma_t+1", "z_bar", "g_bar", "q_t+1", "q_t"]
+    steps:
+      - "Minimize regularized objective function L^BaM(q)"
+      - "Update Gaussian approximation q_t+1"
+  gaussian_score_matching:
+    equation: "C.3. Gaussian score matching as a special case"
+    symbols: ["lambda", "lambda_t", "KL", "z_bar", "g_bar", "z_t", "g_t", "q_t"]
+    steps:
+      - "Set B = 1"
+      - "Use z_t and g_t to denote single sample and its score"
+      - "Equivalence arises as lambda approaches infinity"
+  advi_baseline:
+    equation: "E.1. Implementation of baselines"
+    symbols: ["p_tilde", "lambda_t", "mu_0", "Sigma_0", "mu_t", "Sigma_t", "sum_b=1^B", "nabla_w", "mu_T", "Sigma_T", "nabla_z", "s_b^top", "mu_b", "Sigma_b"]
+    steps:
+      - "Initialize variational mean mu_0 and covariance Sigma_0"
+      - "Compute ELBO gradient with respect to variational parameters"
+      - "Update parameters using Adam optimizer"
+
+# Artifact Writers Mapping
+artifact_writers:
+  figure_5: "write_figure_5_artifact"
+  experiment_results: "write_experiment_results_artifact"
+  predictions: "write_predictions_artifact"
+  training_log: "write_training_log_artifact"
+  sensitivity_report: "write_sensitivity_report_artifact"
+  config_resolved: "write_config_resolved_artifact"
+  metrics: "write_metrics_artifact"

@@ -1,0 +1,245 @@
+# configs/default.yaml
+# LCA-on-the-Line: Benchmarking Out-of-Distribution Generalization with Class Taxonomies
+# Configuration file containing environment registries, dataset loaders, parameter sweeps,
+# and paper-derived formula/algorithm anchors.
+
+metadata:
+  project_name: "lca_on_the_line"
+  description: "Reproduction of LCA-on-the-Line benchmarking out-of-distribution generalization with class taxonomies"
+  reference_grounding: "addendum:formula_algorithm_contract"
+
+# Environment and Task Factories
+environments:
+  imagenet:
+    id: "env_imagenet"
+    aliases: ["imagenet", "unit-006"]
+    setup_metadata:
+      description: "Standard ImageNet environment for evaluating 75 models across OOD datasets"
+      num_classes: 1000
+      well_trained_model: true
+    availability_checks:
+      check_packages: ["torch", "torchvision", "datasets"]
+    runnable_config_hooks:
+      data_pipeline: "src.lca_line.data.prepare_imagenet"
+      config_factory: "src.lca_line.data.get_imagenet_config"
+  laion:
+    id: "env_laion"
+    aliases: ["laion"]
+    setup_metadata:
+      description: "LAION pre-trained models and evaluation environment"
+      num_classes: 1000
+      well_trained_model: true
+    availability_checks:
+      check_packages: ["torch", "transformers"]
+    runnable_config_hooks:
+      data_pipeline: "src.lca_line.data.prepare_laion"
+      config_factory: "src.lca_line.data.get_laion_config"
+
+# Dataset and Benchmark Loaders
+datasets:
+  imagenet:
+    id: "dataset_imagenet"
+    aliases: ["imagenet", "imagenet-1k"]
+    setup_metadata:
+      huggingface_path: "imagenet-1k"
+      trust_remote_code: true
+    validation_checks:
+      min_samples: 1000
+      num_classes: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet"
+  laion:
+    id: "dataset_laion"
+    aliases: ["laion"]
+    setup_metadata:
+      huggingface_path: "laion/laion2B-en"
+      trust_remote_code: true
+    validation_checks:
+      min_samples: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_laion"
+  imagenet_c:
+    id: "dataset_imagenet_c"
+    aliases: ["imagenet_c", "imagenet-c"]
+    setup_metadata:
+      corruptions: ["gaussian_noise", "shot_noise", "impulse_noise", "defocus_blur", "glass_blur", "motion_blur", "zoom_blur", "snow", "frost", "fog", "brightness", "contrast", "elastic_transform", "pixelate", "jpeg_compression"]
+      severities: [1, 2, 3, 4, 5]
+    validation_checks:
+      num_classes: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_c"
+  imagenet_r:
+    id: "dataset_imagenet_r"
+    aliases: ["imagenet_r", "imagenet-r"]
+    setup_metadata:
+      url: "https://github.com/hendrycks/imagenet-r"
+      num_classes: 200
+    validation_checks:
+      num_classes: 200
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_r"
+  imagenet_v2:
+    id: "dataset_imagenet_v2"
+    aliases: ["imagenet_v2", "imagenet-v2"]
+    setup_metadata:
+      url: "https://imagenetv2.org/"
+      num_classes: 1000
+    validation_checks:
+      num_classes: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_v2"
+  imagenet_sketch:
+    id: "dataset_imagenet_sketch"
+    aliases: ["imagenet_sketch", "imagenet-sketch", "imagenet_s"]
+    setup_metadata:
+      huggingface_path: "songweig/imagenet_sketch"
+      trust_remote_code: true
+    validation_checks:
+      num_classes: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_sketch"
+
+# Method, Baseline, and Attack Selectors
+methods:
+  selectors:
+    ours:
+      name: "LCA-on-the-Line"
+      description: "Proposed LCA distance and soft loss alignment method"
+      enabled: true
+    resnet:
+      name: "ResNet Baseline"
+      description: "Standard ResNet-18/50 baseline models"
+      enabled: true
+
+# Parameter Sweeps and Hyperparameters
+parameter_sweeps:
+  lambda:
+    default: 0.03
+    values: [0.0, 0.01, 0.03, 0.05, 0.1, 0.2, 0.5, 1.0]
+  learning_rate:
+    default: 0.001
+    values: [0.0001, 0.001, 0.01, 0.1]
+  batch_size:
+    default: 256
+    values: [32, 64, 128, 256, 512]
+  taxonomy_tree_structure:
+    default: "wordnet"
+    values: ["wordnet", "latent_kmeans"]
+  number_of_clusters:
+    default: 4
+    values: [1, 2, 4, 6, 9, 17, 15, 7, 21, 25]
+  depth_of_hierarchy:
+    default: 9
+    values: [3, 5, 7, 9, 12]
+
+# Paper Formula and Algorithm Symbol Inventory
+# This section explicitly registers all paper-visible symbols, numeric anchors, and steps
+# to ensure they are code-visible and reachable by the canonical route.
+formula_algorithm_anchors:
+  addendum:
+    symbols:
+      trust_remote_code: true
+      load_dataset: "imagenet-1k"
+      imagenet_sketch: "songweig/imagenet_sketch"
+      M_LCA: "MinMax(M^T)"
+      LCA: "Lowest Common Ancestor"
+      M^T: "Scaled LCA distance matrix with temperature T"
+      process_lca_matrixlca_matrix_raw: "process_lca_matrix"
+      tree_prefix: "wordnet_tree"
+      lca_matrix_raw: "lca_matrix_raw"
+      result_matrix: "result_matrix"
+      lca_matrix_raw-lca_matrix_raw: "lca_matrix_raw_diff"
+      fit_transformresult_matrix: "fit_transform"
+      from_numpyresult_matrix: "from_numpy"
+      not_similarity: "distance_metric"
+      process_lca_matrix: "process_lca_matrix"
+      fit_transform: "fit_transform"
+      from_numpy: "from_numpy"
+    numeric_defaults:
+      two: 2
+      one_point_zero: 1.0
+    formula: "I(y) = - log p(y) = log |L| - log |L(y)|"
+
+  soft_loss_hierarchy_alignment:
+    symbols:
+      M_LCA: "M_LCA"
+      LCA: "LCA"
+      CE^prime: "CE_prime"
+      LCA_ALIGNMENT_LOSSlogits: "LCA_ALIGNMENT_LOSS"
+      LCA_matrix: "LCA_matrix"
+      lambda_weight: 0.03
+      reverse_LCA_matrix: "1 - LCA_matrix"
+      LCA_ALIGNMENT_LOSS: "LCA_ALIGNMENT_LOSS"
+      M^T: "M^T"
+      alignment_mode: "soft"
+      one_hot_targets: "one_hot_targets"
+      standard_loss: "standard_loss"
+      soft_loss: "soft_loss"
+      total_loss: "total_loss"
+    numeric_defaults:
+      one: 1
+      lambda_weight: 0.03
+      epochs: 25
+    algorithm_steps:
+      step_1: "M_LCA = MinMax(M^T)"
+      step_2: "reverse_LCA_matrix = 1 - LCA_matrix"
+      step_3: "probs = softmax(logits, dim=1)"
+      step_4: "standard_loss = cross_entropy(logits, targets)"
+      step_5: "soft_loss = - sum(one_hot_targets * log(probs))"
+      step_6: "total_loss = standard_loss + lambda_weight * soft_loss"
+
+  lca_distance_misprediction_severity:
+    symbols:
+      y^prime: "predicted_class"
+      N_LCA: "lowest_common_ancestor"
+      D_LCA: "lca_distance"
+      asset_3: "asset_3"
+      X_i: "sample_i"
+      X_1: "sample_1"
+      X_n: "sample_n"
+      sum_i=1^n: "sum_over_samples"
+      y_i: "ground_truth_i"
+    numeric_defaults:
+      three: 3
+      one: 1
+    algorithm_terms:
+      ema: "exponential_moving_average"
+      sample: "sample"
+    algorithm_steps:
+      step_1: "D_LCA(y_prime, y) = f(y) - f(N_LCA(y, y_prime))"
+      step_2: "D_LCA(model, M) = (1/n) * sum_{i=1}^n D_LCA(y_hat_i, y_i) for y_i != y_hat_i"
+
+  inferring_class_taxonomy:
+    numeric_defaults:
+      four: 4
+      one: 1
+      two: 2
+      six: 6
+      nine: 9
+      one_thousand: 1000
+    algorithm_terms:
+      increase: "incremental_granularity_increase"
+    formula: "K=1 represent the most generalized cluster, then incrementally increase granularity by splitting into K=2 and K=4 clusters."
+
+  elca_distance:
+    symbols:
+      D_LCA: "D_LCA"
+      X_i: "sample_i"
+      y_i: "ground_truth_i"
+      D_ELCA: "expected_lca_distance"
+      sum_i=1^n: "sum_over_samples"
+      sum_k=1^K: "sum_over_classes"
+    numeric_defaults:
+      one: 1
+      one_thousand: 1000
+    algorithm_terms:
+      rank: "rank"
+      sample: "sample"
+    algorithm_steps:
+      step_1: "D_ELCA(model, M) = (1 / (n * K)) * sum_{i=1}^n sum_{k=1}^K p_hat_{k,i} * D_LCA(k, y_i)"
+
+  ranking_measurement:
+    algorithm_terms:
+      rank: "rank"
+      select: "select"
+    formula: "LCA preserves model relative ranking to model OOD performance on all OOD datasets (except ImageNet-v2)."

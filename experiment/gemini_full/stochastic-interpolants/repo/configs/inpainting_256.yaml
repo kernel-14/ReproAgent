@@ -1,0 +1,364 @@
+# configs/inpainting_256.yaml
+# Stochastic Interpolants with Data-Dependent Couplings
+# In-painting 256x256 Configuration and Experiment Specification
+
+# Grounding marker: reference_grounding: paper_method_core chunk_002 chunk_005 chunk_006 chunk_011
+
+metadata:
+  project_name: "Stochastic Interpolants with Data-Dependent Couplings"
+  task_name: "In-painting on ImageNet (256x256)"
+  description: "Reproduction of in-painting task using data-dependent couplings on ImageNet 256x256."
+  version: "1.0.0"
+
+# 1. Dataset Registry
+dataset_registry:
+  imagenet:
+    id: "imagenet"
+    aliases: ["imagenet", "imagenet_1k", "imagenet-1k", "imagenet_c"]
+    loader_factory: "data_pipeline.imagenet.load_imagenet"
+    trust_remote_code: true
+    resolutions: [256, 512]
+    validation_checks:
+      - "check_dataset_exists"
+      - "check_resolution_valid"
+    setup_metadata:
+      huggingface_path: "imagenet-1k"
+      split: "validation"
+  imagenet_1k:
+    id: "imagenet_1k"
+    aliases: ["imagenet_1k", "imagenet-1k"]
+    loader_factory: "data_pipeline.imagenet.load_imagenet"
+    trust_remote_code: true
+    resolutions: [256, 512]
+    setup_metadata:
+      huggingface_path: "imagenet-1k"
+      split: "validation"
+  imagenet_c:
+    id: "imagenet_c"
+    aliases: ["imagenet_c"]
+    loader_factory: "data_pipeline.imagenet.load_imagenet"
+    trust_remote_code: true
+    resolutions: [256, 512]
+    setup_metadata:
+      huggingface_path: "imagenet-1k"
+      split: "validation"
+
+# 2. Environment Registry
+environment_registry:
+  imagenet_256:
+    id: "imagenet_256"
+    aliases: ["imagenet-256", "ImageNet (256x256)"]
+    task_family: "image_restoration"
+    resolution: 256
+    channels: 3
+    availability_check: "data_pipeline.tasks.check_tasks_available"
+    setup_metadata:
+      trust_remote_code: true
+      size: [256, 256]
+  imagenet_512:
+    id: "imagenet_512"
+    aliases: ["imagenet-512", "ImageNet (512x512)"]
+    task_family: "image_restoration"
+    resolution: 512
+    channels: 3
+    availability_check: "data_pipeline.tasks.check_tasks_available"
+    setup_metadata:
+      trust_remote_code: true
+      size: [512, 512]
+
+# 3. Method Registry
+method_registry:
+  ours:
+    id: "ours"
+    name: "Stochastic Interpolant with Data-Dependent Coupling"
+    class_path: "model_or_method.coupling.DataDependentCoupling"
+    selector: "ours"
+  resnet:
+    id: "resnet"
+    name: "ResNet Baseline"
+    class_path: "src.stochastic_interpolants.model.ResNetBaseline"
+    selector: "resnet"
+  ddpm:
+    id: "ddpm"
+    name: "Denoising Diffusion Probabilistic Models Baseline"
+    class_path: "src.stochastic_interpolants.model.DDPMBaseline"
+    selector: "ddpm"
+  diffusion_model:
+    id: "diffusion_model"
+    name: "Standard Diffusion Model Baseline"
+    class_path: "src.stochastic_interpolants.model.DiffusionModelBaseline"
+    selector: "diffusion_model"
+  gaussian_independent:
+    id: "gaussian_independent"
+    name: "Gaussian with independent coupling"
+    class_path: "model_or_method.coupling.GaussianIndependentCoupling"
+    selector: "Gaussian with independent coupling"
+
+# 4. Metric Registry
+metric_registry:
+  fid:
+    id: "fid"
+    name: "Fréchet Inception Distance"
+    formula: "evaluation.metrics.compute_fid"
+    target_path: "results/metrics.json"
+  mse:
+    id: "mse"
+    name: "Mean Squared Error"
+    formula: "evaluation.metrics.compute_mse"
+    target_path: "results/metrics.json"
+
+# 5. Fixed Hyperparameters (Anchors)
+fixed_hyperparameters:
+  batch_size: 32  # batch_size_32
+  mask_tiles: 64  # mask_tiles_64
+  mask_probability: 0.3  # mask_probability_0.3
+  gradient_steps: 200000
+  resnet_block_groups: 32
+
+# 6. Parameter Sweeps
+parameter_sweeps:
+  gamma: [0.0, 1.0]  # gamma values 0, 1
+  batch_size: [32, 64]
+
+# 7. Mathematical Formulas & Coefficients (Stochastic Interpolant Specification)
+interpolant_spec:
+  alpha_t:
+    formula: "t"
+    alpha_0: 0.0
+    alpha_1: 1.0
+  beta_t:
+    formula: "1.0 - t"
+    beta_0: 1.0
+    beta_1: 0.0
+  gamma_t:
+    formula: "sqrt(t * (1.0 - t))"
+    gamma_0: 0.0
+    gamma_1: 0.0
+  process:
+    equation: "I_t = alpha_t * x_0 + beta_t * x_1 + gamma_t * z"
+    base_density: "rho_0"
+    target_density: "rho_1"
+    time_distribution: "U(0,1)"
+
+# 8. Task Specifics: In-painting (Section 4.1)
+task_spec:
+  name: "In-painting"
+  dimension: "R^CtimesWtimesH"
+  channels: 3
+  width: 256
+  height: 256
+  mask_generator:
+    type: "tile"
+    tiles: 64
+    probability: 0.3
+  base_density_relation:
+    equation: "x_0 = xi * x_1 + (1 - xi) * zeta"
+    zeta_distribution: "N(0, I)"
+    conditioning_variable: "xi"
+
+# 9. Callable Protocol Matrix (Linking Experiments to Environments, Methods, Metrics, and Artifacts)
+protocol_matrix:
+  experiments:
+    - id: "inpainting_imagenet_256"
+      name: "In-painting on ImageNet (256x256)"
+      environment: "imagenet_256"
+      dataset: "imagenet"
+      method_selector: "ours"
+      metrics: ["fid", "mse"]
+      artifact_writers:
+        - "write_metrics_artifact"
+        - "write_inpainting_samples_artifact"
+        - "write_dataset_registry_artifact"
+        - "write_environment_registry_artifact"
+        - "write_evidence_contract_matrix_artifact"
+        - "write_experiment_registry_artifact"
+        - "write_artifact_manifest_artifact"
+        - "write_sensitivity_report_artifact"
+      outputs:
+        metrics_json: "results/metrics.json"
+        samples_png: "results/inpainting_samples.png"
+        dataset_registry_json: "results/dataset_registry.json"
+        environment_registry_json: "results/environment_registry.json"
+        evidence_contract_matrix_json: "results/evidence_contract_matrix.json"
+        experiment_registry_json: "results/experiment_registry.json"
+        artifact_manifest_json: "results/artifact_manifest.json"
+        sensitivity_report_json: "results/sensitivity_report.json"
+        model_pth: "checkpoints/model.pth"
+        data_manifest_json: "results/data_manifest.json"
+        environment_readiness_json: "results/environment_readiness.json"
+        config_resolved_json: "results/config_resolved.json"
+        experiment_results_csv: "results/tables/experiment_results.csv"
+        table_2_csv: "results/tables/table_2.csv"
+        figure_3_png: "results/figures/figure_3.png"
+        table_3_csv: "results/tables/table_3.csv"
+        fig_4_png: "results/figures/fig_4.png"
+        figure_4_png: "results/figures/figure_4.png"
+
+# 10. Evidence Obligation Matrix
+evidence_obligation_matrix:
+  - method: "Stochastic Interpolant"
+    source_path: "model_or_method/interpolant.py"
+  - method: "Data-Dependent Coupling"
+    source_path: "model_or_method/coupling.py"
+  - baseline: "Gaussian with independent coupling"
+    source_path: "model_or_method/coupling.py"
+  - experiment: "In-painting on ImageNet"
+    source_path: "data_pipeline/tasks.py"
+  - experiment: "Super-resolution on ImageNet"
+    source_path: "data_pipeline/tasks.py"
+  - metric: "FID comparison"
+    target_path: "results/metrics.json"
+  - artifact: "In-painting samples"
+    target_path: "results/inpainting_samples.png"
+  - artifact: "Super-resolution samples"
+    target_path: "results/sr_samples.png"
+  - artifact: "Figure 5"
+    target_path: "results/figures/figure_5.png"
+
+# 11. Formula & Algorithm Anchors
+formula_algorithm_anchors:
+  omitted_proofs_conditioning:
+    section: "A. Omitted proofs with conditioning variables incorporated"
+    symbols:
+      - "alpha_t"
+      - "beta_t"
+      - "gamma_t^2"
+      - "alpha_0"
+      - "beta_1"
+      - "alpha_1"
+      - "beta_0"
+      - "gamma_0"
+      - "gamma_1"
+      - "alpha_t^2"
+      - "beta_t^2"
+      - "gamma_t"
+      - "gamma_t^-1"
+      - "I_t"
+    numeric_defaults:
+      - 4
+      - 0
+      - 1
+      - 2
+      - 3.1
+      - 26
+      - 23
+    algorithm_terms:
+      - "equation"
+      - "objective"
+      - "sample"
+    steps: "Note that the objectives (29) can readily be estimated in practice from samples (x_0, x_1) ~ rho(x_0, x_1 | xi), z ~ N(0,1), and xi ~ eta(xi), which will enable us to learn approximations for use in a generative model."
+
+  stochastic_interpolants_couplings:
+    section: "3. Stochastic interpolants with couplings"
+    symbols:
+      - "alpha_t"
+      - "beta_t"
+      - "gamma_t^2"
+      - "alpha_0"
+      - "beta_1"
+      - "alpha_1"
+      - "beta_0"
+      - "gamma_0"
+      - "gamma_1"
+      - "alpha_t^2"
+      - "beta_t^2"
+      - "gamma_t"
+      - "x_1^i"
+      - "rho_0"
+    numeric_defaults:
+      - 1
+      - 0
+      - 3.1
+      - 2
+    algorithm_terms:
+      - "sample"
+    steps: "Albergo et al., 2023), we introduce a time-dependent stochastic process that interpolates between samples from a simple base density rho_0(x_0) at time t=0 and samples from the target rho_1(x_1) at time t=1 : Definition 3.1 (Stochastic interpolant with coupling). ; They can then be used as generative models, owing to the property that the process x_t specified in Definition 3.1 satisfies I_{t=0}=x_0 ~ rho_0(x_0) and I_{t=1}=x_1 ~ rho_1(x_1), and hence samples the desired target density."
+
+  transport_equations:
+    section: "3.1. Transport equations and conditional generative models"
+    symbols:
+      - "gamma_t"
+      - "gamma_t^-1"
+      - "I_t"
+      - "rho_t"
+      - "rho_0"
+      - "rho_1"
+      - "x_0"
+      - "x_1"
+      - "b_t"
+      - "g_t"
+      - "rho_t=0"
+      - "rho_t=1"
+      - "partial_t"
+      - "L_b"
+    numeric_defaults:
+      - 4
+      - 8
+      - 0
+      - 1
+      - 2
+    algorithm_terms:
+      - "equation"
+      - "objective"
+      - "sample"
+    steps: "The objectives (7) can readily be estimated in practice from samples (x_0, x_1) ~ rho(x_0, x_1) and z ~ N(0,1), which will enable us to learn a"
+
+  reducing_transport_costs:
+    section: "3.3. Reducing transport costs via coupling"
+    symbols:
+      - "alpha_t"
+      - "beta_t"
+      - "alpha"
+      - "beta"
+      - "gamma"
+      - "n_b"
+      - "x_1^i"
+      - "rho_1"
+      - "x_1"
+      - "zeta_i"
+      - "t_i"
+      - "x_0^i"
+      - "sigma"
+      - "zeta^i"
+    numeric_defaults:
+      - 1
+      - 0
+      - 2
+      - 3
+      - 19
+    algorithm_terms:
+      - "algorithm"
+      - "loss"
+      - "gradient"
+      - "compute"
+      - "update"
+      - "sample"
+      - "initialize"
+    steps:
+      - "Compute x_0^i = m(x_1^i) + sigma * zeta^i."
+      - "Compute I_{t_i} = alpha_{t_i} * x_0^i + beta_{t_i} * x_1^i."
+
+  inpainting_section:
+    section: "4.1. In-painting"
+    symbols:
+      - "alpha_t"
+      - "beta_t"
+      - "x_0"
+      - "x_1"
+      - "R^CtimesWtimesH"
+      - "rho_1"
+      - "rho_0"
+      - "b_t"
+      - "I_t"
+    numeric_defaults:
+      - 0
+      - 1
+      - 0.3
+      - 20
+    algorithm_terms:
+      - "mask"
+      - "select"
+      - "initialize"
+    steps:
+      - "Given a pre-specified mask, the goal is to fill the pixels in the masked region with new values that are consistent with the entirety of the image."
+      - "For simplicity, the mask takes the same value for all channels in a given spatial location in the image."

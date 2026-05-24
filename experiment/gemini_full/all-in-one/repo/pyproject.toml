@@ -1,0 +1,98 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simformer"
+version = "0.1.0"
+description = "All-in-one simulation-based inference"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "Manuel Gloeckler", email = "manuel.gloeckler@uni-tuebingen.de" }
+]
+dependencies = [
+    "numpy>=1.20.0",
+    "torch>=1.9.0",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+simulators = [
+    "sbi>=0.21.0",
+    "scipy>=1.7.0",
+    "matplotlib>=3.4.0",
+]
+
+[tool.simformer.tasks.unit-001]
+id = "unit-001"
+aliases = ["unit_001"]
+setup_metadata = { type = "benchmark", description = "CLI or main entrypoint for Simformer" }
+availability_check = "src.simformer.adapter.check_availability"
+
+[tool.simformer.tasks.approximating_posterior_distributions_across_four]
+id = "approximating posterior distributions across four"
+aliases = ["four_benchmarks"]
+setup_metadata = { type = "benchmark", description = "Approximating posterior distributions across four benchmark tasks" }
+availability_check = "src.simformer.adapter.check_availability"
+
+[tool.simformer.tasks.across_all_four_benchmark]
+id = "across all four benchmark"
+aliases = ["all_four_benchmarks"]
+setup_metadata = { type = "benchmark", description = "Across all four benchmark tasks" }
+availability_check = "src.simformer.adapter.check_availability"
+
+[tool.simformer.tasks.averaged_across_all_benchmark]
+id = "averaged across all benchmark"
+aliases = ["averaged_benchmarks"]
+setup_metadata = { type = "benchmark", description = "Averaged across all benchmark tasks" }
+availability_check = "src.simformer.adapter.check_availability"
+
+[tool.simformer.tasks.model_all_conditionals_across_all]
+id = "model all conditionals across all"
+aliases = ["model_all_conditionals"]
+setup_metadata = { type = "benchmark", description = "Model all conditionals across all tasks" }
+availability_check = "src.simformer.adapter.check_availability"
+
+[tool.simformer.tasks.hodgkin-huxley]
+id = "hodgkin-huxley"
+aliases = ["hh"]
+setup_metadata = { type = "simulator", description = "Hodgkin-Huxley simulator task" }
+availability_check = "src.simformer.adapter.check_availability"
+
+[tool.simformer.tasks.posterior_estimation_techniques]
+id = "posterior estimation techniques"
+aliases = ["posterior_estimation"]
+setup_metadata = { type = "method", description = "Posterior estimation techniques comparison" }
+availability_check = "src.simformer.adapter.check_availability"
+
+[tool.simformer.tasks.average_across]
+id = "average across"
+aliases = ["average_across_tasks"]
+setup_metadata = { type = "metric", description = "Average across tasks and observations" }
+availability_check = "src.simformer.adapter.check_availability"
+
+[tool.simformer.tasks.gaussian_linear]
+id = "gaussian linear"
+aliases = ["gaussian_linear_task"]
+setup_metadata = { type = "simulator", description = "Gaussian Linear fully factorized task" }
+availability_check = "src.simformer.adapter.check_availability"
+
+[tool.simformer.tasks.jointly_tackle_multiple_amortized_inference]
+id = "jointly tackle multiple amortized inference"
+aliases = ["joint_amortized_inference"]
+setup_metadata = { type = "method", description = "Jointly tackle multiple amortized inference tasks" }
+availability_check = "src.simformer.adapter.check_availability"
+
+[tool.simformer.tasks.undirected_simulator_dependency_masks]
+id = "undirected simulator dependency masks"
+aliases = ["undirected_masks"]
+setup_metadata = { type = "mask", description = "Undirected simulator dependency masks" }
+availability_check = "src.simformer.adapter.check_availability"
+
+[tool.simformer.tasks.condition-mask]
+id = "condition-mask"
+aliases = ["condition_mask_task"]
+setup_metadata = { type = "mask", description = "Condition mask sampling and application" }
+availability_check = "src.simformer.adapter.check_availability"

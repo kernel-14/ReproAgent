@@ -1,0 +1,366 @@
+# configs/project_skeleton.yaml
+# Centralized configuration and sweep registry for Batch and Match (BaM) reproduction.
+# Reference Grounding: addendum:formula_algorithm_contract, chunk_004, chunk_007_01, chunk_008_02
+
+global_setup:
+  mode: "runtime_smoke"
+  seed: 42
+  output_dir: "results"
+  documented_setup_commands:
+    - "pip install -e ."
+    - "python main.py --mode runtime_smoke"
+
+config_schema:
+  version: "1.0"
+  required_fields:
+    - "global_setup"
+    - "environment_registry"
+    - "dataset_registry"
+    - "method_registry"
+    - "metric_registry"
+    - "parameter_sweeps"
+    - "experiment_specs"
+
+environment_registry:
+  cifar:
+    id: "cifar"
+    aliases:
+      - "cifar"
+      - "CIFAR-10 VAE 任务环境"
+      - "cifar_vae"
+    task_family: "cifar"
+    setup_metadata:
+      description: "CIFAR-10 Variational Autoencoder posterior inference task"
+      in_channels: 3
+      out_channels: 32 # c_hid
+      c_hid: 32
+      latent_dim: 16
+      kernel_size: 3
+      stride: 2
+    availability_check: "src.bam.vae.is_cifar_vae_available"
+    runnable_config_hook: "src.bam.vae.setup_cifar_vae"
+  synthetic:
+    id: "synthetic"
+    aliases:
+      - "synthetic"
+      - "synthetic targets"
+      - "unit-001"
+    task_family: "synthetic"
+    setup_metadata:
+      description: "Synthetically-constructed target distributions (Gaussian and non-Gaussian)"
+      dimensions: [4, 16, 64, 256]
+      covariance_types: ["correlated", "warped"]
+    availability_check: "src.data.environment_correlated_warped.is_synthetic_available"
+    runnable_config_hook: "src.data.environment_correlated_warped.make_environment_correlated_warped"
+  hierarchical:
+    id: "hierarchical"
+    aliases:
+      - "hierarchical"
+      - "8-schools"
+    task_family: "hierarchical"
+    setup_metadata:
+      description: "Hierarchical Bayesian models (e.g., 8-schools)"
+    availability_check: "src.data.data_posterior_targets.is_hierarchical_available"
+    runnable_config_hook: "src.data.data_posterior_targets.load_data_posterior_targets"
+
+dataset_registry:
+  cifar:
+    id: "cifar"
+    aliases:
+      - "cifar"
+      - "cifar_dataset"
+    setup_metadata:
+      description: "CIFAR-10 dataset loader"
+    validation_check: "src.bam.data.validate_cifar"
+    runnable_config_hook: "src.bam.data.load_cifar"
+
+method_registry:
+  ours:
+    id: "ours"
+    aliases:
+      - "ours"
+      - "BaM"
+      - "Batch and Match"
+    selector: "ours"
+    description: "Batch and Match (BaM) score-based variational inference"
+  baseline:
+    id: "baseline"
+    aliases:
+      - "baseline"
+      - "GSM"
+      - "ADVI"
+    selector: "baseline"
+    description: "Baseline methods (Gaussian Score Matching and ADVI)"
+
+parameter_sweeps:
+  learning_rate:
+    values: [1e-4, 1e-3, 1e-2, 1e-1]
+    default: 0.01
+  batch_size:
+    values: [3, 4, 10, 50]
+    default: 4
+  regularization:
+    values: [0.1, 1.0, 10.0]
+    default: 1.0
+  dimensions:
+    values: [4, 16, 64, 256]
+    default: 16
+  lambda:
+    values: [0.01, 0.1, 1.0]
+    default: 0.1
+  p:
+    values: [1, 2]
+    default: 2
+  steps:
+    values: [100, 500]
+    default: 100
+
+fixed_hyperparameters:
+  iterations: 100
+  iterations_alias: "100_iterations"
+
+experiment_specs:
+  sweep_protocol:
+    id: "sweep_protocol"
+    environment: "synthetic"
+    method: "ours"
+    parameter_sweep: "lambda"
+    metric_function: "loss"
+    artifact_writer: "write_sensitivity_report_artifact"
+    output_path: "results/sensitivity_report.json"
+  main_comparison:
+    id: "main_comparison"
+    environment: "synthetic"
+    method: "ours"
+    parameter_sweep: "dimensions"
+    metric_function: "kl_divergence"
+    artifact_writer: "write_metrics_artifact"
+    output_path: "results/metrics.json"
+  per_sample_lowest_score_selection:
+    id: "per_sample_lowest_score_selection"
+    environment: "cifar"
+    method: "ours"
+    parameter_sweep: "batch_size"
+    metric_function: "mse"
+    artifact_writer: "write_predictions_artifact"
+    output_path: "results/metrics.json"
+  environment_protocol:
+    id: "environment_protocol"
+    environment: "cifar"
+    method: "ours"
+    parameter_sweep: "learning_rate"
+    metric_function: "loss"
+    artifact_writer: "write_experiment_results_artifact"
+    output_path: "results/environment_registry.json"
+  method_protocol:
+    id: "method_protocol"
+    environment: "synthetic"
+    method: "baseline"
+    parameter_sweep: "regularization"
+    metric_function: "loss"
+    artifact_writer: "write_training_log_artifact"
+    output_path: "results/method_registry.json"
+  dataset_inventory:
+    id: "dataset_inventory"
+    environment: "cifar"
+    method: "ours"
+    parameter_sweep: "steps"
+    metric_function: "loss"
+    artifact_writer: "write_config_resolved_artifact"
+    output_path: "results/dataset_registry.json"
+
+# Paper Formula and Algorithm Symbol Inventory
+# Reference Grounding: addendum:formula_algorithm_contract, chunk_004, chunk_007_01, chunk_008_02
+formula_algorithm_anchors:
+  addendum_vae:
+    symbols:
+      - "Convin_channels=3,out_channels=c_hid,kernel_size=3,stride=2"
+      - "in_channels"
+      - "out_channels"
+      - "c_hid"
+      - "kernel_size"
+      - "Convin_channels=c_hid,out_channels=c_hid,kernel_size=3,stride=1"
+      - "Convin_channels=c_hid,out_channels=2×c_hid,kernel_size=3,stride=2"
+      - "Convin_channels=2×c_hid,out_channels=2×c_hid,kernel_size=3,stride=1"
+      - "Convin_channels=2×c_hid,out_channels=2×c_hid,kernel_size=3,stride=2"
+      - "Denseoutput=latent_dim"
+      - "latent_dim"
+      - "KL"
+      - "S_++^D"
+      - "R^DtimesD"
+      - "Sigma^top"
+      - "sum_d=1^D"
+    numeric_defaults:
+      in_channels: 3
+      out_channels: 32
+      c_hid: 32
+      kernel_size: 3
+      latent_dim: 16
+      batch_size: 4
+      batch_size_low_rank: 3
+      learning_rate_initial: 0.0
+      learning_rate_peak: 0.0001
+      warmup_steps: 100
+    algorithm_terms:
+      - "gradient"
+      - "rank"
+      - "search"
+    steps:
+      - "In sections 5.2 and 5.3, like in 5.1, a grid search was used to determine the best learning rate for the gradient-based methods."
+      - "For computing the gradient of the log density functions for the PosteriorDB models, the authors used the bridgestan library."
+  bam_algorithm_3_1:
+    symbols:
+      - "R^DtimesD"
+      - "sum_b=1^B"
+      - "Sigma^-1"
+      - "mu"
+      - "Sigma_t+1"
+      - "lambda_t"
+      - "mu_0"
+      - "Sigma_0"
+      - "mu_t"
+      - "Sigma_t"
+      - "g_bar^top"
+      - "mu_t+1"
+      - "mu_T"
+      - "Sigma_T"
+    numeric_defaults:
+      B: 4
+      D: 16
+      lambda: 0.1
+      T: 100
+    algorithm_terms:
+      - "equation"
+      - "eq."
+      - "algorithm"
+      - "compute"
+      - "update"
+      - "sample"
+    steps:
+      - "This step begins by sampling $z_{1}, z_{2}, \\ldots, z_{B} \\sim$ $q_{t}$ and computing the scores $g_{b}=\\nabla \\log p\\left(z_{b}\\right)$ at each sample."
+      - "We denote these statistics by z_bar = 1/B * sum(z_b), C = 1/B * sum((z_b - z_bar)(z_b - z_bar)^T), g_bar = 1/B * sum(g_b), Gamma = 1/B * sum((g_b - g_bar)(g_b - g_bar)^T)."
+  gaussian_score_matching_c_3:
+    symbols:
+      - "lambda"
+      - "lambda_t"
+      - "KL"
+      - "z_t"
+      - "g_t"
+      - "q_t"
+      - "z_bar"
+      - "g_bar"
+    numeric_defaults:
+      B: 1
+      lambda_limit: 95
+    algorithm_terms:
+      - "eq."
+      - "formula"
+      - "loss"
+      - "update"
+      - "sample"
+    steps:
+      - "To see this equivalence, we set $B=1$, and we use $z_{t}$ and $g_{t}$ to denote, respectively, the single sample from $q_{t}$ and its score under $p$ at the $t^{\\text {th }}$ iteration of BaM ."
+      - "The equivalence arises from a simple intuition: as $\\lambda \\rightarrow \\infty$, all the weight in the loss shifts to minimizing the divergence."
+  advi_baseline_e_1:
+    symbols:
+      - "p_tilde"
+      - "lambda_t"
+      - "mu_0"
+      - "Sigma_0"
+      - "mu_t"
+      - "Sigma_t"
+      - "sum_b=1^B"
+      - "nabla_w"
+      - "mu_T"
+      - "Sigma_T"
+      - "nabla_z"
+      - "s_b^top"
+      - "mu_b"
+      - "Sigma_b"
+    numeric_defaults:
+      B: 4
+      T: 100
+      learning_rate: 0.01
+    algorithm_terms:
+      - "algorithm"
+      - "gradient"
+      - "compute"
+      - "calculate"
+      - "update"
+      - "sample"
+    steps:
+      - "Algorithm 2 Implementation of ADVI: Input: Iterations $T$, batch size $B$, unnormalized target $\\tilde{p}$, learning rate $\\lambda_{t}>0$, initial variational mean $\\mu_{0}$."
+  bam_objective_3_1:
+    symbols:
+      - "sum_b=1^B"
+      - "nabla_z"
+      - "lambda_t"
+      - "KL"
+      - "q^*"
+      - "z_b"
+      - "q_t"
+      - "q_t+1"
+    numeric_defaults:
+      B: 4
+      lambda: 0.1
+    algorithm_terms:
+      - "eq."
+      - "algorithm"
+      - "objective"
+      - "gradient"
+      - "ema"
+      - "compute"
+      - "update"
+      - "sample"
+    steps:
+      - "D(q; p) approx 1/B * sum(||nabla_z log(q(z_b)/p(z_b))||^2_Cov(q))"
+      - "This estimator is unbiased, but it does not lend itself to optimization: we cannot simultaneously sample from $q$ while also optimizing over the family $\\mathcal{Q}$ to which it belongs."
+  batch_step_c_1:
+    symbols:
+      - "mu"
+      - "sum_b=1^B"
+      - "Sigma^-1"
+      - "sum_n=1^N"
+      - "z_b"
+      - "g_b"
+      - "q_t"
+      - "z_bar"
+      - "g_bar"
+    numeric_defaults:
+      B: 4
+    algorithm_terms:
+      - "eq."
+      - "algorithm"
+      - "ema"
+      - "compute"
+      - "sample"
+    steps:
+      - "Batch step: At each iteration, Algorithm 1 solves an optimization based on samples drawn from its current Gaussian approximation to the target distribution."
+      - "The algorithm uses these samples to compute a (biased) empirical estimate of the score-based divergence."
+  match_step_c_2:
+    symbols:
+      - "lambda_t"
+      - "KL"
+      - "Sigma^-1"
+      - "Sigma_t"
+      - "mu"
+      - "mu_t"
+      - "mu_t+1"
+      - "Sigma_t+1"
+      - "z_bar"
+      - "g_bar"
+      - "q_t+1"
+      - "q_t"
+    numeric_defaults:
+      lambda: 0.1
+    algorithm_terms:
+      - "eq."
+      - "algorithm"
+      - "objective"
+      - "gradient"
+      - "compute"
+      - "update"
+      - "sample"
+    steps:
+      - "Match step: The MATCH step of the algorithm updates the Gaussian approximation of VI to better match the recently sampled scores of the target distribution."
+      - "The update at the $t^{\\text {th }}$ iteration is computed as q_t+1 = argmin (D_hat_q_t(q; p) + lambda_t * KL(q; q_t))"

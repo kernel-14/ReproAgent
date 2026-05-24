@@ -1,0 +1,479 @@
+# configs/bbox_qa_benchmark.yaml
+# reference_grounding: paperbench_ref_002 lora.ipynb
+
+# ==========================================
+# 1. Dataset Registry & Loaders
+# ==========================================
+dataset_registry:
+  gsm8k:
+    id: "gsm8k"
+    alias: "gsm8k"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_gsm8k"
+  strategyqa:
+    id: "strategyqa"
+    alias: "strategyqa"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_strategyqa"
+  truthfulqa:
+    id: "truthfulqa"
+    alias: "truthfulqa"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_truthfulqa"
+  scienceqa:
+    id: "scienceqa"
+    alias: "scienceqa"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_scienceqa"
+  toxigen:
+    id: "toxigen"
+    alias: "toxigen"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_toxigen"
+
+# ==========================================
+# 2. Environment & Task Factories
+# ==========================================
+environment_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "unit_001"
+    setup_metadata:
+      entrypoint: "main.py"
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  unit-006:
+    id: "unit-006"
+    alias: "unit_006"
+    setup_metadata:
+      entrypoint: "src/data/bbox_qa_benchmark.py"
+      availability_check: true
+      runnable_config_hook: "compute_accuracy"
+  achieving_improvements:
+    id: "achieving improvements"
+    alias: "achieving_improvements"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  determines_which:
+    id: "determines which"
+    alias: "determines_which"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  keep_all_paper_visible:
+    id: "keep all paper-visible"
+    alias: "keep_all_paper_visible"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  config_data_pipeline:
+    id: "config data-pipeline"
+    alias: "config_data_pipeline"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  config_factory:
+    id: "config factory"
+    alias: "config_factory"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  registry_configuration_artifact:
+    id: "registry configuration artifact"
+    alias: "registry_configuration_artifact"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  decides_which:
+    id: "decides which"
+    alias: "decides_which"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  config_tests_artifact_writer_expose_explicit:
+    id: "config tests artifact-writer expose explicit"
+    alias: "config_tests_artifact_writer_expose_explicit"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  bind_each_baseline:
+    id: "bind each baseline"
+    alias: "bind_each_baseline"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  worse_ablation_performance_without_fabricating:
+    id: "worse ablation performance without fabricating"
+    alias: "worse_ablation_performance_without_fabricating"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+
+# ==========================================
+# 3. Baselines & Methods
+# ==========================================
+baselines:
+  - ours
+  - chain_of_thought
+  - oracle
+  - heuristic
+  - roberta
+  - fine_tuning
+  - lora
+  - sft_lora
+  - azure_sft
+  - mlm
+  - bbox_adapter
+  - ranking_nce
+  - online_adaptation
+  - single_step_inference
+  - full_step_inference
+  - ai_feedback
+
+# ==========================================
+# 4. Parameter Sweeps & Hyperparameters
+# ==========================================
+parameter_sweeps:
+  temperature: 0.7
+  learning_rate: 0.0001
+  batch_size: 64
+  beam_size: [1, 3, 5]
+  iteration_count: [3, 0, 1, 2, 4]
+  adapter_size: [0.1, 0.3]
+  fixed_hyperparameters:
+    batch_size_64: 64
+    nearest_neighbor_upsample: true
+
+# ==========================================
+# 5. Metric Formulas & Aggregations
+# ==========================================
+metrics:
+  accuracy:
+    id: "accuracy"
+    canonical_identifier: "metric_accuracy"
+    formula: "correct_predictions / total_predictions"
+    aggregation: "mean"
+  table_2_reproduction_artifact:
+    id: "table 2 reproduction artifact"
+    canonical_identifier: "metric_table_2_reproduction_artifact"
+    formula: "accuracy"
+    aggregation: "mean"
+  table_4_reproduction_artifact:
+    id: "table 4 reproduction artifact"
+    canonical_identifier: "metric_table_4_reproduction_artifact"
+    formula: "accuracy"
+    aggregation: "mean"
+  loss:
+    id: "loss"
+    canonical_identifier: "metric_loss"
+    formula: "ranking_nce_loss"
+    aggregation: "mean"
+  training_cost:
+    id: "training_cost"
+    canonical_identifier: "metric_training_cost"
+    formula: "gpu_hours * cost_per_hour"
+    aggregation: "sum"
+  inference_cost:
+    id: "inference_cost"
+    canonical_identifier: "metric_inference_cost"
+    formula: "api_cost + compute_cost"
+    aggregation: "sum"
+  api_cost:
+    id: "api_cost"
+    canonical_identifier: "metric_api_cost"
+    formula: "tokens * cost_per_token"
+    aggregation: "sum"
+  memory_usage:
+    id: "memory_usage"
+    canonical_identifier: "metric_memory_usage"
+    formula: "max_vram_allocated"
+    aggregation: "max"
+  gpu_memory:
+    id: "gpu_memory"
+    canonical_identifier: "metric_gpu_memory"
+    formula: "max_gpu_memory"
+    aggregation: "max"
+  toxicity:
+    id: "toxicity"
+    canonical_identifier: "metric_toxicity"
+    formula: "toxic_generations / total_generations"
+    aggregation: "mean"
+
+# ==========================================
+# 6. Result Artifacts & Writers
+# ==========================================
+artifacts:
+  table_2:
+    id: "table 2"
+    canonical_identifier: "artifact_table_2"
+    path: "results/tables/table_2.csv"
+    caption: "Table 2. Main results of adapting gpt-3.5-turbo on downstream tasks."
+    writer_function: "write_table_2_artifact"
+  table_4:
+    id: "table 4"
+    canonical_identifier: "artifact_table_4"
+    path: "results/tables/table_4.csv"
+    caption: "Table 4. Comparison of performance and cost for the base model, SFT, and BBOX-ADAPTER."
+    writer_function: "write_table_4_artifact"
+  figure_1:
+    id: "Figure 1"
+    canonical_identifier: "artifact_figure_1"
+    path: "results/figures/figure_1.png"
+    caption: "Figure 1. Illustration of white-box, grey-box, and black-box LLM adaptation."
+    writer_function: "write_figure_1_artifact"
+  table_1:
+    id: "Table 1"
+    canonical_identifier: "artifact_table_1"
+    path: "results/tables/table_1.csv"
+    caption: "Table 1. Comparison of existing LLM adaptation methods based on five aspects."
+    writer_function: "write_table_1_artifact"
+  figure_2:
+    id: "Figure 2"
+    canonical_identifier: "artifact_figure_2"
+    path: "results/figures/figure_2.png"
+    caption: "Figure 2. Overview of BBox-ADAPTER for black-box LLM adaptation."
+    writer_function: "write_figure_2_artifact"
+  table_3:
+    id: "Table 3"
+    canonical_identifier: "artifact_table_3"
+    path: "results/tables/table_3.csv"
+    caption: "Table 3. Results of plug-and-play adaptation on davinci-002 and Mixtral-8x7B."
+    writer_function: "write_table_3_artifact"
+  table_5:
+    id: "Table 5"
+    canonical_identifier: "artifact_table_5"
+    path: "results/tables/table_5.csv"
+    caption: "Table 5. Accuracy (%) of BBox-ADAPTER fine-tuned with MLM loss and ranking-based NCE loss."
+    writer_function: "write_table_5_artifact"
+  figure_3:
+    id: "Figure 3"
+    canonical_identifier: "artifact_figure_3"
+    path: "results/figures/figure_3.png"
+    caption: "Figure 3. Scale analysis on StrategyQA with different beam sizes and iterations."
+    writer_function: "write_figure_3_artifact"
+  table_6:
+    id: "Table 6"
+    canonical_identifier: "artifact_table_6"
+    path: "results/tables/table_6.csv"
+    caption: "Table 6. Accuracy (%) and GPU memory usage on adapting Mixtral-8x7B."
+    writer_function: "write_table_6_artifact"
+  figure_4:
+    id: "Figure 4"
+    canonical_identifier: "artifact_figure_4"
+    path: "results/figures/figure_4.png"
+    caption: "Figure 4. Case study of BBox-ADAPTER on GSM8K."
+    writer_function: "write_figure_4_artifact"
+  table_7:
+    id: "Table 7"
+    canonical_identifier: "artifact_table_7"
+    path: "results/tables/table_7.csv"
+    caption: "Table 7. Results of adapting Mixtral-8x7B-v0.1 on the ToxiGen dataset."
+    writer_function: "write_table_7_artifact"
+  table_8:
+    id: "Table 8"
+    canonical_identifier: "artifact_table_8"
+    path: "results/tables/table_8.csv"
+    caption: "Table 8. Hyperparameter settings of SFT-LoRA."
+    writer_function: "write_table_8_artifact"
+  figure_5:
+    id: "Figure 5"
+    canonical_identifier: "artifact_figure_5"
+    path: "results/figures/figure_5.png"
+    caption: "Figure 5. Loss curve of Azure-SFT on StrategyQA, TruthfulQA, and ScienceQA."
+    writer_function: "write_figure_5_artifact"
+  table_9:
+    id: "Table 9"
+    canonical_identifier: "artifact_table_9"
+    path: "results/tables/table_9.csv"
+    caption: "Table 9. Additional results."
+    writer_function: "write_table_9_artifact"
+  figure_6:
+    id: "Figure 6"
+    canonical_identifier: "artifact_figure_6"
+    path: "results/figures/figure_6.png"
+    caption: "Figure 6. Loss curves of Azure-SFT on GSM8K."
+    writer_function: "write_figure_6_artifact"
+
+# ==========================================
+# 7. Trend Assertions & Semantic Review
+# ==========================================
+trend_assertions:
+  baseline_outperformance:
+    description: "proposed method should be compared against explicit baselines"
+    assertion: "ours > chain_of_thought"
+
+# ==========================================
+# 8. Executable Algorithm & Formula Anchors
+# ==========================================
+formula_anchors:
+  ebm_adaptation:
+    section: "3.1. Black-Box LLM Adaptation as EBM"
+    symbols:
+      p_LLM: "p_LLM"
+      LLM: "LLM"
+      x_i: "x_i"
+      y_i_t: "y_i^t"
+      Y_S: "Y^S"
+      Y_T: "Y^T"
+      Z_theta: "Z_theta"
+      g_theta: "g_theta"
+      p_theta: "p_theta"
+      theta: "theta"
+    numeric_defaults:
+      value: 1
+    algorithm_terms:
+      - equation
+      - ema
+    formula: "p_theta(y | x) = p_LLM(y | x) * exp(g_theta(x, y)) / Z_theta(x)"
+
+  adapter_update:
+    section: "3.2. Adapter Update"
+    symbols:
+      p_LLM: "p_LLM"
+      LLM: "LLM"
+      x_k: "x_k"
+      p_theta: "p_theta"
+      p_data: "p_data"
+      p_LM: "p_LM"
+      prod_ineqk: "prod_ineqk"
+      x_i: "x_i"
+      sum_k: "sum_k"
+      LM: "LM"
+      theta: "theta"
+      g_theta: "g_theta"
+      min_theta: "min_theta"
+      max_theta: "max_theta"
+      nabla_theta: "nabla_theta"
+      alpha: "alpha"
+    numeric_defaults:
+      value_1: 1
+      value_2: 2
+    algorithm_terms:
+      - eq.
+      - loss
+      - gradient
+      - rank
+      - sample
+    formula: "nabla_theta ell(theta) = nabla_theta { -E_{y_+ ~ p_data}[g_theta(x, y_+)] + E_{y_- ~ p_theta}[g_theta(x, y_-)] + alpha * E[g_theta(x, y_+)^2] + alpha * E[g_theta(x, y_-)^2] }"
+
+  adapted_inference:
+    section: "3.3. Adapted Inference"
+    symbols:
+      p_LLM: "p_LLM"
+      LLM: "LLM"
+      s_1: "s^1"
+      s_2: "s^2"
+      s_L: "s^L"
+      s_1_L: "s^1:L"
+      s_l: "s^l"
+      p_theta: "p_theta"
+      g_theta: "g_theta"
+      prod_l: "prod_l"
+      s_1_l_minus_1: "s^1:l-1"
+    numeric_defaults:
+      value_1: 1
+      value_2: 2
+    formula: "y = [s^1, s^2, ..., s^L] = s^1:L"
+
+  online_adaptation:
+    section: "3.4. Online Adaptation"
+    symbols:
+      p_data: "p_data"
+      y_plus: "y_+"
+      y_minus: "y_-"
+      p_theta: "p_theta"
+      theta: "theta"
+      x_i: "x_i"
+      y_i: "y_i"
+      y_i_plus_t: "y_i+^t"
+      y_i_minus_t: "y_i-^t"
+      nabla_theta: "nabla_theta"
+      theta_t: "theta_t"
+      y_i_j: "y_i,j"
+      y_i_1: "y_i,1"
+      y_i_2: "y_i,2"
+    numeric_defaults:
+      value_4: 4
+      value_1: 1
+      value_0: 0
+      value_2: 2
+    algorithm_terms:
+      - eq.
+      - algorithm
+      - loss
+      - ema
+      - compute
+      - update
+      - select
+      - sample
+    steps:
+      - "Draw positive samples from target domain distribution y_+ ~ p_data"
+      - "Draw negative samples from adapted generations y_- ~ p_theta"
+      - "Update adapter parameters theta using NCE loss"
+
+  ablation_study:
+    section: "4.5. Ablation Study: Effect of Ranking-based NCE Loss"
+    algorithm_terms:
+      - loss
+      - mask
+      - rank
+      - search
+    steps:
+      - "Compare ranking-based NCE loss against Masked Language Modeling (MLM) loss"
+      - "For MLM, generate text chunks, randomly mask words, and train adapter using masked word as supervision"
+
+  scale_analysis:
+    section: "4.6. Scale Analysis"
+    numeric_defaults:
+      value_4: 4
+      value_1: 1
+      value_3: 3
+      value_5: 5
+      value_3_5: 3.5
+      value_0: 0
+      value_2: 2
+    algorithm_terms:
+      - search
+    steps:
+      - "Un-finetuned adapter (T=0) performs worse than base model due to inaccurate scores misguiding beam search"
+
+# ==========================================
+# 9. Defined Symbols & Calls Symbols
+# ==========================================
+defined_symbols:
+  ell_2: "ell_2"
+  alpha: "alpha"
+  theta: "theta"
+  y_2: "y_2"
+  equation: "equation"
+  gradient: "gradient"
+  search: "search"
+  loss: "loss"
+  rank: "rank"
+  update: "update"
+  x_i: "x_i"
+
+calls_symbols:
+  - run_experiment
+  - compute_accuracy
+  - aggregate_accuracy
+  - compute_loss
+  - aggregate_loss
+  - compute_entrypoint_metric_entrypoint_objective
+  - compute_entrypoint_metric_entrypoint_score
+  - write_main_artifact
+  - write_artifact_manifest
+  - write_figure_4_artifact
+  - run_figure_4_route
+  - write_table_4_artifact

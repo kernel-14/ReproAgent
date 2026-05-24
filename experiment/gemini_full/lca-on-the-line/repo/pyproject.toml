@@ -1,0 +1,112 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lca_line"
+version = "0.1.0"
+description = "LCA-on-the-Line: Benchmarking Out-of-Distribution Generalization with Class Taxonomies"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "PaperBench Repro Agent" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+    "pyyaml>=6.0",
+    "click>=8.0.0",
+    "matplotlib>=3.4.0",
+    "scikit-learn>=1.0.0",
+]
+
+[project.optional-dependencies]
+heavy = [
+    "torch>=1.10.0",
+    "torchvision>=0.11.0",
+    "transformers>=4.15.0",
+    "datasets>=2.0.0",
+]
+
+[project.scripts]
+lca-repro = "scripts.run_reproduction:main"
+
+[tool.setuptools]
+packages = ["src.lca_line"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[tool.lca_line.environment_registry]
+# Decides which environment adapters and lazy dependency checks are required
+environments = [
+    "imagenet",
+    "laion"
+]
+datasets = [
+    "imagenet",
+    "laion",
+    "imagenet_c",
+    "imagenet_r",
+    "imagenet_v2",
+    "imagenet_sketch"
+]
+metrics = [
+    "accuracy",
+    "loss",
+    "mae",
+    "return"
+]
+artifacts = [
+    "results/environment_registry.json",
+    "results/environment_readiness.json",
+    "results/figures/figure_1.png",
+    "results/figures/figure_2.png",
+    "results/figures/figure_3.png",
+    "results/figures/figure_4.png"
+]
+
+[tool.lca_line.formula_anchors]
+# Reference grounding and formula/algorithm anchors
+trust_remote_code = true
+load_dataset = "imagenet-1k"
+imagenet_sketch = "songweig/imagenet_sketch"
+M_LCA = "M_LCA"
+LCA = "LCA"
+M_T = "M^T"
+process_lca_matrix = "process_lca_matrix"
+tree_prefix = "tree_prefix"
+lca_matrix_raw = "lca_matrix_raw"
+result_matrix = "result_matrix"
+not_similarity = true
+y_prime = "y_prime"
+N_LCA = "N_LCA"
+D_LCA = "D_LCA"
+asset_3 = "asset_3"
+X_i = "X_i"
+X_1 = "X_1"
+X_n = "X_n"
+sum_i_1_n = "sum_i=1^n"
+y_i = "y_i"
+x_i = "x_i"
+y_bar = "y_bar"
+R_2 = "R^2"
+x_bar = "x_bar"
+tau = "tau"
+KEN = "Kendall rank correlation coefficient"
+
+# Numeric defaults and sweeps
+numeric_defaults = { "2" = 2, "1.0" = 1.0, "3" = 3, "1" = 1, "4" = 4, "6" = 6, "9" = 9, "1000" = 1000, "0" = 0, "17" = 17, "15" = 15, "7" = 7, "21" = 21, "0.03" = 0.03, "25" = 25 }
+
+# Algorithm terms and steps
+algorithm_terms = ["rank", "select", "loss", "ema", "sample", "increase"]

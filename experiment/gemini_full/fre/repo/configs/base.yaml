@@ -1,0 +1,245 @@
+# configs/base.yaml
+# Functional Reward Encodings (FRE) Base Configuration
+
+# 1. Paper Formula / Algorithm Symbols & Anchors
+# Grounding marker: reference_grounding: addendum:formula_algorithm_contract /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/fre/addendum.md
+vel_left: [-1.0, 0.0]
+vel_up: [0.0, 1.0]
+vel_down: [0.0, -1.0]
+vel_right: [1.0, 0.0]
+l_pi: "loss_pi"
+e_s_g_asimd: "expectation_s_g_a_sim_D"
+p_randomgoal: 0.3
+p_geometric_goal: 0.5
+p_current_goal: 0.2
+loss: "loss_function"
+mask: "done_mask"
+sample: "hindsight_sample"
+
+# 2. Parameter Sweeps and Defaults
+parameters:
+  K: 128
+  reward_discretization_bins: 20
+  latent_dim_size: 256
+  transformer_layers: 4
+  transformer_heads: 4
+  beta: 0.1
+  KL_weight: 0.1
+  K_prime: 6
+  numeric_defaults:
+    1: 1.0
+    0: 0.0
+    0.3: 0.3
+    0.5: 0.5
+    0.2: 0.2
+    2: 2.0
+    6: 6.0
+  algorithm_terms:
+    - loss
+    - mask
+    - sample
+    - equation
+    - algorithm
+    - gradient
+    - ema
+    - formula
+    - objective
+
+# 3. Environment Registry
+environment_registry:
+  deepmind_control:
+    id: "deepmind_control"
+    aliases: ["dmc", "DeepMind Control (ExORL)", "exorl"]
+    tasks: ["walker_walk", "walker_run", "cheetah_run"]
+    setup_metadata:
+      without_online: true
+      maximizes_expected_return: true
+      competitive_performance: true
+    availability_check: "check_dmc_available"
+    config_hook: "make_dmc_env"
+  robotics:
+    id: "robotics"
+    aliases: ["d4rl", "AntMaze (D4RL)", "Kitchen (D4RL)", "antmaze", "kitchen"]
+    tasks: ["antmaze-large-diverse-v2", "kitchen-mixed-v0"]
+    setup_metadata:
+      unique_test: true
+      determines_which: true
+      keep_all_paper_visible: true
+    availability_check: "check_robotics_available"
+    config_hook: "make_robotics_env"
+
+# 4. Dataset Registry
+dataset_registry:
+  exorl_unlabeled:
+    id: "exorl_unlabeled"
+    alias: "deepmind_control"
+    setup_metadata:
+      path: "data/exorl"
+    validation_check: "validate_exorl_dataset"
+    config_hook: "load_exorl_dataset"
+  antmaze_large_diverse:
+    id: "antmaze-large-diverse-v2"
+    alias: "robotics"
+    setup_metadata:
+      path: "data/antmaze"
+    validation_check: "validate_antmaze_dataset"
+    config_hook: "load_antmaze_dataset"
+  kitchen_mixed:
+    id: "kitchen-mixed-v0"
+    alias: "robotics"
+    setup_metadata:
+      path: "data/kitchen"
+    validation_check: "validate_kitchen_dataset"
+    config_hook: "load_kitchen_dataset"
+
+# 5. Method/Baseline Registry
+baseline_registry:
+  ours:
+    name: "ours"
+    class_path: "src.algorithms.fre_trainer.FRETrainer"
+    config:
+      latent_dim: 256
+  bc:
+    name: "bc"
+    class_path: "baselines.bc_impl.BCTrainer"
+  iql:
+    name: "iql"
+    class_path: "baselines.iql_impl.IQLTrainer"
+  test_time_adaptation:
+    name: "test_time_adaptation"
+    class_path: "baselines.tta_impl.TTATrainer"
+  ppo:
+    name: "ppo"
+    class_path: "baselines.ppo_impl.PPOTrainer"
+  pbt:
+    name: "pbt"
+    class_path: "baselines.pbt_impl.PBTTrainer"
+  pql:
+    name: "pql"
+    class_path: "baselines.pql_impl.PQLTrainer"
+
+# 6. Evidence Obligation Matrix Registry
+evidence_obligation_matrix:
+  - id: "Table 1"
+    name: "ExORL benchmark comparison"
+    experiment: "Experiment I: ExORL Main Comparison"
+    environments: ["deepmind_control"]
+    methods: ["ours", "bc", "iql", "test_time_adaptation"]
+    metrics: ["reward"]
+    artifact_path: "results/tables/exorl_results.csv"
+    writer: "write_table_1_artifact"
+    runner: "run_table_1_route"
+  - id: "Figure 4"
+    name: "AntMaze/Kitchen zero-shot"
+    experiment: "Experiment II: D4RL Zero-Shot Transfer"
+    environments: ["robotics"]
+    methods: ["ours", "bc", "iql"]
+    metrics: ["reward"]
+    artifact_path: "results/tables/d4rl_results.csv"
+    writer: "write_figure_4_artifact"
+    runner: "run_figure_4_route"
+  - id: "Figure 5"
+    name: "Scaling properties (subsets of reward forms)"
+    experiment: "Experiment III: Scaling with Reward Families"
+    environments: ["deepmind_control"]
+    methods: ["ours"]
+    metrics: ["reward"]
+    artifact_path: "results/sensitivity_report.json"
+    writer: "write_sensitivity_report"
+    runner: "run_scaling_experiment"
+    details: "execute the 'all possible subsets' training for the scaling experiment (Section 5.3)"
+  - id: "Figure 6"
+    name: "Domain knowledge (XY/Velocity priors)"
+    experiment: "Experiment IV: Domain Knowledge Augmentation"
+    environments: ["robotics"]
+    methods: ["ours"]
+    metrics: ["reward"]
+    artifact_path: "results/metrics.json"
+    writer: "write_metrics_artifact"
+    runner: "run_domain_knowledge_experiment"
+    details: "implement the XY-position and velocity-based reward priors for the domain knowledge experiment (Section 5.4)"
+  - id: "Figure 7"
+    name: "Extended results"
+    experiment: "Experiment V: Extended Baselines (PPO, PBT, PQL)"
+    environments: ["deepmind_control"]
+    methods: ["ours", "ppo", "pbt", "pql"]
+    metrics: ["reward"]
+    artifact_path: "results/figures/figure_7.png"
+    writer: "write_figure_7_artifact"
+    runner: "run_extended_baselines"
+  - id: "Figure 8"
+    name: "Extended results"
+    experiment: "Experiment V: Extended Baselines (PPO, PBT, PQL)"
+    environments: ["robotics"]
+    methods: ["ours", "ppo", "pbt", "pql"]
+    metrics: ["reward"]
+    artifact_path: "results/figures/figure_8.png"
+    writer: "write_figure_8_artifact"
+    runner: "run_extended_baselines"
+  - id: "Figure 9"
+    name: "Extended results"
+    experiment: "Experiment V: Extended Baselines (PPO, PBT, PQL)"
+    environments: ["deepmind_control", "robotics"]
+    methods: ["ours", "ppo", "pbt", "pql"]
+    metrics: ["reward"]
+    artifact_path: "results/figures/figure_9.png"
+    writer: "write_figure_9_artifact"
+    runner: "run_extended_baselines"
+  - id: "Table 3"
+    name: "Extended comparison"
+    experiment: "Experiment V: Extended Baselines (PPO, PBT, PQL)"
+    environments: ["deepmind_control", "robotics"]
+    methods: ["ours", "ppo", "pbt", "pql"]
+    metrics: ["reward"]
+    artifact_path: "results/tables/table_3.csv"
+    writer: "write_table_3_artifact"
+    runner: "run_extended_baselines"
+
+# 7. Callable Protocol Matrix
+protocol_matrix:
+  "Experiment I: ExORL Main Comparison":
+    environments: ["deepmind_control"]
+    methods: ["ours", "bc", "iql", "test_time_adaptation"]
+    metrics: ["reward"]
+    writers: ["write_table_1_artifact", "write_summary_artifact"]
+  "Experiment II: D4RL Zero-Shot Transfer":
+    environments: ["robotics"]
+    methods: ["ours", "bc", "iql"]
+    metrics: ["reward"]
+    writers: ["write_figure_4_artifact", "write_summary_artifact"]
+  "Experiment III: Scaling with Reward Families":
+    environments: ["deepmind_control"]
+    methods: ["ours"]
+    metrics: ["reward"]
+    writers: ["write_sensitivity_report"]
+  "Experiment IV: Domain Knowledge Augmentation":
+    environments: ["robotics"]
+    methods: ["ours"]
+    metrics: ["reward"]
+    writers: ["write_metrics_artifact"]
+  "Experiment V: Extended Baselines (PPO, PBT, PQL)":
+    environments: ["deepmind_control", "robotics"]
+    methods: ["ours", "ppo", "pbt", "pql"]
+    metrics: ["reward"]
+    writers: ["write_figure_7_artifact", "write_figure_8_artifact", "write_figure_9_artifact", "write_table_3_artifact"]
+
+# 8. Artifact Manifest
+artifact_manifest:
+  - "results/experiment_registry.json"
+  - "results/artifact_manifest.json"
+  - "results/tables/summary.csv"
+  - "results/environment_registry.json"
+  - "results/environment_readiness.json"
+  - "results/evidence_contract_matrix.json"
+  - "results/metrics.json"
+  - "results/dataset_registry.json"
+  - "results/sensitivity_report.json"
+  - "results/tables/experiment_results.csv"
+  - "results/tables/table_1.csv"
+  - "results/tables/table_2.csv"
+  - "results/tables/table_3.csv"
+  - "results/tables/table_4.csv"
+  - "results/figures/figure_3.png"
+  - "results/figures/figure_4.png"
+  - "results/figures/figure_7.png"
+  - "results/figures/figure_8.png"

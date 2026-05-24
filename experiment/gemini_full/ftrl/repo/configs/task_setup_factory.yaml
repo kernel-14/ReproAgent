@@ -1,0 +1,201 @@
+# configs/task_setup_factory.yaml
+# reference_grounding: chunk_003_01 chunk_018 chunk_019 chunk_024_01 addendum:formula_algorithm_contract
+
+metadata:
+  project_name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+  reproduction_scope: "Faithful implementation of MDP, AppleRetrieval, and Robotics experiments."
+
+# 1. Environment/Task Factories and Registries
+environments:
+  registry:
+    - id: "two_state_mdp"
+      alias: "two-state-mdp"
+      description: "Two-state MDP with CLOSE and FAR state partitions to track forgetting."
+      state_space_partition:
+        close: "s_0"
+        far: "s_1"
+      setup_metadata:
+        gamma: 0.9
+        epsilon: 0.5
+        r_0: 0.11
+        r_1: 2.22
+        s_0: 0
+        s_1: 1
+        v_0: 10.0
+        f_0: 0.0
+        f_1: 1.0
+      availability_check: "src.envs.two_state_mdp.make_two_state_mdp"
+      runnable_config_hook: "setup_two_state_mdp"
+
+    - id: "appleretrieval"
+      alias: "apple_retrieval"
+      description: "AppleRetrieval grid-world environment exhibiting state coverage gap."
+      setup_metadata:
+        M: 13
+        c: 11
+        sigma: 30
+        asset_13: 13
+        pi_w: 1.0
+        pi_b: 0.0
+        apple_reward: 10.0
+        step_penalty: -0.1
+      availability_check: "src.envs.apple_retrieval.make_apple_retrieval"
+      runnable_config_hook: "setup_apple_retrieval"
+
+    - id: "robotics"
+      alias: "push-wall"
+      description: "Robotic manipulation task (Meta-World push-wall) for sequential transfer."
+      setup_metadata:
+        task_name: "push-wall-v2"
+        gold_score_threshold: 0.9
+        beta: 1.5
+        E_k: 200
+        E_i: 1
+        r_t: 1.0
+        r_t_prime: 1.0
+      availability_check: "src.envs.robotics.make_robotics"
+      runnable_config_hook: "setup_robotics"
+
+# 2. Dataset/Benchmark Loaders
+datasets:
+  registry:
+    - id: "robotics_dataset"
+      alias: "robotics"
+      description: "Robotics demonstration dataset for behavioral cloning."
+      setup_metadata:
+        num_trajectories: 100
+        validation_split: 0.2
+        batch_size: 128
+      validation_checks: "src.data.task_setup_factory.validate_robotics_dataset"
+      runnable_config_hook: "load_robotics_dataset"
+
+    - id: "nld_aa_v0"
+      alias: "nld-aa-v0"
+      description: "NetHack Learning Dataset (NLD-AA) for behavioral cloning."
+      setup_metadata:
+        add_nledata_directory: "/path/to/nld-aa"
+        add_altorg_directory: "/path/to/nld-nao"
+        TtyrecDataset_nld_aa_v0_batch_size_128: "TtyrecDataset('nld-aa-v0', batch_size=128)"
+        batch_size: 128
+      validation_checks: "src.data.task_setup_factory.validate_nle_dataset"
+      runnable_config_hook: "load_nle_dataset"
+
+# 3. Method/Baseline/Attack Selectors
+methods:
+  selectors:
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+
+  configs:
+    ours:
+      description: "Proposed forgetting mitigation method (scaled-bc + fine-tuning + ks)"
+      learning_rate: 0.0003
+      batch_size: 128
+    ppo:
+      description: "Proximal Policy Optimization baseline"
+      learning_rate: 0.0003
+      batch_size: 128
+    sac:
+      description: "Soft Actor-Critic baseline"
+      learning_rate: 0.0003
+      batch_size: 128
+    bc:
+      description: "Behavioral Cloning baseline"
+      learning_rate: 0.0003
+      batch_size: 128
+    oracle:
+      description: "Oracle baseline with full state coverage"
+      learning_rate: 0.0003
+      batch_size: 128
+    nle:
+      description: "NetHack baseline"
+      learning_rate: 0.0003
+      batch_size: 128
+    ewc:
+      description: "Elastic Weight Consolidation baseline"
+      learning_rate: 0.0003
+      batch_size: 128
+
+# 4. Bounded Sweeps and Hyperparameter Anchors
+hyperparameters:
+  learning_rate:
+    default: 0.0003
+    sweep_values: [0.0001, 0.0003, 0.001]
+  batch_size:
+    default: 128
+    sweep_values: [64, 128, 256]
+  anchors:
+    batch_size_128: 128
+
+# 5. Paper Formula and Algorithm Symbol Inventory
+symbol_inventory:
+  add_nledata_directory: "add_nledata_directory"
+  add_altorg_directory: "add_altorg_directory"
+  ttyrecdataset_nld_aa_v0_batch_size_128: "TtyrecDataset('nld-aa-v0', batch_size=128)"
+  batch_size: 128
+  L_aux: "L_aux"
+  theta: "theta"
+  sum_i: "sum_i"
+  F_i: "F^i"
+  theta_star_i: "theta_*^i"
+  theta_i: "theta^i"
+  theta_star: "theta_*"
+  L_BC: "L_BC"
+  B_BC: "B_BC"
+  D_KL: "D_KL"
+  pi_star: "pi_*"
+  pi_theta: "pi_theta"
+  L_KS: "L_KS"
+  s_0: 0
+  v_0: 10.0
+  gamma: 0.9
+  r_0: 0.11
+  f_theta: "f_theta"
+  r_1: 2.22
+  epsilon: 0.5
+
+# 6. Numeric and Default Anchors
+numeric_anchors:
+  anchor_128: 128
+  anchor_2: 2
+  anchor_0: 0
+  anchor_9: 9
+  anchor_1: 1
+  anchor_0_11: 0.11
+  anchor_2_22: 2.22
+  anchor_0_5: 0.5
+  anchor_10: 10
+  anchor_0_08: 0.08
+  anchor_9_93: 9.93
+  anchor_13: 13
+  anchor_11: 11
+  anchor_30: 30
+  anchor_200: 200
+  anchor_1_5: 1.5
+
+# 7. Measurement and Result Aggregation Targets
+result_targets:
+  figure_1: "results/figures/figure_1.png"
+  figure_2: "results/figures/figure_2.png"
+  figure_4: "results/figures/figure_4.png"
+  figure_12: "results/figures/figure_12.png"
+  figure_3a: "results/figures/figure_3a.png"
+  figure_3: "results/figures/figure_3.png"
+  figure_3b: "results/figures/figure_3b.png"
+  figure_3c: "results/figures/figure_3c.png"
+  figure_7: "results/figures/figure_7.png"
+  figure_5: "results/figures/figure_5.png"
+  figure_6: "results/figures/figure_6.png"
+  figure_8: "results/figures/figure_8.png"
+  figure_14: "results/figures/figure_14.png"
+  table_4: "results/tables/table_4.csv"
+  table_5: "results/tables/table_5.csv"
+  figure_15: "results/figures/figure_15.png"
+  figure_16: "results/figures/figure_16.png"
+  figure_17: "results/figures/figure_17.png"

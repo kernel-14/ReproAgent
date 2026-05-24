@@ -1,0 +1,239 @@
+# configs/sweep_hyperparameter_schema.yaml
+# reference_grounding: paperbench_ref_002 lora.ipynb
+
+# ==========================================
+# 1. Environment & Task Factories
+# ==========================================
+environment_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "cli_entry"
+    setup_metadata: { entrypoint: "main.py", availability_check: true }
+    runnable_config_hook: "run_experiment"
+  unit-006:
+    id: "unit-006"
+    alias: "data_eval"
+    setup_metadata: { entrypoint: "src/data/unit_python_pipeline.py", availability_check: true }
+    runnable_config_hook: "compute_accuracy"
+  achieving_improvements:
+    id: "achieving improvements"
+    alias: "main_hypothesis"
+  determines_which:
+    id: "determines which"
+    alias: "selection_logic"
+  keep_all_paper_visible:
+    id: "keep all paper-visible"
+    alias: "visibility_contract"
+  config_data_pipeline:
+    id: "config data-pipeline"
+    alias: "pipeline_config"
+  config_factory:
+    id: "config factory"
+    alias: "factory_config"
+  registry_configuration_artifact:
+    id: "registry configuration artifact"
+    alias: "registry_config"
+  decides_which:
+    id: "decides which"
+    alias: "decision_logic"
+  config_tests_artifact_writer_expose_explicit:
+    id: "config tests artifact-writer expose explicit"
+    alias: "writer_config"
+  bind_each_baseline:
+    id: "bind each baseline"
+    alias: "baseline_binding"
+  worse_ablation_performance_without_fabricating:
+    id: "worse ablation performance without fabricating"
+    alias: "ablation_logic"
+
+# ==========================================
+# 2. Dataset & Benchmark Loaders
+# ==========================================
+dataset_loaders:
+  gsm8k: { id: "gsm8k", alias: "gsm8k", setup: "src/data/bbox_qa_benchmark.py", validation: true }
+  strategyqa: { id: "strategyqa", alias: "strategyqa", setup: "src/data/bbox_qa_benchmark.py", validation: true }
+  truthfulqa: { id: "truthfulqa", alias: "truthfulqa", setup: "src/data/bbox_qa_benchmark.py", validation: true }
+  scienceqa: { id: "scienceqa", alias: "scienceqa", setup: "src/data/bbox_qa_benchmark.py", validation: true }
+  toxigen: { id: "toxigen", alias: "toxigen", setup: "src/data/bbox_qa_benchmark.py", validation: true }
+
+# ==========================================
+# 3. Method & Baseline Selectors
+# ==========================================
+method_selectors:
+  - ours
+  - chain_of_thought
+  - oracle
+  - heuristic
+  - roberta
+  - fine_tuning
+  - lora
+  - sft_lora
+  - azure_sft
+  - mlm
+  - bbox_adapter
+  - ranking_nce
+  - online_adaptation
+  - single_step_inference
+  - full_step_inference
+  - ai_feedback
+  - ppo
+  - energy_based_model
+
+# ==========================================
+# 4. Parameter Sweeps & Bounded Configs
+# ==========================================
+parameter_sweeps:
+  temperature: { default: 0.7, values: [0.1, 0.5, 0.7, 1.0] }
+  learning_rate: { default: 1e-4, values: [1e-5, 5e-5, 1e-4, 5e-4] }
+  batch_size: { default: 64, values: [16, 32, 64, 128] }
+  beam_size: { default: 3, values: [1, 3, 5] }
+  iteration_count: { default: 3, values: [0, 1, 2, 3, 4] }
+  adapter_size: { default: 0.1, values: [0.1, 0.3] }
+  epochs: { default: 3, values: [1, 2, 3, 5] }
+
+# ==========================================
+# 5. Fixed Hyperparameter Anchors
+# ==========================================
+fixed_hyperparameters:
+  batch_size_64: 64
+  nearest_neighbor_upsample: true
+  alpha: 0.01
+  ema_decay: 0.99
+  r_sft_lora: 128
+  ell_2: true
+  theta: true
+  y_2: true # Representing y_+^2 and y_-^2 from Equation 3
+  equation: "Equation 3"
+
+# ==========================================
+# 6. Formula & Algorithm Symbol Inventory
+# ==========================================
+symbol_inventory:
+  - ell_2
+  - alpha
+  - theta
+  - y_2
+  - y_plus_2
+  - y_minus_2
+  - x_i
+  - y_i_t
+  - Y_S
+  - Y_T
+  - p_LLM
+  - Z_theta
+  - LLM
+  - g_theta
+  - p_theta
+  - x_k
+  - p_data
+  - p_LM
+  - prod_ineqk
+  - sum_k
+  - LM
+  - min_theta
+  - max_theta
+  - nabla_theta
+  - y_plus
+  - gradient
+  - search
+  - loss
+  - rank
+  - update
+
+# ==========================================
+# 7. Numeric & Default Anchors
+# ==========================================
+numeric_anchors:
+  - 1
+  - 2
+  - 0
+  - 4
+  - 3
+  - 5
+  - 3.5
+  - 44
+  - 88
+  - 66
+  - 11
+  - 128
+  - 0.3
+  - 384
+  - 14
+  - 21
+
+# ==========================================
+# 8. Algorithm Implementation Hooks
+# ==========================================
+algorithm_hooks:
+  adapter_update:
+    section: "3.2. Adapter Update"
+    loss: "ranking_nce"
+    symbols: [p_theta, p_LLM, p_LM, prod_ineqk, LLM, sum_k, LM, theta, g_theta, min_theta, max_theta, nabla_theta, alpha, x_k]
+    numeric_defaults: [1, 2]
+    terms: [eq., loss, gradient, rank, sample]
+    steps:
+      - "Instead, we employ a ranking-based NCE loss that prioritizes ranking true data samples higher than noise (Ma & Collins, 2018)."
+      - "Assuming the auxiliary label differentiates between a positive sample from data and a negative one from the LLM, we consider the samples {x_k} to estimate the posterior of the label distribution."
+  online_adaptation:
+    section: "3.4. Online Adaptation"
+    algorithm: "Algorithm 1"
+    symbols: [p_theta, theta, nabla_theta, theta_t, p_data, y_plus, y_minus, x_i, y_i, y_i_plus_t, y_i_minus_t, y_i_j, y_i_1, y_i_2]
+    numeric_defaults: [4, 1, 0, 2]
+    terms: [eq., algorithm, loss, ema, compute, update, select, sample]
+    steps:
+      - "According to the NCE loss function in Eq.(3), it is essential to draw positive samples from the real distribution of the target domain."
+      - "We propose an online adaptation framework (Algorithm 1) with iterative sampling and training."
+  ablation_study:
+    section: "4.5. Ablation Study: Effect of Ranking-based NCE Loss"
+    comparison: ["ranking_nce", "mlm"]
+    terms: [loss, mask, rank, search]
+    steps:
+      - "We compare the efficacy of ranking-based NCE loss against the Masked Language Modeling (MLM) loss."
+      - "For the MLM-based approach, we generate text chunks from the groundtruth data, randomly masking words."
+  nce_gradients_proof:
+    section: "B. Proof for Ranking-based NCE Gradients"
+    symbols: [theta, g_theta, sum_k, nabla_theta, sum_m, p_theta, p_data, k_prime, x_k, x_m]
+    numeric_defaults: [2, 1]
+    terms: [eq., loss, gradient, rank, compute]
+    steps:
+      - "We can rewrite the loss function in Eq.(2) as: -ell(theta) = E[g_theta(x) - log sum exp(g_theta(x_k))]"
+  ebm_adaptation:
+    section: "3.1. Black-Box LLM Adaptation as EBM"
+    symbols: [p_LLM, Z_theta, LLM, g_theta, p_theta, theta, x_i, y_i_t, Y_S, Y_T]
+    numeric_defaults: [1]
+    terms: [equation, ema]
+    formula: "p_theta(y|x) = p_LLM(y|x) * exp(g_theta(x, y)) / Z_theta(x)"
+  addendum:
+    section: "addendum"
+    symbols: [ell_2, alpha, theta, y_plus_2, y_minus_2]
+    terms: [equation]
+    formula: "alpha * E[g_theta(x, y_+)^2] + alpha * E[g_theta(x, y_-)^2]"
+  additional_baseline:
+    section: "F.2. Additional Baseline Details"
+    symbols: [alpha]
+    numeric_defaults: [0, 128, 0.3, 384, 2]
+    formula: "set r=128 for SFT-LoRA to maintain the same size as the 0.1B version of BBOX-ADAPTER."
+
+# ==========================================
+# 9. Artifact Writing Hooks
+# ==========================================
+artifact_hooks:
+  write_config_resolved_artifact: "results/config_resolved.json"
+  write_sensitivity_report_artifact: "results/sensitivity_report.json"
+  write_figure_1_artifact: "results/figures/figure_1.png"
+  write_table_1_artifact: "results/tables/table_1.csv"
+  write_figure_2_artifact: "results/figures/figure_2.png"
+  write_table_2_artifact: "results/tables/table_2.csv"
+  write_table_3_artifact: "results/tables/table_3.csv"
+  write_table_4_artifact: "results/tables/table_4.csv"
+  write_table_5_artifact: "results/tables/table_5.csv"
+  write_figure_3_artifact: "results/figures/figure_3.png"
+  write_table_6_artifact: "results/tables/table_6.csv"
+  write_figure_4_artifact: "results/figures/figure_4.png"
+  write_table_7_artifact: "results/tables/table_7.csv"
+  run_table_8_route: "results/tables/table_8.csv"
+  write_table_8_artifact: "results/tables/table_8.csv"
+  write_figure_5_artifact: "results/figures/figure_5.png"
+  write_table_9_artifact: "results/tables/table_9.csv"
+  write_figure_6_artifact: "results/figures/figure_6.png"
+  write_table_10_artifact: "results/tables/table_10.csv"

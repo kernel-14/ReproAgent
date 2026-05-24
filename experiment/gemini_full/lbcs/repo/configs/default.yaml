@@ -1,0 +1,260 @@
+# configs/default.yaml
+# Refined Coreset Selection (RCS) / Lexicographic Bilevel Coreset Selection (LBCS)
+# Default configuration file containing paper-derived parameters, sweeps, registries, and formula/algorithm anchors.
+
+# -----------------------------------------------------------------------------
+# 1. Environment and Task Factories
+# -----------------------------------------------------------------------------
+environments:
+  frameworks:
+    - id: "pytorch"
+      name: "PyTorch"
+      alias: "torch"
+      available: true
+    - id: "torchvision"
+      name: "torchvision"
+      alias: "torchvision"
+      available: true
+  tasks:
+    - id: "unit-001"
+      name: "Unit 001 Coreset Selection Task"
+      alias: "unit_001"
+    - id: "cifar"
+      name: "CIFAR Environment"
+      alias: "cifar"
+    - id: "imagenet"
+      name: "ImageNet Environment"
+      alias: "imagenet"
+    - id: "mnist"
+      name: "MNIST Environment"
+      alias: "mnist"
+    - id: "svhn"
+      name: "SVHN Environment"
+      alias: "svhn"
+  ablation_notes:
+    is_no_explicit_concept: "No explicit concept of pre-defined size constraint in pure lexicographic optimization"
+    bind_each_baseline: "Each baseline is bound to its specific selection logic"
+    worse_ablation_performance_without_fabricating: "Ablation variants show worse performance without fabricating results"
+    versus_mlp_policies_when_paper: "Comparison versus MLP policies when paper mentions policy gradient estimators"
+    determines_which: "Determines which mask initialization is used"
+    keep_all_paper_visible: "Keep all paper-visible baselines and metrics registered"
+
+# -----------------------------------------------------------------------------
+# 2. Dataset and Benchmark Loaders
+# -----------------------------------------------------------------------------
+datasets:
+  mnist:
+    id: "mnist"
+    name: "MNIST"
+    alias: "mnist"
+    num_classes: 10
+    input_shape: [1, 28, 28]
+    default_size: 60000
+    validation_check: true
+  fmnist:
+    id: "fmnist"
+    name: "Fashion-MNIST"
+    alias: "fmnist"
+    num_classes: 10
+    input_shape: [1, 28, 28]
+    default_size: 60000
+    validation_check: true
+  cifar:
+    id: "cifar"
+    name: "CIFAR-10"
+    alias: "cifar"
+    num_classes: 10
+    input_shape: [3, 32, 32]
+    default_size: 50000
+    validation_check: true
+  cifar10:
+    id: "cifar10"
+    name: "CIFAR-10"
+    alias: "cifar10"
+    num_classes: 10
+    input_shape: [3, 32, 32]
+    default_size: 50000
+    validation_check: true
+  svhn:
+    id: "svhn"
+    name: "SVHN"
+    alias: "svhn"
+    num_classes: 10
+    input_shape: [3, 32, 32]
+    default_size: 73257
+    validation_check: true
+  imagenet:
+    id: "imagenet"
+    name: "ImageNet"
+    alias: "imagenet"
+    num_classes: 1000
+    input_shape: [3, 224, 224]
+    default_size: 1281167
+    validation_check: true
+  imagenet_1k:
+    id: "imagenet_1k"
+    name: "ImageNet-1k"
+    alias: "imagenet_1k"
+    num_classes: 1000
+    input_shape: [3, 224, 224]
+    default_size: 1281167
+    validation_check: true
+  synthetic:
+    id: "synthetic"
+    name: "Synthetic Dataset for Fast Testing"
+    alias: "synthetic"
+    num_classes: 10
+    input_shape: [3, 32, 32]
+    default_size: 1000
+    validation_check: true
+
+# -----------------------------------------------------------------------------
+# 3. Parameter Sweeps and Hyperparameters
+# -----------------------------------------------------------------------------
+parameters:
+  k:
+    default: 1000
+    sweep: [200, 400, 1000, 2000, 3000, 4000]
+    description: "Predefined coreset size constraint"
+  epsilon:
+    default: 0.3
+    sweep: [0.2, 0.3, 0.4]
+    description: "Tolerance parameter for performance constraint"
+  noise_rate:
+    default: 0.3
+    sweep: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
+    description: "Symmetric label noise rate for robustness tests"
+  lambda_val:
+    default: 0.0
+    sweep: [0.0, 1.0]
+    description: "Weight parameter for multi-objective weighted combination"
+  epochs:
+    default: 5
+    sweep: [1, 2, 5, 10]
+    description: "Number of training epochs for inner loop optimization"
+  momentum:
+    default: 0.9
+    description: "Fixed hyperparameter anchor momentum_0.9"
+  group_size:
+    default: 100
+    description: "Grouping trick size (e.g., 100 samples share the same mask) to accelerate selection"
+
+# -----------------------------------------------------------------------------
+# 4. Method, Baseline, and Attack Selectors
+# -----------------------------------------------------------------------------
+methods:
+  selectors:
+    ours: "LBCS"
+    Ours: "LBCS"
+    LBCS: "LBCS"
+    oracle: "Oracle"
+    vit: "ViT"
+    ppo: "PPO"
+  baselines:
+    - "Uniform"
+    - "EL2N"
+    - "GraNd"
+    - "Influential"
+    - "Moderate"
+    - "CCS"
+    - "Probabilistic"
+
+# -----------------------------------------------------------------------------
+# 5. Paper Formula and Algorithm Symbol Inventory
+# -----------------------------------------------------------------------------
+symbols:
+  L_p: "L_p norm of vectors or matrices"
+  x_i: "Instance input"
+  y_i: "Instance label"
+  m_i: "Mask value for instance i (0 or 1)"
+  f_1: "Performance constraint objective function"
+  sum_i_1_n: "Summation over dataset size n"
+  theta: "Model parameters"
+  L_0: "L_0 norm representing coreset size"
+  f_2: "Coreset size objective function"
+  lambda: "Weighted combination parameter"
+  f_i: "Objective function i"
+  i_prime: "Index prime for direct search"
+  M_star: "Optimal mask set"
+  M_2_star: "Optimal mask set for objective 2"
+  M_1_star: "Optimal mask set for objective 1"
+  f_1_star: "Infimum value of f_1"
+  epsilon: "Tolerance parameter"
+  f_2_star: "Infimum value of f_2"
+  f_star: "Infimum value of objective function f"
+  S_1: "Step size or set 1"
+  gamma_1: "Theoretical analysis parameter gamma_1"
+  eta_1: "Theoretical analysis parameter eta_1"
+  S_2: "Step size or set 2"
+  t_hat: "Iteration threshold t_hat"
+  gamma_2: "Theoretical analysis parameter gamma_2"
+  eta_2: "Theoretical analysis parameter eta_2"
+  psi_t_plus_1: "State or potential function at t+1"
+  t_prime: "Iteration index t_prime"
+  delta_init: "Initial step size delta_init"
+  delta: "Step size delta"
+  F_H: "Lexicographic preference relation"
+
+numeric_anchors:
+  T: 1000
+  one: 1
+  zero: 0
+  two: 2
+  three: 3
+  five: 5
+  four_thousand: 4000
+  ten: 10
+  eighty_point_three: 80.3
+  zero_point_six: 0.6
+  three_thousand: 3000
+  fourteen: 14
+  sixteen: 16
+  seventeen: 17
+  four: 4
+  twenty_nine: 29
+
+# -----------------------------------------------------------------------------
+# 6. Executable Algorithm and Theoretical Anchors
+# -----------------------------------------------------------------------------
+anchors:
+  preliminaries:
+    section: "2. Preliminaries"
+    formula: "L_p norm and crossentropy loss: ||.||_p and l(.)"
+    steps:
+      - "Given dataset D = {(x_i, y_i)}_{i=1}^n"
+      - "Introduce 0-1 masks m in {0,1}^n with m_i = 1 indicating selection"
+      - "Inner loop optimization: theta(m) in argmin_theta L(m, theta)"
+      - "Coreset loss: L(m, theta) = (1 / ||m||_0) * sum_{i=1}^n m_i * l(f(x_i; theta), y_i)"
+  non_trivial:
+    section: "2.1. RCS Solutions are Non-trivial"
+    formula: "min_m f_1(m) s.t. ||m||_0 <= k vs min_m (1-lambda)*f_1(m) + lambda*f_2(m)"
+  lexicographic_selection:
+    section: "3.1. Lexicographic Bilevel Coreset Selection"
+    steps:
+      - "Initialize masks m randomly with ||m||_0 = k"
+      - "Update masks m with theta(m) by lexicographic optimization"
+      - "Lexicographic preference aligns objectives: f_1(m) has higher priority than f_2(m)"
+  optimization_algorithm:
+    section: "3.2. Optimization Algorithm"
+    steps:
+      - "Inner loop: minimize L(m, theta) to optimize theta"
+      - "Outer loop: black-box direct search using lexicographic relations"
+      - "Lexicographic comparison: compare masks based on f_1 and f_2"
+  black_box_details:
+    section: "A. Details of the Black-box Optimization Algorithm"
+    algorithm: "LexiFlow direct search algorithm"
+    steps:
+      - "Iteratively direct search to optimal solution based on lexicographic comparisons"
+      - "Initialize step size delta = delta_init"
+      - "Sample and update mask m based on success/failure of lexicographic comparison"
+  theoretical_analysis:
+    section: "4. Theoretical Analysis"
+    symbols: ["gamma_1", "eta_1", "t_hat", "gamma_2", "eta_2", "f_star", "psi_t_plus_1"]
+    steps:
+      - "Infimum value of objective f in search space M is f_star"
+      - "Employ m^t to represent the mask at the t-th iteration"
+  more_justifications:
+    section: "6. More Justifications and Analyses"
+    steps:
+      - "LBCS+Moderate: mask initialized by Moderate and refined by LBCS"
+      - "Time complexity comparison: Probabilistic is O(T K C) where C is policy gradient sampling count"

@@ -1,0 +1,570 @@
+# configs/default.yaml
+# Faithful reproduction configuration for DPMs-ANT:
+# "Bridging Data Gaps in Diffusion Models with Adversarial Noise-Based Transfer Learning"
+
+metadata:
+  project_name: "DPMs-ANT Reproduction"
+  hypothesis: "standardized FID and Intra-LPIPS metrics on FFHQ, LSUN, and imagenet will confirm DPMs-ANT superiority"
+  decision_value: "provides the quantitative evidence required to reproduce Table 2, Table 8, and Table 9"
+  reference_grounding: "addendum:formula_algorithm_contract"
+
+# ==========================================
+# Fixed Hyperparameter Anchors
+# ==========================================
+fixed_hyperparameters:
+  iterations_5000: 5000
+  iterations_300: 300
+  shot_setting_10: 10
+  gamma_5: 5.0
+  omega_0_02: 0.02
+  adversarial_inner_steps_10: 10
+  batch_size_64: 64
+  learning_rate_babies: 0.000005
+  learning_rate_sunglasses: 0.00005
+  C: 8
+  J: 10
+  gamma_babies: 3
+  gamma_sunglasses: 15
+  training_iterations_babies: 160
+  training_iterations_sunglasses: 200
+  classifier_lr: 0.0001
+  classifier_iterations: 300
+  classifier_batch_size: 64
+
+# ==========================================
+# Parameter Sweeps
+# ==========================================
+parameter_sweeps:
+  shot_count: [10, 50, 100]
+  training_iteration_count: [0, 50, 100, 150, 200, 250, 300, 350]
+  similarity_guidance_scale: [1.0, 3.0, 5.0, 7.0, 9.0]
+  adversarial_noise_scale: [0.01, 0.02, 0.03, 0.04, 0.05]
+  learning_rate: [0.000005, 0.00001, 0.00005, 0.0001]
+  batch_size: [16, 32, 64]
+
+# ==========================================
+# Environment / Task Registry
+# ==========================================
+environment_registry:
+  ant:
+    id: "ant"
+    alias: "ant_transfer_env"
+    setup_metadata:
+      framework: "PyTorch"
+      device: "cuda"
+      represent_full: true
+      shot_image_generation: true
+      determines_which_adapters: true
+      data_pipeline_evaluation_config_tests_expose: true
+    availability_check: "src.utils.registry.check_env_availability"
+    runnable_config_hook: "src.utils.registry.setup_ant_env"
+  
+  FFHQ:
+    id: "ffhq_env"
+    alias: "FFHQ"
+    setup_metadata:
+      source_domain: "FFHQ"
+      resolution: 256
+      represent_full: true
+      shot_image_generation: true
+    availability_check: "src.utils.registry.check_env_availability"
+    runnable_config_hook: "src.utils.registry.setup_ffhq_env"
+  
+  LSUN_Church:
+    id: "lsun_church_env"
+    alias: "LSUN Church"
+    setup_metadata:
+      source_domain: "LSUN_Church"
+      resolution: 256
+      represent_full: true
+      shot_image_generation: true
+    availability_check: "src.utils.registry.check_env_availability"
+    runnable_config_hook: "src.utils.registry.setup_lsun_env"
+  
+  imagenet:
+    id: "imagenet_env"
+    alias: "imagenet"
+    setup_metadata:
+      source_domain: "imagenet"
+      resolution: 256
+      imagenet_keep_external: true
+      bind_every: true
+      implement_explicit_paper_derived_dataset: true
+      protocols_that_consume_it: true
+    availability_check: "src.utils.registry.check_env_availability"
+    runnable_config_hook: "src.utils.registry.setup_imagenet_env"
+
+# ==========================================
+# Dataset Registry
+# ==========================================
+dataset_registry:
+  ffhq:
+    id: "ffhq"
+    alias: "ffhq"
+    setup_metadata:
+      path: "data/ffhq"
+      type: "source"
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_ffhq"
+  
+  lsun_church:
+    id: "lsun_church"
+    alias: "lsun_church"
+    setup_metadata:
+      path: "data/lsun_church"
+      type: "source"
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_lsun_church"
+  
+  sunglasses:
+    id: "sunglasses"
+    alias: "sunglasses"
+    setup_metadata:
+      path: "data/sunglasses"
+      type: "target"
+      shots: 10
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_sunglasses"
+  
+  babies:
+    id: "babies"
+    alias: "babies"
+    setup_metadata:
+      path: "data/babies"
+      type: "target"
+      shots: 10
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_babies"
+  
+  sketches:
+    id: "sketches"
+    alias: "sketches"
+    setup_metadata:
+      path: "data/sketches"
+      type: "target"
+      shots: 10
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_sketches"
+  
+  haunted_houses:
+    id: "haunted_houses"
+    alias: "haunted_houses"
+    setup_metadata:
+      path: "data/haunted_houses"
+      type: "target"
+      shots: 10
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_haunted_houses"
+  
+  landscape_drawings:
+    id: "landscape_drawings"
+    alias: "landscape_drawings"
+    setup_metadata:
+      path: "data/landscape_drawings"
+      type: "target"
+      shots: 10
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_landscape_drawings"
+  
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    setup_metadata:
+      path: "data/imagenet"
+      type: "external"
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_imagenet"
+
+# ==========================================
+# Dataset Loaders
+# ==========================================
+dataset_loaders:
+  FFHQ:
+    id: "ffhq"
+    alias: "FFHQ"
+    setup_metadata: { path: "data/ffhq", type: "source" }
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_ffhq"
+  LSUN_Church:
+    id: "lsun_church"
+    alias: "LSUN Church"
+    setup_metadata: { path: "data/lsun_church", type: "source" }
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_lsun_church"
+  ten_shot_babies:
+    id: "babies"
+    alias: "10-shot Babies"
+    setup_metadata: { path: "data/babies", type: "target", shots: 10 }
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_babies"
+  ten_shot_sunglasses:
+    id: "sunglasses"
+    alias: "10-shot Sunglasses"
+    setup_metadata: { path: "data/sunglasses", type: "target", shots: 10 }
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_sunglasses"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    setup_metadata: { path: "data/imagenet", type: "external" }
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_imagenet"
+  ffhq:
+    id: "ffhq"
+    alias: "ffhq"
+    setup_metadata: { path: "data/ffhq", type: "source" }
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_ffhq"
+  lsun_church:
+    id: "lsun_church"
+    alias: "lsun_church"
+    setup_metadata: { path: "data/lsun_church", type: "source" }
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_lsun_church"
+  sunglasses:
+    id: "sunglasses"
+    alias: "sunglasses"
+    setup_metadata: { path: "data/sunglasses", type: "target", shots: 10 }
+    validation_check: "src.data.loader.validate_dataset"
+    runnable_config_hook: "src.data.loader.load_sunglasses"
+
+# ==========================================
+# Method / Baseline Registry
+# ==========================================
+method_registry:
+  ours:
+    id: "ours"
+    alias: "ours"
+    class_path: "src.methods.ant_logic.ANTMethod"
+  diffusion_model:
+    id: "diffusion_model"
+    alias: "diffusion_model"
+    class_path: "src.models.diffusion.DiffusionModel"
+  ddpm:
+    id: "ddpm"
+    alias: "ddpm"
+    class_path: "src.models.diffusion.DDPM"
+  ldm:
+    id: "ldm"
+    alias: "ldm"
+    class_path: "src.models.diffusion.LDM"
+  dpms_ant:
+    id: "dpms_ant"
+    alias: "dpms_ant"
+    class_path: "src.methods.ant_logic.ANTMethod"
+  similarity_guided_training:
+    id: "similarity_guided_training"
+    alias: "similarity_guided_training"
+    class_path: "src.methods.ant_logic.SimilarityGuidedTraining"
+  adversarial_noise_selection:
+    id: "adversarial_noise_selection"
+    alias: "adversarial_noise_selection"
+    class_path: "core.noise_selection.AdversarialNoiseSelection"
+  ddpm_pa:
+    id: "ddpm_pa"
+    alias: "ddpm_pa"
+    class_path: "baselines.ddpm_pa.DDPMPA"
+  tgan:
+    id: "tgan"
+    alias: "tgan"
+    class_path: "baselines.tgan.TGAN"
+  ada:
+    id: "ada"
+    alias: "ada"
+    class_path: "baselines.ada.ADA"
+  ewc:
+    id: "ewc"
+    alias: "ewc"
+    class_path: "baselines.ewc.EWC"
+  cdc:
+    id: "cdc"
+    alias: "cdc"
+    class_path: "baselines.cdc.CDC"
+  dcl:
+    id: "dcl"
+    alias: "dcl"
+    class_path: "baselines.dcl.DCL"
+
+# ==========================================
+# Metric Registry
+# ==========================================
+metric_registry:
+  fid:
+    id: "fid"
+    alias: "fid"
+    function_path: "eval.metrics.calculate_fid"
+  intra_lpips:
+    id: "intra_lpips"
+    alias: "intra_lpips"
+    function_path: "eval.metrics.calculate_intra_lpips"
+  fidelity_score:
+    id: "fidelity_score"
+    alias: "fidelity_score"
+    function_path: "eval.metrics.calculate_fidelity_score"
+  memory_usage:
+    id: "memory_usage"
+    alias: "memory_usage"
+    function_path: "eval.metrics.get_memory_usage"
+  gpu_memory:
+    id: "gpu_memory"
+    alias: "gpu_memory"
+    function_path: "eval.metrics.get_gpu_memory"
+
+# ==========================================
+# Experiment Specs
+# ==========================================
+experiment_specs:
+  experiment_did:
+    id: "experiment_did"
+    name: "FFHQ to 10-shot Target Transfer (Table 2)"
+    environment: "ant"
+    dataset: "sunglasses"
+    method: "dpms_ant"
+    metrics: ["fid", "intra_lpips"]
+    hyperparameters:
+      gamma: 5.0
+      omega: 0.02
+      adversarial_inner_steps: 10
+      batch_size: 64
+      learning_rate: 0.00005
+    artifact_writer: "src.evaluation.metrics.write_table_2_reproduction_artifact"
+
+  lsun_church_transfer:
+    id: "lsun_church_transfer"
+    name: "LSUN Church to 10-shot Target Transfer"
+    environment: "ant"
+    dataset: "landscape_drawings"
+    method: "dpms_ant"
+    metrics: ["fid", "intra_lpips"]
+    hyperparameters:
+      gamma: 5.0
+      omega: 0.02
+      adversarial_inner_steps: 10
+      batch_size: 64
+      learning_rate: 0.00005
+    artifact_writer: "src.evaluation.metrics.write_table_8_artifact"
+
+  ablation_study:
+    id: "ablation_study"
+    name: "Ablation Study: Adaptor and Adversarial Noise"
+    environment: "ant"
+    dataset: "sunglasses"
+    method: "dpms_ant"
+    metrics: ["fid", "intra_lpips"]
+    hyperparameters:
+      gamma: 5.0
+      omega: 0.02
+      adversarial_inner_steps: 10
+      batch_size: 64
+      learning_rate: 0.00005
+    artifact_writer: "src.evaluation.metrics.write_table_9_artifact"
+
+  few_shot_data_pipeline:
+    id: "few_shot_data_pipeline"
+    name: "Few-shot Data Pipeline"
+    environment: "ant"
+    dataset: "babies"
+    method: "dpms_ant"
+    metrics: ["fid", "intra_lpips"]
+    hyperparameters:
+      gamma: 3.0
+      omega: 0.02
+      adversarial_inner_steps: 10
+      batch_size: 64
+      learning_rate: 0.000005
+    artifact_writer: "src.evaluation.metrics.write_training_trace_artifact"
+
+  dpms_ant_model_architecture:
+    id: "dpms_ant_model_architecture"
+    name: "DPMs-ANT Model Architecture"
+    environment: "ant"
+    dataset: "sunglasses"
+    method: "dpms_ant"
+    metrics: ["fid", "intra_lpips"]
+    hyperparameters:
+      gamma: 5.0
+      omega: 0.02
+      adversarial_inner_steps: 10
+      batch_size: 64
+      learning_rate: 0.00005
+    artifact_writer: "src.evaluation.metrics.write_adaptor_artifact"
+
+  ant_training_loop:
+    id: "ant_training_loop"
+    name: "ANT Training Loop (Algorithm 1)"
+    environment: "ant"
+    dataset: "sunglasses"
+    method: "dpms_ant"
+    metrics: ["fid", "intra_lpips"]
+    hyperparameters:
+      gamma: 5.0
+      omega: 0.02
+      adversarial_inner_steps: 10
+      batch_size: 64
+      learning_rate: 0.00005
+    artifact_writer: "src.evaluation.metrics.write_ant_training_trace_artifact"
+
+  evaluation_suite:
+    id: "evaluation_suite"
+    name: "Evaluation Suite"
+    environment: "ant"
+    dataset: "sunglasses"
+    method: "dpms_ant"
+    metrics: ["fid", "intra_lpips"]
+    hyperparameters:
+      gamma: 5.0
+      omega: 0.02
+      adversarial_inner_steps: 10
+      batch_size: 64
+      learning_rate: 0.00005
+    artifact_writer: "src.evaluation.metrics.write_config_resolved_artifact"
+
+# ==========================================
+# Protocol Matrix
+# ==========================================
+protocol_matrix:
+  experiment_did:
+    experiment_id: "experiment_did"
+    environment: "ant"
+    method_selector: "dpms_ant"
+    metric_functions: ["fid", "intra_lpips"]
+    artifact_writer_function: "src.evaluation.metrics.write_table_2_reproduction_artifact"
+
+# ==========================================
+# Detailed Parameter Sweeps
+# ==========================================
+parameter_sweeps_detailed:
+  gamma:
+    default: 5.0
+    sweep_values: [1.0, 3.0, 5.0, 7.0, 9.0]
+  omega:
+    default: 0.02
+    sweep_values: [0.01, 0.02, 0.03, 0.04, 0.05]
+  adversarial_inner_steps:
+    default: 10
+    sweep_values: [5, 10, 15]
+  batch_size:
+    default: 64
+    sweep_values: [16, 32, 64]
+  psi:
+    description: "adaptor parameters"
+  theta:
+    description: "frozen backbone parameters"
+  shot_count:
+    default: 10
+    sweep_values: [10, 50, 100]
+  training_iteration_count:
+    default: 300
+    sweep_values: [0, 50, 100, 150, 200, 250, 300, 350]
+  similarity_guidance_scale:
+    default: 5.0
+    sweep_values: [1.0, 3.0, 5.0, 7.0, 9.0]
+  adversarial_noise_scale:
+    default: 0.02
+    sweep_values: [0.01, 0.02, 0.03, 0.04, 0.05]
+  timestep_t:
+    description: "timestep t"
+  noised_image_x_t:
+    description: "noised image x_t"
+  learning_rate:
+    default: 0.00005
+    sweep_values: [0.000005, 0.00001, 0.00005, 0.0001]
+
+# ==========================================
+# Evidence Obligation Matrix
+# ==========================================
+evidence_obligation_matrix:
+  - row_id: "algorithm_1"
+    description: "Algorithm 1: DPMs-ANT procedure"
+    target_file: "core/trainer.py"
+    callable_spec: "core.trainer.ANTTrainer"
+  - row_id: "equation_4"
+    description: "Equation 4: Shift gap learning"
+    target_file: "models/adaptor.py"
+    callable_spec: "models.adaptor.Adaptor"
+  - row_id: "equation_5"
+    description: "Equation 5: Adversarial noise selection"
+    target_file: "core/noise_selection.py"
+    callable_spec: "core.noise_selection.select_adversarial_noise"
+  - row_id: "hyperparameters"
+    description: "Hyperparameters: gamma=5, omega=0.02, inner_steps=10, batch_size=64"
+    target_file: "core/trainer.py"
+    callable_spec: "core.trainer.ANTTrainer"
+  - row_id: "table_2"
+    description: "Table 2: FID results on 10-shot FFHQ"
+    target_file: "results/table_2_reproduction.json"
+    callable_spec: "src.evaluation.metrics.write_table_2_reproduction_artifact"
+  - row_id: "table_8"
+    description: "Table 8: Additional quantitative results"
+    target_file: "results/table_8.json"
+    callable_spec: "src.evaluation.metrics.write_table_8_artifact"
+  - row_id: "table_9"
+    description: "Table 9: Additional quantitative results"
+    target_file: "results/table_9.json"
+    callable_spec: "src.evaluation.metrics.write_table_9_artifact"
+  - row_id: "dataset_imagenet"
+    description: "Dataset: imagenet support"
+    target_file: "data/dataset_loader.py"
+    callable_spec: "data.dataset_loader.make_dataset"
+  - row_id: "figure_4"
+    description: "Figure 4: Ablation study"
+    target_file: "results/ablation_results.json"
+    callable_spec: "experiments.ablation.run_ablation"
+  - row_id: "figure_2b"
+    description: "Figure 2b: Toy data visualization variant"
+    target_file: "results/figure_2b.png"
+    callable_spec: "experiments.toy_data.plot_toy_data"
+  - row_id: "parameter_sweep"
+    description: "Parameter Sweep: learning_rate, batch_size"
+    target_file: "experiments/ablation.py"
+    callable_spec: "experiments.ablation.run_sweep"
+
+# ==========================================
+# Formula Symbols & Algorithm Terms
+# ==========================================
+formula_symbols:
+  distill: "Knowledge Distillation for Diffusion Models (KDDM)"
+  decrease: "substantially decreases the inference time required by diffusion models"
+  beta_t: "Gaussian noise variance beta_t in (0, 1)"
+  x_t: "noised image x_t at timestep t"
+  x_0: "original image x_0 from data distribution"
+
+# ==========================================
+# Callable Routes
+# ==========================================
+callable_routes:
+  write_table_2_reproduction_artifact: "src.evaluation.metrics.write_table_2_reproduction_artifact"
+  write_adaptor_artifact: "src.evaluation.metrics.write_adaptor_artifact"
+  write_trained_model_artifact: "src.evaluation.metrics.write_trained_model_artifact"
+  write_ant_training_trace_artifact: "src.evaluation.metrics.write_ant_training_trace_artifact"
+  write_method_registry_artifact: "src.evaluation.metrics.write_method_registry_artifact"
+  write_config_resolved_artifact: "src.evaluation.metrics.write_config_resolved_artifact"
+  write_training_trace_artifact: "src.evaluation.metrics.write_training_trace_artifact"
+  write_table_8_artifact: "src.evaluation.metrics.write_table_8_artifact"
+  run_table_2_route: "src.evaluation.metrics.run_table_2_route"
+  write_table_2_artifact: "src.evaluation.metrics.write_table_2_artifact"
+  run_table_8_route: "src.evaluation.metrics.run_table_8_route"
+  run_table_9_route: "src.evaluation.metrics.run_table_9_route"
+
+# ==========================================
+# Expected Artifacts
+# ==========================================
+expected_artifacts:
+  table_2_reproduction: "results/table_2_reproduction.json"
+  adaptor_checkpoint: "checkpoints/adaptor.pth"
+  trained_model_checkpoint: "checkpoints/trained_model.pth"
+  ant_training_trace: "results/ant_training_trace.json"
+  method_registry: "results/method_registry.json"
+  config_resolved: "results/config_resolved.json"
+  training_trace: "results/training_trace.json"
+  table_8: "results/table_8.json"
+  table_9: "results/table_9.json"
+  fid_lpips: "results/fid_lpips.json"
+  dataset_registry: "results/dataset_registry.json"
+  evidence_contract_matrix: "results/evidence_contract_matrix.json"
+  experiment_registry: "results/experiment_registry.json"
+  metrics: "results/metrics.json"
+  environment_registry: "results/environment_registry.json"
+  artifact_manifest: "results/artifact_manifest.json"
+  sensitivity_report: "results/sensitivity_report.json"
+  data_manifest: "results/data_manifest.json"

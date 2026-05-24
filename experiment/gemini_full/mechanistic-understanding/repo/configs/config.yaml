@@ -1,0 +1,282 @@
+# configs/config.yaml
+# Configuration file for reproducing "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity"
+
+project_metadata:
+  name: "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity"
+  hypothesis: "DPO can reduce model toxicity by suppressing the likelihood of negative samples (toxic outputs), and is sensitive to the beta parameter."
+  decision_value: "Generate aligned models (GPT2_DPO, Llama2_DPO) for mechanistic difference comparison."
+
+active_routes:
+  toxic_vector_extraction_and_identification:
+    name: "Toxic Vector Extraction and Identification"
+    enabled: true
+    description: "Extract and validate toxicity vectors in pre-trained models and establish baseline classifiers."
+  toxicity_intervention_via_vector_subtraction:
+    name: "Toxicity Intervention via Vector Subtraction"
+    enabled: true
+    description: "Perform intervention experiments using vector subtraction to reduce toxicity."
+  dpo_alignment_for_toxicity_reduction:
+    name: "DPO Alignment for Toxicity Reduction"
+    enabled: true
+    description: "Construct pairwise toxicity data and execute DPO alignment training."
+  mechanistic_analysis_of_dpo_alignment:
+    name: "Mechanistic Analysis of DPO Alignment"
+    enabled: true
+    description: "Analyze activations and verify DPO mechanisms through intervention experiments."
+  un_aligning_dpo_via_activation_manipulation:
+    name: "Un-aligning DPO via Activation Manipulation"
+    enabled: true
+    description: "Execute jailbreak attack protocols by manipulating activations (e.g., setting gating to 1)."
+
+environment_registry:
+  wikitext:
+    id: "wikitext"
+    alias: "wikitext"
+    setup_metadata:
+      keep_external: true
+    availability_check: "check_wikitext_availability"
+  jigsaw:
+    id: "jigsaw"
+    alias: "jigsaw_dataset"
+    setup_metadata:
+      split_ratio: "90:10"
+    availability_check: "check_jigsaw_availability"
+  real_toxicity_prompts:
+    id: "real_toxicity_prompts"
+    alias: "rtp"
+    setup_metadata: {}
+    availability_check: "check_rtp_availability"
+  pplm_pairs:
+    id: "pplm_pairs"
+    alias: "pplm_generated_pairs"
+    setup_metadata:
+      target_pairs: 6700
+    availability_check: "check_pplm_availability"
+
+model_registry:
+  gpt2:
+    id: "gpt2"
+    name: "gpt2"
+    num_layers: 12
+    residual_stream_averaging: "last_layer"
+  llama2:
+    id: "llama2"
+    name: "llama2"
+    num_layers: 32
+    residual_stream_averaging: "last_layer"
+
+dataset_registry:
+  wikitext:
+    id: "wikitext"
+    path: "data/wikitext"
+  jigsaw:
+    id: "jigsaw"
+    path: "data/jigsaw_split.json"
+    split_ratio: 0.9
+  real_toxicity_prompts:
+    id: "real_toxicity_prompts"
+    path: "data/real_toxicity_prompts.json"
+  pplm_generated_pairs:
+    id: "pplm_generated_pairs"
+    path: "data/pairwise_toxic_data.json"
+
+metric_registry:
+  accuracy:
+    id: "accuracy"
+    formula: "correct / total"
+  f1:
+    id: "f1"
+    formula: "2 * (precision * recall) / (precision + recall)"
+  precision:
+    id: "precision"
+    formula: "tp / (tp + fp)"
+  recall:
+    id: "recall"
+    formula: "tp / (tp + fn)"
+  loss:
+    id: "loss"
+    formula: "cross_entropy"
+  perplexity:
+    id: "perplexity"
+    formula: "exp(loss)"
+  toxicity:
+    id: "toxicity"
+    classifier: "https://huggingface.co/unitary/unbiased-toxic-roberta"
+    note: "For measuring toxicity, reproductions should use unbiased-toxic-roberta instead of Perspective API."
+
+method_registry:
+  ours:
+    id: "ours"
+    alias: "dpo"
+    description: "Direct Preference Optimization"
+  ppo:
+    id: "ppo"
+    alias: "ppo_baseline"
+    description: "Proximal Policy Optimization"
+
+baseline_registry:
+  sft:
+    id: "sft"
+  ppo:
+    id: "ppo"
+
+sweep_registry:
+  dpo_beta:
+    values: [0.01, 0.05, 0.1, 0.2, 0.5]
+    default: 0.1
+  patience:
+    default: 10
+  learning_rate:
+    default: 1e-6
+  batch_size:
+    default: 4
+  optimizer:
+    default: "rmsprop"
+  max_grad_norm:
+    default: 10
+
+symbol_inventory:
+  symbols:
+    - "w_0"
+    - "w_t"
+    - "x_i"
+    - "R^d"
+    - "r_d"
+    - "w_i"
+    - "x^ell-mid"
+    - "x_ell_mid"
+    - "x_i^ell"
+    - "x_i_ell"
+    - "MLP^ell"
+    - "Att^ell"
+    - "sigma"
+    - "W_K^ell"
+    - "W_V^ell"
+    - "d_mlp"
+    - "x^ell"
+    - "v_i"
+    - "m_i^ell"
+    - "m^ell"
+    - "sum_i=1"
+    - "l_p"
+    - "k_i^ell"
+    - "v_i^ell"
+    - "r_i^ell"
+    - "e_w"
+    - "W_1^ell"
+  numeric_anchors:
+    - 0
+    - 1
+    - 2
+    - 94
+
+formula_algorithm_anchors:
+  section_2_preliminaries:
+    symbols: ["w_0", "w_t", "x_i", "R^d", "w_i", "x^ell-mid", "x_i^ell", "MLP^ell", "Att^ell", "sigma", "W_K^ell", "W_V^ell"]
+    numeric_defaults: [0, 1, 2]
+    equation: "x_i^{ell+1} = x_i^ell + MLP^ell(x_i^ell + Att^ell(x_i^ell))"
+  section_3_1_extracting_toxic_vectors:
+    symbols: ["W_Toxic", "R^d"]
+    numeric_defaults: [1, 94]
+    formula: "P(Toxic | x_bar^{L-1}) = softmax(W_Toxic * x_bar^{L-1})"
+    target_accuracy: 0.94
+  section_4_1_background_dpo:
+    symbols: ["y_+", "y_-", "pi_ref", "pi_theta", "DPO", "sigma", "beta"]
+    formula: "L_DPO = -E[log sigma(beta * log(P/N))]"
+    p_term: "pi_theta(y_+ | w) / pi_ref(y_+ | w)"
+    n_term: "pi_theta(y_- | w) / pi_ref(y_- | w)"
+  section_4_2_constructing_pairwise_toxic_data:
+    algorithm_terms: ["loss", "gradient", "compute", "sample", "increase"]
+    patience: 10
+    target_samples: 6700
+  section_5_2_dpo_avoids_mlp_k_toxic_regions:
+    symbols: ["sigma", "W_1", "W_2"]
+    formula: "sigma(W_1 * x) * (W_2 * x)"
+  section_a_projecting_value_vectors:
+    symbols: ["d_mlp", "m_i^ell", "v_i^ell", "MLP^ell", "x^ell", "sum_i=1", "sigma", "k_i^ell", "l_p", "e_w"]
+    formula: "MLP^ell(x^ell) = sum_{i=1}^{d_mlp} sigma(x^ell * k_i^ell) * v_i^ell"
+
+experiment_specs:
+  section_3_1_toxicity_probe_vector:
+    checkpoint: "checkpoints/toxic_probe.pt"
+    dataset: "jigsaw"
+    split: "90:10"
+    averaging: "last_layer"
+  section_3_2_toxic_vectors_in_vocabulary_space:
+    metadata_path: "results/toxic_vectors_metadata.json"
+    top_k: 10
+  figure_4_top_k_tokens_promoted_by_mlp_v_toxic_gpt2:
+    figure_path: "results/figures/figure_4.png"
+    model: "gpt2"
+  figure_6_top_k_tokens_promoted_by_mlp_v_toxic_llama2:
+    figure_path: "results/figures/figure_6.png"
+    model: "llama2"
+  section_4_2_constructing_pairwise_toxic_data:
+    data_path: "data/pairwise_toxic_data.json"
+    method: "pplm"
+  section_5_toxicity_after_dpo:
+    gpt2_checkpoint: "checkpoints/gpt2_dpo.pt"
+    llama2_checkpoint: "checkpoints/llama2_dpo.pt"
+  figure_10_comparison_with_ppo:
+    figure_path: "results/figures/figure_10.png"
+    baselines: ["ppo"]
+  figure_11_hyperparameter_sensitivity:
+    figure_path: "results/figures/figure_11.png"
+    sweep_param: "beta"
+  section_3_3_interventions_using_toxic_vectors:
+    results_path: "results/intervention_results.json"
+  section_5_2_dpo_avoids_mlp_k_toxic_regions:
+    results_path: "results/activation_analysis.json"
+  section_6_unaligning_dpo:
+    results_path: "results/unalign_results.json"
+    unalign_protocol: "sigma(W1x) = 1"
+  figure_5_cosine_similarity:
+    figure_path: "results/figures/figure_5.png"
+
+defines_symbols:
+  - "Toxic Vector Extraction and Identification"
+  - "Toxicity Intervention via Vector Subtraction"
+  - "DPO Alignment for Toxicity Reduction"
+  - "Mechanistic Analysis of DPO Alignment"
+  - "Un-aligning DPO via Activation Manipulation"
+  - "w_0"
+  - "w_t"
+  - "x_i"
+  - "r_d"
+  - "w_i"
+  - "x_ell_mid"
+  - "x_i_ell"
+
+calls_symbols:
+  - "write_gpt2_dpo_artifact"
+  - "write_llama2_dpo_artifact"
+  - "write_table_2_artifact"
+  - "write_table_7_artifact"
+  - "write_figure_1_artifact"
+  - "write_figure_10_artifact"
+  - "write_figure_11_artifact"
+  - "write_dataset_registry_artifact"
+  - "run_figure_4_route"
+  - "write_figure_4_artifact"
+  - "run_figure_6_route"
+  - "write_figure_6_artifact"
+
+writes_artifacts:
+  - "checkpoints/gpt2_dpo.pt"
+  - "checkpoints/llama2_dpo.pt"
+  - "results/tables/table_2.csv"
+  - "results/tables/table_7.csv"
+  - "results/figures/figure_1.png"
+  - "results/figures/figure_10.png"
+  - "results/figures/figure_11.png"
+  - "results/dataset_registry.json"
+  - "results/metrics.json"
+  - "results/data_manifest.json"
+  - "results/method_registry.json"
+  - "results/ablation_registry.json"
+  - "results/config_resolved.json"
+  - "results/sensitivity_report.json"
+  - "results/training_trace.json"
+  - "results/tables/table_1.csv"
+  - "results/tables/table_6.csv"
+  - "results/tables/table_3.csv"

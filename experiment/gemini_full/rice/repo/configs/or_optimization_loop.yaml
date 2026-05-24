@@ -1,0 +1,221 @@
+# configs/or_optimization_loop.yaml
+# reference_grounding: paper chunk_010_01, chunk_011_02, chunk_015, chunk_035
+# reference_grounding: addendum:formula_algorithm_contract
+
+# Global Constants and Algorithm Terms
+# reference_grounding: addendum:formula_algorithm_contract
+constants:
+  d_max: 1.0
+  gamma: 0.99
+  alpha_default: 0.01
+  lambda_default: 0.01
+  p_default: 0.5
+
+# Paper-derived Symbols and Formulas
+# reference_grounding: paper chunk_008, chunk_010_01, chunk_011_02
+symbols:
+  v_pi: "Value function V^pi(s)"
+  e_pi: "Expectation E_pi"
+  sum_t_0_infty: "Sum from t=0 to infinity"
+  gamma_t: "Discount factor gamma^t"
+  s_t: "State at time t"
+  a_t: "Action at time t"
+  s_0: "Initial state"
+  a_t_m: "Mask action (0 or 1)"
+  theta: "Mask network parameters"
+  pi_bar: "Blinded policy"
+  pi_tilde: "State mask policy"
+  R_prime: "Intrinsic reward R(s,a) + alpha * a_m"
+
+# Algorithm Terms and Steps
+# reference_grounding: paper chunk_010_01, chunk_011_02
+algorithm:
+  terms:
+    - formula
+    - mask
+    - ema
+    - calculate
+    - compute
+    - update
+    - sample
+    - select
+    - rank
+  steps:
+    explanation_generation:
+      - "Initialize mask network M_theta"
+      - "Sample trajectories from target policy pi"
+      - "Train M_theta using PPO to maximize eta(pi_bar)"
+      - "Apply intrinsic reward R' = R + alpha * a_m to prevent trivial solutions"
+      - "Compute importance scores based on mask output probability"
+    policy_refining:
+      - "Identify top-K critical states using importance scores"
+      - "Reset agent to critical states (Roll-in)"
+      - "Perform exploration from critical states"
+      - "Update policy using collected exploration data"
+
+# Environment and Task Factories
+# reference_grounding: paper:unit-001
+environments:
+  Hopper-v3:
+    alias: "Hopper"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Walker2d-v3:
+    alias: "Walker2d"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Reacher-v2:
+    alias: "Reacher"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  HalfCheetah-v3:
+    alias: "HalfCheetah"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  SelfishMining:
+    alias: "selfish mining"
+    group: "selfish_mining"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  CageChallenge2:
+    alias: "CAGE Challenge 2"
+    group: "network_defense"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+    # reference_grounding: paperbench_ref_001 CybORG/README.md
+  AutonomousDriving:
+    alias: "autonomous driving"
+    group: "autonomous_driving"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+    # reference_grounding: paperbench_ref_008 docs/source/features/simulator_feature.rst
+  MalwareMutation:
+    alias: "Malware Mutation"
+    group: "malware_mutation"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+
+# Dataset and Benchmark Loaders
+datasets:
+  cage:
+    loader: "src.rice.envs.load_cage_dataset"
+  gym:
+    loader: "src.rice.envs.load_gym_dataset"
+
+# Method and Baseline Selectors
+# reference_grounding: paper:unit_009
+methods:
+  ours:
+    class: "src.rice.refining.RICETrainer"
+    explanation: "src.rice.explanation.ExplanationGenerator"
+  statemask:
+    class: "src.rice.baselines.StateMaskTrainer"
+  ppo:
+    class: "src.rice.ppo.PPOTrainer"
+  sac:
+    class: "src.rice.baselines.SACTrainer"
+  gail:
+    class: "src.rice.baselines.GAILTrainer"
+  jsrl:
+    class: "src.rice.baselines.JSRLTrainer"
+  random:
+    class: "src.rice.baselines.RandomTrainer"
+  heuristic:
+    class: "src.rice.baselines.HeuristicTrainer"
+  ppo_fine_tuning:
+    class: "src.rice.baselines.PPOFineTuningTrainer"
+
+# Parameter Sweeps
+# reference_grounding: paper chunk_035, chunk_015
+sweeps:
+  alpha: [0.01, 0.001, 0.0001]
+  lambda: [0, 0.1, 0.01, 0.001]
+  p: [0, 0.25, 0.5, 0.75, 1]
+  learning_rate: [3e-4, 1e-4, 5e-5]
+  mask_network_architecture: [[64, 64], [128, 128]]
+  batch_size: [64, 128, 256]
+  clip_ratio: [0.1, 0.2, 0.3]
+
+# Experiment Matrix
+# reference_grounding: paper chunk_015, chunk_016_01, chunk_035
+experiment_matrix:
+  experiment_i:
+    name: "Fidelity and Efficiency of Explanation"
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3", "SelfishMining", "CageChallenge2", "AutonomousDriving", "MalwareMutation"]
+    methods: ["ours", "statemask"]
+    metrics: ["compute_fidelity_score", "training_time"]
+    artifact_writers: 
+      - "results/figures/figure_5.png"
+      - "results/tables/table_4.csv"
+  experiment_ii:
+    name: "Refining Performance (MuJoCo)"
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "random", "jsrl", "ppo_fine_tuning", "statemask"]
+    metrics: ["compute_reward"]
+    artifact_writers: 
+      - "results/tables/table_1.csv"
+      - "results/figures/figure_2.png"
+      - "results/figures/figure_3.png"
+      - "results/figures/figure_4.png"
+  experiment_iii:
+    name: "Real-world Applications Performance"
+    tasks: ["SelfishMining", "CageChallenge2", "AutonomousDriving", "MalwareMutation"]
+    methods: ["ours", "random", "jsrl", "ppo_fine_tuning"]
+    metrics: ["compute_reward"]
+    artifact_writers: 
+      - "results/tables/table_2.csv"
+      - "results/figures/figure_10.png"
+      - "results/figures/figure_11.png"
+      - "results/figures/figure_12.png"
+  experiment_iv:
+    name: "Ablation and Sensitivity"
+    tasks: ["Hopper-v3", "Walker2d-v3"]
+    methods: ["ours"]
+    parameters: ["lambda", "p", "alpha"]
+    metrics: ["compute_reward", "compute_fidelity_score"]
+    artifact_writers: 
+      - "results/tables/table_3.csv"
+      - "results/tables/table_5.csv"
+      - "results/tables/table_6.csv"
+      - "results/figures/figure_6.png"
+      - "results/figures/figure_7.png"
+      - "results/figures/figure_8.png"
+      - "results/figures/figure_9.png"
+  experiment_v:
+    name: "System Overview and Design"
+    tasks: ["Hopper-v3"]
+    methods: ["ours"]
+    metrics: ["compute_reward"]
+    artifact_writers:
+      - "results/figures/figure_1.png"
+
+# Callable Protocol Matrix
+# reference_grounding: paper:unit_001
+callable_registry:
+  run_experiment: "main.run_experiment"
+  compute_reward: "src.rice.utils.compute_reward"
+  aggregate_reward: "src.rice.utils.aggregate_reward"
+  compute_metric_entrypoint_config_loader_logger_entrypoint_metric_entrypoint_objective: "src.rice.explanation.compute_objective"
+  compute_metric_entrypoint_config_loader_logger_entrypoint_metric_entrypoint_score: "src.rice.explanation.compute_score"
+  write_main_artifact: "src.reporting.or_optimization_loop.write_main_artifact"
+  write_artifact_manifest: "src.reporting.or_optimization_loop.write_artifact_manifest"
+  load_main: "main.load_main"
+  prepare_main: "main.prepare_main"
+  compute_fidelity_score: "src.rice.explanation.compute_fidelity_score"
+  aggregate_fidelity_score: "src.rice.explanation.aggregate_fidelity_score"
+  write_fidelity_score_artifact: "src.reporting.or_optimization_loop.write_fidelity_score_artifact"
+
+# Training Loop Configuration
+# reference_grounding: paper chunk_010_01, chunk_011_02
+training_loop:
+  max_episodes: 1000
+  steps_per_update: 2048
+  ppo_epochs: 10
+  target_kl: 0.01
+  refine_step_frequency: 100
+  roll_in_length: 50
+  exploration_steps: 100

@@ -1,0 +1,271 @@
+# configs/evidence_obligation_registry.yaml
+# reference_grounding: chunk_003_01 chunk_018 chunk_019 chunk_024_01 addendum:formula_algorithm_contract
+
+metadata:
+  project_name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+
+# 1. Environment/Task Factories
+environments:
+  two_state_mdp:
+    id: "two_state_mdp"
+    alias: "two-state-mdp"
+    description: "Two-state MDP with CLOSE and FAR state partitions to track forgetting."
+    state_space_partition:
+      close: "s_0"
+      far: "s_1"
+    setup_metadata:
+      gamma: 0.9
+      epsilon: 0.5
+      r_0: 0.11
+      r_1: 2.22
+      s_0: 0
+      s_1: 1
+      v_0: 10.0
+      f_0: 0.0
+      f_1: 1.0
+    availability_check: "src.envs.two_state_mdp.make_two_state_mdp"
+    runnable_config_hook: "setup_two_state_mdp"
+
+  appleretrieval:
+    id: "appleretrieval"
+    alias: "apple_retrieval"
+    description: "AppleRetrieval grid-world environment exhibiting state coverage gap."
+    setup_metadata:
+      M: 13
+      c: 11
+      sigma: 30
+      asset_13: 13
+      pi_w: 1.0
+      pi_b: 0.0
+      apple_reward: 10.0
+      step_penalty: -0.1
+    availability_check: "src.envs.apple_retrieval.make_apple_retrieval"
+    runnable_config_hook: "setup_apple_retrieval"
+
+  robotics:
+    id: "robotics"
+    alias: "push-wall"
+    description: "Robotic manipulation task (Meta-World push-wall) for sequential transfer."
+    setup_metadata:
+      task_name: "push-wall-v2"
+      gold_score_threshold: 0.9
+      beta: 1.5
+      E_k: 200
+      E_i: 1
+      r_t: 1.0
+      r_t_prime: 1.0
+    availability_check: "src.envs.robotics.make_robotics"
+    runnable_config_hook: "setup_robotics"
+
+# 2. Dataset/Benchmark Loaders
+datasets:
+  robotics:
+    id: "robotics_dataset"
+    alias: "robotics"
+    description: "Robotics demonstration dataset for behavioral cloning and fine-tuning."
+    setup_metadata:
+      num_trajectories: 100
+      validation_split: 0.2
+    validation_checks:
+      - "check_dataset_exists"
+      - "check_trajectory_lengths"
+    runnable_config_hook: "load_robotics_dataset"
+
+# 3. Method/Baseline/Attack Selectors
+methods:
+  selectors:
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+  details:
+    ours:
+      name: "Ours (Forgetting Mitigation Fine-tuning)"
+      description: "Proposed fine-tuning method with forgetting mitigation."
+    ppo:
+      name: "PPO"
+      description: "Proximal Policy Optimization baseline."
+    sac:
+      name: "SAC"
+      description: "Soft Actor-Critic baseline."
+    bc:
+      name: "BC"
+      description: "Behavioral Cloning baseline."
+    oracle:
+      name: "Oracle"
+      description: "Oracle policy trained on all tasks."
+    nle:
+      name: "NLE"
+      description: "NetHack Learning Environment baseline."
+    ewc:
+      name: "EWC"
+      description: "Elastic Weight Consolidation baseline."
+
+# 4. Parameter Sweeps and Fixed Hyperparameters
+parameter_sweeps:
+  learning_rate:
+    values: [0.0001, 0.0003, 0.001, 0.003]
+    default: 0.0003
+  batch_size:
+    values: [32, 64, 128, 256]
+    default: 128
+
+fixed_hyperparameters:
+  batch_size_128:
+    name: "batch_size"
+    value: 128
+    description: "Fixed batch size anchor of 128 as specified in the paper."
+
+# 5. Formula and Algorithm Symbol Inventory
+symbol_inventory:
+  addendum:
+    symbols:
+      - "add_nledata_directory"
+      - "add_altorg_directory"
+      - "TtyrecDataset\"nld-aa-v0\",batch_size=128"
+      - "batch_size"
+    numeric_defaults:
+      - 128
+    algorithm_terms:
+      - "algorithm"
+      - "distill"
+      - "compute"
+  two_state_mdp:
+    symbols:
+      - "theta"
+      - "gamma"
+      - "f_theta"
+      - "epsilon"
+      - "1_thetaleq1-epsilon/2"
+      - "1_theta>1-epsilon/2"
+      - "s_0"
+      - "v_0"
+      - "r_0"
+      - "r_1"
+      - "s_1"
+      - "f_0"
+    numeric_defaults:
+      - 0
+      - 9
+      - 1
+      - 2
+      - 0.11
+      - 2.22
+      - 0.5
+      - 10
+  forgetting_pre_trained:
+    symbols:
+      - "theta_*"
+      - "L_BC"
+      - "theta"
+      - "B_BC"
+      - "D_KL"
+      - "pi_*"
+      - "pi_theta"
+      - "L_KS"
+    algorithm_terms:
+      - "objective"
+      - "loss"
+      - "sample"
+      - "initialize"
+  appleretrieval:
+    symbols:
+      - "pi_w,b"
+      - "sigma"
+      - "asset_13"
+    numeric_defaults:
+      - 1
+      - 0
+      - 2
+      - 13
+      - 11
+      - 30
+    algorithm_terms:
+      - "algorithm"
+      - "gradient"
+      - "ema"
+      - "increase"
+  ewc:
+    symbols:
+      - "L_aux"
+      - "theta"
+      - "sum_i"
+      - "F^i"
+      - "theta_*^i"
+      - "theta^i"
+      - "theta_*"
+    numeric_defaults:
+      - 2
+    algorithm_terms:
+      - "loss"
+  meta_world:
+    symbols:
+      - "E_k"
+      - "E_i"
+      - "r_t"
+      - "r_t^prime"
+      - "beta"
+      - "K_ij"
+      - "x_i"
+      - "x_j"
+      - "L_ij"
+      - "y_i"
+      - "y_j"
+      - "CKA"
+      - "HSIC"
+    numeric_defaults:
+      - 1
+      - 200
+      - 1.5
+    algorithm_terms:
+      - "algorithm"
+      - "formula"
+      - "sample"
+      - "initialize"
+
+# 6. Evidence Obligation Matrix Registry
+evidence_obligation_matrix:
+  environments:
+    - "robotics"
+    - "two_state_mdp"
+    - "appleretrieval"
+  datasets:
+    - "robotics"
+  methods:
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+  metrics:
+    - "loss"
+    - "reward"
+    - "return"
+    - "success_rate"
+  trends:
+    - "baseline_outperformance"
+
+# 7. Experiment Registry
+experiment_registry:
+  experiments:
+    - id: "exp_two_state_mdp"
+      name: "Two-State MDP Forgetting Experiment"
+      environment: "two_state_mdp"
+      methods: ["ours", "bc", "ewc", "ppo"]
+      metrics: ["loss", "return"]
+    - id: "exp_appleretrieval"
+      name: "AppleRetrieval Coverage Gap Experiment"
+      environment: "appleretrieval"
+      methods: ["ours", "bc", "ewc", "ppo"]
+      metrics: ["loss", "return"]
+    - id: "exp_robotics"
+      name: "Robotics Sequential Transfer Experiment"
+      environment: "robotics"
+      methods: ["ours", "sac", "bc", "ewc"]
+      metrics: ["success_rate", "return"]

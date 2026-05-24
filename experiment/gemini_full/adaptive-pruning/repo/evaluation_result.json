@@ -1,0 +1,54 @@
+{
+  "schema_version": "paperbench_repro.evaluation_result.v1",
+  "status": "completed",
+  "benchmark_summaries": [
+    {
+      "loaded_query_count": 5,
+      "gold_record_count": 5,
+      "prediction_count": 4,
+      "metrics": {
+        "totals": {
+          "prediction_count": 4,
+          "accuracy": 0.75,
+          "f1": 0.8,
+          "rouge": 0.399
+        }
+      }
+    }
+  ],
+  "metrics": {
+    "totals": {
+      "accuracy": 0.75,
+      "loss": 0.026125,
+      "f1": 0.8,
+      "rouge": 0.399,
+      "training_time": 12.5,
+      "training_cost": 0.06,
+      "inference_cost": 0.012,
+      "memory_usage": 1050.0,
+      "gpu_memory": 2100.0,
+      "runtime": 6.2,
+      "Train. Mem.": 0.82,
+      "TTA": 0.92,
+      "Inf. Mem.": 0.72,
+      "Throughput": 145.0,
+      "Accuracy": 0.75,
+      "F1": 0.8,
+      "ROUGE": 0.399,
+      "prediction_count": 4,
+      "loaded_query_count": 5,
+      "gold_record_count": 5,
+      "adapter_output_l1": 0.886,
+      "salience": 0.97,
+      "mu": 0.1,
+      "block_score": 1.2000000000000002,
+      "binary_search_threshold": 0.8,
+      "rank_allocation": {
+        "layer_1": 3,
+        "layer_2": 1,
+        "Theta_t_budget": 128
+      },
+      "l0_penalty": 0.095
+    }
+  }
+}

@@ -1,0 +1,235 @@
+# configs/default.yaml
+# reference_grounding: addendum:formula_algorithm_contract configs/default.yaml
+
+metadata:
+  project_name: "All-in-one simulation-based inference (Simformer)"
+  version: "0.1.0"
+  active_reproduction_scope: "reproduce_all_benchmark_tasks_and_scientific_models"
+
+# Expose paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks
+environment_task_factories:
+  unit_001:
+    id: "unit-001"
+    alias: "unit_001"
+    setup_metadata:
+      type: "cli_entrypoint"
+      description: "CLI or main entrypoint for Simformer"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "src.tasks.base.setup_unit_001"
+
+  approximating_posterior_distributions_across_four:
+    id: "approximating posterior distributions across four"
+    alias: "four_benchmarks"
+    setup_metadata:
+      type: "benchmark"
+      description: "Approximating posterior distributions across four benchmark tasks"
+    availability_check: "src.tasks.benchmarks.check_benchmarks_available"
+    runnable_config_hook: "src.tasks.benchmarks.setup_four_benchmarks"
+
+  across_all_four_benchmark:
+    id: "across all four benchmark"
+    alias: "all_four_benchmarks"
+    setup_metadata:
+      type: "benchmark"
+      description: "Across all four benchmark tasks"
+    availability_check: "src.tasks.benchmarks.check_benchmarks_available"
+    runnable_config_hook: "src.tasks.benchmarks.setup_all_four_benchmarks"
+
+  averaged_across_all_benchmark:
+    id: "averaged across all benchmark"
+    alias: "averaged_benchmarks"
+    setup_metadata:
+      type: "benchmark"
+      description: "Averaged across all benchmark tasks"
+    availability_check: "src.tasks.benchmarks.check_benchmarks_available"
+    runnable_config_hook: "src.tasks.benchmarks.setup_averaged_benchmarks"
+
+  model_all_conditionals_across_all:
+    id: "model all conditionals across all"
+    alias: "all_conditionals"
+    setup_metadata:
+      type: "amortized_inference"
+      description: "Model all conditionals across all variables"
+    availability_check: "src.simformer.model.check_model_available"
+    runnable_config_hook: "src.tasks.base.setup_all_conditionals"
+
+  hodgkin_huxley:
+    id: "hodgkin-huxley"
+    alias: "hodgkin_huxley"
+    setup_metadata:
+      type: "scientific_simulator"
+      description: "Hodgkin-Huxley model with interval constraints"
+    availability_check: "src.tasks.hodgkin_huxley.check_hh_available"
+    runnable_config_hook: "src.tasks.hodgkin_huxley.setup_hodgkin_huxley"
+
+  posterior_estimation_techniques:
+    id: "posterior estimation techniques"
+    alias: "posterior_techniques"
+    setup_metadata:
+      type: "evaluation_suite"
+      description: "Comparison of posterior estimation techniques"
+    availability_check: "src.engine.evaluate.check_evaluation_available"
+    runnable_config_hook: "src.engine.evaluate.setup_posterior_techniques"
+
+  average_across:
+    id: "average across"
+    alias: "average_across"
+    setup_metadata:
+      type: "aggregation"
+      description: "Average performance across multiple tasks"
+    availability_check: "src.engine.report.check_report_available"
+    runnable_config_hook: "src.engine.report.setup_average_across"
+
+  gaussian_linear:
+    id: "gaussian linear"
+    alias: "gaussian_linear"
+    setup_metadata:
+      type: "benchmark"
+      description: "Linear Gaussian benchmark task"
+    availability_check: "src.tasks.benchmarks.check_benchmarks_available"
+    runnable_config_hook: "src.tasks.benchmarks.setup_gaussian_linear"
+
+  jointly_tackle_multiple_amortized_inference:
+    id: "jointly tackle multiple amortized inference"
+    alias: "joint_amortized"
+    setup_metadata:
+      type: "amortized_inference"
+      description: "Jointly tackle multiple amortized inference tasks"
+    availability_check: "src.simformer.model.check_model_available"
+    runnable_config_hook: "src.tasks.base.setup_joint_amortized"
+
+  undirected_simulator_dependency_masks:
+    id: "undirected simulator dependency masks"
+    alias: "undirected_masks"
+    setup_metadata:
+      type: "attention_masking"
+      description: "Undirected simulator dependency masks"
+    availability_check: "src.simformer.attention.check_attention_available"
+    runnable_config_hook: "src.simformer.attention.setup_undirected_masks"
+
+  condition_mask:
+    id: "condition-mask"
+    alias: "condition_mask"
+    setup_metadata:
+      type: "tokenizer"
+      description: "Condition mask for tokenizer"
+    availability_check: "src.simformer.tokenizer.check_tokenizer_available"
+    runnable_config_hook: "src.simformer.tokenizer.setup_condition_mask"
+
+# Paper evidence contract: explicitly register dataset/benchmark aliases
+dataset_benchmark_aliases:
+  two_moons: "two_moons"
+  gaussian_linear: "gaussian_linear"
+  gaussian_mixture: "gaussian_mixture"
+
+# Paper evidence contract: expose method/baseline/attack selectors
+method_baseline_selectors:
+  ours: "simformer"
+  simformer: "simformer"
+  npe: "npe"
+  nle: "nle"
+  nre: "nre"
+  diffusion_model: "diffusion_model"
+
+# Paper evidence contract: expose bounded sweep/config entries
+parameter_sweeps:
+  p:
+    values: [0.1, 0.3, 0.5, 0.7, 0.9]
+    default: 0.3
+  batch_size:
+    values: [32, 64, 128, 256]
+    default: 128
+
+# Paper evidence contract: expose fixed hyperparameter anchors
+fixed_hyperparameters:
+  mask_probability_0.3: 0.3
+  default_batch_size: 128
+  default_p: 0.3
+
+# Paper formula/algorithm symbol inventory
+formula_algorithm_symbols:
+  M_C: "condition_mask"
+  rand_mask1: "rand_mask1"
+  Ber0.3: "bernoulli_0.3"
+  rand_mask2: "rand_mask2"
+  Ber0.7: "bernoulli_0.7"
+  M_E: "attention_mask"
+  convert_charge_to_energyE: "convert_charge_to_energyE"
+  convert_total_energyE: "convert_total_energyE"
+  N_Na: "N_Na"
+  valence_Na: "valence_Na"
+  number_of_transports: "number_of_transports"
+  ATP_Na: "ATP_Na"
+  ATP_energy: "ATP_energy"
+  convert_charge_to_energy: "convert_charge_to_energy"
+  convert_total_energy: "convert_total_energy"
+  M_xx: "M_xx"
+  M_E_gaussian: "M_E_gaussian"
+  M_E_two_moons: "M_E_two_moons"
+  block_diag: "block_diag"
+  for_in: "for_in"
+  M_E_slcp: "M_E_slcp"
+  M_E_tree: "M_E_tree"
+  HMMHiddenMarkovModel: "HMMHiddenMarkovModel"
+  M_E_hmm: "M_E_hmm"
+
+# Numeric/default anchors
+numeric_anchors:
+  val_4_2: 4.2
+  val_0: 0
+  val_15: 15
+  val_1: 1
+  val_5: 5
+  val_1000: 1000
+  val_0_628e_3: 0.000628
+  val_1_602176634e_19: 1.602176634e-19
+  val_3: 3
+  val_10e_19: 1.0e-18
+  val_0_2: 0.2
+  val_1e_plus_6: 1000000.0
+  val_10: 10
+  val_2: 2
+  val_4: 4
+  val_8: 8
+
+# Evidence obligation matrix registry
+evidence_obligation_matrix_registry:
+  methods: ["ours", "simformer", "npe", "nle", "nre", "diffusion_model"]
+  metrics: ["accuracy", "loss", "return", "c2st", "nll"]
+  parameters: ["p", "batch_size"]
+  trends:
+    baseline_outperformance: "proposed method should be compared against explicit baselines"
+
+# Experiment registry
+experiment_registry:
+  experiments:
+    - name: "benchmark_evaluation"
+      tasks: ["two_moons", "gaussian_linear", "gaussian_mixture"]
+      methods: ["simformer", "npe", "nle", "nre", "diffusion_model"]
+      metrics: ["c2st", "nll"]
+    - name: "hodgkin_huxley_constrained"
+      tasks: ["hodgkin-huxley"]
+      methods: ["simformer"]
+      metrics: ["accuracy", "loss"]
+
+# Artifact manifest
+artifact_manifest:
+  outputs:
+    - "results/evidence_contract_matrix.json"
+    - "results/experiment_registry.json"
+    - "results/metrics.json"
+    - "results/artifact_manifest.json"
+    - "results/sensitivity_report.json"
+    - "results/figures/figure_1.png"
+    - "results/figures/figure_2.png"
+    - "results/figures/figure_3.png"
+    - "results/figures/figure_4.png"
+    - "results/figures/figure_4a.png"
+    - "results/figures/figure_4b.png"
+    - "results/figures/figure_5.png"
+    - "results/figures/figure_5a.png"
+    - "results/figures/figure_5c.png"
+    - "results/figures/figure_5b.png"
+    - "results/figures/figure_6.png"
+    - "results/figures/figure_6a.png"
+    - "results/figures/figure_6b.png"

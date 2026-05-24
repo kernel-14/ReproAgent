@@ -1,0 +1,260 @@
+{
+  "dataset_registry": {
+    "wikitext": {
+      "id": "wikitext",
+      "aliases": ["wikitext", "wikitext-2", "wikitext-103"],
+      "setup_metadata": {
+        "keep_external": true,
+        "source": "huggingface"
+      },
+      "availability_check": {
+        "type": "import_check",
+        "package": "datasets",
+        "dataset_name": "wikitext"
+      },
+      "runnable_config_hooks": {
+        "load_command": "datasets.load_dataset('wikitext', 'wikitext-2-raw-v1')"
+      }
+    },
+    "jigsaw": {
+      "id": "jigsaw",
+      "aliases": ["Jigsaw dataset", "jigsaw-toxic-comment"],
+      "setup_metadata": {
+        "split_ratio": 0.9,
+        "train_percent": 90,
+        "val_percent": 10,
+        "total_comments": 561808
+      },
+      "validation_checks": {
+        "required_columns": ["id", "comment_text", "toxic"],
+        "binary_classification": true
+      },
+      "availability_check": {
+        "type": "file_check",
+        "path": "data/jigsaw_split.json"
+      },
+      "runnable_config_hooks": {
+        "make_dataset": "src.data.dataset_utils.make_dataset"
+      }
+    },
+    "real_toxicity_prompts": {
+      "id": "real_toxicity_prompts",
+      "aliases": ["RealToxicityPrompts"],
+      "setup_metadata": {
+        "source": "allenai/real-toxicity-prompts"
+      },
+      "availability_check": {
+        "type": "import_check",
+        "package": "datasets"
+      }
+    },
+    "pplm_generated_pairs": {
+      "id": "pplm_generated_pairs",
+      "aliases": ["PPLM-generated pairs", "pairwise_toxic_data"],
+      "setup_metadata": {
+        "patience_value": 10,
+        "approx_sample_pairs": 6700,
+        "source_file": "data/pairwise_toxic_data.json"
+      },
+      "availability_check": {
+        "type": "file_check",
+        "path": "data/pairwise_toxic_data.json"
+      }
+    }
+  },
+  "environment_registry": {
+    "gpt2": {
+      "id": "gpt2",
+      "aliases": ["GPT2", "gpt2-small"],
+      "model_name": "gpt2",
+      "setup_metadata": {
+        "d_model": 768,
+        "n_layer": 12,
+        "n_head": 12
+      },
+      "availability_check": {
+        "type": "transformers_import"
+      }
+    },
+    "llama2": {
+      "id": "llama2",
+      "aliases": ["Llama2", "Llama-2-7b"],
+      "model_name": "meta-llama/Llama-2-7b-hf",
+      "setup_metadata": {
+        "d_model": 4096,
+        "n_layer": 32,
+        "n_head": 32,
+        "uses_glu": true
+      },
+      "availability_check": {
+        "type": "transformers_import"
+      }
+    },
+    "binary_toxicity_classification": {
+      "id": "binary_toxicity_classification",
+      "aliases": ["toxicity_classification"],
+      "setup_metadata": {
+        "num_classes": 2,
+        "class_labels": {
+          "0": "non-toxic",
+          "1": "toxic"
+        }
+      }
+    }
+  },
+  "experiment_registry": {
+    "toxic_vector_extraction": {
+      "hypothesis": "通过线性探测（Linear Probe）和MLP权重分解（SVD）可以识别出模型中负责毒性生成的特定方向，且Oracle分类器可作为评估基准",
+      "decision_value": "为后续的干预实验和DPO机制分析提供基础的向量表示与评估基准",
+      "metrics": ["accuracy", "f1", "precision", "recall"],
+      "expected_probe_accuracy": 0.94,
+      "artifacts": {
+        "probe_checkpoint": "checkpoints/toxic_probe.pt",
+        "metadata": "results/toxic_vectors_metadata.json",
+        "table_1": "results/tables/table_1.csv",
+        "table_6": "results/tables/table_6.csv",
+        "figure_4": "results/figures/figure_4.png",
+        "figure_6": "results/figures/figure_6.png"
+      }
+    },
+    "dpo_alignment": {
+      "hypothesis": "DPO can reduce model toxicity by suppressing the likelihood of negative samples (toxic outputs), and is sensitive to the beta parameter.",
+      "loss_formula": "L_DPO = -E[log sigma(beta * log P - beta * log N)]",
+      "probability_ratios": {
+        "P": "pi_theta(y_+ | w) / pi_ref(y_+ | w)",
+        "N": "pi_theta(y_- | w) / pi_ref(y_- | w)"
+      },
+      "hyperparameters": {
+        "beta": 0.1
+      },
+      "metrics": ["loss", "perplexity", "toxicity"],
+      "artifacts": {
+        "gpt2_dpo_checkpoint": "checkpoints/gpt2_dpo.pt",
+        "llama2_dpo_checkpoint": "checkpoints/llama2_dpo.pt",
+        "table_2": "results/tables/table_2.csv",
+        "table_7": "results/tables/table_7.csv",
+        "figure_10": "results/figures/figure_10.png",
+        "figure_11": "results/figures/figure_11.png"
+      }
+    },
+    "mechanistic_analysis": {
+      "protocols": {
+        "jailbreak_attack_protocol": {
+          "description": "Evaluate alignment robustness under adversarial prompts or activation manipulation."
+        }
+      },
+      "gating_override": {
+        "formula": "sigma(W1 * x) = 1",
+        "description": "Un-aligning DPO via activation manipulation to restore toxicity."
+      },
+      "artifacts": {
+        "intervention_results": "results/intervention_results.json",
+        "activation_analysis": "results/activation_analysis.json",
+        "unalign_results": "results/unalign_results.json",
+        "table_3": "results/tables/table_3.csv",
+        "table_4": "results/tables/table_4.csv",
+        "figure_5": "results/figures/figure_5.png"
+      }
+    }
+  },
+  "method_obligations": {
+    "oracle_toxicity_classifier": {
+      "model_name": "unitary/unbiased-toxic-roberta",
+      "binding_addendum_clarification": "For measuring toxicity, reproductions should use https://huggingface.co/unitary/unbiased-toxic-roberta instead of Perspective API."
+    },
+    "probe_training": {
+      "pooling_method": "average_pooling",
+      "layer": "last_layer_residual_stream",
+      "formula": "P(Toxic | x_bar^{L-1}) = softmax(W_Toxic * x_bar^{L-1})",
+      "w_toxic_shape_clarification": "W_toxic is a matrix of shape [d_model, 2], where W_toxic[:, 0] is for non-toxic and W_toxic[:, 1] is for toxic. Cosine similarity is computed with W_toxic[:, 1]."
+    },
+    "projection_logic": {
+      "description": "Project toxic vectors (W_toxic[:, 1], MLP.v_toxic, SVD.U_toxic) onto the vocabulary space using the unembedding matrix U to verify semantic consistency.",
+      "top_tokens_definition": "Tokens that have the highest dot-products with a specified toxic vector."
+    }
+  },
+  "readiness_checks": {
+    "environment_readiness_path": "results/environment_readiness.json",
+    "environment_registry_path": "results/environment_registry.json",
+    "experiment_registry_path": "results/experiment_registry.json",
+    "artifact_manifest_path": "results/artifact_manifest.json",
+    "dataset_registry_path": "results/dataset_registry.json",
+    "data_manifest_path": "results/data_manifest.json"
+  },
+  "split_data": {
+    "train": [
+      {
+        "id": "train_001",
+        "comment_text": "This is a wonderful and helpful contribution to the community.",
+        "toxic": 0
+      },
+      {
+        "id": "train_002",
+        "comment_text": "You are an absolute idiot and I hate everything you stand for.",
+        "toxic": 1
+      },
+      {
+        "id": "train_003",
+        "comment_text": "The weather today is quite pleasant and sunny.",
+        "toxic": 0
+      },
+      {
+        "id": "train_004",
+        "comment_text": "Go away, nobody wants to hear your stupid opinions.",
+        "toxic": 1
+      },
+      {
+        "id": "train_005",
+        "comment_text": "I completely disagree with your perspective, but let's discuss it civilly.",
+        "toxic": 0
+      },
+      {
+        "id": "train_006",
+        "comment_text": "This article is complete garbage and the author is a moron.",
+        "toxic": 1
+      },
+      {
+        "id": "train_007",
+        "comment_text": "Please let me know if you need any further assistance with this project.",
+        "toxic": 0
+      },
+      {
+        "id": "train_008",
+        "comment_text": "Shut up and get out of here, you worthless piece of trash.",
+        "toxic": 1
+      },
+      {
+        "id": "train_009",
+        "comment_text": "The recipe requires three cups of flour and two eggs.",
+        "toxic": 0
+      },
+      {
+        "id": "train_010",
+        "comment_text": "This is the worst service ever, they are all incompetent fools.",
+        "toxic": 1
+      }
+    ],
+    "val": [
+      {
+        "id": "val_001",
+        "comment_text": "Thank you for the detailed explanation, it makes perfect sense.",
+        "toxic": 0
+      },
+      {
+        "id": "val_002",
+        "comment_text": "You are a disgusting liar and a cheat.",
+        "toxic": 1
+      },
+      {
+        "id": "val_003",
+        "comment_text": "The train departs at exactly 8:00 AM tomorrow morning.",
+        "toxic": 0
+      },
+      {
+        "id": "val_004",
+        "comment_text": "This is incredibly ugly and stupid, delete this immediately.",
+        "toxic": 1
+      }
+    ]
+  }
+}

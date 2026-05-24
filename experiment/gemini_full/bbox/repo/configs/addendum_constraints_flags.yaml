@@ -1,0 +1,114 @@
+# configs/addendum_constraints_flags.yaml
+# reference_grounding: paperbench_ref_002 lora.ipynb
+
+# BBox-Adapter Model and Loss Module
+# symbols: ell_2, alpha, theta, y_2, equation
+# formula: alpha * E[g_theta(x, y_+)^2] + alpha * E[g_theta(x, y_-)^2]
+BBox-Adapter Model and Loss Module:
+  ranking_nce_loss:
+    enabled: true
+    spectral_normalization:
+      method: "l2_regularization" # As per addendum.md
+      alpha: 0.01
+      ell_2: true
+      theta: true
+      y_2: true # Representing y_+^2 and y_-^2 from Equation 3
+      equation: "Equation 3"
+    numeric_defaults:
+      alpha: 0.01
+      margin: 1.0
+
+# Baselines and Ablations Module
+# complete method/baseline selector set
+Baselines and Ablations Module:
+  methods:
+    - ours
+    - chain_of_thought
+    - oracle
+    - heuristic
+    - roberta
+    - fine_tuning
+    - lora
+    - sft_lora
+    - azure_sft
+    - mlm
+    - bbox_adapter
+    - ranking_nce
+    - online_adaptation
+    - single_step_inference
+    - full_step_inference
+    - ai_feedback
+    - ppo
+    - energy_based_model
+
+# Adapted Inference and Beam Search Module
+# complete bounded parameter sweeps
+Adapted Inference and Beam Search Module:
+  sweeps:
+    temperature: 0.7
+    learning_rate: 0.0001
+    batch_size: 64
+    beam_size: [1, 3, 5]
+    iteration_count: [3, 0, 1, 2, 4]
+    adapter_size: [0.1, 0.3]
+    epochs: 3
+
+# BBox-Adapter Core Adaptation Experiment
+BBox-Adapter Core Adaptation Experiment:
+  datasets:
+    - gsm8k
+    - strategyqa
+    - truthfulqa
+    - scienceqa
+    - toxigen
+  online_adaptation:
+    steps: "Algorithm 1"
+    ema_decay: 0.99
+    numeric_defaults: [4, 1, 0, 2]
+  dataset_loaders:
+    gsm8k: { id: "gsm8k", setup: "src/data/unit_python_pipeline.py", validation: true }
+    strategyqa: { id: "strategyqa", setup: "src/data/unit_python_pipeline.py", validation: true }
+    truthfulqa: { id: "truthfulqa", setup: "src/data/unit_python_pipeline.py", validation: true }
+    scienceqa: { id: "scienceqa", setup: "src/data/unit_python_pipeline.py", validation: true }
+    toxigen: { id: "toxigen", setup: "src/data/unit_python_pipeline.py", validation: true }
+
+# Evaluation and Artifact Generation Module
+Evaluation and Artifact Generation Module:
+  generate_artifacts: true
+  vram_measurement:
+    target: "0.1B" # As per addendum.md: only 0.1B version evaluated for VRAM
+  artifacts:
+    - results/figures/figure_1.png
+    - results/tables/table_1.csv
+    - results/figures/figure_2.png
+    - results/tables/table_2.csv
+    - results/tables/table_3.csv
+    - results/tables/table_4.csv
+    - results/tables/table_5.csv
+    - results/figures/figure_3.png
+    - results/tables/table_6.csv
+    - results/figures/figure_4.png
+    - results/tables/table_7.csv
+    - results/tables/table_8.csv
+    - results/figures/figure_5.png
+    - results/tables/table_9.csv
+    - results/figures/figure_6.png
+    - results/tables/table_10.csv
+    - results/figures/figure_7.png
+    - results/figures/figure_8.png
+
+# Environment/Task Factories
+# Exposing paper-derived environment/task factories with ids, aliases, setup metadata
+factories:
+  unit-001: { alias: "cli_entrypoint", setup: "main.py", availability: true }
+  unit-006: { alias: "data_pipeline", setup: "src/data/unit_python_pipeline.py", availability: true }
+  achieving_improvements: { alias: "main_results", setup: "main.py", availability: true }
+  determines_which: { alias: "method_selection", setup: "configs/task_setup_factory.yaml", availability: true }
+  keep_all_paper_visible: { alias: "visibility_registry", setup: "configs/evidence_obligation_registry.yaml", availability: true }
+  config_data_pipeline: { alias: "data_config", setup: "configs/task_setup_factory.yaml", availability: true }
+  config_factory: { alias: "factory_config", setup: "configs/task_setup_factory.yaml", availability: true }
+  registry_configuration_artifact: { alias: "artifact_registry", setup: "configs/task_setup_factory.yaml", availability: true }
+  decides_which: { alias: "environment_selection", setup: "configs/inventory_registry_make.yaml", availability: true }
+  config_tests_artifact_writer_expose_explicit: { alias: "test_config", setup: "configs/inventory_registry_make.yaml", availability: true }
+  bind_each_baseline: { alias: "baseline_binding", setup: "configs/rl_comparison_registry.yaml", availability: true }
+  worse_ablation_performance_without_fabricating: { alias: "ablation_check", setup: "main.py", availability: true }

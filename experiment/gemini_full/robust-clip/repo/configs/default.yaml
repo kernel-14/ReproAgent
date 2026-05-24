@@ -1,0 +1,406 @@
+# configs/default.yaml
+# reference_grounding: paperbench_ref_001 README.md
+# reference_grounding: paperbench_ref_004 lavis/projects/blip2/train/caption_coco_ft.yaml
+
+# Global configuration defaults for Robust CLIP reproduction
+
+# ==============================================================================
+# 1. Environment and Task Factories
+# ==============================================================================
+environments:
+  unit-001:
+    id: "unit-001"
+    alias: "unit_001_smoke"
+    setup_metadata:
+      description: "Smoke test environment for pipeline validation"
+      requires_gpu: false
+    availability_check: "src.fare.utils.check_smoke_env"
+    runnable_config_hook: "src.fare.utils.setup_smoke_env"
+  
+  cifar:
+    id: "cifar"
+    alias: "cifar10"
+    setup_metadata:
+      description: "CIFAR-10 zero-shot classification task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_cifar_env"
+    runnable_config_hook: "src.fare.utils.setup_cifar_env"
+
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_val"
+    setup_metadata:
+      description: "ImageNet-1k validation task for zero-shot and robust evaluation"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_imagenet_env"
+    runnable_config_hook: "src.fare.utils.setup_imagenet_env"
+
+  coco:
+    id: "coco"
+    alias: "coco_caption"
+    setup_metadata:
+      description: "COCO captioning and retrieval task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_coco_env"
+    runnable_config_hook: "src.fare.utils.setup_coco_env"
+
+  flickr30k:
+    id: "flickr30k"
+    alias: "flickr30k_retrieval"
+    setup_metadata:
+      description: "Flickr30k image-text retrieval task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_flickr_env"
+    runnable_config_hook: "src.fare.utils.setup_flickr_env"
+
+  stl10:
+    id: "stl10"
+    alias: "stl10_val"
+    setup_metadata:
+      description: "STL-10 zero-shot classification task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_stl_env"
+    runnable_config_hook: "src.fare.utils.setup_stl_env"
+
+  visual-question answering:
+    id: "visual-question answering"
+    alias: "vqa"
+    setup_metadata:
+      description: "Visual Question Answering task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_vqa_env"
+    runnable_config_hook: "src.fare.utils.setup_vqa_env"
+
+  was recently introduced:
+    id: "was recently introduced"
+    alias: "recent_benchmarks"
+    setup_metadata:
+      description: "Recently introduced benchmarks for LVLM evaluation"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_recent_env"
+    runnable_config_hook: "src.fare.utils.setup_recent_env"
+
+  best performing numbers:
+    id: "best performing numbers"
+    alias: "sota_comparison"
+    setup_metadata:
+      description: "SOTA comparison environment"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_sota_env"
+    runnable_config_hook: "src.fare.utils.setup_sota_env"
+
+  models outperform tecoa across all:
+    id: "models outperform tecoa across all"
+    alias: "tecoa_comparison"
+    setup_metadata:
+      description: "TeCoA comparison environment"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_tecoa_env"
+    runnable_config_hook: "src.fare.utils.setup_tecoa_env"
+
+  resulting pope:
+    id: "resulting pope"
+    alias: "pope_eval"
+    setup_metadata:
+      description: "POPE hallucination evaluation task"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_pope_env"
+    runnable_config_hook: "src.fare.utils.setup_pope_env"
+
+  almost all down-stream:
+    id: "almost all down-stream"
+    alias: "downstream_tasks"
+    setup_metadata:
+      description: "Downstream task evaluation suite"
+      requires_gpu: true
+    availability_check: "src.fare.utils.check_downstream_env"
+    runnable_config_hook: "src.fare.utils.setup_downstream_env"
+
+
+# ==============================================================================
+# 2. Dataset and Benchmark Loaders
+# ==============================================================================
+datasets:
+  cifar:
+    id: "cifar"
+    alias: "cifar10"
+    setup_metadata:
+      source: "torchvision"
+      split: "test"
+    validation_check: "src.fare.data.validate_cifar"
+    runnable_config_hook: "src.fare.data.load_cifar"
+
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_val"
+    setup_metadata:
+      source: "huggingface"
+      path: "imagenet-1k"
+      split: "validation"
+      trust_remote_code: true
+    validation_check: "src.fare.data.validate_imagenet"
+    runnable_config_hook: "src.fare.data.load_imagenet"
+
+  coco:
+    id: "coco"
+    alias: "coco_caption"
+    setup_metadata:
+      source: "huggingface"
+      path: "ydshieh/coco_karpathy_paper2any"
+      split: "test"
+    validation_check: "src.fare.data.validate_coco"
+    runnable_config_hook: "src.fare.data.load_coco"
+
+  flickr30k:
+    id: "flickr30k"
+    alias: "flickr30k_retrieval"
+    setup_metadata:
+      source: "huggingface"
+      path: "nlplab/flickr30k"
+      split: "test"
+    validation_check: "src.fare.data.validate_flickr"
+    runnable_config_hook: "src.fare.data.load_flickr"
+
+  stl10:
+    id: "stl10"
+    alias: "stl10_val"
+    setup_metadata:
+      source: "torchvision"
+      split: "test"
+    validation_check: "src.fare.data.validate_stl"
+    runnable_config_hook: "src.fare.data.load_stl"
+
+  imagenet_r:
+    id: "imagenet_r"
+    alias: "imagenet_rendition"
+    setup_metadata:
+      source: "huggingface"
+      path: "imagenet_r"
+      split: "test"
+    validation_check: "src.fare.data.validate_imagenet_r"
+    runnable_config_hook: "src.fare.data.load_imagenet_r"
+
+  imagenet_sketch:
+    id: "imagenet_sketch"
+    alias: "imagenet_sketch"
+    setup_metadata:
+      source: "huggingface"
+      path: "imagenet_sketch"
+      split: "test"
+    validation_check: "src.fare.data.validate_imagenet_sketch"
+    runnable_config_hook: "src.fare.data.load_imagenet_sketch"
+
+  vqav2:
+    id: "vqav2"
+    alias: "vqav2_val"
+    setup_metadata:
+      source: "huggingface"
+      path: "vqav2"
+      split: "validation"
+    validation_check: "src.fare.data.validate_vqav2"
+    runnable_config_hook: "src.fare.data.load_vqav2"
+
+  textvqa:
+    id: "textvqa"
+    alias: "textvqa_val"
+    setup_metadata:
+      source: "huggingface"
+      path: "textvqa"
+      split: "validation"
+    validation_check: "src.fare.data.validate_textvqa"
+    runnable_config_hook: "src.fare.data.load_textvqa"
+
+  pope:
+    id: "pope"
+    alias: "pope_hallucination"
+    setup_metadata:
+      source: "local"
+      path: "data/pope"
+    validation_check: "src.fare.data.validate_pope"
+    runnable_config_hook: "src.fare.data.load_pope"
+
+  sqa_i:
+    id: "sqa_i"
+    alias: "science_qa_img"
+    setup_metadata:
+      source: "huggingface"
+      path: "derek-chen/ScienceQA"
+      split: "test"
+    validation_check: "src.fare.data.validate_sqa_i"
+    runnable_config_hook: "src.fare.data.load_sqa_i"
+
+  caltech101:
+    id: "caltech101"
+    alias: "caltech101"
+    setup_metadata:
+      source: "torchvision"
+      split: "test"
+    validation_check: "src.fare.data.validate_caltech101"
+    runnable_config_hook: "src.fare.data.load_caltech101"
+
+  stanford_cars:
+    id: "stanford_cars"
+    alias: "stanford_cars"
+    setup_metadata:
+      source: "torchvision"
+    validation_check: "src.fare.data.validate_stanford_cars"
+    runnable_config_hook: "src.fare.data.load_stanford_cars"
+
+  fgvc_aircraft:
+    id: "fgvc_aircraft"
+    alias: "fgvc_aircraft"
+    setup_metadata:
+      source: "torchvision"
+    validation_check: "src.fare.data.validate_fgvc_aircraft"
+    runnable_config_hook: "src.fare.data.load_fgvc_aircraft"
+
+  flowers:
+    id: "flowers"
+    alias: "flowers102"
+    setup_metadata:
+      source: "torchvision"
+    validation_check: "src.fare.data.validate_flowers"
+    runnable_config_hook: "src.fare.data.load_flowers"
+
+  pcam:
+    id: "pcam"
+    alias: "patch_camelyon"
+    setup_metadata:
+      source: "huggingface"
+    validation_check: "src.fare.data.validate_pcam"
+    runnable_config_hook: "src.fare.data.load_pcam"
+
+  oxford_pets:
+    id: "oxford_pets"
+    alias: "oxford_iiit_pet"
+    setup_metadata:
+      source: "torchvision"
+    validation_check: "src.fare.data.validate_oxford_pets"
+    runnable_config_hook: "src.fare.data.load_oxford_pets"
+
+
+# ==============================================================================
+# 3. Method, Baseline, and Attack Selectors
+# ==============================================================================
+selectors:
+  methods:
+    ours: "src.fare.models.load_ours"
+    robust_clip: "src.fare.models.load_robust_clip"
+    vit: "src.fare.models.load_vit"
+    fine_tuning: "src.fare.models.load_fine_tuning"
+    llava: "src.fare.models.load_llava"
+    openflamingo: "src.fare.models.load_openflamingo"
+    tecoa: "src.fare.models.load_tecoa"
+    fare: "src.fare.models.load_fare"
+
+  baselines:
+    chain_of_thought: "src.fare.baselines.chain_of_thought"
+    clip: "src.fare.baselines.clip_standard"
+
+  attacks:
+    apgd: "src.fare.attacks.apgd_attack"
+    autoattack: "src.fare.attacks.autoattack_wrapper"
+    pgd: "src.fare.attacks.pgd_attack"
+
+
+# ==============================================================================
+# 4. Parameter Sweeps and Bounded Config Entries
+# ==============================================================================
+parameter_sweeps:
+  weight_decay:
+    default: 1e-4
+    values: [1e-5, 1e-4, 1e-3, 1e-2]
+  learning_rate:
+    default: 5e-6
+    values: [1e-6, 5e-6, 1e-5, 5e-5]
+  batch_size:
+    default: 128
+    values: [32, 64, 128, 256]
+
+
+# ==============================================================================
+# 5. Fixed Hyperparameter Anchors
+# ==============================================================================
+fixed_hyperparameters:
+  100_iterations: 100
+  10000_iterations: 10000
+  5000_iterations: 5000
+  5_ground_truths: 5
+  2_epochs: 2
+  10_pgd_steps: 10
+  epsilon_4/255: 0.0156862745  # 4 / 255
+  epsilon_2/255: 0.0078431372  # 2 / 255
+  alpha_1/255: 0.0039215686    # 1 / 255
+  adamw_betas_0.9_0.95: [0.9, 0.95]
+  weight_decay_1e-4: 0.0001
+  batch_size_128: 128
+  momentum_0.9: 0.9
+  cosine_decay_with_linear_warmup:
+    warmup_epochs: 0.1
+    decay_style: "cosine"
+
+
+# ==============================================================================
+# 6. Formula and Algorithm Symbol Inventory
+# ==============================================================================
+symbols:
+  l_infinity: "L_inf"
+  trust_remote_code: true
+  load_dataset: "datasets.load_dataset"
+  ell_infty: "L_inf"
+  EmailAPIto=<targetemail>,subject=User: "EmailAPI(to=<target email>, subject=User(...))"
+  asset_6: "assets/asset_6.jpg"
+  EmailAPIto=<targetemail>,subject=UserQuery,body=attack: "EmailAPI(to=<target email>, subject=User Query, body=attack)"
+  LR: 5e-6
+  WD: 1e-4
+  ell_2: "L2"
+  ell_1: "L1"
+  R^d: "R^d"
+  L_clean: "L_clean"
+  phi_FT: "phi_FT"
+  phi_Org: "phi_Org"
+  FT: "Fine-Tuning"
+  L_adv: "L_adv"
+  varepsilon_infty: 0.0078431372  # 2 / 255
+
+numeric_anchors:
+  5000: 5000
+  1: 1
+  255: 255
+  2: 2
+  4: 4
+  6: 6
+  3: 3
+  5: 5
+  4.2: 4.2
+  10: 10
+  32: 32
+  15.7: 15.7
+  17.4: 17.4
+  14.4: 14.4
+  5.6: 5.6
+  500: 500
+
+
+# ==============================================================================
+# 7. Executable Artifact and Output Paths
+# ==============================================================================
+artifacts:
+  metrics_json: "results/metrics.json"
+  fare_clip_vision_pt: "checkpoints/fare_clip_vision.pt"
+  evidence_contract_matrix_json: "results/evidence_contract_matrix.json"
+  experiment_registry_json: "results/experiment_registry.json"
+  environment_registry_json: "results/environment_registry.json"
+  dataset_registry_json: "results/dataset_registry.json"
+  artifact_manifest_json: "results/artifact_manifest.json"
+  sensitivity_report_json: "results/sensitivity_report.json"
+  experiment_results_csv: "results/tables/experiment_results.csv"
+  table_1_csv: "results/tables/table_1.csv"
+  table_2_csv: "results/tables/table_2.csv"
+  table_3_csv: "results/tables/table_3.csv"
+  table_8_csv: "results/tables/table_8.csv"
+  table_12_csv: "results/tables/table_12.csv"
+  config_resolved_json: "results/config_resolved.json"
+  training_trace_json: "results/training_trace.json"
+  adversarial_trace_json: "results/adversarial_trace.json"
+  loss_trace_json: "results/loss_trace.json"

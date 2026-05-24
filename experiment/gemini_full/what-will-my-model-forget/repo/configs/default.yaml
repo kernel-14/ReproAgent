@@ -1,0 +1,284 @@
+# configs/default.yaml
+# Grounding Marker: reference_grounding: paper_contract_sweep_hyperparameter_protocol
+
+# 1. Global Configuration & Setup
+setup:
+  mode: "runtime_smoke"
+  verbose: true
+  seed: 42
+
+# 2. Model Registry & Environment/Task Factories
+models:
+  BART0_Large:
+    name: "BART0_Large"
+    alias: "bart0_large"
+    path: "facebook/bart-large"
+    type: "seq2seq"
+    parameters:
+      H: 1024
+      V: 50265
+  FLAN-T5_Large:
+    name: "FLAN-T5_Large"
+    alias: "flan_t5_large"
+    path: "google/flan-t5-large"
+    type: "seq2seq"
+    parameters:
+      H: 1024
+      V: 32128
+  FLAN-T5_3B:
+    name: "FLAN-T5_3B"
+    alias: "flan_t5_3b"
+    path: "google/flan-t5-xl"
+    type: "seq2seq"
+    parameters:
+      H: 2048
+      V: 32128
+
+environment_factories:
+  BART0_Large:
+    id: "BART0_Large"
+    alias: "bart0_large"
+    setup_metadata:
+      parameters: 400000000
+      H: 1024
+      V: 50265
+    availability_check: "check_model_availability"
+    runnable_config_hook: "setup_bart0_large"
+  FLAN-T5_Large:
+    id: "FLAN-T5_Large"
+    alias: "flan_t5_large"
+    setup_metadata:
+      parameters: 780000000
+      H: 1024
+      V: 32128
+    availability_check: "check_model_availability"
+    runnable_config_hook: "setup_flan_t5_large"
+  FLAN-T5_3B:
+    id: "FLAN-T5_3B"
+    alias: "flan_t5_3b"
+    setup_metadata:
+      parameters: 3000000000
+      H: 2048
+      V: 32128
+    availability_check: "check_model_availability"
+    runnable_config_hook: "setup_flan_t5_3b"
+
+# 3. Dataset & Benchmark Loaders
+datasets:
+  D_PT:
+    P3-Test:
+      name: "P3-Test"
+      alias: "p3_test"
+      splits: ["ID", "OOD"]
+      examples_per_task: 100
+      total_tasks: 36
+      description: "Upstream pretraining dataset, filtering out samples the model got wrong (D_hat_PT)"
+    SQuAD:
+      name: "SQuAD"
+      alias: "squad"
+      splits: ["train", "validation"]
+      description: "Stanford Question Answering Dataset"
+    GLUE:
+      name: "GLUE"
+      alias: "glue"
+      splits: ["train", "validation"]
+      description: "General Language Understanding Evaluation benchmark"
+  D_R:
+    Refinement:
+      name: "Refinement data"
+      alias: "refinement_data"
+      description: "Online learned examples or refinement data"
+
+dataset_loaders:
+  D_PT_P3_Test:
+    id: "D_PT: P3-Test (ID/OOD)"
+    alias: "p3_test"
+    setup_metadata:
+      examples_per_task: 100
+      total_tasks: 36
+    validation_check: "validate_p3_test"
+    runnable_config_hook: "load_p3_test"
+  D_PT_SQuAD:
+    id: "D_PT: SQuAD"
+    alias: "squad"
+    setup_metadata:
+      task_family: "QA"
+    validation_check: "validate_squad"
+    runnable_config_hook: "load_squad"
+  D_PT_GLUE:
+    id: "D_PT: GLUE"
+    alias: "glue"
+    setup_metadata:
+      task_family: "Classification"
+    validation_check: "validate_glue"
+    runnable_config_hook: "load_glue"
+  D_R_Refinement:
+    id: "D_R: Refinement data"
+    alias: "refinement_data"
+    setup_metadata:
+      description: "Online learned examples"
+    validation_check: "validate_refinement_data"
+    runnable_config_hook: "load_refinement_data"
+
+# 4. Method & Baseline Registry
+methods:
+  ours:
+    name: "ours"
+    description: "Proposed representation-based forecasting method"
+  t5:
+    name: "t5"
+    description: "T5-based forecasting baseline"
+  fine_tuning:
+    name: "fine_tuning"
+    description: "Vanilla fine-tuning baseline"
+  lora:
+    name: "lora"
+    description: "Low-Rank Adaptation baseline"
+  frequency_threshold:
+    name: "Frequency-Threshold based forecasting"
+    alias: "threshold"
+    description: "Baseline predicting forgetting based on historical forgetting frequency"
+  trainable_logit:
+    name: "Trainable Logit-based forecasting"
+    alias: "trainable_logit"
+    description: "Trainable logit-based forecasting model"
+  fixed_logit:
+    name: "Non-trained fixed-logit based forecasting"
+    alias: "fixed_logit"
+    description: "Fixed-logit based forecasting model using frozen final layer representation"
+  representation:
+    name: "Representation-Based forecasting"
+    alias: "representation"
+    description: "Representation-based forecasting model using inner products of representations"
+  wo_prior:
+    name: "w/o Prior (Ablation)"
+    alias: "wo_prior"
+    description: "Ablation of representation-based forecasting without prior"
+
+# 5. Parameter Sweeps & Fixed Hyperparameters
+sweeps:
+  learning_rate: [1e-6, 1e-5, 1e-4, 1e-3]
+  gamma: [0.1, 0.3, 0.5, 0.7, 0.9]
+  H: [512, 768, 1024, 2048]
+  V: [32000, 50265]
+
+# 6. LoRA Configuration
+lora_config:
+  task_type: "SEQ_2_SEQ_LM"
+  inference_mode: false
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.1
+  bias: "none"
+  target_modules: ["q", "v"]
+
+# 7. Formula & Algorithm Symbol Inventory
+symbols:
+  D_hat_PT: "Upstream pretraining dataset filtered for correct predictions"
+  EM_D_f: "Exact Match score of model f on dataset D"
+  x_i: "Input text of online learned example i"
+  y_i: "Ground truth answer of online learned example i"
+  D_R: "Refinement dataset"
+  f_i: "Model updated after learning example i"
+  D_PT: "Upstream pretraining dataset"
+  PT: "Pretraining"
+  f_0: "Base language model"
+  D_hat: "Filtered dataset"
+  x_j: "Input text of upstream pretraining example j"
+  y_j: "Ground truth answer of upstream pretraining example j"
+  z_ij: "Binary indicator of ground truth forgetting of example j when learning example i"
+  gamma: "Threshold parameter for frequency-threshold based forecasting"
+  Delta: "Change of model parameters or logits"
+  theta_i: "Model parameters after learning example i"
+  theta_0: "Base model parameters"
+  nabla_theta: "Gradient with respect to model parameters"
+  f_hat_0: "Logits of base model"
+  f_hat_i: "Logits of updated model"
+  Theta: "Kernel measuring inner products among gradients"
+  Theta_inv: "Inverse of kernel Theta"
+  Theta_tilde: "Approximated kernel"
+  R^TVtimesTV: "Dimension of kernel Theta"
+  W_Head: "LM head weights"
+  R^TtimesH: "Dimension of representation matrix"
+  f_tilde_0: "Logits of base model"
+  f_tilde_i: "Logits of updated model"
+  z_hat_ij: "Predicted forgetting score"
+  LM: "Language Model"
+  z_tilde_ij: "Approximated forgetting score"
+
+# 8. Numeric & Default Anchors
+numeric_anchors:
+  zero: 0
+  one: 1
+  two: 2
+  three: 3
+  four: 4
+  sixteen: 16
+  thirty_two: 32
+  point_one: 0.1
+  one_hundred: 100
+
+# 9. Callable Protocol Matrix
+protocols:
+  Experiment_I:
+    name: "Experiment I: Performance of Forecasting Example Forgetting"
+    environments: ["squad", "glue"]
+    methods: ["ours", "frequency_threshold", "trainable_logit", "fixed_logit", "representation", "wo_prior"]
+    metrics: ["accuracy", "f1", "precision", "recall", "loss"]
+    artifact_writers:
+      - "write_experiment_registry_artifact"
+      - "write_method_registry_artifact"
+      - "write_ablation_registry_artifact"
+      - "write_config_resolved_artifact"
+      - "write_training_trace_artifact"
+      - "write_table_1_artifact"
+      - "write_table_2_artifact"
+  Experiment_II:
+    name: "Experiment II: Improving Model Refinement by Forecasting Forgetting"
+    environments: ["squad", "glue"]
+    methods: ["ours", "t5", "fine_tuning", "lora"]
+    metrics: ["accuracy", "f1", "success_rate", "loss"]
+    protocol_obligations: ["per_sample_lowest_score_selection"]
+    artifact_writers:
+      - "write_sensitivity_report_artifact"
+      - "write_figure_1_artifact"
+      - "write_figure_2_artifact"
+
+# 10. Evidence Obligation Matrix
+obligation_matrix:
+  Data_Pipeline:
+    target: "results/dataset_registry.json"
+    description: "Data pipeline setup and validation"
+  Environment_Setup:
+    target: "results/environment_registry.json"
+    description: "Environment setup and model factories"
+  Method_Implementation:
+    target: "results/experiment_registry.json"
+    description: "Method registry and baseline comparison surface"
+  Exp_I_Forecasting_Performance:
+    target: "results/tables/table_1.csv"
+    description: "Performance of forgetting forecasting methods"
+  Exp_I_ID_vs_OOD:
+    target: "results/tables/table_2.csv"
+    description: "In-domain and out-of-domain performance of forecasting methods"
+  Exp_I_Computational_Efficiency:
+    target: "results/metrics.json"
+    description: "Computational efficiency and training cost of forecasting methods"
+  Exp_I_SQuAD_GLUE:
+    target: "results/tables/table_7.csv"
+    description: "SQuAD and GLUE forecasting results"
+  Exp_I_Hyperparameters:
+    target: "results/tables/table_9.csv"
+    description: "Hyperparameter sensitivity analysis"
+  Exp_I_Additional_Results:
+    target: "results/tables/table_10.csv"
+    description: "Additional forecasting results"
+  Exp_II_Replay_Utility:
+    target: "results/evidence_contract_matrix.json"
+    description: "Replay utility and model refinement results"
+  Exp_II_Sensitivity_Analysis:
+    target: "results/figures/figure_4.png"
+    description: "Sensitivity analysis of replay selection"
+  Exp_II_Model_Refinement:
+    target: "results/tables/table_3.csv"
+    description: "Model refinement and replay performance"

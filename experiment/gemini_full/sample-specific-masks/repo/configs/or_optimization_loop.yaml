@@ -1,0 +1,329 @@
+# configs/or_optimization_loop.yaml
+# Reference Grounding: paper:paper_training_or_optimization_loop (chunk_005, chunk_006)
+
+metadata:
+  paper_title: "Sample-specific Masks for Visual Reprogramming-based Prompting"
+  active_reproduction_scope: "Reproduction of SMM (Sample-specific Multi-channel Masks) and baseline VR methods"
+  three_seed_protocol: [42, 43, 44]
+
+# Defined symbols for contract validation
+symbols:
+  vit_b32: "ViT_B32"
+  train_preprocess: "train_preprocess"
+  compose_transforms_resizeimgsize_32_imgsize_32: "transforms.Resize((imgsize + 32, imgsize + 32))"
+  randomcropimgsize: "transforms.RandomCrop(imgsize)"
+  lambdalambdax_x_convert_rgb: "transforms.Lambda(lambda x: x.convert('RGB') if hasattr(x, 'convert') else x)"
+  normalizeimagenetnormalize_mean_imagenetnormalize_std: "transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])"
+  test_preprocess: "test_preprocess"
+  compose_transforms_resizeimgsize_imgsize: "transforms.Resize((imgsize, imgsize))"
+  d_t: "d_T"
+  k_t: "k_T"
+  x_i: "x_i"
+  y_i: "y_i"
+  delta: "delta"
+  f_mask: "f_mask"
+  f_in: "f_in"
+  delta_star: "delta^*"
+  d_P: "d_P"
+  d_T: "d_T"
+  phi: "phi"
+  theta: "theta"
+  phi_star: "phi^*"
+  f_out: "f_out"
+  f_P: "f_P"
+  R_d: "R^d"
+  alpha_1: "alpha_1"
+  alpha_2: "alpha_2"
+  sum_i_1_n: "sum_i=1^n"
+  int_X: "int_X"
+  p_X: "p_X"
+  F_1: "F_1"
+  F_2: "F_2"
+  R_plus: "R^+"
+  R_D: "R_D"
+
+# Paper evidence contract priority methods
+priority_methods:
+  - ours
+  - vit
+  - resnet
+  - lora
+
+# Paper evidence contract priority sweeps
+priority_sweeps:
+  p: [0.0, 0.5, 1.0]
+  learning_rate: [0.001, 0.01, 0.1]
+  patch_size: [4, 2, 1]
+  epochs: [1, 10, 50]
+
+# Paper evidence contract priority fixed hyperparameters
+fixed_hyperparameters:
+  three_seed_protocol: [42, 43, 44]
+  delta_initialized_to_zero: true
+  frozen_pretrained_model_parameters: true
+
+# Environment/task factories
+environment_task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "unit_001_smoke"
+    setup_metadata: "Lightweight smoke test environment"
+    availability_check: "src.data.unit_python_py.check_availability"
+    runnable_config_hook: "src.data.unit_python_py.setup_env"
+  cifar:
+    id: "cifar"
+    alias: "cifar_env"
+    setup_metadata: "CIFAR environment setup"
+    availability_check: "src.data.unit_smm_class.check_cifar_availability"
+    runnable_config_hook: "src.data.unit_smm_class.setup_cifar_env"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet_env"
+    setup_metadata: "ImageNet environment setup"
+    availability_check: "src.data.unit_smm_class.check_imagenet_availability"
+    runnable_config_hook: "src.data.unit_smm_class.setup_imagenet_env"
+  svhn:
+    id: "svhn"
+    alias: "svhn_env"
+    setup_metadata: "SVHN environment setup"
+    availability_check: "src.data.unit_smm_class.check_svhn_availability"
+    runnable_config_hook: "src.data.unit_smm_class.setup_svhn_env"
+  ucf101:
+    id: "ucf101"
+    alias: "ucf101_env"
+    setup_metadata: "UCF101 environment setup"
+    availability_check: "src.data.unit_smm_class.check_ucf101_availability"
+    runnable_config_hook: "src.data.unit_smm_class.setup_ucf101_env"
+  food101:
+    id: "food101"
+    alias: "food101_env"
+    setup_metadata: "Food101 environment setup"
+    availability_check: "src.data.unit_smm_class.check_food101_availability"
+    runnable_config_hook: "src.data.unit_smm_class.setup_food101_env"
+  sun397:
+    id: "sun397"
+    alias: "sun397_env"
+    setup_metadata: "SUN397 environment setup"
+    availability_check: "src.data.unit_smm_class.check_sun397_availability"
+    runnable_config_hook: "src.data.unit_smm_class.setup_sun397_env"
+  one_can_address_new:
+    id: "one can address new"
+    alias: "one_can_address_new"
+    setup_metadata: "One can address new tasks environment"
+    availability_check: "src.data.unit_smm_class.check_one_can_address_new"
+    runnable_config_hook: "src.data.unit_smm_class.setup_one_can_address_new"
+  target_tasks:
+    id: "target tasks"
+    alias: "target_tasks"
+    setup_metadata: "Target tasks environment"
+    availability_check: "src.data.unit_smm_class.check_target_tasks"
+    runnable_config_hook: "src.data.unit_smm_class.setup_target_tasks"
+  across_some:
+    id: "across some"
+    alias: "across_some"
+    setup_metadata: "Across some environment"
+    availability_check: "src.data.unit_smm_class.check_across_some"
+    runnable_config_hook: "src.data.unit_smm_class.setup_across_some"
+  paper_semantic_chunk_046:
+    id: "paper-semantic-chunk-046-dataset-registry-additional-visualization-additional-visualization-figure"
+    alias: "paper_semantic_chunk_046"
+    setup_metadata: "Paper semantic chunk 046 environment"
+    availability_check: "src.data.unit_smm_class.check_paper_semantic_chunk_046"
+    runnable_config_hook: "src.data.unit_smm_class.setup_paper_semantic_chunk_046"
+  determines_which:
+    id: "determines which"
+    alias: "determines_which"
+    setup_metadata: "Determines which environment"
+    availability_check: "src.data.unit_smm_class.check_determines_which"
+    runnable_config_hook: "src.data.unit_smm_class.setup_determines_which"
+
+# Dataset/benchmark loaders
+dataset_loaders:
+  CIFAR10:
+    id: "CIFAR10"
+    alias: "cifar10"
+    setup_metadata: "CIFAR10 dataset loader"
+    validation_check: "src.data.unit_smm_class.validate_cifar10"
+    runnable_config_hook: "src.data.unit_smm_class.load_cifar10"
+  CIFAR100:
+    id: "CIFAR100"
+    alias: "cifar100"
+    setup_metadata: "CIFAR100 dataset loader"
+    validation_check: "src.data.unit_smm_class.validate_cifar100"
+    runnable_config_hook: "src.data.unit_smm_class.load_cifar100"
+  cifar:
+    id: "cifar"
+    alias: "cifar"
+    setup_metadata: "Generic CIFAR dataset loader"
+    validation_check: "src.data.unit_smm_class.validate_cifar"
+    runnable_config_hook: "src.data.unit_smm_class.load_cifar"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    setup_metadata: "ImageNet dataset loader"
+    validation_check: "src.data.unit_smm_class.validate_imagenet"
+    runnable_config_hook: "src.data.unit_smm_class.load_imagenet"
+  imagenet_1k:
+    id: "imagenet_1k"
+    alias: "imagenet_1k"
+    setup_metadata: "ImageNet-1K dataset loader"
+    validation_check: "src.data.unit_smm_class.validate_imagenet_1k"
+    runnable_config_hook: "src.data.unit_smm_class.load_imagenet_1k"
+  dtd:
+    id: "dtd"
+    alias: "dtd"
+    setup_metadata: "DTD dataset loader"
+    validation_check: "src.data.unit_smm_class.validate_dtd"
+    runnable_config_hook: "src.data.unit_smm_class.load_dtd"
+  eurosat:
+    id: "eurosat"
+    alias: "eurosat"
+    setup_metadata: "EuroSAT dataset loader"
+    validation_check: "src.data.unit_smm_class.validate_eurosat"
+    runnable_config_hook: "src.data.unit_smm_class.load_eurosat"
+  flowers:
+    id: "flowers"
+    alias: "flowers"
+    setup_metadata: "Flowers dataset loader"
+    validation_check: "src.data.unit_smm_class.validate_flowers"
+    runnable_config_hook: "src.data.unit_smm_class.load_flowers"
+  oxford_pets:
+    id: "oxford_pets"
+    alias: "oxford_pets"
+    setup_metadata: "Oxford Pets dataset loader"
+    validation_check: "src.data.unit_smm_class.validate_oxford_pets"
+    runnable_config_hook: "src.data.unit_smm_class.load_oxford_pets"
+
+# Selectable method/baseline/variant factories
+method_factories:
+  PAD:
+    id: "PAD"
+    class_path: "src.methods.unit_transformation_functions.PadVR"
+    description: "Centering the original image and adding the noise pattern around the images"
+  NARROW:
+    id: "NARROW"
+    class_path: "src.methods.unit_transformation_functions.NarrowVR"
+    description: "Adding a narrow padding binary mask with a width of 28"
+  MEDIUM:
+    id: "MEDIUM"
+    class_path: "src.methods.unit_transformation_functions.MediumVR"
+    description: "Adding a medium padding binary mask"
+  FULL:
+    id: "FULL"
+    class_path: "src.methods.unit_transformation_functions.FullVR"
+    description: "Adding a full padding binary mask"
+  ONLY_delta:
+    id: "ONLY delta"
+    class_path: "src.methods.unit_smm_class.OnlyDeltaSMM"
+    description: "Ablation variant: only delta is trained"
+  ONLY_f_mask:
+    id: "ONLY f_mask"
+    class_path: "src.methods.unit_smm_class.OnlyFMaskSMM"
+    description: "Ablation variant: only f_mask is trained"
+  SINGLE_CHANNEL_f_mask_s:
+    id: "SINGLE-CHANNEL f_mask^s"
+    class_path: "src.methods.unit_smm_class.SingleChannelSMM"
+    description: "Ablation variant: single-channel mask generator"
+  ours:
+    id: "ours"
+    class_path: "src.methods.unit_smm_class.SMM"
+    description: "Sample-specific Multi-channel Masks (SMM)"
+  vit:
+    id: "vit"
+    class_path: "src.methods.unit_smm_class.ViTReprogramming"
+    description: "ViT-based visual prompting baseline"
+  resnet:
+    id: "resnet"
+    class_path: "src.methods.unit_smm_class.ResNetReprogramming"
+    description: "ResNet-based visual reprogramming baseline"
+  lora:
+    id: "lora"
+    class_path: "src.methods.unit_smm_class.LoRAReprogramming"
+    description: "LoRA baseline"
+  Ours:
+    id: "Ours"
+    class_path: "src.methods.unit_smm_class.SMM"
+    description: "Sample-specific Multi-channel Masks (SMM)"
+  imagenet_1k:
+    id: "imagenet_1k"
+    class_path: "src.methods.unit_smm_class.ImageNet1kPretrained"
+    description: "ImageNet-1K pre-trained model loader"
+  SMM:
+    id: "Sample-specific Multi-channel Masks (SMM)"
+    class_path: "src.methods.unit_smm_class.SMM"
+    description: "Sample-specific Multi-channel Masks (SMM)"
+  Lightweight_Mask_Generator:
+    id: "Lightweight Mask Generator Module"
+    class_path: "src.methods.unit_smm_class.LightweightMaskGenerator"
+    description: "Lightweight CNN mask generator f_mask"
+  Patchwise_Interpolation:
+    id: "Patch-wise Interpolation Module"
+    class_path: "src.methods.unit_smm_class.PatchwiseInterpolation"
+    description: "Patch-wise interpolation module to upscale the mask"
+  Rlm:
+    id: "Random Label Mapping (Rlm)"
+    class_path: "src.methods.unit_labelmapper_class.RandomLabelMapping"
+    description: "Random Label Mapping (Rlm) function"
+  ResNet_18:
+    id: "ResNet-18"
+    class_path: "src.methods.unit_smm_class.ResNet18Loader"
+    description: "Pre-trained ResNet-18 model"
+  ResNet_50:
+    id: "ResNet-50"
+    class_path: "src.methods.unit_smm_class.ResNet50Loader"
+    description: "Pre-trained ResNet-50 model"
+
+# Executable orchestration matrix over declared paper-derived dimensions
+experiment_matrix:
+  datasets_or_tasks:
+    - "unit-001"
+    - "cifar"
+    - "imagenet"
+    - "svhn"
+    - "ucf101"
+    - "food101"
+    - "sun397"
+  methods_or_models:
+    - "PAD"
+    - "NARROW"
+    - "MEDIUM"
+    - "FULL"
+    - "ONLY delta"
+    - "ONLY f_mask"
+    - "SINGLE-CHANNEL f_mask^s"
+    - "ours"
+    - "vit"
+    - "resnet"
+    - "lora"
+  parameters:
+    delta_init: 0.0
+    frozen_pretrained: true
+    learning_rate: [0.001, 0.01, 0.1]
+    patch_size: [4, 2, 1]
+    epochs: [1, 10, 50]
+
+# Active route closure: calls same-package helper symbols
+calls_symbols:
+  run_experiment: "main.run_experiment"
+  compute_accuracy: "src.methods.registry_make_results.compute_accuracy"
+  aggregate_accuracy: "src.methods.registry_make_results.aggregate_accuracy"
+  compute_loss: "src.methods.registry_make_results.compute_loss"
+  aggregate_loss: "src.methods.registry_make_results.aggregate_loss"
+  compute_f1: "src.methods.registry_make_results.compute_f1"
+  aggregate_f1: "src.methods.registry_make_results.aggregate_f1"
+  compute_metric_entrypoint_artifact_writer_entrypoint_metric_entrypoint_objective: "src.methods.registry_make_results.compute_metric_entrypoint_artifact_writer_entrypoint_metric_entrypoint_objective"
+  compute_metric_entrypoint_artifact_writer_entrypoint_metric_entrypoint_score: "src.methods.registry_make_results.compute_metric_entrypoint_artifact_writer_entrypoint_metric_entrypoint_score"
+  write_main_artifact: "src.methods.registry_make_results.write_main_artifact"
+  write_artifact_manifest: "src.methods.registry_make_results.write_artifact_manifest"
+  train_preprocess: "src.methods.registry_make_results.train_preprocess"
+
+# Bounded execution defaults
+bounded_execution:
+  smoke_mode: true
+  default_dataset: "cifar"
+  default_model: "resnet"
+  default_method: "ours"
+  default_epochs: 1
+  default_learning_rate: 0.01
+  default_patch_size: 4
+  default_p: 1.0

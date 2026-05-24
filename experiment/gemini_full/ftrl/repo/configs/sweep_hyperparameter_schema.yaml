@@ -1,0 +1,199 @@
+# configs/sweep_hyperparameter_schema.yaml
+# Faithful reproduction configuration and sweep hyperparameter schema for:
+# "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+
+metadata:
+  project_name: "Fine-tuning RL as Forgetting Mitigation"
+  paper_id: "ftrl"
+  reproduction_scope: "Faithful implementation of MDP, AppleRetrieval, and Robotics experiments."
+  reference_grounding: "addendum:formula_algorithm_contract chunk_003_01 chunk_004_02 chunk_018 chunk_019 chunk_024_01"
+
+# Expose paper-derived environment/task factories and registries
+environments:
+  registry:
+    - id: "two_state_mdp"
+      alias: "two-state-mdp"
+      description: "Two-state MDP with CLOSE and FAR state partitions to track forgetting."
+      state_space_partition:
+        close: "s_0"
+        far: "s_1"
+      setup_metadata:
+        gamma: 0.9
+        epsilon: 0.5
+        r_0: 0.11
+        r_1: 2.22
+        s_0: 0
+        s_1: 1
+        v_0: 10.0
+        f_0: 0.0
+        f_1: 1.0
+      availability_check: "src.envs.two_state_mdp.make_two_state_mdp"
+      runnable_config_hook: "setup_two_state_mdp"
+
+    - id: "appleretrieval"
+      alias: "apple_retrieval"
+      description: "AppleRetrieval grid-world environment exhibiting state coverage gap."
+      setup_metadata:
+        M: 13
+        c: 11
+        sigma: 30
+        asset_13: 13
+        pi_w: 1.0
+        pi_b: 0.0
+        apple_reward: 10.0
+        step_penalty: -0.1
+      availability_check: "src.envs.apple_retrieval.make_apple_retrieval"
+      runnable_config_hook: "setup_apple_retrieval"
+
+    - id: "robotics"
+      alias: "push-wall"
+      description: "Robotic manipulation task (Meta-World push-wall) for sequential transfer."
+      setup_metadata:
+        task_name: "push-wall-v2"
+        gold_score_threshold: 0.9
+        beta: 1.5
+        E_k: 200
+        E_i: 1
+        r_t: 1.0
+        r_t_prime: 1.0
+      availability_check: "src.envs.robotics.make_robotics"
+      runnable_config_hook: "setup_robotics"
+
+# Expose paper-derived dataset/benchmark loaders
+datasets:
+  robotics:
+    id: "robotics_dataset"
+    alias: "robotics"
+    description: "Robotic manipulation demonstration dataset for push-wall task."
+    setup_metadata:
+      num_trajectories: 100
+      validation_split: 0.2
+    validation_checks: "src.envs.robotics.validate_robotics_dataset"
+    runnable_config_hook: "load_robotics_dataset"
+
+  nethack:
+    id: "nld-aa-v0"
+    alias: "nethack_learning"
+    description: "NetHack Learning Dataset (NLD-AA) for behavioral cloning and forgetting mitigation."
+    setup_metadata:
+      add_nledata_directory: "/path/to/nld-aa"
+      add_altorg_directory: "/path/to/nld-nao"
+      dataset_name: "nld-aa-v0"
+      batch_size: 128
+    validation_checks: "src.data.nethack.validate_nethack_dataset"
+    runnable_config_hook: "load_nethack_dataset"
+
+# Expose method/baseline/attack selectors
+methods:
+  selectors:
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+
+# Expose bounded sweep/config entries
+sweeps:
+  learning_rate:
+    type: "float"
+    bounds: [1e-5, 1e-3]
+    default: 3e-4
+    values: [1e-5, 3e-5, 1e-4, 3e-4, 1e-3]
+  batch_size:
+    type: "int"
+    bounds: [32, 256]
+    default: 128
+    values: [32, 64, 128, 256]
+
+# Expose fixed hyperparameter anchors
+fixed_hyperparameters:
+  batch_size_128: 128
+  ewc_lambda: 2.0
+  gamma: 0.9
+  epsilon: 0.5
+  r_0: 0.11
+  r_1: 2.22
+  c_parameter: 1.5
+  E_k: 200
+  E_i: 1
+  theta_init: 0.0
+  f_theta_init: 1.0
+  sigma: 30
+  asset_13: 13
+  M: 13
+  c: 11
+
+# Paper formula/algorithm symbol inventory
+symbol_inventory:
+  add_nledata_directory: "nld.add_nledata_directory"
+  add_altorg_directory: "nld.add_altorg_directory"
+  ttyrecdataset_nld_aa_v0_batch_size_128: "nld.TtyrecDataset('nld-aa-v0', batch_size=128)"
+  batch_size: 128
+  L_aux: "L_aux(theta) = sum_i F^i * (theta_*^i - theta^i)^2"
+  theta: "Current policy parameters"
+  sum_i: "Summation over parameter indices"
+  F^i: "Fisher Information Matrix diagonal element i"
+  theta_*^i: "Pre-trained policy parameter index i"
+  theta^i: "Current policy parameter index i"
+  theta_*: "Pre-trained policy parameters"
+  L_BC: "L_BC(theta) = E_{s ~ B_BC}[D_KL(pi_*(s) || pi_theta(s))]"
+  B_BC: "Behavioral cloning replay buffer"
+  D_KL: "Kullback-Leibler divergence"
+  pi_*: "Pre-trained policy"
+  pi_theta: "Current policy"
+  L_KS: "L_KS(theta) = E_{s ~ pi_theta}[D_KL(pi_*(s) || pi_theta(s))]"
+  s_0: "Starting state in two-state MDP"
+  v_0: "Value of state s_0"
+  gamma: "Discount factor"
+  r_0: "Reward for CLOSE state transition"
+  f_theta: "Policy parameterization function"
+  r_1: "Reward for FAR state transition"
+  epsilon: "Policy parameterization epsilon"
+
+# Numeric/default anchors
+numeric_anchors:
+  batch_size: 128
+  ewc_lambda: 2
+  theta_init: 0
+  gamma_mdp: 9
+  far_reward: 1
+  r_0: 0.11
+  r_1: 2.22
+  epsilon: 0.5
+  v_0_target: 10
+  f_theta_min: 0.08
+  v_0_max: 9.93
+  M: 13
+  c: 11
+  sigma: 30
+  E_k: 200
+  beta: 1.5
+
+# Measurement collection and result aggregation
+metrics:
+  fidelity_score:
+    formula: "Fidelity = 1.0 - abs(reproduced_score - paper_score) / paper_score"
+    aggregation: "mean"
+  success_rate:
+    formula: "Success Rate = successful_episodes / total_episodes"
+    aggregation: "mean"
+  return:
+    formula: "Return = sum_{t=0}^T gamma^t * r_t"
+    aggregation: "mean"
+  loss:
+    formula: "Loss = L_RL + lambda_aux * L_aux"
+    aggregation: "mean"
+
+# Resolved config and sensitivity report artifacts
+artifacts:
+  resolved_config_path: "results/config_resolved.json"
+  sensitivity_report_path: "results/sensitivity_report.json"
+  figures:
+    - "results/figures/figure_1.png"
+    - "results/figures/figure_2.png"
+    - "results/figures/figure_4.png"
+    - "results/figures/figure_12.png"
+    - "results/figures/figure_3a.png"
+    - "results/figures/figure_3.png"

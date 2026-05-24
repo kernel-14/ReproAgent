@@ -1,0 +1,153 @@
+# configs/default.yaml
+# Reproduction of "Stay on topic with Classifier-Free Guidance"
+# reference_grounding: paperbench_ref_001 README.md
+# reference_grounding: paperbench_ref_002 howto_finetune.md
+
+project:
+  name: "stay-on-topic-cfg"
+  description: "Reproduction of Classifier-Free Guidance for Language Models"
+  output_dir: "results"
+  active_reproduction_scope: "Zero-shot, CoT, Code Gen, and Chatbot evaluations with CFG"
+
+# Implementation surfaces: model_or_method, logit_processor
+method:
+  selector: "ours" # Options: ours, vanilla, chain_of_thought, bert, ppo
+  cfg:
+    enabled: true
+    # 实现公式: L_cfg = L(w|c) + gamma * (L(w|c) - L(w|c_bar))
+    formula: "log P_hat(w_i | w_j<i, c) = log P(w_i | w_j<i) + gamma * (log P(w_i | w_j<i, c) - log P(w_i | w_j<i))"
+    gamma: 1.5 # Default guidance scale (gamma)
+    dynamic_gamma: true # 支持动态调整 guidance scale (gamma) 参数
+    negative_prompt: "" # Default c_bar (empty prompt)
+  baselines:
+    vanilla:
+      gamma: 1.0
+    chain_of_thought:
+      enabled: true
+      template: "Let's think step by step."
+    bert:
+      enabled: false
+    ppo:
+      enabled: false
+
+# Paper-derived environment/task factories
+environments:
+  glue:
+    id: "glue"
+    aliases: ["glue_benchmark", "glue_tasks"]
+    tasks: ["paws", "mnli", "sst2", "paraphrase"]
+    metadata:
+      description: "General Language Understanding Evaluation"
+  common_sense:
+    id: "common_sense_reasoning"
+    tasks: ["hellaswag", "piqa", "arc_challenge"]
+  unit_006:
+    id: "unit-006"
+  humanoid:
+    id: "humanoid"
+  diverse_array:
+    id: "diverse_array"
+  exhaustive_array:
+    id: "exhaustive_array"
+
+# Paper-derived dataset/benchmark loaders
+datasets:
+  lambada:
+    id: "lambada"
+    alias: "lambada_openai"
+    metric: "accuracy"
+    target_sota: 77.9 # PaLM-540B
+    paper_result: 81.0 # LLaMA-7B with gamma=1.5
+  closebook_qa:
+    id: "closebook_qa"
+  open_assistant:
+    id: "open_assistant_dataset"
+    n_c: 25 # system-prompts
+    n_p: 46 # user-prompts
+    total_samples: 1740
+
+# Required parameter sweeps and fixed hyperparameter anchors
+hyperparameters:
+  gamma: 1.5
+  temperature: 1.0
+  p: 0.9 # top-p sampling
+  gamma_5: 5.0 # fixed hyperparameter anchor for gamma_5
+  flops_computation: 5.1 # numeric anchor from addendum
+
+sweeps:
+  gamma: [1.0, 1.2, 1.5, 2.0, 3.0, 5.0]
+  temperature: [0.2, 0.6, 0.8, 1.0, 1.5]
+  p: [0.1, 0.5, 0.9, 1.0]
+
+# Paper formula/algorithm symbol inventory and numeric anchors
+# These are code-visible constants used by runtime code.
+paper_anchors:
+  symbols:
+    w_p: "prompt"
+    flops_computation: "FLOPs measurement"
+    sum_k: "summation over k"
+    p_k: "probability of k"
+    x_i: "input dimension i"
+    x_lt_i: "prefix inputs"
+    sum_i_1_n: "summation from 1 to n"
+    P_theta: "conditional distribution"
+    P_phi: "classifier distribution"
+    gamma: "guidance scale"
+    theta: "model parameters"
+    epsilon_t: "sample noise"
+    x_t_plus_1: "diffusion state at t+1"
+    prod_i_1_T: "product from 1 to T"
+    w_i: "next token"
+    w_j_lt_i: "prefix tokens"
+    prod_i_T: "product over T"
+    c_bar: "negative or empty prompt"
+    n_c: "number of system prompts"
+    n_p: "number of user prompts"
+    w_t: "token at t"
+    w_lt_t: "tokens before t"
+    w_T: "terminal token"
+    w_hat: "predicted token"
+  numeric_defaults:
+    val_5_1: 5.1
+    val_1: 1
+    val_0: 0
+    val_3: 3
+    val_4: 4
+    val_6: 6
+    val_7: 7
+    val_5: 5
+    val_3_4: 3.4
+    val_81: 81
+    val_1_5: 1.5
+    val_77_9: 77.9
+    val_2: 2
+    val_10: 10
+    val_100: 100
+    val_0_2: 0.2
+
+# Executable artifact contract: table/figure/metric/prediction writers
+artifacts:
+  figure_1: "results/figures/figure_1.png"
+  table_1: "results/tables/table_1.csv"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+  table_4: "results/tables/table_4.csv"
+  table_5: "results/tables/table_5.csv"
+  figure_6: "results/figures/figure_6.png"
+  figure_18a: "results/figures/figure_18a.png" # Entropy analysis
+  figure_19: "results/figures/figure_19.png"
+  table_17: "results/tables/table_17.csv"
+  zeroshot_metrics: "results/zeroshot_metrics.json"
+  code_gen_metrics: "results/code_gen_metrics.json"
+  chatbot_samples: "results/chatbot_samples.json"
+  entropy_analysis: "results/entropy_analysis.png"
+  vocab_reordering: "results/vocab_reordering.png"
+
+# Canonical route call sites
+calls_symbols:
+  - run_figure_18a_route
+  - write_figure_18a_artifact
+  - run_figure_19_route
+  - write_figure_19_artifact
+  - run_table_17_route
+  - write_table_17_artifact

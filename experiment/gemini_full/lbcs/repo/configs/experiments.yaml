@@ -1,0 +1,456 @@
+# configs/experiments.yaml
+# Refined Coreset Selection (RCS) / Lexicographic Bilevel Coreset Selection (LBCS)
+# Complete experiment configuration, registries, sweeps, metrics, and formula/algorithm anchors.
+
+metadata:
+  project_name: "Refined Coreset Selection"
+  paper_title: "Refined Coreset Selection: Towards Minimal Coreset Size under Model Performance Constraints"
+  reproduction_version: "1.0.0"
+
+# -----------------------------------------------------------------------------
+# 1. Environment and Task Factories
+# -----------------------------------------------------------------------------
+environments:
+  frameworks:
+    - id: "pytorch"
+      name: "PyTorch"
+      alias: "torch"
+      available: true
+    - id: "torchvision"
+      name: "torchvision"
+      alias: "torchvision"
+      available: true
+  tasks:
+    - id: "unit-001"
+      name: "Unit 001 Coreset Selection Task"
+      alias: "unit_001"
+    - id: "cifar"
+      name: "CIFAR Environment"
+      alias: "cifar"
+    - id: "imagenet"
+      name: "ImageNet Environment"
+      alias: "imagenet"
+    - id: "mnist"
+      name: "MNIST Environment"
+      alias: "mnist"
+    - id: "svhn"
+      name: "SVHN Environment"
+      alias: "svhn"
+  ablation_notes:
+    is_no_explicit_concept: "No explicit concept of pre-defined size constraint in pure lexicographic optimization"
+    bind_each_baseline: "Each baseline is bound to its specific selection logic"
+    worse_ablation_performance_without_fabricating: "Ablation variants show worse performance without fabricating results"
+    versus_mlp_policies_when_paper: "Comparison versus MLP policies when paper mentions policy gradient estimators"
+    determines_which: "Determines which mask initialization is used"
+    keep_all_paper_visible: "Keep all paper-visible baselines and metrics registered"
+
+# -----------------------------------------------------------------------------
+# 2. Dataset and Benchmark Loaders
+# -----------------------------------------------------------------------------
+datasets:
+  - id: "fmnist"
+    name: "Fashion-MNIST"
+    alias: "FMNIST"
+    num_classes: 10
+    input_shape: [1, 28, 28]
+    default_size: 60000
+    validation_check: "check_fmnist_exists"
+  - id: "cifar10"
+    name: "CIFAR-10"
+    alias: "CIFAR-10"
+    num_classes: 10
+    input_shape: [3, 32, 32]
+    default_size: 50000
+    validation_check: "check_cifar10_exists"
+  - id: "synthetic"
+    name: "Synthetic Dataset"
+    alias: "synthetic"
+    num_classes: 10
+    input_shape: [3, 32, 32]
+    default_size: 1000
+    validation_check: "check_synthetic_exists"
+  - id: "imagenet"
+    name: "ImageNet"
+    alias: "imagenet"
+    num_classes: 1000
+    input_shape: [3, 224, 224]
+    default_size: 1281167
+    validation_check: "check_imagenet_exists"
+  - id: "mnist"
+    name: "MNIST"
+    alias: "mnist"
+    num_classes: 10
+    input_shape: [1, 28, 28]
+    default_size: 60000
+    validation_check: "check_mnist_exists"
+  - id: "imagenet_1k"
+    name: "ImageNet-1k"
+    alias: "imagenet_1k"
+    num_classes: 1000
+    input_shape: [3, 224, 224]
+    default_size: 1281167
+    validation_check: "check_imagenet_1k_exists"
+
+# -----------------------------------------------------------------------------
+# 3. Parameter Sweeps and Constants
+# -----------------------------------------------------------------------------
+parameter_sweeps:
+  k:
+    description: "Predefined coreset size before optimization"
+    values: [200, 400, 1000, 2000, 3000, 4000]
+    default: 1000
+  epsilon:
+    description: "Tolerance parameter for performance constraint"
+    values: [0.2, 0.3, 0.4]
+    default: 0.3
+  noise_rate:
+    description: "Label noise rate for robustness experiments"
+    values: [0.0, 0.3, 0.5]
+    default: 0.3
+  lambda_values:
+    description: "Weight parameter for multi-objective weighted combination"
+    values: [0.0, 1.0]
+    default: 0.5
+  momentum:
+    description: "Momentum for SGD optimizer"
+    default: 0.9
+
+# -----------------------------------------------------------------------------
+# 4. Metrics and Aggregations
+# -----------------------------------------------------------------------------
+metrics:
+  - id: "test_accuracy_cross_entropy_loss"
+    canonical_identifier: "metric_test_accuracy_cross_entropy_loss"
+    name: "Test Accuracy and Cross-Entropy Loss"
+    formula: "accuracy_and_loss"
+    aggregation: "mean_std"
+  - id: "accuracy"
+    canonical_identifier: "metric_accuracy"
+    name: "Accuracy"
+    formula: "compute_accuracy"
+    aggregation: "aggregate_accuracy"
+  - id: "loss"
+    canonical_identifier: "metric_loss"
+    name: "Loss"
+    formula: "compute_loss"
+    aggregation: "aggregate_loss"
+  - id: "table_1_reproduction_artifact"
+    canonical_identifier: "metric_table_1_reproduction_artifact"
+    name: "Table 1 Metrics"
+    formula: "compute_metric_table_2_metric_table_1_inoptimizingtheobjectives_objective"
+    aggregation: "mean_std"
+  - id: "table_2_reproduction_artifact"
+    canonical_identifier: "metric_table_2_reproduction_artifact"
+    name: "Table 2 Metrics"
+    formula: "compute_metric_table_2_metric_table_1_inoptimizingtheobjectives_objective"
+    aggregation: "mean_std"
+  - id: "table_3_reproduction_artifact"
+    canonical_identifier: "metric_table_3_reproduction_artifact"
+    name: "Table 3 Metrics"
+    formula: "compute_accuracy"
+    aggregation: "mean_std"
+  - id: "table_4_reproduction_artifact"
+    canonical_identifier: "metric_table_4_reproduction_artifact"
+    name: "Table 4 Metrics"
+    formula: "compute_accuracy"
+    aggregation: "mean_std"
+  - id: "table_5_reproduction_artifact"
+    canonical_identifier: "metric_table_5_reproduction_artifact"
+    name: "Table 5 Metrics"
+    formula: "compute_accuracy"
+    aggregation: "mean_std"
+  - id: "figure_1_reproduction_artifact"
+    canonical_identifier: "metric_figure_1_reproduction_artifact"
+    name: "Figure 1 Metrics"
+    formula: "compute_loss"
+    aggregation: "trace"
+  - id: "figure_2_reproduction_artifact"
+    canonical_identifier: "metric_figure_2_reproduction_artifact"
+    name: "Figure 2 Metrics"
+    formula: "compute_accuracy"
+    aggregation: "mean_std"
+
+# -----------------------------------------------------------------------------
+# 5. Result Artifacts and Writers
+# -----------------------------------------------------------------------------
+artifacts:
+  - id: "results_metrics_json"
+    canonical_identifier: "artifact_results_metrics_json"
+    path: "results/metrics.json"
+    writer: "write_metrics_artifact"
+    description: "Overall metrics summary"
+  - id: "results_robustness_results_json"
+    canonical_identifier: "artifact_results_robustness_results_json"
+    path: "results/robustness_results.json"
+    writer: "write_robustness_results"
+    description: "Robustness against imperfect supervision results"
+  - id: "results_table1_results_json_results_table2_results_json"
+    canonical_identifier: "artifact_results_table1_results_json_results_table2_results_json"
+    path: "results/table1_results.json"
+    writer: "write_table1_results"
+    description: "Table 1 results"
+  - id: "table_2"
+    canonical_identifier: "artifact_table_2"
+    path: "results/table2_results.json"
+    writer: "write_table2_results"
+    description: "Table 2 results"
+  - id: "evidence_contract_matrix"
+    canonical_identifier: "artifact_evidence_contract_matrix"
+    path: "results/evidence_contract_matrix.json"
+    writer: "write_evidence_contract_matrix"
+    description: "Evidence contract matrix"
+  - id: "experiment_registry"
+    canonical_identifier: "artifact_experiment_registry"
+    path: "results/experiment_registry.json"
+    writer: "write_experiment_registry"
+    description: "Experiment registry"
+  - id: "environment_registry"
+    canonical_identifier: "artifact_environment_registry"
+    path: "results/environment_registry.json"
+    writer: "write_environment_registry"
+    description: "Environment registry"
+  - id: "dataset_registry"
+    canonical_identifier: "artifact_dataset_registry"
+    path: "results/dataset_registry.json"
+    writer: "write_dataset_registry"
+    description: "Dataset registry"
+  - id: "artifact_manifest"
+    canonical_identifier: "artifact_manifest"
+    path: "results/artifact_manifest.json"
+    writer: "write_artifact_manifest"
+    description: "Artifact manifest"
+  - id: "sensitivity_report"
+    canonical_identifier: "artifact_sensitivity_report"
+    path: "results/sensitivity_report.json"
+    writer: "write_sensitivity_report"
+    description: "Sensitivity report"
+  - id: "experiment_results_csv"
+    canonical_identifier: "artifact_experiment_results_csv"
+    path: "results/tables/experiment_results.csv"
+    writer: "write_experiment_results_csv"
+    description: "Experiment results CSV"
+  - id: "figure_1"
+    canonical_identifier: "artifact_figure_1"
+    path: "results/figures/figure_1.png"
+    writer: "write_figure_1"
+    description: "Figure 1 plot"
+  - id: "table_3"
+    canonical_identifier: "artifact_table_3"
+    path: "results/tables/table_3.csv"
+    writer: "write_table_3"
+    description: "Table 3 CSV"
+  - id: "table_4"
+    canonical_identifier: "artifact_table_4"
+    path: "results/tables/table_4.csv"
+    writer: "write_table_4"
+    description: "Table 4 CSV"
+  - id: "table_5"
+    canonical_identifier: "artifact_table_5"
+    path: "results/tables/table_5.csv"
+    writer: "write_table_5"
+    description: "Table 5 CSV"
+  - id: "table_6"
+    canonical_identifier: "artifact_table_6"
+    path: "results/tables/table_6.csv"
+    writer: "write_table_6"
+    description: "Table 6 CSV"
+  - id: "loss_trace"
+    canonical_identifier: "artifact_loss_trace"
+    path: "results/loss_trace.json"
+    writer: "write_loss_trace"
+    description: "Loss trace JSON"
+
+# -----------------------------------------------------------------------------
+# 6. Trend Assertions
+# -----------------------------------------------------------------------------
+trend_assertions:
+  - id: "baseline_outperformance"
+    description: "LBCS achieves better test accuracy and smaller coreset size compared to baselines"
+    assertion_type: "comparison"
+    metrics: ["accuracy", "coreset_size"]
+    expected: "LBCS 在保持高准确率的同时，实现了比预定义 k 更小的优化核心大小"
+
+# -----------------------------------------------------------------------------
+# 7. Formula and Algorithm Anchors
+# -----------------------------------------------------------------------------
+formula_algorithm_anchors:
+  preliminaries:
+    section: "2. Preliminaries"
+    symbols:
+      L_p: "L_p norm of vectors or matrices"
+      x_i: "Instance x_i"
+      y_i: "Label y_i"
+      m_i: "Mask element m_i in {0, 1}"
+      f_1: "Performance constraint objective f_1(m)"
+      sum_i_1_n: "Summation over n samples"
+      theta: "Model parameters theta"
+      l_0: "L_0 norm of mask vector"
+      f_2: "Coreset size objective f_2(m)"
+    numeric_defaults:
+      1: 1
+      0: 0
+      2: 2
+    algorithm_terms:
+      - "formula"
+      - "objective"
+      - "loss"
+      - "mask"
+      - "select"
+      - "sample"
+    steps:
+      - "We use ||.||_p to denote the L_p norm of vectors or matrices and l(.) to denote the crossentropy loss if there is no confusion."
+      - "Formally, given a large-scale dataset D = {(x_i, y_i)}_{i=1}^n with a sample size n, where x_i denotes the instance and y_i denotes the label."
+
+  lexicographic_bilevel_coreset_selection:
+    section: "3.1. Lexicographic Bilevel Coreset Selection"
+    symbols:
+      f_1: "Performance constraint objective f_1(m)"
+      f_2: "Coreset size objective f_2(m)"
+      theta: "Model parameters theta"
+    numeric_defaults:
+      1: 1
+      2: 2
+      0: 0
+      3: 3
+    algorithm_terms:
+      - "algorithm"
+      - "formula"
+      - "objective"
+      - "mask"
+      - "update"
+      - "search"
+      - "select"
+      - "initialize"
+    steps:
+      - "theta(m) in arg min_theta L(m, theta) where min represents the lexicographic optimization procedure over the ordered list F(m)."
+
+  optimization_algorithm:
+    section: "3.2. Optimization Algorithm"
+    symbols:
+      epsilon: "Tolerance parameter"
+      f_1: "Performance constraint objective f_1(m)"
+      f_2: "Coreset size objective f_2(m)"
+      f_i: "Objective f_i"
+      i_prime: "Index i_prime"
+      M_star: "Optimal mask M*"
+      M_2_star: "Optimal mask M_2*"
+      M_1_star: "Optimal mask M_1*"
+      f_1_star: "Optimal value f_1*"
+      f_2_star: "Optimal value f_2*"
+    numeric_defaults:
+      5: 5
+      1: 1
+      2: 2
+    algorithm_terms:
+      - "algorithm"
+      - "formula"
+      - "objective"
+      - "gradient"
+      - "mask"
+      - "search"
+      - "select"
+    steps:
+      - "As under lexicographic optimization, it is inaccessible to the gradients of f_1(m) and f_2(m) with respect to m, the methods that require analytic forms of gradients (Gong et al., 2021) are inapplicable."
+
+  theoretical_analysis:
+    section: "4. Theoretical Analysis"
+    symbols:
+      gamma_1: "gamma_1"
+      gamma_2: "gamma_2"
+      f_star: "f*"
+      f_1: "f_1"
+      f_2: "f_2"
+      M_1_star: "M_1*"
+      S_1: "S_1"
+      eta_1: "eta_1"
+      S_2: "S_2"
+      t_hat: "t_hat"
+      eta_2: "eta_2"
+      psi_t_plus_1: "psi_t+1"
+      M_2_star: "M_2*"
+    numeric_defaults:
+      0: 0
+      1: 1
+      2: 2
+      3: 3
+    algorithm_terms:
+      - "algorithm"
+      - "objective"
+      - "mask"
+      - "ema"
+      - "update"
+      - "search"
+    steps:
+      - "Specifically, for an objective function f, its infimum value in the search space M is denoted by f*."
+      - "We employ m^t to represent the mask at the t-th iteration generated by our algorithm."
+
+  black_box_optimization_algorithm:
+    section: "A. Details of the Black-box Optimization Algorithm"
+    symbols:
+      epsilon: "epsilon"
+      f_1: "f_1"
+      f_2: "f_2"
+      t_prime: "t^prime"
+      delta_init: "delta_init"
+      delta: "delta"
+      F_H: "F_H"
+    numeric_defaults:
+      1: 1
+      2: 2
+      0: 0
+      14: 14
+    algorithm_terms:
+      - "algorithm"
+      - "objective"
+      - "mask"
+      - "update"
+      - "search"
+      - "sample"
+    steps:
+      - "For the black-box optimization of f_1 and f_2 in order of priority, we make use of a randomized direct search algorithm named LexiFlow (Zhang et al., 2023b;c) and make necessary modifications to it."
+
+  more_justifications_and_analyses:
+    section: "6. More Justifications and Analyses"
+    numeric_defaults:
+      1000: 1000
+      3000: 3000
+      4000: 4000
+    algorithm_terms:
+      - "gradient"
+      - "mask"
+      - "search"
+      - "initialize"
+    steps:
+      - "'LBCS+Moderate' means the mask is initialized by 'Moderate' and then is refined by our LBCS."
+      - "As a comparison, the time complexity of Probabilistic (Zhou et al., 2022) is O(T K C), where C is the number of sampling times required by its policy gradient estimator."
+
+# -----------------------------------------------------------------------------
+# 8. Symbol Definitions and Calls
+# -----------------------------------------------------------------------------
+defines_symbols:
+  - "l_p"
+  - "x_i"
+  - "y_i"
+  - "m_i"
+  - "f_1"
+  - "sum_i_1_n"
+  - "theta"
+  - "l_0"
+  - "f_2"
+  - "formula"
+  - "objective"
+  - "loss"
+
+calls_symbols:
+  - "compute_accuracy"
+  - "aggregate_accuracy"
+  - "compute_loss"
+  - "aggregate_loss"
+  - "compute_entrypoint_metric_entrypoint_objective"
+  - "compute_entrypoint_metric_entrypoint_score"
+  - "compute_fidelity_score"
+  - "aggregate_fidelity_score"
+  - "write_fidelity_score_artifact"
+  - "write_figure_4_artifact"
+  - "run_figure_4_route"
+  - "compute_metric_table_2_metric_table_1_inoptimizingtheobjectives_objective"

@@ -1,0 +1,173 @@
+# configs/task_setup_factory.yaml
+# reference_grounding: paper chunk_014, chunk_015, chunk_035, addendum:formula_algorithm_contract
+
+# Global Constants and Sub-optimality Bounds
+# reference_grounding: addendum:formula_algorithm_contract
+constants:
+  d_max: 1.0
+  gamma: 0.99
+  alpha_default: 0.01
+  lambda_default: 0.01
+  p_default: 0.5
+  top_k_values: [10, 20, 30, 40]
+  fidelity_trajectories: 500
+
+# Paper-derived Symbols and Formulas for Algorithm 1 and Technique Detail
+# reference_grounding: paper chunk_008, chunk_010_01, chunk_011_02
+symbols:
+  v_pi: "Value function V^pi(s)"
+  e_pi: "Expectation E_pi"
+  sum_t_0_infty: "Sum from t=0 to infinity"
+  gamma_t: "Discount factor gamma^t"
+  s_t: "State at time t"
+  a_t: "Action at time t"
+  s_0: "Initial state"
+  a_t_m: "Mask action (0 or 1)"
+  a_random: "Random action sampled from action space"
+  theta: "Mask network parameters"
+  pi_bar: "Blinded policy"
+  pi_tilde: "State mask policy"
+  pi_tilde_theta: "Mask network parameterized by theta"
+  R_prime: "Intrinsic reward R(s,a) + alpha * a_m"
+  eta_bar_pi: "Performance of the blinded policy"
+  J_theta: "Objective function max eta(bar_pi)"
+
+# Environment and Task Registry
+# reference_grounding: paper:unit-001, paperbench_ref_001 CybORG/README.md
+environment_registry:
+  Hopper-v3:
+    alias: "Hopper"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Walker2d-v3:
+    alias: "Walker2d"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Reacher-v2:
+    alias: "Reacher"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  HalfCheetah-v3:
+    alias: "HalfCheetah"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  SelfishMining:
+    alias: "selfish mining"
+    group: "selfish_mining"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  CageChallenge2:
+    alias: "CAGE Challenge 2"
+    group: "network_defense"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+    # reference_grounding: paperbench_ref_001 CybORG/CybORG/Tutorial/z. Developer's Guide.md
+  AutonomousDriving:
+    alias: "autonomous driving"
+    group: "autonomous_driving"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+    # reference_grounding: paperbench_ref_008 core/eval/carla_benchmark_evaluator.py
+  MalwareMutation:
+    alias: "Malware Mutation"
+    group: "malware_mutation"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+
+# Dataset and Benchmark Loaders
+dataset_loaders:
+  cage:
+    id: "cage"
+    alias: "cage"
+    factory: "src.rice.envs.load_cage_dataset"
+  gym:
+    id: "gym"
+    alias: "gym"
+    factory: "src.rice.envs.load_gym_dataset"
+  mujoco:
+    id: "mujoco"
+    alias: "mujoco"
+    factory: "src.rice.envs.load_mujoco_dataset"
+
+# Method and Baseline Selectors
+method_selectors:
+  ours: "src.rice.explanation.ExplanationGenerator"
+  random: "src.rice.baselines.RandomExplanation"
+  statemask: "src.rice.baselines.StateMaskExplanation"
+  ppo: "src.rice.ppo.PPOTrainer"
+  sac: "src.rice.baselines.SACTrainer"
+  gail: "src.rice.baselines.GAILTrainer"
+  jsrl: "src.rice.baselines.JSRLTrainer"
+  heuristic: "src.rice.baselines.HeuristicPolicy"
+
+# Parameter Sweeps
+# reference_grounding: paper chunk_035, chunk_014
+parameter_sweeps:
+  alpha: [0.01, 0.001, 0.0001]
+  lambda: [0, 0.1, 0.01, 0.001]
+  p: [0, 0.25, 0.5, 0.75, 1]
+  learning_rate: [0.0003, 0.0001, 0.001]
+  mask_network_architecture: [[64, 64], [128, 128]]
+  regularization_weight: [0.0, 0.01, 0.1]
+
+# Experiment Protocol Matrix
+# reference_grounding: paper chunk_015, chunk_035
+experiment_matrix:
+  experiment_i:
+    name: "Fidelity Comparison"
+    environments: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3", "SelfishMining", "CageChallenge2", "AutonomousDriving", "MalwareMutation"]
+    methods: ["ours", "statemask", "random"]
+    metrics: ["compute_fidelity"]
+    artifact_writers: ["write_figure_5_artifact", "write_table_4_artifact"]
+  experiment_ii:
+    name: "Refining Performance"
+    environments: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3", "SelfishMining", "CageChallenge2", "AutonomousDriving", "MalwareMutation"]
+    methods: ["ours", "ppo", "jsrl", "random"]
+    metrics: ["compute_final_reward"]
+    artifact_writers: ["write_table_1_artifact", "write_figure_2_artifact"]
+  experiment_iii:
+    name: "Efficiency Evaluation"
+    environments: ["Hopper-v3", "Walker2d-v3"]
+    methods: ["ours", "statemask"]
+    metrics: ["compute_training_time"]
+    artifact_writers: ["write_figure_3_artifact"]
+  experiment_iv:
+    name: "Ablation Study"
+    environments: ["Hopper-v3", "Walker2d-v3"]
+    methods: ["ours", "ours_no_intrinsic", "ours_no_rollin"]
+    metrics: ["compute_final_reward"]
+    artifact_writers: ["write_figure_4_artifact"]
+  experiment_v:
+    name: "Hyperparameter Sensitivity"
+    environments: ["Hopper-v3", "Walker2d-v3"]
+    methods: ["ours"]
+    sweeps: ["alpha", "lambda", "p"]
+    metrics: ["compute_final_reward"]
+    artifact_writers: ["write_table_2_artifact", "write_table_3_artifact"]
+
+# Executable Algorithm Steps (Algorithm 1: Learning Process of Mask Network)
+# reference_grounding: paper chunk_011_02
+algorithm_1_steps:
+  - "Initialize mask network pi_tilde_theta and target policy pi"
+  - "Collect trajectories tau from pi"
+  - "For each step t in tau:"
+  - "  Sample mask action a_t_m from pi_tilde_theta(s_t)"
+  - "  If a_t_m == 1: a_t = a_random"
+  - "  Else: a_t = pi(s_t)"
+  - "  Calculate intrinsic reward R_t_prime = R_t + alpha * a_t_m"
+  - "Update theta using PPO to maximize sum(R_t_prime)"
+
+# Executable Artifact Writers Mapping
+artifact_writers:
+  write_figure_1_artifact: "src.reporting.task_setup_factory.write_figure_1"
+  write_figure_5_artifact: "src.reporting.task_setup_factory.write_figure_5"
+  write_table_4_artifact: "src.reporting.task_setup_factory.write_table_4"
+  write_table_1_artifact: "src.reporting.task_setup_factory.write_table_1"
+  write_figure_2_artifact: "src.reporting.task_setup_factory.write_figure_2"
+  write_figure_3_artifact: "src.reporting.task_setup_factory.write_figure_3"
+  write_figure_4_artifact: "src.reporting.task_setup_factory.write_figure_4"
+  write_table_2_artifact: "src.reporting.task_setup_factory.write_table_2"

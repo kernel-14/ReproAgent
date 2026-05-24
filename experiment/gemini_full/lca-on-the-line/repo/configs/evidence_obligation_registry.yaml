@@ -1,0 +1,254 @@
+# configs/evidence_obligation_registry.yaml
+# LCA-on-the-Line: Benchmarking Out-of-Distribution Generalization with Class Taxonomies
+# Evidence Obligation Registry containing environment registries, dataset loaders, parameter sweeps,
+# and paper-derived formula/algorithm anchors.
+
+metadata:
+  project_name: "lca_on_the_line"
+  description: "Reproduction of LCA-on-the-Line benchmarking out-of-distribution generalization with class taxonomies"
+  reference_grounding: "addendum:formula_algorithm_contract"
+
+# Environment and Task Factories
+environments:
+  imagenet:
+    id: "env_imagenet"
+    aliases: ["imagenet", "unit-006"]
+    setup_metadata:
+      description: "Standard ImageNet environment for evaluating 75 models across OOD datasets"
+      num_classes: 1000
+      well_trained_model: true
+      capture_correlation_invariances: true
+      discern_stable_features: true
+    availability_checks:
+      check_packages: ["torch", "torchvision", "datasets"]
+    runnable_config_hooks:
+      data_pipeline: "src.lca_line.data.prepare_imagenet"
+      config_factory: "src.lca_line.data.get_imagenet_config"
+  laion:
+    id: "env_laion"
+    aliases: ["laion"]
+    setup_metadata:
+      description: "LAION pre-trained models and evaluation environment"
+      num_classes: 1000
+      well_trained_model: true
+      capture_correlation_invariances: true
+      discern_stable_features: true
+    availability_checks:
+      check_packages: ["torch", "transformers"]
+    runnable_config_hooks:
+      data_pipeline: "src.lca_line.data.prepare_laion"
+      config_factory: "src.lca_line.data.get_laion_config"
+
+# Dataset and Benchmark Loaders
+datasets:
+  imagenet:
+    id: "dataset_imagenet"
+    aliases: ["imagenet", "imagenet-1k"]
+    setup_metadata:
+      huggingface_path: "imagenet-1k"
+      trust_remote_code: true
+    validation_checks:
+      min_samples: 1000
+      num_classes: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet"
+  laion:
+    id: "dataset_laion"
+    aliases: ["laion"]
+    setup_metadata:
+      huggingface_path: "laion"
+      trust_remote_code: true
+    validation_checks:
+      min_samples: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_laion"
+  imagenet_c:
+    id: "dataset_imagenet_c"
+    aliases: ["imagenet_c", "imagenet-c"]
+    setup_metadata:
+      description: "ImageNet-C corruption dataset"
+    validation_checks:
+      min_samples: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_c"
+  imagenet_r:
+    id: "dataset_imagenet_r"
+    aliases: ["imagenet_r", "imagenet-r"]
+    setup_metadata:
+      description: "ImageNet-R rendition dataset"
+    validation_checks:
+      min_samples: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_r"
+  imagenet_v2:
+    id: "dataset_imagenet_v2"
+    aliases: ["imagenet_v2", "imagenet-v2"]
+    setup_metadata:
+      description: "ImageNet-V2 dataset"
+    validation_checks:
+      min_samples: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_v2"
+  imagenet_sketch:
+    id: "dataset_imagenet_sketch"
+    aliases: ["imagenet_sketch", "imagenet-sketch"]
+    setup_metadata:
+      description: "ImageNet-Sketch dataset"
+    validation_checks:
+      min_samples: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_sketch"
+
+# Method, Baseline, and Attack Selectors
+methods:
+  ours:
+    id: "method_ours"
+    aliases: ["ours", "lca_alignment"]
+    description: "LCA-on-the-Line proposed method (soft labels / taxonomy alignment)"
+  resnet:
+    id: "method_resnet"
+    aliases: ["resnet", "resnet18"]
+    description: "Standard ResNet baseline"
+
+# Parameter Sweeps and Hyperparameters
+parameter_sweeps:
+  lambda:
+    default: 0.03
+    values: [0.0, 0.01, 0.03, 0.05, 0.1]
+    description: "Weight for LCA alignment loss"
+  learning_rate:
+    default: 0.001
+    values: [0.0001, 0.001, 0.01]
+    description: "Learning rate for linear probing / fine-tuning"
+  batch_size:
+    default: 25
+    values: [16, 25, 32, 64]
+    description: "Batch size for training"
+  taxonomy_tree_structure:
+    default: "wordnet"
+    values: ["wordnet", "latent_kmeans"]
+    description: "Taxonomy tree structure used for LCA distance"
+  number_of_clusters:
+    default: 4
+    values: [1, 2, 4, 6, 9]
+    description: "Number of clusters for latent taxonomy discovery"
+  depth_of_hierarchy:
+    default: 9
+    values: [3, 6, 9]
+    description: "Depth of hierarchy for latent taxonomy discovery"
+
+# Paper Formula and Algorithm Symbol Inventory
+formula_algorithm_anchors:
+  addendum:
+    symbols:
+      trust_remote_code: true
+      load_dataset: "imagenet-1k"
+      imagenet_sketch: "songweig/imagenet_sketch"
+      M_LCA: "MinMax(M^T)"
+      LCA: "Lowest Common Ancestor"
+      M^T: "Scaled LCA distance matrix"
+      process_lca_matrixlca_matrix_raw: "process_lca_matrix"
+      tree_prefix: "wordnet"
+      lca_matrix_raw: "raw_lca_matrix"
+      result_matrix: "normalized_lca_matrix"
+      lca_matrix_raw-lca_matrix_raw: "lca_matrix_raw - lca_matrix_raw"
+      fit_transformresult_matrix: "fit_transform"
+      from_numpyresult_matrix: "from_numpy"
+      not_similarity: true
+      process_lca_matrix: "process_lca_matrix"
+      fit_transform: "fit_transform"
+      from_numpy: "from_numpy"
+    numeric_defaults:
+      temp: 2
+      scale: 1.0
+    formula: "I(y) = - log p(y) = log |L| - log |L(y)|"
+
+  soft_loss_hierarchy_alignment:
+    symbols:
+      M_LCA: "MinMax(M^T)"
+      LCA: "Lowest Common Ancestor"
+      CE^prime: "Cross entropy with soft labels"
+      LCA_ALIGNMENT_LOSSlogits: "logits"
+      LCA_matrix: "LCA distance matrix"
+      lambda_weight: 0.03
+      reverse_LCA_matrix: "1 - LCA_matrix"
+      LCA_ALIGNMENT_LOSS: "LCA alignment loss"
+      M^T: "Scaled LCA distance matrix"
+      alignment_mode: "soft"
+      one_hot_targets: "one_hot"
+      standard_loss: "standard_cross_entropy"
+      soft_loss: "soft_cross_entropy"
+      total_loss: "standard_loss + lambda_weight * soft_loss"
+    numeric_defaults:
+      alignment_mode_flag: 1
+      lambda_weight: 0.03
+      batch_size: 25
+    algorithm_terms: ["algorithm", "loss", "compute"]
+    steps: "M_LCA = MinMax(M^T)"
+
+  lca_distance_misprediction_severity:
+    symbols:
+      y^prime: "predicted_class"
+      N_LCA: "lowest_common_ancestor_node"
+      D_LCA: "lca_distance"
+      asset_3: "taxonomy_tree"
+      X_i: "sample_i"
+      X_1: "sample_1"
+      X_n: "sample_n"
+      sum_i=1^n: "sum_over_samples"
+      y_i: "ground_truth_class"
+    numeric_defaults:
+      min_distance: 3
+      step_size: 1
+    algorithm_terms: ["ema", "sample"]
+    steps: "D_LCA(model, M) = (1/n) * sum_{i=1}^n D_LCA(y_hat_i, y_i) for y_i != y_hat_i"
+
+  inferring_class_taxonomy_kmeans:
+    numeric_defaults:
+      K_generalized: 1
+      K_split_1: 2
+      K_split_2: 4
+      K_split_3: 6
+      n_levels: 9
+      num_classes: 1000
+      zero: 0
+      seventeen: 17
+      fifteen: 15
+      seven: 7
+      twenty_one: 21
+    algorithm_terms: ["increase"]
+    formula: "K=1 represent the most generalized cluster, then we incrementally increase the granularity by splitting into K=2 and K=4 clusters."
+
+  ranking_measurement_lca_on_the_line:
+    algorithm_terms: ["rank", "select"]
+    formula: "LCA shows a much better result in preserving the model relative ranking to model OOD performance on all OOD datasets (with the exception of ImageNet-v2)"
+
+  lca_on_the_line_ood_predictor:
+    algorithm_terms: ["loss"]
+    steps: "Error prediction of OOD datasets across 75 models of diverse settings measured by MAE loss"
+
+  elca_distance:
+    symbols:
+      sum_i=1^n: "sum_over_samples"
+      sum_k=1^K: "sum_over_classes"
+      D_LCA: "lca_distance"
+      X_i: "sample_i"
+      y_i: "ground_truth_class"
+      D_ELCA: "expected_lca_distance"
+    numeric_defaults:
+      min_val: 1
+      num_classes: 1000
+    algorithm_terms: ["rank", "sample"]
+    steps: "D_ELCA(model, M) = (1/n) * sum_{i=1}^n sum_{k=1}^K p_hat_{k,i} * D_LCA(k, y_i)"
+
+# Expected Outputs and Artifacts
+expected_outputs:
+  - "results/metrics.json"
+  - "results/resnet18_soft_labels_metrics.json"
+  - "results/vlm_taxonomy_prompt_metrics.json"
+  - "results/evidence_contract_matrix.json"
+  - "results/experiment_registry.json"
+  - "results/environment_registry.json"
+  - "results/dataset_registry.json"
+  - "results/artifact_manifest.json"
+  - "results/sensitivity_report.json"

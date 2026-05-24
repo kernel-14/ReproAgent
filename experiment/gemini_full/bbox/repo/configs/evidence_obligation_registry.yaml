@@ -1,0 +1,259 @@
+# configs/evidence_obligation_registry.yaml
+# reference_grounding: paperbench_ref_002 lora.ipynb
+
+# ==========================================
+# 1. Dataset & Benchmark Registry
+# ==========================================
+dataset_registry:
+  gsm8k:
+    id: "gsm8k"
+    alias: "gsm8k"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_gsm8k"
+  strategyqa:
+    id: "strategyqa"
+    alias: "strategyqa"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_strategyqa"
+  truthfulqa:
+    id: "truthfulqa"
+    alias: "truthfulqa"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_truthfulqa"
+  scienceqa:
+    id: "scienceqa"
+    alias: "scienceqa"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_scienceqa"
+  toxigen:
+    id: "toxigen"
+    alias: "toxigen"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_toxigen"
+
+# ==========================================
+# 2. Method & Baseline Selectors
+# ==========================================
+method_registry:
+  selectors:
+    - ours
+    - chain_of_thought
+    - oracle
+    - heuristic
+    - roberta
+    - fine_tuning
+    - lora
+    - sft_lora
+    - azure_sft
+    - mlm
+    - bbox_adapter
+    - ranking_nce
+    - online_adaptation
+    - single_step_inference
+    - full_step_inference
+    - ai_feedback
+    - ppo
+    - energy_based_model
+
+# ==========================================
+# 3. Environment & Task Factories
+# ==========================================
+environment_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "cli_orchestration"
+    setup_metadata:
+      entrypoint: "main.py"
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  unit-006:
+    id: "unit-006"
+    alias: "data_eval_pipeline"
+    setup_metadata:
+      module: "src.data.unit_python_pipeline"
+      availability_check: true
+      runnable_config_hook: "compute_accuracy"
+  achieving_improvements:
+    id: "achieving improvements"
+    alias: "main_hypothesis"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  determines_which:
+    id: "determines which"
+    alias: "selection_logic"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  keep_all_paper_visible:
+    id: "keep all paper-visible"
+    alias: "visibility_contract"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  config_data_pipeline:
+    id: "config data-pipeline"
+    alias: "pipeline_config"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  config_factory:
+    id: "config factory"
+    alias: "factory_config"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  registry_configuration_artifact:
+    id: "registry configuration artifact"
+    alias: "registry_config"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  decides_which:
+    id: "decides which"
+    alias: "decision_logic"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  config_tests_artifact_writer_expose_explicit:
+    id: "config tests artifact-writer expose explicit"
+    alias: "writer_config"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  bind_each_baseline:
+    id: "bind each baseline"
+    alias: "baseline_binding"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  worse_ablation_performance_without_fabricating:
+    id: "worse ablation performance without fabricating"
+    alias: "ablation_logic"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+
+# ==========================================
+# 4. Parameter Sweeps & Hyperparameters
+# ==========================================
+parameter_sweeps:
+  temperature: { default: 0.7 }
+  learning_rate: { default: 0.0001 }
+  batch_size: { default: 64, anchor: "batch_size_64" }
+  beam_size: { values: [1, 3, 5] }
+  iteration_count: { values: [3, 0, 1, 2, 4] }
+  adapter_size: { values: [0.1, 0.3] }
+  epochs: { default: 3 }
+  fixed:
+    nearest_neighbor_upsample: true
+
+# ==========================================
+# 5. Formula & Algorithm Symbol Inventory
+# ==========================================
+symbol_inventory:
+  symbols:
+    - ell_2
+    - alpha
+    - theta
+    - y_2 # Defined symbol alias for y_+^2, y_-^2
+    - y_+^2
+    - y_-^2
+    - x_i
+    - y_i^t
+    - Y^S
+    - Y^T
+    - p_LLM
+    - Z_theta
+    - LLM
+    - g_theta
+    - p_theta
+    - x_k
+    - p_data
+    - p_LM
+    - prod_ineqk
+    - sum_k
+    - LM
+    - min_theta
+    - max_theta
+    - nabla_theta
+    - y_+
+  numeric_anchors:
+    - 1
+    - 2
+    - 0
+    - 4
+    - 3
+    - 5
+    - 3.5
+    - 44
+    - 88
+    - 66
+    - 11
+    - 128
+    - 0.3
+    - 384
+    - 14
+    - 21
+
+# ==========================================
+# 6. Formula & Algorithm Anchors
+# ==========================================
+formula_anchors:
+  adapter_update_3_2:
+    section: "3.2. Adapter Update"
+    symbols: [p_theta, p_LLM, p_LM, prod_ineqk, LLM, sum_k, LM, theta, g_theta, min_theta, max_theta, nabla_theta, alpha, x_k]
+    numeric_defaults: [1, 2]
+    terms: [eq., loss, gradient, rank, sample]
+  online_adaptation_3_4:
+    section: "3.4. Online Adaptation"
+    symbols: [p_theta, theta, nabla_theta, theta_t, p_data, y_+, y_-, x_i, y_i, y_i+^t, y_i-^t, y_i,j, y_i,1, y_i,2]
+    numeric_defaults: [4, 1, 0, 2]
+    terms: [eq., algorithm, loss, ema, compute, update, select, sample]
+  ablation_nce_4_5:
+    section: "4.5. Ablation Study: Effect of Ranking-based NCE Loss"
+    terms: [loss, mask, rank, search]
+  nce_gradients_proof_b:
+    section: "B. Proof for Ranking-based NCE Gradients"
+    symbols: [theta, g_theta, sum_k, nabla_theta, sum_m, p_theta, p_data, k^prime, x_k, x_m]
+    numeric_defaults: [2, 1]
+    terms: [eq., loss, gradient, rank, compute]
+  spectral_normalization_addendum:
+    section: "addendum"
+    symbols: [ell_2, alpha, theta, y_+^2, y_-^2]
+    formula: "alpha * E[g_theta(x, y_+)^2] + alpha * E[g_theta(x, y_-)^2]"
+
+# ==========================================
+# 7. Artifact Registry
+# ==========================================
+artifact_registry:
+  matrix: "results/evidence_contract_matrix.json"
+  experiment_registry: "results/experiment_registry.json"
+  metrics: "results/metrics.json"
+  dataset_registry: "results/dataset_registry.json"
+  manifest: "results/artifact_manifest.json"
+  sensitivity: "results/sensitivity_report.json"
+  figures:
+    figure_1: "results/figures/figure_1.png"
+    figure_2: "results/figures/figure_2.png"
+    figure_3: "results/figures/figure_3.png"
+    figure_4: "results/figures/figure_4.png"
+  tables:
+    table_1: "results/tables/table_1.csv"
+    table_2: "results/tables/table_2.csv"
+    table_3: "results/tables/table_3.csv"
+    table_4: "results/tables/table_4.csv"
+    table_5: "results/tables/table_5.csv"
+    table_6: "results/tables/table_6.csv"
+    table_7: "results/tables/table_7.csv"
+    table_8: "results/tables/table_8.csv"

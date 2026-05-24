@@ -1,0 +1,285 @@
+# configs/default.yaml
+# Functional Reward Encodings (FRE) Default Configuration and Experiment Registry
+
+# Grounding marker: reference_grounding: addendum:formula_algorithm_contract /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/fre/addendum.md
+
+# 1. Active Route Contracts & Symbols
+ExORL Zero-Shot Performance Comparison:
+  description: "Table 1: ExORL benchmark comparison"
+  environment: "deepmind_control"
+  dataset: "ExORL unlabeled trajectories"
+  methods: ["ours", "bc", "iql", "test_time_adaptation"]
+  metrics: ["reward"]
+  artifact_path: "results/tables/exorl_results.csv"
+
+Multi-Task Generalization on AntMaze and Kitchen:
+  description: "Figure 4: AntMaze/Kitchen zero-shot"
+  environments: ["AntMaze (D4RL)", "Kitchen (D4RL)"]
+  datasets: ["AntMaze-large-diverse-v2", "Kitchen-mixed-v0"]
+  methods: ["ours", "bc", "iql"]
+  metrics: ["success_rate", "reward"]
+  artifact_path: "results/tables/d4rl_results.csv"
+
+Reward Prior Scaling Ablation:
+  description: "Figure 5: Scaling properties (subsets of reward forms)"
+  environment: "deepmind_control"
+  methods: ["ours"]
+  subsets: "all possible subsets"
+  artifact_path: "results/sensitivity_report.json"
+
+Functional Reward Encoder (Transformer):
+  architecture: "permutation_invariant_transformer"
+  latent_dim_size: 256
+  transformer_layers: 4
+  transformer_heads: 4
+  K: 128
+  reward_discretization_bins: 20
+  positional_encodings: false
+  causal_masking: false
+
+Random Reward Prior Generator:
+  families:
+    - "singleton_goals"
+    - "linear_functions"
+    - "random_neural_networks"
+  sparsity_mask_chance: 0.9
+  done_mask: true
+
+Latent-Conditioned Offline RL Trainer:
+  base_algorithm: "iql"
+  beta: 0.1
+  KL_weight: 0.1
+  K_prime: 6
+  hindsight_relabeling:
+    p_randomgoal: 0.3
+    p_geometric_goal: 0.5
+    p_current_goal: 0.2
+
+Zero-Shot Evaluation Pipeline:
+  num_eval_episodes: 10
+  metrics: ["reward", "success_rate"]
+
+# 2. Paper Formula / Algorithm Symbols & Anchors
+symbols:
+  vel_left: [-1.0, 0.0]
+  vel_up: [0.0, 1.0]
+  vel_down: [0.0, -1.0]
+  vel_right: [1.0, 0.0]
+  l_pi: "loss_pi"
+  E_s_g_asimD: "expectation_s_g_a_sim_D"
+  p_randomgoal: 0.3
+  p_geometric_goal: 0.5
+  p_current_goal: 0.2
+  L_eta: "loss_eta"
+  L_eta_e: "loss_eta_encoder"
+  L_eta_d: "loss_eta_decoder"
+  D_KL: "kl_divergence"
+  beta: 0.1
+  KL: "kl_loss"
+  p_theta: "prior_theta"
+  sum_k_1: "sum_k_1_to_K"
+  K_prime: 6
+  q_theta: "posterior_theta"
+  s_k_d: "decoder_states"
+  s_1_e: "encoder_state_1"
+  s_2_e: "encoder_state_2"
+  s_K_e: "encoder_state_K"
+  sum_k: "sum_k"
+  numeric_defaults:
+    1: 1.0
+    0: 0.0
+    0.3: 0.3
+    0.5: 0.5
+    0.2: 0.2
+    2: 2.0
+    6: 6.0
+
+# 3. Environment Registry
+environment_registry:
+  deepmind_control:
+    id: "deepmind_control"
+    aliases: ["dmc", "DeepMind Control (ExORL)", "exorl"]
+    tasks: ["walker_walk", "walker_run", "cheetah_run"]
+    setup_metadata:
+      without_online: true
+      maximizes_expected_return: true
+      competitive_performance: true
+    availability_check: "check_dmc_available"
+    config_hook: "make_dmc_env"
+  robotics:
+    id: "robotics"
+    aliases: ["d4rl", "AntMaze (D4RL)", "Kitchen (D4RL)", "antmaze", "kitchen"]
+    tasks: ["antmaze-large-diverse-v2", "kitchen-mixed-v0"]
+    setup_metadata:
+      unique_test: true
+      determines_which: true
+      keep_all_paper_visible: true
+    availability_check: "check_robotics_available"
+    config_hook: "make_robotics_env"
+
+# 4. Dataset Registry
+dataset_registry:
+  deepmind_control:
+    id: "deepmind_control"
+    aliases: ["ExORL unlabeled trajectories"]
+    setup_metadata:
+      validation_checks: true
+    config_hook: "load_exorl_dataset"
+  robotics:
+    id: "robotics"
+    aliases: ["AntMaze-large-diverse-v2", "Kitchen-mixed-v0"]
+    setup_metadata:
+      validation_checks: true
+    config_hook: "load_robotics_dataset"
+
+# 5. Method/Baseline Registry
+baseline_registry:
+  ours:
+    name: "ours"
+    aliases: ["Ours", "FRE"]
+    config:
+      use_fre: true
+  bc:
+    name: "bc"
+    aliases: ["Behavior Cloning"]
+    config:
+      use_fre: false
+  iql:
+    name: "iql"
+    aliases: ["Implicit Q-Learning"]
+    config:
+      use_fre: false
+  test_time_adaptation:
+    name: "test_time_adaptation"
+    aliases: ["TTA"]
+    config:
+      use_fre: true
+      adapt_at_test_time: true
+  ppo:
+    name: "ppo"
+    aliases: ["PPO"]
+    config:
+      use_fre: false
+  pbt:
+    name: "pbt"
+    aliases: ["PBT"]
+    config:
+      use_fre: false
+  pql:
+    name: "pql"
+    aliases: ["PQL"]
+    config:
+      use_fre: false
+
+# 6. Evidence Obligation Matrix Registry
+evidence_obligation_matrix:
+  Table 1:
+    description: "ExORL benchmark comparison"
+    environment: "deepmind_control"
+    dataset: "deepmind_control"
+    methods: ["ours", "bc", "iql", "test_time_adaptation"]
+    metrics: ["reward"]
+    artifact_path: "results/tables/exorl_results.csv"
+  Figure 4:
+    description: "AntMaze/Kitchen zero-shot"
+    environment: "robotics"
+    dataset: "robotics"
+    methods: ["ours", "bc", "iql"]
+    metrics: ["reward"]
+    artifact_path: "results/tables/d4rl_results.csv"
+  Figure 5:
+    description: "Scaling properties (subsets of reward forms)"
+    environment: "deepmind_control"
+    dataset: "deepmind_control"
+    methods: ["ours"]
+    metrics: ["reward"]
+    artifact_path: "results/sensitivity_report.json"
+  Figure 6:
+    description: "Domain knowledge (XY/Velocity priors)"
+    environment: "robotics"
+    dataset: "robotics"
+    methods: ["ours"]
+    metrics: ["reward"]
+    artifact_path: "results/metrics.json"
+  Figure 7:
+    description: "Extended results"
+    environment: "deepmind_control"
+    dataset: "deepmind_control"
+    methods: ["ours"]
+    metrics: ["reward"]
+    artifact_path: "results/figures/figure_7.png"
+  Figure 8:
+    description: "Extended results"
+    environment: "robotics"
+    dataset: "robotics"
+    methods: ["ours"]
+    metrics: ["reward"]
+    artifact_path: "results/figures/figure_8.png"
+  Figure 9:
+    description: "Extended results"
+    environment: "robotics"
+    dataset: "robotics"
+    methods: ["ours"]
+    metrics: ["reward"]
+    artifact_path: "results/figures/figure_9.png"
+  Table 3:
+    description: "Extended comparison"
+    environment: "deepmind_control"
+    dataset: "deepmind_control"
+    methods: ["ours", "bc", "iql", "ppo", "pbt", "pql"]
+    metrics: ["reward"]
+    artifact_path: "results/tables/table_3.csv"
+
+# 7. Callable Protocol Matrix (Experiment Registry)
+experiment_registry:
+  Experiment I: ExORL Main Comparison:
+    environment: "deepmind_control"
+    method_selector: "ours"
+    metric_function: "compute_reward"
+    artifact_writer: "write_table_1_artifact"
+    output_path: "results/tables/table_1.csv"
+  Experiment II: D4RL Zero-Shot Transfer:
+    environment: "robotics"
+    method_selector: "ours"
+    metric_function: "compute_reward"
+    artifact_writer: "write_table_2_artifact"
+    output_path: "results/tables/table_2.csv"
+  Experiment III: Scaling with Reward Families:
+    environment: "deepmind_control"
+    method_selector: "ours"
+    metric_function: "compute_reward"
+    artifact_writer: "write_sensitivity_report"
+    output_path: "results/sensitivity_report.json"
+  Experiment IV: Domain Knowledge Augmentation:
+    environment: "robotics"
+    method_selector: "ours"
+    metric_function: "compute_reward"
+    artifact_writer: "write_metrics_artifact"
+    output_path: "results/metrics.json"
+  Experiment V: Extended Baselines (PPO, PBT, PQL):
+    environment: "deepmind_control"
+    method_selector: "ppo"
+    metric_function: "compute_reward"
+    artifact_writer: "write_table_3_artifact"
+    output_path: "results/tables/table_3.csv"
+
+# 8. Artifact Manifest
+artifact_manifest:
+  - "results/experiment_registry.json"
+  - "results/artifact_manifest.json"
+  - "results/tables/summary.csv"
+  - "results/environment_registry.json"
+  - "results/environment_readiness.json"
+  - "results/evidence_contract_matrix.json"
+  - "results/metrics.json"
+  - "results/dataset_registry.json"
+  - "results/sensitivity_report.json"
+  - "results/tables/experiment_results.csv"
+  - "results/tables/table_1.csv"
+  - "results/tables/table_2.csv"
+  - "results/tables/table_3.csv"
+  - "results/tables/table_4.csv"
+  - "results/figures/figure_3.png"
+  - "results/figures/figure_4.png"
+  - "results/figures/figure_7.png"
+  - "results/figures/figure_8.png"

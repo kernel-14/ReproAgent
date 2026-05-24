@@ -1,0 +1,176 @@
+# configs/default.yaml
+# Configuration for Sequential Neural Score Estimation (SNPSE/TSNPSE) Reproduction
+
+# Global settings
+seed: 42
+device: "cpu"
+mode: "smoke"
+
+# Parameter Sweeps and Defaults
+hyperparameters:
+  layers: 3
+  hidden_units: 256
+  activation: "SiLU"
+  learning_rate: 1.0e-4
+  batch_size: 128
+  optimizer: "Adam"
+  weight_decay: 0.0
+  ema_decay: 0.999
+
+# Dataset Registry
+dataset_registry:
+  slcp:
+    name: "Simple Likelihood Complex Posterior"
+    alias: "slcp"
+    theta_dim: 5
+    x_dim: 8
+    prior:
+      type: "uniform"
+      low: -3.0
+      high: 3.0
+    x_obs: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    num_rounds: 5
+    budget_per_round: 1000
+    validation_check: true
+  lotka_volterra:
+    name: "Lotka-Volterra"
+    alias: "lotka_volterra"
+    theta_dim: 4
+    x_dim: 9
+    prior:
+      type: "lognormal"
+      mean: [-0.125, -3.0, -0.125, -3.0]
+      std: [0.5, 0.5, 0.5, 0.5]
+    x_obs: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    num_rounds: 5
+    budget_per_round: 1000
+    validation_check: true
+
+# Method/Baseline/Attack Selectors
+method_registry:
+  ours:
+    name: "TSNPSE"
+    description: "Truncated Sequential Neural Score Estimation"
+    use_truncation: true
+  npe:
+    name: "Neural Posterior Estimation"
+    description: "Sequential NPE baseline using sbibm"
+  nle:
+    name: "Neural Likelihood Estimation"
+    description: "Sequential NLE baseline"
+  nre:
+    name: "Neural Ratio Estimation"
+    description: "Sequential NRE baseline"
+  diffusion_model:
+    name: "Diffusion Model (Geffner et al. 2023)"
+    description: "Non-sequential score-based diffusion model baseline"
+
+# Experiment Registry
+experiment_registry:
+  slcp_comparison:
+    name: "SLCP comparison"
+    dataset: "slcp"
+    methods: ["ours", "npe", "nle", "nre", "diffusion_model"]
+    metrics: ["loss", "c2st"]
+    output_path: "results/metrics.json"
+  lotka_volterra_comparison:
+    name: "Lotka-Volterra comparison"
+    dataset: "lotka_volterra"
+    methods: ["ours", "npe", "nle", "nre", "diffusion_model"]
+    metrics: ["loss", "c2st"]
+    output_path: "results/metrics.json"
+  figure_2:
+    name: "Figure 2: Posterior samples"
+    type: "figure"
+    output_path: "results/figures/figure_2.png"
+  figure_9:
+    name: "Figure 9: Additional posterior results"
+    type: "figure"
+    output_path: "results/figures/figure_9.png"
+  table_1:
+    name: "Table 1: C2ST results"
+    type: "table"
+    output_path: "results/tables/experiment_results.csv"
+  checkpoint:
+    name: "Checkpoint: Model state"
+    type: "checkpoint"
+    output_path: "results/checkpoints/last.ckpt"
+
+# Metric Registry
+metric_registry:
+  loss:
+    name: "Denoising Score Matching Loss"
+    formula: "DSM"
+  c2st:
+    name: "Classifier 2-Sample Test"
+    classifier: "MLP"
+    epochs: 100
+    learning_rate: 0.001
+
+# Paper Formula/Algorithm Symbol Inventory & Numeric/Default Anchors
+formula_anchors:
+  symbols:
+    theta: "theta"
+    theta_t: "theta_t"
+    theta_0: "theta_0"
+    R_d: "R^d"
+    R_plus: "R_+"
+    w_t: "w_t"
+    theta_bar_0: "theta_bar_0"
+    p_T: "p_T"
+    theta_bar_t: "theta_bar_t"
+    g_2: "g^2"
+    p_t: "p_t"
+    p_tmid0: "p_tmid0"
+    nabla_theta: "nabla_theta"
+    p_T_minus_t: "p_T-t"
+    lambda_t: "lambda_t"
+    J_post: "J_post"
+    SM: "SM"
+    int_0_T: "int_0^T"
+    s_psi: "s_psi"
+    DSM: "DSM"
+    R_p: "R^p"
+    x_obs: "x_obs"
+    p_tilde: "p_tilde"
+    N_r: "N_r"
+  numeric_anchors:
+    anchor_0: 0
+    anchor_2: 2
+    anchor_1: 1
+    anchor_3: 3
+    anchor_4: 4
+    anchor_9: 9
+    anchor_7: 7
+    anchor_12: 12
+    anchor_13: 13
+    anchor_14: 14
+    anchor_18: 18
+    anchor_19: 19
+    anchor_2_1: 2.1
+    anchor_6: 6
+    anchor_54: 54
+    anchor_2_115: 2.115
+
+# Algorithm Steps and Theoretical Justifications
+algorithms:
+  truncated_approach:
+    section: "3.1. Truncated Approach"
+    steps:
+      - "For r=1, sample parameters from the prior theta_0_i_1 ~ p(theta) := p_psi_0(. | x_obs)"
+      - "Concatenate samples to form proposal posterior p_tilde_r"
+  proposal_prior_score:
+    section: "C.4.3. Estimating the Proposal Prior Score"
+    objective: "DSM"
+    steps:
+      - "Estimate the score of the perturbed proposal prior s_tilde_psi_r(theta_t, x, t)"
+  alternative_approaches:
+    section: "3.2. Alternative Approaches"
+    baselines: ["npe", "nle", "nre"]
+    steps:
+      - "Sample new parameters theta_0_i_r ~ p_psi_r-1(theta | x_obs)"
+  theoretical_justification:
+    section: "C.2.2. Theoretical Justification"
+    objective: "J_post"
+    steps:
+      - "Minimize DSM objective to find argmin_psi J_post(psi)"

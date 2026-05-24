@@ -1,0 +1,216 @@
+# configs/rl_comparison_registry.yaml
+# Faithful reproduction configuration and baseline registry for:
+# "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+
+metadata:
+  project_name: "Fine-tuning RL as Forgetting Mitigation"
+  paper_id: "ftrl"
+  reproduction_scope: "Faithful implementation of MDP, AppleRetrieval, and Robotics experiments."
+
+# Expose paper-derived environment/task factories and registries
+environments:
+  registry:
+    - id: "two_state_mdp"
+      alias: "two-state-mdp"
+      description: "Two-state MDP with CLOSE and FAR state partitions to track forgetting."
+      state_space_partition:
+        close: "s_0"
+        far: "s_1"
+      setup_metadata:
+        gamma: 0.9
+        epsilon: 0.5
+        r_0: 0.11
+        r_1: 2.22
+        s_0: 0
+        s_1: 1
+        v_0: 10.0
+        f_0: 0.0
+        f_1: 1.0
+      availability_check: "src.envs.two_state_mdp.make_two_state_mdp"
+      runnable_config_hook: "setup_two_state_mdp"
+
+    - id: "appleretrieval"
+      alias: "apple_retrieval"
+      description: "AppleRetrieval grid-world environment exhibiting state coverage gap."
+      setup_metadata:
+        M: 13
+        c: 11
+        sigma: 30
+        asset_13: 13
+        pi_w: 1.0
+        pi_b: 0.0
+        apple_reward: 10.0
+        step_penalty: -0.1
+      availability_check: "src.envs.apple_retrieval.make_apple_retrieval"
+      runnable_config_hook: "setup_apple_retrieval"
+
+    - id: "robotics"
+      alias: "push-wall"
+      description: "Robotic manipulation task (Meta-World push-wall) for sequential transfer."
+      setup_metadata:
+        task_name: "push-wall-v2"
+        gold_score_threshold: 0.9
+        beta: 1.5
+        E_k: 200
+        E_i: 1
+        r_t: 1.0
+        r_t_prime: 1.0
+      availability_check: "src.envs.robotics.make_robotics"
+      runnable_config_hook: "setup_robotics"
+
+# Expose paper-derived dataset/benchmark loaders
+datasets:
+  robotics:
+    id: "robotics_dataset"
+    alias: "robotics"
+    description: "Robotic manipulation demonstration dataset."
+    setup_metadata:
+      num_trajectories: 100
+      validation_split: 0.2
+    validation_checks: "src.envs.robotics.validate_robotics_dataset"
+    runnable_config_hook: "load_robotics_dataset"
+
+# Expose method/baseline/attack selectors
+methods:
+  selectors:
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+    - "scaled-bc + fine-tuning + ks"
+
+# Expose bounded sweep/config entries
+sweeps:
+  learning_rate:
+    values: [0.0001, 0.0003, 0.001, 0.01]
+    default: 0.0003
+  batch_size:
+    values: [32, 64, 128, 256]
+    default: 128
+
+# Expose fixed hyperparameter anchors
+fixed_hyperparameters:
+  batch_size_128: 128
+  default_learning_rate: 0.0003
+
+# Paper formula/algorithm symbol inventory and numeric anchors
+formula_algorithm_inventory:
+  symbols:
+    add_nledata_directory: "nld.add_nledata_directory"
+    add_altorg_directory: "nld.add_altorg_directory"
+    ttyrecdataset_nld_aa_v0_batch_size_128: "nld.TtyrecDataset('nld-aa-v0', batch_size=128)"
+    batch_size: 128
+    L_aux: "L_aux = sum_i F^i * (theta_*^i - theta^i)^2"
+    theta: "theta"
+    sum_i: "sum_i"
+    F_i: "F^i"
+    theta_star_i: "theta_*^i"
+    theta_i: "theta^i"
+    theta_star: "theta_*"
+    L_BC: "L_BC = E_{s ~ B_BC}[D_KL(pi_*(s) || pi_theta(s))]"
+    B_BC: "B_BC"
+    D_KL: "D_KL"
+    pi_star: "pi_*"
+    pi_theta: "pi_theta"
+    L_KS: "L_KS = E_{s ~ pi_theta}[D_KL(pi_*(s) || pi_theta(s))]"
+    s_0: 0
+    v_0: "v_0(theta) = 1/(1-gamma) * (theta + r_0*(1-theta)*(1-gamma*f_theta) + gamma*theta*r_1*(1-f_theta)) / (1 - gamma*f_theta + gamma*theta)"
+    gamma: 0.9
+    r_0: 0.11
+    f_theta: "f_theta"
+    r_1: 2.22
+    epsilon: 0.5
+  numeric_anchors:
+    anchor_128: 128
+    anchor_2: 2
+    anchor_0: 0
+    anchor_9: 9
+    anchor_1: 1
+    anchor_0_11: 0.11
+    anchor_2_22: 2.22
+    anchor_0_5: 0.5
+    anchor_10: 10
+    anchor_0_08: 0.08
+    anchor_9_93: 9.93
+    anchor_13: 13
+    anchor_11: 11
+    anchor_30: 30
+    anchor_200: 200
+    anchor_1_5: 1.5
+
+# Baseline registry and comparison configuration
+baseline_registry:
+  baselines:
+    - name: "ours"
+      config:
+        learning_rate: 0.0003
+        batch_size: 128
+        use_bc: true
+        use_ewc: true
+    - name: "ppo"
+      config:
+        learning_rate: 0.0003
+        batch_size: 128
+        use_bc: false
+        use_ewc: false
+    - name: "sac"
+      config:
+        learning_rate: 0.0003
+        batch_size: 128
+        use_bc: false
+        use_ewc: false
+    - name: "bc"
+      config:
+        learning_rate: 0.0003
+        batch_size: 128
+        use_bc: true
+        use_ewc: false
+    - name: "oracle"
+      config:
+        learning_rate: 0.0003
+        batch_size: 128
+        use_bc: false
+        use_ewc: false
+    - name: "nle"
+      config:
+        learning_rate: 0.0003
+        batch_size: 128
+        use_bc: false
+        use_ewc: false
+    - name: "ewc"
+      config:
+        learning_rate: 0.0003
+        batch_size: 128
+        use_bc: false
+        use_ewc: true
+    - name: "scaled-bc + fine-tuning + ks"
+      config:
+        learning_rate: 0.0003
+        batch_size: 128
+        use_bc: true
+        use_ks: true
+        use_ewc: false
+
+# Artifact paths to write
+artifacts:
+  baseline_registry_path: "results/baseline_registry.json"
+  baseline_comparison_path: "results/tables/baseline_comparison.csv"
+  metrics_path: "results/metrics.json"
+  experiment_results_path: "results/tables/experiment_results.csv"
+  figure_1_path: "results/figures/figure_1.png"
+  figure_2_path: "results/figures/figure_2.png"
+  figure_4_path: "results/figures/figure_4.png"
+  figure_12_path: "results/figures/figure_12.png"
+  figure_3a_path: "results/figures/figure_3a.png"
+  figure_3_path: "results/figures/figure_3.png"
+  figure_3b_path: "results/figures/figure_3b.png"
+  figure_3c_path: "results/figures/figure_3c.png"
+  figure_7_path: "results/figures/figure_7.png"
+  figure_5_path: "results/figures/figure_5.png"
+  figure_6_path: "results/figures/figure_6.png"
+  figure_8_path: "results/figures/figure_8.png"
+  figure_14_path: "results/figures/figure_14.png"
+  table_4_path: "results/tables/table_4.csv"

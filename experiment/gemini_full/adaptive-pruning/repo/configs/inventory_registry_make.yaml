@@ -1,0 +1,194 @@
+# configs/inventory_registry_make.yaml
+# reference_grounding: paperbench_ref_025 truthfulqa/models.py truthfulqa/evaluate.py
+
+# Active Reproduction Scope Notes
+reproduction_scope:
+  include_llama: false
+  include_alpaca: false
+  required_models: ["bert", "roberta", "t5"]
+  required_tasks: ["glue", "squad", "cnn/dm"]
+  active_reproduction_notes: "Reproduction focuses on BERT, RoBERTa, and T5 models across GLUE, SQuAD, and CNN/DM tasks as per addendum constraints."
+
+# Environment and Task Factories
+# reference_grounding: paper_contract_environment_protocol
+environments:
+  unit-001:
+    id: "unit-001"
+    alias: "smoke_test"
+    setup_metadata:
+      description: "CLI entrypoint validation task"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  t5:
+    id: "t5"
+    alias: "t5_tasks"
+    setup_metadata:
+      description: "T5 model specific tasks"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  cnn_dm:
+    id: "cnn/dm"
+    alias: "cnn_dm"
+    setup_metadata:
+      loader: "CNN/DailyMail"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  tuning_mechanism_recovery:
+    id: "tuning mechanism that recovers"
+    alias: "recovery_mechanism"
+    setup_metadata:
+      description: "Mechanism that recovers performance after pruning"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  efficiency_claims:
+    id: "efficiency claims while maintaining high"
+    alias: "efficiency_validation"
+    setup_metadata:
+      description: "Validation of efficiency claims"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  squad:
+    id: "squad"
+    alias: "squad_env"
+    setup_metadata:
+      description: "SQuAD environment"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  glue:
+    id: "glue"
+    alias: "glue_env"
+    setup_metadata:
+      description: "GLUE environment"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  pruning_roberta:
+    id: "pruning roberta models targeting similar"
+    alias: "roberta_pruning"
+    setup_metadata:
+      description: "Pruning RoBERTa models targeting similar sparsity"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  apt_consistently_reach:
+    id: "apt consistently reach higher"
+    alias: "apt_reach"
+    setup_metadata:
+      description: "APT consistently reach higher performance"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  salience_hurts:
+    id: "salience notably hurts"
+    alias: "salience_hurts_env"
+    setup_metadata:
+      description: "Salience notably hurts environment"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  sst2:
+    id: "sst2"
+    alias: "sst2_env"
+    setup_metadata:
+      description: "SST2 environment"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  open_llm_leaderboard:
+    id: "open llm leaderboard few-shot"
+    alias: "open_llm"
+    setup_metadata:
+      description: "Open LLM Leaderboard few-shot environment"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+
+# Dataset and Benchmark Loaders
+# reference_grounding: paper_contract_dataset_protocol
+datasets:
+  sst2_mnli_squad:
+    id: "SST2, MNLI, SQuAD v2.0"
+    alias: "squad"
+    setup_metadata:
+      tasks: ["SST2", "MNLI", "SQuAD v2.0"]
+    validation_check: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    runnable_config_hook: "configs/default.yaml"
+  cnn_xsum:
+    id: "CNN/DailyMail, XSum"
+    alias: "cnn_dm"
+    setup_metadata:
+      tasks: ["CNN/DailyMail", "XSum"]
+    validation_check: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    runnable_config_hook: "configs/default.yaml"
+  glue:
+    id: "glue"
+    alias: "glue"
+    setup_metadata:
+      tasks: ["cola", "sst2", "mrpc", "qqp", "mnli", "qnli", "rte", "sts-b"]
+    validation_check: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    runnable_config_hook: "configs/default.yaml"
+  truthfulqa:
+    id: "truthfulqa"
+    alias: "truthfulqa"
+    setup_metadata:
+      tasks: ["generation", "multiple_choice"]
+    validation_check: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    runnable_config_hook: "configs/default.yaml"
+
+# Method, Baseline, and Attack Selectors
+# reference_grounding: paper_contract_method_baseline_protocol
+methods:
+  ours:
+    id: "apt"
+    alias: "ours"
+    name: "Adaptive Pruning and Tuning"
+    factory: "src.methods.unit_python_class.APTAdapter"
+  bert:
+    id: "bert-base-uncased"
+    alias: "bert"
+  roberta:
+    id: "roberta-base"
+    alias: "roberta"
+  t5:
+    id: "t5-base"
+    alias: "t5"
+  fine_tuning:
+    id: "ft"
+    alias: "fine_tuning"
+  lora:
+    id: "lora"
+    alias: "lora"
+  test_time_adaptation:
+    id: "tta"
+    alias: "test_time_adaptation"
+  cofi:
+    id: "cofi"
+    alias: "cofi"
+    description: "CoFi baseline with LoRA and L0 module controls plus default hyperparameters"
+    hyperparameters:
+      learning_rate: 2e-5
+      weight_decay: 0.01
+      l0_lambda: 0.1
+      lora_r: 8
+      lora_alpha: 16
+
+# Parameter Sweeps
+# reference_grounding: m_i, m_o, r_apt, batch_size
+sweeps:
+  m_i: [0.3, 0.5, 0.7, 0.9]
+  m_o: [0.3, 0.5, 0.7, 0.9]
+  r_apt: [4, 8, 16, 32]
+  batch_size: [16, 32, 64, 128]
+
+# Fixed Hyperparameter Anchors
+# reference_grounding: 10_shot_setting, batch_size_128, batch_size_32
+fixed_hyperparameters:
+  few_shot_setting: 10
+  batch_size_128: 128
+  batch_size_32: 32
+
+# Measurement Collection and Result Aggregation
+metrics:
+  accuracy:
+    formula: "correct / total"
+    aggregation: "mean"
+  runtime:
+    formula: "elapsed_time"
+    aggregation: "sum"
+  training_time:
+    formula: "total_training_duration"
+    aggregation: "mean"

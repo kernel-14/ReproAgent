@@ -1,0 +1,211 @@
+# configs/rl_entropy_diversity.yaml
+# reference_grounding: chunk_003_01 chunk_018 chunk_019 chunk_024_01 addendum:formula_algorithm_contract
+
+metadata:
+  project_name: "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+  paper_id: "ftrl"
+  reproduction_scope: "Faithful implementation of MDP, AppleRetrieval, and Robotics experiments."
+
+# 1. Environment/Task Factories
+environments:
+  two_state_mdp:
+    id: "two_state_mdp"
+    alias: "two-state-mdp"
+    description: "Two-state MDP with CLOSE and FAR state partitions to track forgetting."
+    state_space_partition:
+      close: "s_0"
+      far: "s_1"
+    setup_metadata:
+      gamma: 0.9
+      epsilon: 0.5
+      r_0: 0.11
+      r_1: 2.22
+      s_0: 0
+      s_1: 1
+      v_0: 10.0
+      f_0: 0.0
+      f_1: 1.0
+    availability_check: "src.envs.two_state_mdp.make_two_state_mdp"
+    runnable_config_hook: "setup_two_state_mdp"
+
+  appleretrieval:
+    id: "appleretrieval"
+    alias: "apple_retrieval"
+    description: "AppleRetrieval grid-world environment exhibiting state coverage gap."
+    setup_metadata:
+      M: 13
+      c: 11
+      sigma: 30
+      asset_13: 13
+      pi_w: 1.0
+      pi_b: 0.0
+      apple_reward: 10.0
+      step_penalty: -0.1
+    availability_check: "src.envs.apple_retrieval.make_apple_retrieval"
+    runnable_config_hook: "setup_apple_retrieval"
+
+  robotics:
+    id: "robotics"
+    alias: "push-wall"
+    description: "Robotic manipulation task (Meta-World push-wall) for sequential transfer."
+    setup_metadata:
+      task_name: "push-wall-v2"
+      gold_score_threshold: 0.9
+      beta: 1.5
+      E_k: 200
+      E_i: 1
+      r_t: 1.0
+      r_t_prime: 1.0
+    availability_check: "src.envs.robotics.make_robotics"
+    runnable_config_hook: "setup_robotics"
+
+# 2. Dataset/Benchmark Loaders
+datasets:
+  robotics:
+    id: "robotics_dataset"
+    alias: "robotics"
+    description: "RoboticSequence dataset for sequential transfer learning."
+    setup_metadata:
+      num_trajectories: 100
+      validation_split: 0.2
+    validation_checks: "src.envs.robotics.validate_robotics_dataset"
+    runnable_config_hook: "load_robotics_dataset"
+
+# 3. Method/Baseline/Attack Selectors
+methods:
+  selectors:
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+  active_method: "ours"
+
+# 4. Bounded Sweep/Config Entries
+sweeps:
+  learning_rate:
+    values: [0.0001, 0.0003, 0.001, 0.003]
+    default: 0.0003
+  batch_size:
+    values: [64, 128, 256]
+    default: 128
+
+# 5. Fixed Hyperparameter Anchors
+fixed_hyperparameters:
+  batch_size_128: 128
+  gamma: 0.9
+  epsilon: 0.5
+  r_0: 0.11
+  r_1: 2.22
+  M: 13
+  c: 11
+  sigma: 30
+  asset_13: 13
+  beta: 1.5
+  E_k: 200
+  E_i: 1
+
+# 6. Paper Formula/Algorithm Symbol Inventory
+symbol_inventory:
+  add_nledata_directory: "nld.add_nledata_directory"
+  add_altorg_directory: "nld.add_altorg_directory"
+  ttyrecdataset_nld_aa_v0_batch_size_128: "nld.TtyrecDataset('nld-aa-v0', batch_size=128)"
+  batch_size: 128
+  L_aux: "L_aux = sum_i F^i * (theta_*^i - theta^i)^2"
+  theta: "policy parameters"
+  sum_i: "sum over parameters"
+  F_i: "Fisher information matrix diagonal"
+  theta_star_i: "pre-trained policy parameters"
+  theta_i: "current policy parameters"
+  theta_star: "pre-trained policy"
+  L_BC: "L_BC = E_{s ~ B_BC}[D_KL(pi_*(s) || pi_theta(s))]"
+  B_BC: "behavioral cloning buffer"
+  D_KL: "Kullback-Leibler divergence"
+  pi_star: "pre-trained policy"
+  pi_theta: "current policy"
+  L_KS: "L_KS = E_{s ~ pi_theta}[D_KL(pi_*(s) || pi_theta(s))]"
+  s_0: "start state s_0"
+  v_0: "value of state s_0"
+  gamma: 0.9
+  r_0: 0.11
+  r_1: 2.22
+  f_theta: "policy parameterization"
+  epsilon: 0.5
+
+# 7. Numeric/Default Anchors
+numeric_anchors:
+  anchor_128: 128
+  anchor_2: 2
+  anchor_0: 0
+  anchor_9: 9
+  anchor_1: 1
+  anchor_0_11: 0.11
+  anchor_2_22: 2.22
+  anchor_0_5: 0.5
+  anchor_10: 10
+  anchor_0_08: 0.08
+  anchor_9_93: 9.93
+  anchor_13: 13
+  anchor_11: 11
+  anchor_30: 30
+  anchor_200: 200
+  anchor_1_5: 1.5
+
+# 8. Entropy Schedule Config
+entropy_schedule:
+  initial_entropy_coef: 0.01
+  final_entropy_coef: 0.001
+  decay_steps: 100000
+  schedule_type: "linear"
+
+# 9. Policy Loss with Entropy
+policy_loss_with_entropy_config:
+  policy_index: 0
+  entropy_coef: 0.01
+  loss_formula: "policy_loss - entropy_coef * entropy"
+
+# 10. Sweep Registry
+sweep_registry:
+  - name: "lr_sweep"
+    parameter: "learning_rate"
+    values: [0.0001, 0.0003, 0.001]
+  - name: "batch_size_sweep"
+    parameter: "batch_size"
+    values: [64, 128, 256]
+
+# 11. Explicit Environment/Task Coverage and Initialization Surfaces
+coverage_surfaces:
+  - "fine-tuning + bc"
+  - "nethack learning"
+  - "arcade learning"
+
+# 12. Measurement Collection and Result Aggregation
+measurements:
+  - name: "return"
+    metric: "episode_return"
+    aggregation: "mean"
+  - name: "figure 4 reproduction artifact"
+    metric: "dungeon_level_vs_turns"
+    aggregation: "density_plot"
+  - name: "figure 12 reproduction artifact"
+    metric: "forgetting_rate"
+    aggregation: "line_plot"
+  - name: "figure 5 reproduction artifact"
+    metric: "entropy_diversity"
+    aggregation: "scatter_plot"
+  - name: "figure 3a reproduction artifact"
+    metric: "success_rate"
+    aggregation: "bar_plot"
+
+# 13. Declared Output Artifacts
+artifacts:
+  sensitivity_report: "results/sensitivity_report.json"
+  config_resolved: "results/config_resolved.json"
+  figure_1: "results/figures/figure_1.png"
+  figure_2: "results/figures/figure_2.png"
+  figure_4: "results/figures/figure_4.png"
+  figure_12: "results/figures/figure_12.png"
+  figure_3a: "results/figures/figure_3a.png"
+  figure_3: "results/figures/figure_3.png"

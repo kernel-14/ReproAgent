@@ -1,0 +1,251 @@
+# configs/inventory_registry_make.yaml
+# reference_grounding: paperbench_ref_002 lora.ipynb
+
+# ==========================================
+# 1. Environment & Task Registry
+# ==========================================
+environment_registry:
+  unit-001:
+    id: "unit-001"
+    alias: "cli_entrypoint"
+    setup_metadata:
+      entrypoint: "main.py"
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  unit-006:
+    id: "unit-006"
+    alias: "data_eval_pipeline"
+    setup_metadata:
+      module: "src.data.unit_python_pipeline"
+      availability_check: true
+      runnable_config_hook: "compute_accuracy"
+  achieving_improvements:
+    id: "achieving improvements"
+    alias: "main_hypothesis"
+    setup_metadata:
+      description: "Core method claim testable on named environment families"
+  determines_which:
+    id: "determines which"
+    alias: "selection_logic"
+  keep_all_paper_visible:
+    id: "keep all paper-visible"
+    alias: "visibility_contract"
+  config_data_pipeline:
+    id: "config data-pipeline"
+    alias: "pipeline_config"
+  config_factory:
+    id: "config factory"
+    alias: "factory_config"
+  registry_configuration_artifact:
+    id: "registry configuration artifact"
+    alias: "registry_config"
+  decides_which:
+    id: "decides which"
+    alias: "decision_logic"
+  config_tests_artifact_writer_expose_explicit:
+    id: "config tests artifact-writer expose explicit"
+    alias: "writer_config"
+  bind_each_baseline:
+    id: "bind each baseline"
+    alias: "baseline_binding"
+  worse_ablation_performance_without_fabricating:
+    id: "worse ablation performance without fabricating"
+    alias: "ablation_logic"
+
+# ==========================================
+# 2. Dataset & Benchmark Registry
+# ==========================================
+dataset_registry:
+  gsm8k:
+    id: "gsm8k"
+    alias: "gsm8k"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_gsm8k"
+  strategyqa:
+    id: "strategyqa"
+    alias: "strategyqa"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_strategyqa"
+  truthfulqa:
+    id: "truthfulqa"
+    alias: "truthfulqa"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_truthfulqa"
+  scienceqa:
+    id: "scienceqa"
+    alias: "scienceqa"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_scienceqa"
+  toxigen:
+    id: "toxigen"
+    alias: "toxigen"
+    setup_metadata:
+      loader_path: "src/data/bbox_qa_benchmark.py"
+      validation_check: true
+      runnable_config_hook: "load_toxigen"
+
+# ==========================================
+# 3. Method & Baseline Selectors
+# ==========================================
+method_registry:
+  selectors:
+    - ours
+    - chain_of_thought
+    - oracle
+    - heuristic
+    - roberta
+    - fine_tuning
+    - lora
+    - sft_lora
+    - azure_sft
+    - mlm
+    - bbox_adapter
+    - ranking_nce
+    - online_adaptation
+    - single_step_inference
+    - full_step_inference
+    - ai_feedback
+    - ppo
+    - energy_based_model
+
+# ==========================================
+# 4. Parameter Sweeps & Hyperparameters
+# ==========================================
+parameter_sweeps:
+  temperature: 0.7
+  learning_rate: 0.0001
+  batch_size: 64
+  beam_size: [1, 3, 5]
+  iteration_count: [3, 0, 1, 2, 4]
+  adapter_size: [0.1, 0.3]
+  epochs: 3
+
+fixed_hyperparameters:
+  batch_size_64: 64
+  nearest_neighbor_upsample: true
+
+# ==========================================
+# 5. Formula & Algorithm Anchors
+# ==========================================
+formula_algorithm_anchors:
+  symbols:
+    - ell_2
+    - alpha
+    - theta
+    - y_plus_2
+    - y_minus_2
+    - x_i
+    - y_i_t
+    - Y_S
+    - Y_T
+    - p_LLM
+    - Z_theta
+    - LLM
+    - g_theta
+    - p_theta
+    - x_k
+    - p_data
+    - p_LM
+    - prod_ineqk
+    - sum_k
+    - LM
+    - min_theta
+    - max_theta
+    - nabla_theta
+    - y_plus
+  numeric_anchors:
+    - 1
+    - 2
+    - 0
+    - 4
+    - 3
+    - 5
+    - 3.5
+    - 44
+    - 88
+    - 66
+    - 11
+    - 128
+    - 0.3
+    - 384
+    - 14
+    - 21
+  algorithm_terms:
+    - equation
+    - gradient
+    - search
+    - loss
+    - rank
+    - update
+    - ema
+    - compute
+    - select
+    - sample
+    - mask
+  sections:
+    adapter_update_3_2:
+      loss: "ranking-based NCE"
+      prioritize: "ranking true data samples higher than noise"
+      symbols: [p_theta, p_LLM, p_LM, prod_ineqk, LLM, sum_k, LM, theta, g_theta, min_theta, max_theta, nabla_theta, alpha, x_k]
+      numeric_defaults: [1, 2]
+    online_adaptation_3_4:
+      framework: "Algorithm 1"
+      iterative_sampling: true
+      symbols: [p_theta, theta, nabla_theta, theta_t, p_data, y_plus, y_minus, x_i, y_i, y_i_plus_t, y_i_minus_t, y_i_j, y_i_1, y_i_2]
+      numeric_defaults: [4, 1, 0, 2]
+    ablation_study_4_5:
+      comparison: "ranking-based NCE vs MLM"
+      mlm_approach: "masked word as supervision"
+    scale_analysis_4_6:
+      unfinetuned_adapter_t0: "worse than base model"
+      numeric_defaults: [4, 1, 3, 5, 3.5, 0, 2]
+    proof_gradients_b:
+      rewrite_loss: "Eq.(2)"
+      symbols: [theta, g_theta, sum_k, nabla_theta, sum_m, p_theta, p_data, k_prime, x_k, x_m]
+      numeric_defaults: [2, 1]
+    baseline_details_f_2:
+      sft_lora_rank: 128
+      symbols: [alpha]
+      numeric_defaults: [0, 128, 0.3, 384, 2]
+    addendum:
+      spectral_normalization: "l2 regularization of energies"
+      formula: "alpha * E[g_theta(x, y_plus)^2] + alpha * E[g_theta(x, y_minus)^2]"
+      symbols: [ell_2, alpha, theta, y_plus_2, y_minus_2]
+
+# ==========================================
+# 6. Artifact Registry
+# ==========================================
+artifact_registry:
+  environment_registry: "results/environment_registry.json"
+  environment_readiness: "results/environment_readiness.json"
+  figure_1: "results/figures/figure_1.png"
+  table_1: "results/tables/table_1.csv"
+  figure_2: "results/figures/figure_2.png"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+  table_4: "results/tables/table_4.csv"
+  table_5: "results/tables/table_5.csv"
+  figure_3: "results/figures/figure_3.png"
+  table_6: "results/tables/table_6.csv"
+  figure_4: "results/figures/figure_4.png"
+  table_7: "results/tables/table_7.csv"
+  table_8: "results/tables/table_8.csv"
+  figure_5: "results/figures/figure_5.png"
+  table_9: "results/tables/table_9.csv"
+  figure_6: "results/figures/figure_6.png"
+  table_10: "results/tables/table_10.csv"
+
+# ==========================================
+# 7. Environment Interface
+# ==========================================
+interface:
+  make_environment: "src.data.inventory_registry_make.make_environment"
+  readiness_check: "src.data.inventory_registry_make.check_readiness"

@@ -1,0 +1,277 @@
+# configs/rl_comparison_registry.yaml
+# reference_grounding: paperbench_ref_002 lora.ipynb
+
+# ==========================================
+# 1. Baseline Registry
+# ==========================================
+# Interface: make_baseline(name, config)
+baseline_registry:
+  ours:
+    id: "ours"
+    alias: "bbox_adapter"
+    method: "bbox_adapter"
+    config: "configs/default.yaml"
+  chain_of_thought:
+    id: "chain_of_thought"
+    alias: "cot"
+    method: "cot"
+  oracle:
+    id: "oracle"
+    alias: "oracle"
+    method: "oracle"
+  heuristic:
+    id: "heuristic"
+    alias: "heuristic"
+    method: "heuristic"
+  roberta:
+    id: "roberta"
+    alias: "roberta"
+    method: "roberta"
+  fine_tuning:
+    id: "fine_tuning"
+    alias: "ft"
+    method: "fine_tuning"
+  lora:
+    id: "lora"
+    alias: "lora"
+    method: "lora"
+  sft_lora:
+    id: "sft_lora"
+    alias: "sft_lora"
+    method: "sft_lora"
+    r: 128 # Numeric anchor from F.2
+  azure_sft:
+    id: "azure_sft"
+    alias: "azure_sft"
+    method: "azure_sft"
+  mlm:
+    id: "mlm"
+    alias: "mlm"
+    method: "mlm"
+  bbox_adapter:
+    id: "bbox_adapter"
+    alias: "ours"
+    method: "bbox_adapter"
+  ranking_nce:
+    id: "ranking_nce"
+    alias: "nce"
+    method: "ranking_nce"
+  online_adaptation:
+    id: "online_adaptation"
+    alias: "online"
+    method: "online_adaptation"
+  single_step_inference:
+    id: "single_step_inference"
+    alias: "single_step"
+    method: "single_step"
+  full_step_inference:
+    id: "full_step_inference"
+    alias: "full_step"
+    method: "full_step"
+  ai_feedback:
+    id: "ai_feedback"
+    alias: "rlhf"
+    method: "ai_feedback"
+  ppo:
+    id: "ppo"
+    alias: "ppo"
+    method: "ppo"
+  energy_based_model:
+    id: "energy_based_model"
+    alias: "ebm"
+    method: "ebm"
+
+# ==========================================
+# 2. Dataset & Benchmark Registry
+# ==========================================
+dataset_registry:
+  gsm8k:
+    id: "gsm8k"
+    alias: "gsm8k"
+    loader: "src/data/bbox_qa_benchmark.py"
+    validation: true
+  strategyqa:
+    id: "strategyqa"
+    alias: "strategyqa"
+    loader: "src/data/bbox_qa_benchmark.py"
+    validation: true
+  truthfulqa:
+    id: "truthfulqa"
+    alias: "truthfulqa"
+    loader: "src/data/bbox_qa_benchmark.py"
+    validation: true
+  scienceqa:
+    id: "scienceqa"
+    alias: "scienceqa"
+    loader: "src/data/bbox_qa_benchmark.py"
+    validation: true
+  toxigen:
+    id: "toxigen"
+    alias: "toxigen"
+    loader: "src/data/bbox_qa_benchmark.py"
+    validation: true
+
+# ==========================================
+# 3. Parameter Sweeps & Hyperparameters
+# ==========================================
+parameter_sweeps:
+  temperature: 0.7
+  learning_rate: 0.0001
+  batch_size: 64
+  beam_size: [1, 3, 5]
+  iteration_count: [3, 0, 1, 2, 4]
+  adapter_size: [0.1, 0.3]
+  epochs: 3
+
+fixed_hyperparameters:
+  batch_size_64: 64
+  nearest_neighbor_upsample: true
+  r_sft_lora: 128
+  alpha_default: 0.3
+  max_seq_len: 384
+
+# ==========================================
+# 4. Formula & Algorithm Anchors
+# ==========================================
+# Symbols and numeric defaults for code-visible implementation
+# symbols: ell_2, alpha, theta, y_2, equation, gradient, search, loss, rank, update, x_i
+formula_anchors:
+  symbols:
+    ell_2: "l2_regularization"
+    alpha: "scaling_factor"
+    theta: "adapter_parameters"
+    y_2: "squared_energies"
+    equation: "Equation 3"
+    gradient: "nabla_theta"
+    search: "beam_search"
+    loss: "ranking_nce_loss"
+    rank: "ranking_based_nce"
+    update: "adapter_update"
+    x_i: "input_sequence"
+    y_i_t: "target_response"
+    Y_S: "source_domain"
+    Y_T: "target_domain"
+    p_LLM: "black_box_llm_dist"
+    Z_theta: "partition_function"
+    LLM: "black_box_llm"
+    g_theta: "energy_function"
+    p_theta: "adapted_distribution"
+    x_k: "sample_k"
+    p_data: "real_data_distribution"
+    p_LM: "language_model_distribution"
+    prod_ineqk: "product_over_noise"
+    sum_k: "sum_over_samples"
+    LM: "language_model"
+    min_theta: "minimization_objective"
+    max_theta: "maximization_objective"
+    nabla_theta: "gradient_operator"
+    y_plus: "positive_sample"
+    y_minus: "negative_sample"
+    y_plus_2: "positive_sample_squared"
+    y_minus_2: "negative_sample_squared"
+  numeric_anchors:
+    val_1: 1
+    val_2: 2
+    val_0: 0
+    val_4: 4
+    val_3: 3
+    val_5: 5
+    val_3_5: 3.5
+    val_44: 44
+    val_88: 88
+    val_66: 66
+    val_11: 11
+    val_128: 128
+    val_0_3: 0.3
+    val_384: 384
+    val_14: 14
+    val_21: 21
+
+# ==========================================
+# 5. Environment & Task Factories
+# ==========================================
+environment_factories:
+  unit-001: { id: "unit-001", alias: "cli_entry", setup: "main.py" }
+  unit-006: { id: "unit-006", alias: "data_eval", setup: "src/data/unit_python_pipeline.py" }
+  achieving_improvements: { id: "achieving improvements", alias: "main_hypothesis" }
+  determines_which: { id: "determines which", alias: "selection_logic" }
+  keep_all_paper_visible: { id: "keep all paper-visible", alias: "visibility_contract" }
+  config_data_pipeline: { id: "config data-pipeline", alias: "pipeline_config" }
+  config_factory: { id: "config factory", alias: "factory_config" }
+  registry_configuration_artifact: { id: "registry configuration artifact", alias: "registry_config" }
+  decides_which: { id: "decides which", alias: "decision_logic" }
+  config_tests_artifact_writer_expose_explicit: { id: "config tests artifact-writer expose explicit", alias: "writer_config" }
+  bind_each_baseline: { id: "bind each baseline", alias: "baseline_binding" }
+  worse_ablation_performance_without_fabricating: { id: "worse ablation performance without fabricating", alias: "ablation_logic" }
+
+# ==========================================
+# 6. Comparison Protocol
+# ==========================================
+# Interface: run_comparison(config)
+comparison_protocol:
+  metrics: [accuracy, loss, training_cost, inference_cost, api_cost, memory_usage, gpu_memory, toxicity]
+  routes:
+    table_2: "run_table_2_route"
+    table_3: "run_table_3_route"
+  artifact_calls:
+    - write_baseline_registry_artifact
+    - write_baseline_comparison_artifact
+    - write_metrics_artifact
+    - write_table_2_artifact
+    - write_figure_1_artifact
+    - write_table_1_artifact
+    - write_figure_2_artifact
+    - write_table_3_artifact
+
+# ==========================================
+# 7. Artifact Writers
+# ==========================================
+artifact_writers:
+  baseline_registry: "results/baseline_registry.json"
+  baseline_comparison: "results/tables/baseline_comparison.csv"
+  metrics: "results/metrics.json"
+  table_1: "results/tables/table_1.csv"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+  table_4: "results/tables/table_4.csv"
+  table_5: "results/tables/table_5.csv"
+  table_6: "results/tables/table_6.csv"
+  table_7: "results/tables/table_7.csv"
+  table_8: "results/tables/table_8.csv"
+  table_9: "results/tables/table_9.csv"
+  figure_1: "results/figures/figure_1.png"
+  figure_2: "results/figures/figure_2.png"
+  figure_3: "results/figures/figure_3.png"
+  figure_4: "results/figures/figure_4.png"
+  figure_5: "results/figures/figure_5.png"
+  figure_6: "results/figures/figure_6.png"
+
+# ==========================================
+# 8. Algorithm Steps (Implementation Obligations)
+# ==========================================
+algorithms:
+  adapter_update:
+    section: "3.2"
+    loss: "ranking-based NCE"
+    steps:
+      - "Draw positive samples from data and negative samples from LLM"
+      - "Estimate posterior of label distribution"
+      - "Compute gradient of the loss function"
+  online_adaptation:
+    section: "3.4"
+    algorithm: "Algorithm 1"
+    steps:
+      - "Draw y+ ~ p_data and y- ~ p_theta"
+      - "Update adapter parameters theta"
+      - "Iterative sampling and training"
+  ablation_mlm:
+    section: "4.5"
+    method: "Masked Language Modeling"
+    steps:
+      - "Generate text chunks from groundtruth"
+      - "Randomly mask words"
+      - "Train adapter using masked word as supervision"
+  spectral_normalization:
+    source: "addendum"
+    formula: "alpha * E[g_theta(x, y_+)^2] + alpha * E[g_theta(x, y_-)^2]"
+    implementation: "l2 regularization of energies"

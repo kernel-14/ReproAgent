@@ -1,0 +1,209 @@
+# configs/env/antmaze.yaml
+# Configuration for AntMaze (D4RL) environment and multi-task generalization experiments
+
+# Grounding marker: reference_grounding: addendum:formula_algorithm_contract /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/fre/addendum.md
+
+# 1. Active Route Contracts & Symbols
+Multi-Task Generalization on AntMaze and Kitchen:
+  description: "Figure 4: AntMaze/Kitchen zero-shot"
+  environments: ["AntMaze (D4RL)", "Kitchen (D4RL)"]
+  datasets: ["AntMaze-large-diverse-v2", "Kitchen-mixed-v0"]
+  methods: ["ours", "bc", "iql"]
+  metrics: ["success_rate", "reward"]
+  artifact_path: "results/tables/d4rl_results.csv"
+
+# 2. Paper Formula / Algorithm Symbols & Anchors
+vel_left: [-1.0, 0.0]
+vel_up: [0.0, 1.0]
+vel_down: [0.0, -1.0]
+vel_right: [1.0, 0.0]
+l_pi: "loss_pi"
+e_s_g_asimd: "expectation_s_g_a_sim_D"
+p_randomgoal: 0.3
+p_geometric_goal: 0.5
+p_current_goal: 0.2
+loss: "loss_function"
+mask: "done_mask"
+sample: "hindsight_sample"
+
+# 3. Evidence Obligation Matrix
+evidence_obligation_matrix:
+  - id: "Table 1"
+    name: "ExORL benchmark comparison"
+    artifact: "results/tables/exorl_results.csv"
+    run_route: "run_table_1_route"
+    write_artifact: "write_table_1_artifact"
+  - id: "Figure 4"
+    name: "AntMaze/Kitchen zero-shot"
+    artifact: "results/tables/d4rl_results.csv"
+    run_route: "run_figure_4_route"
+    write_artifact: "write_figure_4_artifact"
+  - id: "Figure 5"
+    name: "Scaling properties (subsets of reward forms)"
+    artifact: "results/sensitivity_report.json"
+    run_route: "run_figure_5_route"
+    write_artifact: "write_figure_5_artifact"
+  - id: "Figure 6"
+    name: "Domain knowledge (XY/Velocity priors)"
+    artifact: "results/metrics.json"
+    run_route: "run_figure_6_route"
+    write_artifact: "write_figure_6_artifact"
+  - id: "Figure 7"
+    name: "Extended results"
+    artifact: "results/figures/figure_7.png"
+    run_route: "run_figure_7_route"
+    write_artifact: "write_figure_7_artifact"
+  - id: "Figure 8"
+    name: "Extended results"
+    artifact: "results/figures/figure_8.png"
+    run_route: "run_figure_8_route"
+    write_artifact: "write_figure_8_artifact"
+  - id: "Figure 9"
+    name: "Extended results"
+    artifact: "results/figures/figure_9.png"
+    run_route: "run_figure_9_route"
+    write_artifact: "write_figure_9_artifact"
+  - id: "Table 3"
+    name: "Extended comparison"
+    artifact: "results/tables/table_3.csv"
+    run_route: "run_table_3_route"
+    write_artifact: "write_table_3_artifact"
+
+# 4. Environment Factories
+environment_factories:
+  - id: "deepmind_control"
+    aliases: ["dmc", "DeepMind Control (ExORL)", "exorl"]
+    setup_metadata:
+      without_online: true
+      maximizes_expected_return: true
+      competitive_performance: true
+    availability_check: "check_dmc_available"
+    config_hook: "make_dmc_env"
+  - id: "robotics"
+    aliases: ["d4rl", "AntMaze (D4RL)", "Kitchen (D4RL)", "antmaze", "kitchen"]
+    setup_metadata:
+      unique_test: true
+      determines_which: true
+      keep_all_paper_visible: true
+    availability_check: "check_robotics_available"
+    config_hook: "make_robotics_env"
+
+# 5. Dataset Loaders
+dataset_loaders:
+  - id: "exorl_unlabeled"
+    aliases: ["ExORL unlabeled trajectories", "deepmind_control"]
+    setup_metadata:
+      normalization: "state_normalization"
+    validation_check: "check_exorl_dataset"
+    config_hook: "load_exorl_dataset"
+  - id: "antmaze_large_diverse"
+    aliases: ["AntMaze-large-diverse-v2", "robotics"]
+    setup_metadata:
+      normalization: "state_normalization"
+    validation_check: "check_antmaze_dataset"
+    config_hook: "load_antmaze_dataset"
+  - id: "kitchen_mixed"
+    aliases: ["Kitchen-mixed-v0", "robotics"]
+    setup_metadata:
+      normalization: "state_normalization"
+    validation_check: "check_kitchen_dataset"
+    config_hook: "load_kitchen_dataset"
+
+# 6. Protocol Matrix
+protocol_matrix:
+  - experiment: "Experiment I: ExORL Main Comparison"
+    environment: "deepmind_control"
+    method_selector: "ours"
+    metric_function: "compute_reward"
+    artifact_writer: "write_table_1_artifact"
+  - experiment: "Experiment II: D4RL Zero-Shot Transfer"
+    environment: "robotics"
+    method_selector: "ours"
+    metric_function: "compute_success_rate"
+    artifact_writer: "write_figure_4_artifact"
+  - experiment: "Experiment III: Scaling with Reward Families"
+    environment: "deepmind_control"
+    method_selector: "ours"
+    metric_function: "compute_reward"
+    artifact_writer: "write_figure_5_artifact"
+  - experiment: "Experiment IV: Domain Knowledge Augmentation"
+    environment: "robotics"
+    method_selector: "ours"
+    metric_function: "compute_reward"
+    artifact_writer: "write_figure_6_artifact"
+  - experiment: "Experiment V: Extended Baselines (PPO, PBT, PQL)"
+    environment: "robotics"
+    method_selector: "ppo"
+    metric_function: "compute_reward"
+    artifact_writer: "write_table_3_artifact"
+
+# 7. Parameter Sweeps and Defaults
+parameters:
+  K: 128
+  reward_discretization_bins: 20
+  latent_dim_size: 256
+  transformer_layers: 4
+  transformer_heads: 4
+  beta: 0.1
+  KL_weight: 0.1
+  K_prime: 6
+  numeric_defaults:
+    1: 1.0
+    0: 0.0
+    0.3: 0.3
+    0.5: 0.5
+    0.2: 0.2
+    2: 2.0
+    6: 6.0
+
+# 8. Method Selectors
+method_selectors:
+  - "ours"
+  - "bc"
+  - "iql"
+  - "test_time_adaptation"
+  - "ppo"
+
+# 9. Formula / Algorithm Anchors
+formula_algorithm_anchors:
+  - id: "addendum"
+    symbols: ["vel_left", "vel_up", "vel_down", "vel_right", "L_pi", "E_s,g,asimD", "p_randomgoal", "p_geometric_goal", "p_current_goal"]
+    numeric_defaults: [1, 0, 0.3, 0.5, 0.2]
+    algorithm_terms: ["loss", "mask", "sample"]
+    steps:
+      - "L_pi = -E_{(s, g, a) ~ D} log pi(a | s, g)"
+      - "Hindsight relabeling: goal sampled from future states (geometric), random goal, or current state (reward=0, mask=True)"
+  - id: "4.3. Offline RL with FRE"
+    symbols: ["K^prime", "p_theta", "s_k^e", "s_k^d"]
+    numeric_defaults: [6]
+    algorithm_terms: ["equation", "algorithm", "gradient", "sample"]
+    steps:
+      - "Train encoder: sample eta ~ p(eta), sample K states s_k^e ~ D, sample K' states s_k^d ~ D, train FRE by maximizing Eq 6"
+  - id: "4.1. Functional Reward Encoding"
+    symbols: ["L_eta", "L_eta^e", "L_eta^d", "D_KL", "beta", "KL", "p_theta", "sum_k=1", "K^prime", "q_theta", "s_k^d", "s_1^e", "s_2^e"]
+    numeric_defaults: [1, 2]
+    algorithm_terms: ["algorithm", "formula", "objective", "ema"]
+    formula: "Learn latent representation z maximally informative about L_eta, maximally compressive"
+  - id: "3. Preliminaries and Problem Setting"
+    algorithm_terms: ["loss"]
+    steps:
+      - "Rewards denoted as functions of state eta(s) or state-action pairs eta(s, a)"
+  - id: "B. Training Details"
+    algorithm_terms: ["mask"]
+    steps:
+      - "done mask is set to True when goal is achieved"
+      - "random binary mask applied with 0.9 chance to zero the vector at that dimension to encourage sparsity"
+  - id: "4.1. Functional Reward Encoding (Masking)"
+    algorithm_terms: ["mask"]
+    steps:
+      - "Positional encodings and causal masking are not used, inputs treated as unordered set"
+
+# 10. State Sampling and Preprocessing
+state_sampling_strategy:
+  encoder_sampling: "sample K states from the dataset"
+  normalization: "ensure state normalization matches the paper's preprocessing"
+
+# 11. Artifact Writers
+artifact_writers:
+  results/environment_registry.json: "write_environment_registry_artifact"
+  results/environment_readiness.json: "write_environment_readiness_artifact"

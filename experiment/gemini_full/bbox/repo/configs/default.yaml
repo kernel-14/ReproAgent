@@ -1,0 +1,235 @@
+# configs/default.yaml
+# reference_grounding: paperbench_ref_002 lora.ipynb
+
+# ==========================================
+# 1. CLI & Execution Defaults
+# ==========================================
+# Supports parameters: --dataset, --model, --mode, --dry-run
+execution:
+  dataset: "gsm8k"
+  model: "gpt-3.5-turbo"
+  mode: "runtime_smoke" # Options: runtime_smoke, train, evaluate
+  dry_run: true
+  seed: 42
+  device: "cpu"
+  output_dir: "results"
+  metrics_path: "results/metrics.json"
+  table_2_path: "results/tables/table_2.csv"
+
+# ==========================================
+# 2. Environment & Task Factories
+# ==========================================
+environment_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "cli_orchestration"
+    setup_metadata:
+      entrypoint: "main.py"
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  unit-006:
+    id: "unit-006"
+    alias: "data_eval_pipeline"
+    setup_metadata:
+      module: "src.data.unit_python_pipeline"
+      availability_check: true
+      runnable_config_hook: "compute_accuracy"
+  achieving_improvements:
+    id: "achieving improvements"
+    alias: "main_hypothesis"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  determines_which:
+    id: "determines which"
+    alias: "selection_logic"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  keep_all_paper_visible:
+    id: "keep all paper-visible"
+    alias: "visibility_contract"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  config_data_pipeline:
+    id: "config data-pipeline"
+    alias: "pipeline_config"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  config_factory:
+    id: "config factory"
+    alias: "factory_config"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  registry_configuration_artifact:
+    id: "registry configuration artifact"
+    alias: "registry_config"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  decides_which:
+    id: "decides which"
+    alias: "decision_logic"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  config_tests_artifact_writer_expose_explicit:
+    id: "config tests artifact-writer expose explicit"
+    alias: "writer_config"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  bind_each_baseline:
+    id: "bind each baseline"
+    alias: "baseline_binding"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+  worse_ablation_performance_without_fabricating:
+    id: "worse ablation performance without fabricating"
+    alias: "ablation_logic"
+    setup_metadata:
+      availability_check: true
+      runnable_config_hook: "run_experiment"
+
+# ==========================================
+# 3. Dataset & Benchmark Loaders
+# ==========================================
+dataset_loaders:
+  gsm8k: { id: "gsm8k", alias: "gsm8k", setup_metadata: { loader: "src.data.bbox_qa_benchmark.load_gsm8k", validation: true, runnable_config_hook: "load_gsm8k" } }
+  strategyqa: { id: "strategyqa", alias: "strategyqa", setup_metadata: { loader: "src.data.bbox_qa_benchmark.load_strategyqa", validation: true, runnable_config_hook: "load_strategyqa" } }
+  truthfulqa: { id: "truthfulqa", alias: "truthfulqa", setup_metadata: { loader: "src.data.bbox_qa_benchmark.load_truthfulqa", validation: true, runnable_config_hook: "load_truthfulqa" } }
+  scienceqa: { id: "scienceqa", alias: "scienceqa", setup_metadata: { loader: "src.data.bbox_qa_benchmark.load_scienceqa", validation: true, runnable_config_hook: "load_scienceqa" } }
+  toxigen: { id: "toxigen", alias: "toxigen", setup_metadata: { loader: "src.data.bbox_qa_benchmark.load_toxigen", validation: true, runnable_config_hook: "load_toxigen" } }
+
+# ==========================================
+# 4. Method & Baseline Selectors
+# ==========================================
+method_selectors:
+  - ours
+  - chain_of_thought
+  - oracle
+  - heuristic
+  - roberta
+  - fine_tuning
+  - lora
+  - sft_lora
+  - azure_sft
+  - mlm
+  - bbox_adapter
+  - ranking_nce
+  - online_adaptation
+  - single_step_inference
+  - full_step_inference
+  - ai_feedback
+  - ppo
+  - energy_based_model
+
+# ==========================================
+# 5. Hyperparameters & Parameter Sweeps
+# ==========================================
+hyperparameters:
+  # Fixed anchors
+  batch_size_64: 64
+  nearest_neighbor_upsample: true
+  max_seq_len: 384 # numeric anchor 384
+  r_sft_lora: 128 # SFT-LoRA rank anchor from F.2
+  
+  # Default values
+  temperature: 0.7
+  learning_rate: 0.0001
+  batch_size: 64
+  epochs: 3
+  
+  # Bounded sweeps
+  sweeps:
+    beam_size: [1, 3, 5]
+    iteration_count: [3, 0, 1, 2, 4]
+    adapter_size: [0.1, 0.3]
+
+# ==========================================
+# 6. Formula & Algorithm Anchors (Code-Visible Symbols)
+# ==========================================
+# Symbols from Section 3.1, 3.2, 3.4, 4.5, and Addendum
+formula_anchors:
+  symbols:
+    ell_2: "ell_2"
+    alpha: "alpha"
+    theta: "theta"
+    y_2: "y_2"
+    y_plus_sq: "y_+^2"
+    y_minus_sq: "y_-^2"
+    x_i: "x_i"
+    y_i_t: "y_i^t"
+    Y_S: "Y^S"
+    Y_T: "Y^T"
+    p_LLM: "p_LLM"
+    Z_theta: "Z_theta"
+    LLM: "LLM"
+    g_theta: "g_theta"
+    p_theta: "p_theta"
+    x_k: "x_k"
+    p_data: "p_data"
+    p_LM: "p_LM"
+    prod_ineqk: "prod_ineqk"
+    sum_k: "sum_k"
+    LM: "LM"
+    min_theta: "min_theta"
+    max_theta: "max_theta"
+    nabla_theta: "nabla_theta"
+    y_plus: "y_+"
+    y_minus: "y_-"
+    theta_t: "theta_t"
+    y_i: "y_i"
+    y_i_plus_t: "y_i+^t"
+    y_i_minus_t: "y_i-^t"
+    y_i_j: "y_i,j"
+    y_i_1: "y_i,1"
+    y_i_2: "y_i,2"
+    equation: "equation"
+    gradient: "gradient"
+    search: "search"
+    loss: "loss"
+    rank: "rank"
+    update: "update"
+  
+  numeric_anchors:
+    - 1
+    - 2
+    - 0
+    - 4
+    - 3
+    - 5
+    - 3.5
+    - 44
+    - 88
+    - 66
+    - 11
+    - 128
+    - 0.3
+    - 384
+    - 14
+    - 21
+
+# ==========================================
+# 7. Algorithm Steps & Terms
+# ==========================================
+algorithms:
+  adapter_update:
+    section: "3.2"
+    terms: ["eq.", "loss", "gradient", "rank", "sample"]
+    loss_type: "ranking_nce"
+    spectral_normalization:
+      enabled: true
+      formula: "alpha * E[g_theta(x, y_+)^2] + alpha * E[g_theta(x, y_-)^2]"
+  online_adaptation:
+    section: "3.4"
+    terms: ["eq.", "algorithm", "loss", "ema", "compute", "update", "select", "sample"]
+    steps: "Algorithm 1"
+  ablation_study:
+    section: "4.5"
+    terms: ["loss", "mask", "rank", "search"]
+    baseline_loss: "MLM"

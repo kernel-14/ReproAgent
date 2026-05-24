@@ -1,0 +1,263 @@
+# configs/evidence_obligation_registry.yaml
+# reference_grounding: paperbench_ref_001 README.md
+# reference_grounding: paperbench_ref_001 configure_finetuning.py
+# reference_grounding: paperbench_ref_001 pretrain/pretrain_helpers.py
+
+evidence_obligation_matrix:
+  version: "1.0"
+  paper_title: "Stay on topic with Classifier-Free Guidance"
+
+  environments:
+    glue:
+      id: "glue"
+      aliases: ["glue_benchmark", "glue_tasks"]
+      tasks: ["paws", "mnli", "sst2", "paraphrase"]
+      metadata:
+        description: "General Language Understanding Evaluation"
+        significance: "significantly different"
+      availability_check: "src.cfg_guidance.utils.check_env_availability"
+      config_hook: "src.cfg_guidance.config.get_env_config"
+    common_sense:
+      id: "common_sense_reasoning"
+      aliases: ["common_sense_tasks"]
+      tasks: ["hellaswag", "piqa", "arc_challenge", "winogrande"]
+      metadata:
+        description: "Common sense reasoning benchmarks"
+    unit_006:
+      id: "unit-006"
+    humanoid:
+      id: "humanoid"
+    diverse_array:
+      id: "diverse_array"
+    exhaustive_array:
+      id: "exhaustive_array"
+    multitask_prompted:
+      id: "multitask_prompted_training"
+      description: "multitask prompted training enables zero-shot"
+    hline_paws:
+      id: "hline_paws_labeled_final_paraphrase"
+    underperform_distributions:
+      id: "underperform_distributions_among_all"
+    decides_which:
+      id: "decides_which"
+
+  datasets:
+    lambada:
+      id: "lambada"
+      aliases: ["lambada_openai"]
+      loader_path: "src.cfg_guidance.data.load_data"
+      setup_metadata:
+        source: "OpenAI"
+      validation_check: "src.cfg_guidance.data.validate_dataset"
+      config_hook: "src.cfg_guidance.config.get_dataset_config"
+    closebook_qa:
+      id: "closebook_qa"
+      tasks: ["natural_questions", "trivia_qa"]
+      loader_path: "src.cfg_guidance.data.load_data"
+      setup_metadata:
+        source: "Auer et al., 2023"
+      validation_check: "src.cfg_guidance.data.validate_dataset"
+      config_hook: "src.cfg_guidance.config.get_dataset_config"
+    common_sense_tasks:
+      id: "common_sense_reasoning_tasks"
+      loader_path: "src.cfg_guidance.data.load_data"
+      setup_metadata:
+        source: "Zellers et al., 2019"
+      validation_check: "src.cfg_guidance.data.validate_dataset"
+      config_hook: "src.cfg_guidance.config.get_dataset_config"
+    open_assistant:
+      id: "open_assistant_dataset"
+      alias: "oasst1"
+      loader_path: "src.cfg_guidance.data.load_data"
+      setup_metadata:
+        source: "HuggingFace"
+      validation_check: "src.cfg_guidance.data.validate_dataset"
+      config_hook: "src.cfg_guidance.config.get_dataset_config"
+    glue:
+      id: "glue"
+      aliases: ["glue_benchmark", "glue_tasks"]
+      tasks: ["paws", "mnli", "sst2", "paraphrase"]
+
+  methods:
+    ours:
+      id: "ours"
+      selector: "cfg"
+      description: "Classifier-Free Guidance for Language Models"
+    chain_of_thought:
+      id: "chain_of_thought"
+      selector: "cot"
+      template: "Let's think step by step."
+    bert:
+      id: "bert"
+      selector: "bert_baseline"
+    ppo:
+      id: "ppo"
+      selector: "ppo_baseline"
+
+  parameters:
+    gamma:
+      id: "gamma"
+      name: "guidance_scale"
+      default: 1.5
+      sweep: [1.0, 1.25, 1.5, 1.75, 2.0, 3.0, 4.0, 5.0]
+      anchors:
+        gamma_1: 1.0
+        gamma_1_5: 1.5
+        gamma_2: 2.0
+        gamma_5: 5.0
+    temperature:
+      id: "temperature"
+      default: 1.0
+      sweep: [0.2, 0.4, 0.6, 0.8, 1.0]
+      anchors:
+        temp_0_2: 0.2
+        temp_0_6: 0.6
+        temp_0_8: 0.8
+    p:
+      id: "p"
+      name: "top_p"
+      default: 1.0
+      sweep: [0.9, 0.95, 1.0]
+
+  baseline_hyperparameters:
+    vanilla:
+      gamma: 1.0
+      temperature: 1.0
+    cot:
+      gamma: 1.0
+      temperature: 1.0
+    ours:
+      gamma: 1.5
+      temperature: 0.2
+
+  models:
+    llama_7b:
+      id: "llama-7b"
+      accuracy_lambada: 81
+    falcon_7b:
+      id: "falcon-7b-base"
+    palm_540b:
+      id: "palm-540b"
+      accuracy_lambada: 77.9
+
+  formulas:
+    classifier_guidance_image:
+      section: "2.1"
+      symbols: ["P_theta", "P_phi", "gamma", "theta", "epsilon_t", "x_t+1"]
+      numeric_anchors: [4, 1, 0, 3]
+      algorithm_terms: ["equation", "ema", "sample"]
+      steps: "2020) reduces to predicting the PDF of the sample noise epsilon_t, log P_hat(epsilon_t | x_t+1, c) = gamma * log P_theta(epsilon_t | x_t+1, c) - (gamma - 1) * log P_theta(epsilon_t | x_t+1)"
+    cfg_language_models:
+      section: "2.2"
+      symbols: ["P_theta", "prod_i=1^T", "gamma", "prod_i^T", "w_i", "w_j<i"]
+      numeric_anchors: [1, 6, 7, 5, 3.4]
+      algorithm_terms: ["equation", "formula", "sample"]
+      steps: "We can thus sample the next i-th token w_i in the logits space: log P_hat(w_i | w_j<i, c) = log P(w_i | w_j<i) + gamma * (log P(w_i | w_j<i, c) - log P(w_i | w_j<i))"
+    zero_shot_lambada:
+      section: "3.1"
+      symbols: ["gamma"]
+      numeric_anchors: [81, 1.5, 77.9]
+      claim: "LLaMA 7B achieves 81% accuracy in Lambada with gamma=1.5, outperforming PaLM-540B (77.9%)"
+    program_synthesis:
+      section: "3.3.1"
+      symbols: ["gamma"]
+      numeric_anchors: [4, 8, 2, 3, 1, 10, 100, 0.2, 1.5]
+      algorithm_terms: ["increase"]
+      metrics: ["pass@1", "pass@10", "pass@100"]
+    cot_eval:
+      section: "C.5"
+      symbols: ["gamma"]
+      numeric_anchors: [1, 1.5, 14, 0.8, 15, 0.6]
+    flops_computation:
+      section: "addendum"
+      symbols: ["w_p", "flops_computation", "sum_k", "p_k", "x_i", "x_<i", "sum_i=1^n"]
+      numeric_anchors: [5.1, 1]
+      algorithm_terms: ["equation", "formula", "search"]
+      steps: "In the experiments in Section 4.1 FLOPs are measured using this formula: https://github.com/google-research/electra/blob/master/flops_computation.py At the start of Section 5 the paper states 'we use the Falcon-7b-Base model'"
+
+  artifacts:
+    figure_1:
+      id: "Figure 1"
+      path: "results/figures/figure_1.png"
+      route: "run_figure_1_route"
+      writer: "write_figure_1_artifact"
+    table_1:
+      id: "Table 1"
+      path: "results/tables/table_1.csv"
+      route: "run_table_1_route"
+      writer: "write_table_1_artifact"
+    table_11:
+      id: "Table 11"
+      path: "results/tables/table_11.csv"
+      route: "run_table_11_route"
+      writer: "write_table_11_artifact"
+    table_5:
+      id: "Table 5"
+      path: "results/tables/table_5.csv"
+    figure_6:
+      id: "Figure 6"
+      path: "results/figures/figure_6.png"
+    figure_2:
+      id: "Figure 2"
+    table_1615:
+      id: "Table 1615"
+    figure_3:
+      id: "Figure 3"
+    table_2:
+      id: "Table 2"
+    table_3:
+      id: "Table 3"
+    table_7:
+      id: "Table 7"
+    figure_11:
+      id: "Figure 11"
+
+  metrics:
+    accuracy:
+      id: "accuracy"
+    perplexity:
+      id: "perplexity"
+    return:
+      id: "return"
+    fidelity_score:
+      id: "fidelity_score"
+    training_cost:
+      id: "training_cost"
+    toxicity:
+      id: "toxicity"
+
+  artifact_manifest:
+    - "results/evidence_contract_matrix.json"
+    - "results/experiment_registry.json"
+    - "results/metrics.json"
+    - "results/environment_registry.json"
+    - "results/artifact_manifest.json"
+    - "results/sensitivity_report.json"
+
+  # Symbols defined for code visibility
+  defined_symbols:
+    w_p: "w_p"
+    flops_computation: "flops_computation"
+    sum_k: "summation_k"
+    p_k: "p_k"
+    x_i: "x_i"
+    sum_i_1_n: "sum_i=1^n"
+    equation: "equation"
+    formula: "formula"
+    search: "search"
+    p_theta: "P_theta"
+    p_phi: "P_phi"
+
+  calls_symbols:
+    - write_evidence_contract_matrix_artifact
+    - write_experiment_registry_artifact
+    - write_metrics_artifact
+    - write_environment_registry_artifact
+    - write_artifact_manifest_artifact
+    - write_sensitivity_report_artifact
+    - run_figure_1_route
+    - write_figure_1_artifact
+    - run_table_11_route
+    - write_table_11_artifact
+    - run_table_1_route
+    - write_table_1_artifact

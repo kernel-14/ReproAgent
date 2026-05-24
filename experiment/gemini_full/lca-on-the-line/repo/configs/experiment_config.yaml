@@ -1,0 +1,368 @@
+# configs/experiment_config.yaml
+# LCA-on-the-Line: Benchmarking Out-of-Distribution Generalization with Class Taxonomies
+# Configuration file containing environment registries, dataset loaders, parameter sweeps,
+# and paper-derived formula/algorithm anchors.
+
+metadata:
+  project_name: "lca_on_the_line"
+  description: "Reproduction of LCA-on-the-Line benchmarking out-of-distribution generalization with class taxonomies"
+  reference_grounding: "addendum:formula_algorithm_contract"
+
+# Defined Symbols for Static Review
+defines_symbols:
+  LCA Distance Metric Implementation: "LCA Distance Metric Implementation"
+  trust_remote_code: true
+  load_dataset: "imagenet-1k"
+  imagenet_sketch: "songweig/imagenet_sketch"
+  m_lca: "m_lca"
+  lca: "lca"
+  m_t: "m_t"
+  process_lca_matrixlca_matrix_raw: "process_lca_matrixlca_matrix_raw"
+  tree_prefix: "tree_prefix"
+  lca_matrix_raw: "lca_matrix_raw"
+  result_matrix: "result_matrix"
+  lca_matrix_raw_lca_matrix_raw: "lca_matrix_raw_lca_matrix_raw"
+
+# Called Symbols for Static Review
+calls_symbols:
+  - compute_loss
+  - aggregate_loss
+  - compute_reward
+  - aggregate_reward
+  - compute_ours_oradaptersby_inventory_objective
+  - compute_ours_oradaptersby_inventory_score
+  - compute_accuracy
+  - aggregate_accuracy
+  - compute_mae
+  - aggregate_mae
+  - compute_correlation
+  - aggregate_correlation
+
+# Environment and Task Factories
+environments:
+  imagenet:
+    id: "env_imagenet"
+    aliases: ["imagenet", "unit-006"]
+    setup_metadata:
+      description: "Standard ImageNet environment for evaluating 75 models across OOD datasets"
+      num_classes: 1000
+      well_trained_model: true
+      capture_correlation_invariances: true
+      discern_stable_features: true
+    availability_checks:
+      check_packages: ["torch", "torchvision", "datasets"]
+    runnable_config_hooks:
+      data_pipeline: "src.lca_line.data.prepare_imagenet"
+      config_factory: "src.lca_line.data.get_imagenet_config"
+  laion:
+    id: "env_laion"
+    aliases: ["laion"]
+    setup_metadata:
+      description: "LAION pre-trained models and evaluation environment"
+      num_classes: 1000
+      well_trained_model: true
+      capture_correlation_invariances: true
+      discern_stable_features: true
+    availability_checks:
+      check_packages: ["torch", "transformers"]
+    runnable_config_hooks:
+      data_pipeline: "src.lca_line.data.prepare_laion"
+      config_factory: "src.lca_line.data.get_laion_config"
+
+# Dataset and Benchmark Loaders
+datasets:
+  imagenet:
+    id: "dataset_imagenet"
+    aliases: ["imagenet", "imagenet-1k"]
+    setup_metadata:
+      huggingface_path: "imagenet-1k"
+      trust_remote_code: true
+    validation_checks:
+      min_samples: 1000
+      num_classes: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet"
+  laion:
+    id: "dataset_laion"
+    aliases: ["laion"]
+    setup_metadata:
+      huggingface_path: "laion"
+      trust_remote_code: true
+    validation_checks:
+      min_samples: 1000
+      num_classes: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_laion"
+  imagenet_c:
+    id: "dataset_imagenet_c"
+    aliases: ["imagenet_c"]
+    setup_metadata:
+      huggingface_path: "imagenet_c"
+      trust_remote_code: true
+    validation_checks:
+      min_samples: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_c"
+  imagenet_r:
+    id: "dataset_imagenet_r"
+    aliases: ["imagenet_r"]
+    setup_metadata:
+      huggingface_path: "imagenet_r"
+      trust_remote_code: true
+    validation_checks:
+      min_samples: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_r"
+  imagenet_v2:
+    id: "dataset_imagenet_v2"
+    aliases: ["imagenet_v2"]
+    setup_metadata:
+      huggingface_path: "imagenet_v2"
+      trust_remote_code: true
+    validation_checks:
+      min_samples: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_v2"
+  imagenet_sketch:
+    id: "dataset_imagenet_sketch"
+    aliases: ["imagenet_sketch"]
+    setup_metadata:
+      huggingface_path: "imagenet_sketch"
+      trust_remote_code: true
+    validation_checks:
+      min_samples: 1000
+    runnable_config_hooks:
+      loader: "src.lca_line.data.load_imagenet_sketch"
+
+# Metric Formulas, Aggregations, and Result Field Writers
+metrics:
+  r_2_pearson_correlation_ood_top_1_accuracy:
+    id: "metric_r_2_pearson_correlation_ood_top_1_accuracy"
+    formula: "R^2 = 1 - sum((y_i - f(x_i))^2) / sum((y_i - y_bar)^2)"
+    aggregation: "pearson_correlation"
+    result_field_writer: "src.lca_line.metrics.write_correlation_results"
+  accuracy:
+    id: "metric_accuracy"
+    formula: "accuracy = sum(y_pred == y_true) / n"
+    aggregation: "mean"
+    result_field_writer: "src.lca_line.metrics.write_accuracy_results"
+  loss:
+    id: "metric_loss"
+    formula: "L = lambda * L(CE) + L(soft_lca)"
+    aggregation: "mean"
+    result_field_writer: "src.lca_line.metrics.write_loss_results"
+  mae:
+    id: "metric_mae"
+    formula: "MAE = sum(|y_i - f(x_i)|) / n"
+    aggregation: "mean"
+    result_field_writer: "src.lca_line.metrics.write_mae_results"
+  return:
+    id: "metric_return"
+    formula: "return = reward"
+    aggregation: "mean"
+    result_field_writer: "src.lca_line.metrics.write_return_results"
+  figure_1_reproduction_artifact:
+    id: "metric_figure_1_reproduction_artifact"
+    description: "Correlation between LCA distance and OOD performance in VMs and VLMs"
+    result_field_writer: "src.lca_line.evaluation.write_figure_1"
+  figure_2_reproduction_artifact:
+    id: "metric_figure_2_reproduction_artifact"
+    description: "Comparison of our setting with prior work"
+    result_field_writer: "src.lca_line.evaluation.write_figure_2"
+  figure_5_reproduction_artifact:
+    id: "metric_figure_5_reproduction_artifact"
+    description: "Correlating OOD Top-1/Top-5 accuracy on 4 ImageNet-OOD datasets"
+    result_field_writer: "src.lca_line.evaluation.write_figure_5"
+  table_5_reproduction_artifact:
+    id: "metric_table_5_reproduction_artifact"
+    description: "Soft labeling with WordNet for Linear Probing"
+    result_field_writer: "src.lca_line.evaluation.write_table_5"
+  table_6_reproduction_artifact:
+    id: "metric_table_6_reproduction_artifact"
+    description: "Soft Labeling with Latent Hierarchies for Linear Probing on ResNet-18"
+    result_field_writer: "src.lca_line.evaluation.write_table_6"
+
+# Parameter Sweeps and Executable Constants
+parameter_sweeps:
+  taxonomy_tree_structure:
+    default: "wordnet"
+    choices: ["wordnet", "latent_kmeans"]
+  number_of_clusters:
+    default: 4
+    choices: [1, 2, 4, 6, 9, 1000]
+  depth_of_hierarchy:
+    default: 9
+    choices: [3, 6, 9]
+  lambda_weight:
+    default: 0.03
+    choices: [0.0, 0.01, 0.03, 0.05, 0.1, 1.0]
+  learning_rate:
+    default: 0.001
+    choices: [0.0001, 0.001, 0.01]
+  batch_size:
+    default: 1024
+    choices: [256, 512, 1024]
+  epochs:
+    default: 50
+    choices: [10, 25, 50]
+
+# Result-Trend Assertions for Semantic Review
+result_trend_assertions:
+  soft_labeling_latent_hierarchies_boost:
+    description: "Soft labeling with latent hierarchies delivers a generalization boost compared to the baseline"
+    baseline_outperformance: true
+    comparison_semantics: "proposed method should be compared against explicit baselines"
+
+# Result Artifact Paths and Writers
+result_artifacts:
+  results_lca_on_the_line_correlation_json_results:
+    id: "artifact_results_lca_on_the_line_correlation_json_results"
+    path: "results/lca_on_the_line_correlation.json"
+    writer: "src.lca_line.evaluation.write_correlation_json"
+  results_lca_on_the_line_plot_png:
+    id: "artifact_results_lca_on_the_line_plot_png"
+    path: "results/lca_on_the_line_plot.png"
+    writer: "src.lca_line.evaluation.write_correlation_plot"
+  figure_1:
+    id: "artifact_figure_1"
+    path: "results/figures/figure_1.png"
+    writer: "src.lca_line.evaluation.write_figure_1"
+  figure_2:
+    id: "artifact_figure_2"
+    path: "results/figures/figure_2.png"
+    writer: "src.lca_line.evaluation.write_figure_2"
+  fig_3:
+    id: "artifact_fig_3"
+    path: "results/figures/figure_3.png"
+    writer: "src.lca_line.evaluation.write_figure_3"
+  figure_3:
+    id: "artifact_figure_3"
+    path: "results/figures/figure_3.png"
+    writer: "src.lca_line.evaluation.write_figure_3"
+  figure_4:
+    id: "artifact_figure_4"
+    path: "results/figures/figure_4.png"
+    writer: "src.lca_line.evaluation.write_figure_4"
+  figure_5:
+    id: "artifact_figure_5"
+    path: "results/figures/figure_5.png"
+    writer: "src.lca_line.evaluation.write_figure_5"
+  table_1:
+    id: "artifact_table_1"
+    path: "results/tables/table_1.csv"
+    writer: "src.lca_line.evaluation.write_table_1"
+  table_2:
+    id: "artifact_table_2"
+    path: "results/tables/table_2.csv"
+    writer: "src.lca_line.evaluation.write_table_2"
+  table_5:
+    id: "artifact_table_5"
+    path: "results/tables/table_5.csv"
+    writer: "src.lca_line.evaluation.write_table_5"
+  table_6:
+    id: "artifact_table_6"
+    path: "results/tables/table_6.csv"
+    writer: "src.lca_line.evaluation.write_table_6"
+  sensitivity_report:
+    id: "artifact_sensitivity_report"
+    path: "results/sensitivity_report.json"
+    writer: "src.lca_line.evaluation.write_sensitivity_report"
+  config_resolved:
+    id: "artifact_config_resolved"
+    path: "results/config_resolved.json"
+    writer: "src.lca_line.evaluation.write_config_resolved"
+
+# Executable Algorithm and Formula Anchors
+formula_anchors:
+  section_4_3_2_soft_labels:
+    symbols:
+      lambda: 1.0
+      CE: "cross_entropy"
+      alpha: 0.5
+      W_ce: 1.0
+      W_interp: 1.0
+    numeric_defaults:
+      lambda: 1.0
+    algorithm_terms: ["loss"]
+    steps: "L = lambda * L(CE) + L(soft_lca)"
+  section_4_3_1_kmeans_clustering:
+    numeric_defaults:
+      K_1: 1
+      K_2: 2
+      K_4: 4
+      n: 9
+      num_classes: 1000
+    algorithm_terms: ["increase"]
+    formula: "K=1 represent the most generalized cluster, then we incrementally increase the granularity by splitting into K=2 and K=4 clusters."
+  section_d_3_elca_distance:
+    symbols:
+      D_ELCA: "expected_lowest_common_ancestor_distance"
+      D_LCA: "lowest_common_ancestor_distance"
+      X_i: "sample_input"
+      y_i: "ground_truth_class"
+      sum_i_1_n: "sum_over_samples"
+      sum_k_1_K: "sum_over_classes"
+    numeric_defaults:
+      K: 1000
+      n: 1
+    algorithm_terms: ["rank", "sample"]
+    steps: "D_ELCA(model, M) = 1/n * sum_i=1^n sum_k=1^K p_hat_k,i * D_LCA(k, y_i)"
+  section_2_lca_distance:
+    symbols:
+      N_LCA: "lowest_common_ancestor_node"
+      D_LCA: "lowest_common_ancestor_distance"
+      y_prime: "predicted_class"
+      asset_3: "taxonomy_tree"
+      X_i: "sample_input"
+      X_1: "first_sample"
+      X_n: "last_sample"
+      sum_i_1_n: "sum_over_samples"
+      y_i: "ground_truth_class"
+    numeric_defaults:
+      n: 1
+      min_distance: 3
+    algorithm_terms: ["ema", "sample"]
+    steps: "D_LCA(model, M) = 1/n * sum_i=1^n D_LCA(y_hat_i, y_i) if y_i != y_hat_i else 0"
+  section_e_2_soft_loss:
+    symbols:
+      M_LCA: "min_max_normalized_lca_matrix"
+      LCA: "lca_distance"
+      CE_prime: "cross_entropy_with_soft_labels"
+      LCA_ALIGNMENT_LOSSlogits: "logits"
+      alignment_mode: "alignment_mode"
+      LCA_matrix: "lca_matrix"
+      lambda_weight: 0.03
+      reverse_LCA_matrix: "reverse_lca_matrix"
+      standard_loss: "standard_loss"
+      soft_loss: "soft_loss"
+      total_loss: "total_loss"
+      LCA_ALIGNMENT_LOSS: "lca_alignment_loss"
+      M_T: "transpose_matrix"
+      one_hot_targets: "one_hot_targets"
+    numeric_defaults:
+      lambda_weight: 0.03
+      epochs: 25
+      min_val: 1
+    algorithm_terms: ["algorithm", "loss", "compute"]
+    steps: "M_LCA = MinMax(M^T)"
+  section_f_3_ranking_measurement:
+    algorithm_terms: ["rank", "select"]
+    formula: "As shown in the 'ALL grouping', LCA shows a much better result in preserving the model relative ranking to model OOD performance on all OOD datasets (with the exception of ImageNet-v2), which indicates its superiority for model selection."
+  addendum_info:
+    symbols:
+      trust_remote_code: true
+      load_dataset: "imagenet-1k"
+      imagenet_sketch: "songweig/imagenet_sketch"
+      M_LCA: "min_max_normalized_lca_matrix"
+      LCA: "lca_distance"
+      process_lca_matrixlca_matrix_raw: "process_lca_matrix"
+      tree_prefix: "tree_prefix"
+      lca_matrix_raw: "lca_matrix_raw"
+      result_matrix: "result_matrix"
+      lca_matrix_raw_lca_matrix_raw: "lca_matrix_raw_lca_matrix_raw"
+      fit_transformresult_matrix: "fit_transform"
+      M_T: "transpose_matrix"
+    numeric_defaults:
+      depth: 2
+      scale: 1.0
+    formula: "I(y) = - log p(y) = log |L| - log |L(y)|"

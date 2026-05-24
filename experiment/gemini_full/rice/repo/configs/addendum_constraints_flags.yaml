@@ -1,0 +1,141 @@
+# configs/addendum_constraints_flags.yaml
+# reference_grounding: addendum:formula_algorithm_contract
+# reference_grounding: paper chunk_035, chunk_015, chunk_016_01
+
+# Global Constants and Constraints
+# reference_grounding: addendum:formula_algorithm_contract
+d_max: 1.0
+black_box_assumption: true
+
+# Environment and Task Registry
+# reference_grounding: paper:unit-001
+environment_registry:
+  Hopper-v3:
+    alias: "Hopper"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+  Walker2d-v3:
+    alias: "Walker2d"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+  Reacher-v2:
+    alias: "Reacher"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+  HalfCheetah-v3:
+    alias: "HalfCheetah"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+  SelfishMining:
+    alias: "selfish mining"
+    group: "selfish_mining"
+    factory: "src.rice.envs.make_envs"
+  CageChallenge2:
+    alias: "CAGE Challenge 2"
+    group: "network_defense"
+    factory: "src.rice.envs.make_envs"
+  AutonomousDriving:
+    alias: "autonomous driving"
+    group: "autonomous_driving"
+    factory: "src.rice.envs.make_envs"
+  MalwareMutation:
+    alias: "Malware Mutation"
+    group: "malware_mutation"
+    factory: "src.rice.envs.make_envs"
+
+# Dataset and Benchmark Loaders
+dataset_loaders:
+  cage: "src.rice.envs.load_cage_dataset"
+  gym: "src.rice.envs.load_gym_dataset"
+
+# Experiment Configuration System
+# Materialize a callable protocol matrix linking named experiments to environments, methods, metrics, and artifact writers
+experiment_matrix:
+  experiment_i:
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "statemask"]
+    metrics: ["compute_fidelity_score"]
+    artifact_writers: ["write_fidelity_score_artifact"]
+  experiment_ii:
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "random", "jsrl", "ppo_fine_tuning"]
+    metrics: ["compute_reward"]
+    artifact_writers: ["write_main_artifact"]
+  experiment_iii:
+    tasks: ["Hopper-v3"]
+    methods: ["ours", "statemask", "random"]
+    metrics: ["compute_reward"]
+    artifact_writers: ["write_main_artifact"]
+  experiment_iv:
+    tasks: ["Hopper-v3"]
+    methods: ["ours"]
+    sweeps: ["alpha_values", "lambda_values", "p_values"]
+    metrics: ["compute_reward"]
+    artifact_writers: ["write_main_artifact"]
+  experiment_v:
+    tasks: ["SelfishMining", "CageChallenge2", "AutonomousDriving", "MalwareMutation"]
+    methods: ["ours", "random", "jsrl", "ppo_fine_tuning"]
+    metrics: ["compute_reward"]
+    artifact_writers: ["write_main_artifact"]
+
+# Selectable Method/Baseline Factories
+method_factories:
+  ours: "src.rice.refining.RICETrainer"
+  random: "src.rice.baselines.RandomTrainer"
+  statemask: "src.rice.baselines.StateMaskTrainer"
+  ppo: "src.rice.ppo.PPOTrainer"
+  sac: "src.rice.baselines.SACTrainer"
+  gail: "src.rice.baselines.GAILTrainer"
+  jsrl: "src.rice.baselines.JSRLTrainer"
+  heuristic: "src.rice.baselines.HeuristicTrainer"
+  b-line: "src.rice.baselines.BLineTrainer"
+  ppo_fine_tuning: "src.rice.baselines.PPOFineTuningTrainer"
+
+# Parameter Sweeps
+# reference_grounding: paper chunk_035
+parameter_sweeps:
+  alpha_values: [0.01, 0.001, 0.0001]
+  lambda_values: [0, 0.1, 0.01, 0.001]
+  p_values: [0, 0.25, 0.5, 0.75, 1]
+  learning_rate: [0.001, 0.0003, 0.0001]
+  clip_ratio: [0.1, 0.2, 0.3]
+  batch_size: [32, 64, 128]
+
+# Refining Engine Module
+refining_engine:
+  roll_in: "src.rice.refining.RICETrainer.roll_in"
+  exploration: "src.rice.refining.RICETrainer.exploration"
+  training_loop: "src.rice.refining.RICETrainer.refine_step"
+
+# Fidelity Metric Calculation
+# reference_grounding: addendum:formula_algorithm_contract
+fidelity_metric:
+  formula: "src.rice.explanation.Evaluator.compute_fidelity"
+  calculate: "src.rice.explanation.Evaluator.calculate_fidelity"
+  ema: 0.99
+  mask: "src.rice.explanation.ExplanationGenerator.get_importance_scores"
+  top_k: [10, 20, 30, 40]
+  trajectories: 500
+
+# State Mask Network Module
+state_mask_network:
+  architecture: "mlp"
+  regularization_weight: 0.01
+  alpha: 0.01
+  objective: "max_eta_pi_bar"
+
+# Explanation Fidelity and Efficiency Evaluation
+explanation_evaluation:
+  fidelity_score: "src.rice.explanation.Evaluator.compute_fidelity"
+  efficiency: "src.rice.explanation.Evaluator.measure_efficiency"
+
+# Artifact Routes
+artifact_routes:
+  figure_1: "results/figures/figure_1.png"
+  figure_5: "results/figures/figure_5.png"
+  table_4: "results/tables/table_4.csv"
+  table_1: "results/tables/table_1.csv"
+  figure_2: "results/figures/figure_2.png"
+  figure_3: "results/figures/figure_3.png"
+  figure_4: "results/figures/figure_4.png"
+  table_2: "results/tables/table_2.csv"

@@ -1,0 +1,273 @@
+# configs/addendum_constraints_flags.yaml
+# Faithful reproduction configuration and constraints for:
+# "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+
+metadata:
+  project_name: "Fine-tuning RL as Forgetting Mitigation"
+  paper_id: "ftrl"
+  addendum_version: "1.1"
+
+# Expose paper-derived environment/task factories and aliases
+environments:
+  two_state_mdp:
+    id: "two_state_mdp"
+    alias: "two-state-mdp"
+    description: "Two-state MDP with CLOSE and FAR state partitions to track forgetting."
+    state_space_partition:
+      close: "States frequently visited near start (s_0)"
+      far: "States reachable only after learning on CLOSE (s_1)"
+    setup_metadata:
+      gamma: 0.99
+      epsilon: 0.1
+      r_0: 0.11
+      r_1: 2.22
+    availability_check: "src.envs.two_state_mdp.make_two_state_mdp"
+    runnable_config_hook: "setup_two_state_mdp"
+
+  appleretrieval:
+    id: "appleretrieval"
+    alias: "apple_retrieval"
+    description: "AppleRetrieval grid-world environment with CLOSE/FAR phases."
+    setup_metadata:
+      grid_size: 30
+      apple_reward: 10.0
+      step_penalty: -0.1
+      c_parameter: 1.5
+    availability_check: "src.envs.apple_retrieval.make_apple_retrieval"
+    runnable_config_hook: "setup_apple_retrieval"
+
+  robotics:
+    id: "robotics"
+    alias: "push-wall"
+    description: "Robotic manipulation task (Meta-World push-wall) for sequential transfer."
+    setup_metadata:
+      task_name: "push-wall-v2"
+      gold_score_threshold: 0.9
+    availability_check: "src.envs.robotics.make_robotics"
+    runnable_config_hook: "setup_robotics"
+
+# Expose paper-derived dataset/benchmark loaders
+datasets:
+  robotics:
+    id: "robotics_dataset"
+    alias: "robotics"
+    setup_metadata:
+      num_trajectories: 100
+      validation_split: 0.2
+    validation_checks:
+      - "check_trajectory_length"
+      - "check_state_action_bounds"
+    runnable_config_hook: "load_robotics_data"
+
+  nethack:
+    id: "nld_aa"
+    alias: "nld-aa-v0"
+    setup_metadata:
+      batch_size: 128
+      num_batches_fisher: 10000
+    validation_checks:
+      - "check_ttyrec_format"
+    runnable_config_hook: "load_nethack_data"
+
+# Expose selectable method/baseline/variant factories
+methods:
+  ours:
+    name: "Ours (Scaled-BC + Fine-tuning + KS)"
+    alias: "ours"
+    class_path: "src.methods.bc.BCMethod"
+    hyperparameters:
+      learning_rate: 0.0003
+      batch_size: 128
+      bc_coefficient: 1.0
+      ks_coefficient: 1.0
+
+  ppo:
+    name: "Proximal Policy Optimization"
+    alias: "ppo"
+    class_path: "src.methods.vanilla.PPOMethod"
+    hyperparameters:
+      learning_rate: 0.0003
+      batch_size: 128
+
+  sac:
+    name: "Soft Actor-Critic"
+    alias: "sac"
+    class_path: "src.methods.vanilla.SACMethod"
+    hyperparameters:
+      learning_rate: 0.0003
+      batch_size: 128
+
+  bc:
+    name: "Behavioral Cloning Regularization"
+    alias: "bc"
+    class_path: "src.methods.bc.BCMethod"
+    hyperparameters:
+      learning_rate: 0.0003
+      batch_size: 128
+      bc_coefficient: 1.0
+
+  oracle:
+    name: "Oracle Policy"
+    alias: "oracle"
+    class_path: "src.methods.vanilla.OracleMethod"
+    hyperparameters: {}
+
+  nle:
+    name: "NetHack Learning Environment Baseline"
+    alias: "nle"
+    class_path: "src.methods.vanilla.NLEMethod"
+    hyperparameters: {}
+
+  ewc:
+    name: "Elastic Weight Consolidation"
+    alias: "ewc"
+    class_path: "src.methods.ewc.EWCMethod"
+    hyperparameters:
+      learning_rate: 0.0003
+      batch_size: 128
+      ewc_lambda: 5000.0
+
+  vanilla_fine_tuning:
+    name: "Vanilla Fine-tuning"
+    alias: "vanilla"
+    class_path: "src.methods.vanilla.VanillaFineTuning"
+    hyperparameters:
+      learning_rate: 0.0003
+      batch_size: 128
+
+  knowledge_retention_fine_tuning:
+    name: "Knowledge-Retention Fine-tuning"
+    alias: "kr_ft"
+    class_path: "src.methods.bc.BCMethod"
+    hyperparameters:
+      learning_rate: 0.0003
+      batch_size: 128
+
+# Complete bounded parameter sweeps
+sweeps:
+  learning_rate:
+    values: [0.0001, 0.0003, 0.001]
+    default: 0.0003
+  batch_size:
+    values: [64, 128, 256]
+    default: 128
+
+# Executable anchor contract: exact numeric constants, defaults, formulas, and symbols
+defines_symbols:
+  add_nledata_directory: "nld.add_nledata_directory"
+  add_altorg_directory: "nld.add_altorg_directory"
+  ttyrecdataset_nld_aa_v0_batch_size_128: "nld.TtyrecDataset('nld-aa-v0', batch_size=128)"
+  batch_size: 128
+  algorithm: "distillation_and_regularization"
+  distill: "compute_kl_divergence"
+  compute: "compute_fisher_diagonal"
+  l_aux: "L_aux(theta) = sum_i F^i (theta_*^i - theta^i)^2"
+  theta: "current_policy_weights"
+  sum_i: "sum_over_parameters"
+  f_i: "fisher_information_diagonal_element"
+  theta_i: "current_parameter_i"
+  theta_star: "pretrained_policy_weights"
+  l_bc: "L_BC(theta) = E_{s ~ B_BC}[D_KL(pi_*(s) || pi_theta(s))]"
+  l_ks: "L_KS(theta) = E_{s ~ pi_theta}[D_KL(pi_*(s) || pi_theta(s))]"
+  forward_transfer: "Forward_Transfer = (AUC - AUC_b) / (1 - AUC_b)"
+  auc: "AUC = (1 / T) * integral_0_T p(t) dt"
+  auc_b: "AUC_b = (1 / T) * integral_0_T p_b(t) dt"
+
+# Calls symbols contract for verification and execution routes
+calls_symbols:
+  - "run_experiment"
+  - "compute_loss"
+  - "aggregate_loss"
+  - "compute_reward"
+  - "aggregate_reward"
+  - "compute_metric_that_parses_arguments_entrypoint_metric_entrypoint_objective"
+  - "compute_metric_that_parses_arguments_entrypoint_metric_entrypoint_score"
+  - "write_figure_4_artifact"
+  - "run_figure_4_route"
+  - "write_table_4_artifact"
+  - "run_table_4_route"
+  - "compute_environmentinthisfile_ids_aliasesrobotics_objective"
+
+# Executable artifact contract: table/figure/metric writers
+artifact_writers:
+  figure_1:
+    path: "results/figures/figure_1.png"
+    description: "CLOSE and FAR state space partition illustration."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_1"
+  figure_2:
+    path: "results/figures/figure_2.png"
+    description: "Forgetting of pre-trained capabilities during fine-tuning."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_2"
+  figure_4:
+    path: "results/figures/figure_4.png"
+    description: "NetHack fine-tuning results comparing BC, EWC, and Scratch."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_4"
+  figure_12:
+    path: "results/figures/figure_12.png"
+    description: "NetHack learning curves for different regularization methods."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_12"
+  figure_3a:
+    path: "results/figures/figure_3a.png"
+    description: "Robotic manipulation sequential transfer success rate."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_3a"
+  figure_3:
+    path: "results/figures/figure_3.png"
+    description: "Robotic manipulation overall performance comparison."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_3"
+  figure_3b:
+    path: "results/figures/figure_3b.png"
+    description: "Robotic manipulation forward transfer metric."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_3b"
+  figure_3c:
+    path: "results/figures/figure_3c.png"
+    description: "Robotic manipulation forgetting score over time."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_3c"
+  figure_7:
+    path: "results/figures/figure_7.png"
+    description: "Ablation study on BC buffer size."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_7"
+  figure_5:
+    path: "results/figures/figure_5.png"
+    description: "KL divergence trace during fine-tuning."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_5"
+  figure_6:
+    path: "results/figures/figure_6.png"
+    description: "Success rate computed every 5 million training steps."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_6"
+  figure_8:
+    path: "results/figures/figure_8.png"
+    description: "EWC Fisher diagonal sensitivity analysis."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_8"
+  figure_14:
+    path: "results/figures/figure_14.png"
+    description: "Robotic manipulation push-wall success rate."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_14"
+  table_4:
+    path: "results/tables/table_4.csv"
+    description: "Robotic manipulation forward transfer values."
+    writer_function: "src.reporting.addendum_constraints_flags.write_table_4"
+  table_5:
+    path: "results/tables/table_5.csv"
+    description: "Robotic manipulation success rates across methods."
+    writer_function: "src.reporting.addendum_constraints_flags.write_table_5"
+  figure_15:
+    path: "results/figures/figure_15.png"
+    description: "Robotic manipulation sequential transfer curves."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_15"
+  figure_16:
+    path: "results/figures/figure_16.png"
+    description: "Robotic manipulation forgetting mitigation comparison."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_16"
+  figure_17:
+    path: "results/figures/figure_17.png"
+    description: "Robotic manipulation push-wall learning curves."
+    writer_function: "src.reporting.addendum_constraints_flags.write_figure_17"
+
+# Bounded execution and smoke mode configuration
+smoke_mode:
+  max_epochs: 2
+  max_steps_per_episode: 10
+  num_eval_episodes: 2
+  batch_size: 8
+  nethack_rollout_limit: 150
+  fisher_batches: 5

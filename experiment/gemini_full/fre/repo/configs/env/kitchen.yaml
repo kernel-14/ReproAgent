@@ -1,0 +1,198 @@
+# configs/env/kitchen.yaml
+# Configuration for Kitchen (D4RL) environment and multi-task generalization experiments
+
+# Grounding marker: reference_grounding: addendum:formula_algorithm_contract /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/fre/addendum.md
+
+# 1. Active Route Contracts & Symbols
+Multi-Task Generalization on AntMaze and Kitchen:
+  description: "Figure 4: AntMaze/Kitchen zero-shot"
+  environments: ["AntMaze (D4RL)", "Kitchen (D4RL)"]
+  datasets: ["AntMaze-large-diverse-v2", "Kitchen-mixed-v0"]
+  methods: ["ours", "bc", "iql"]
+  metrics: ["success_rate", "reward"]
+  artifact_path: "results/tables/d4rl_results.csv"
+
+# 2. Paper Formula / Algorithm Symbols & Anchors
+vel_left: [-1.0, 0.0]
+vel_up: [0.0, 1.0]
+vel_down: [0.0, -1.0]
+vel_right: [1.0, 0.0]
+l_pi: "loss_pi"
+e_s_g_asimd: "expectation_s_g_a_sim_D"
+p_randomgoal: 0.3
+p_geometric_goal: 0.5
+p_current_goal: 0.2
+loss: "loss_function"
+mask: "done_mask"
+sample: "hindsight_sample"
+
+L_eta: "L_eta"
+L_eta_e: "L_eta_e"
+L_eta_d: "L_eta_d"
+D_KL: "D_KL"
+beta: 0.1
+KL: "KL"
+p_theta: "p_theta"
+sum_k_1: "sum_k=1"
+K_prime: 6
+q_theta: "q_theta"
+s_k_d: "s_k_d"
+s_1_e: "s_1_e"
+s_2_e: "s_2_e"
+s_K_e: "s_K_e"
+sum_k: "sum_k"
+
+numeric_defaults:
+  1: 1.0
+  0: 0.0
+  0.3: 0.3
+  0.5: 0.5
+  0.2: 0.2
+  2: 2.0
+  6: 6.0
+
+# 3. Evidence Obligation Matrix
+evidence_obligation_matrix:
+  - id: "Table 1"
+    name: "ExORL benchmark comparison"
+    artifact: "results/tables/exorl_results.csv"
+    run_route: "run_table_1_route"
+    write_artifact: "write_table_1_artifact"
+  - id: "Figure 4"
+    name: "AntMaze/Kitchen zero-shot"
+    artifact: "results/tables/d4rl_results.csv"
+    run_route: "run_figure_4_route"
+    write_artifact: "write_figure_4_artifact"
+  - id: "Figure 5"
+    name: "Scaling properties (subsets of reward forms)"
+    artifact: "results/sensitivity_report.json"
+    run_route: "run_figure_5_route"
+    write_artifact: "write_figure_5_artifact"
+  - id: "Figure 6"
+    name: "Domain knowledge (XY/Velocity priors)"
+    artifact: "results/metrics.json"
+    run_route: "run_figure_6_route"
+    write_artifact: "write_figure_6_artifact"
+  - id: "Figure 7"
+    name: "Extended results"
+    artifact: "results/figures/figure_7.png"
+    run_route: "run_figure_7_route"
+    write_artifact: "write_figure_7_artifact"
+  - id: "Figure 8"
+    name: "Extended results"
+    artifact: "results/figures/figure_8.png"
+    run_route: "run_figure_8_route"
+    write_artifact: "write_figure_8_artifact"
+  - id: "Figure 9"
+    name: "Extended results"
+    artifact: "results/figures/figure_9.png"
+    run_route: "run_figure_9_route"
+    write_artifact: "write_figure_9_artifact"
+  - id: "Table 3"
+    name: "Extended comparison"
+    artifact: "results/tables/table_3.csv"
+    run_route: "run_table_3_route"
+    write_artifact: "write_table_3_artifact"
+
+# 4. Environment/Task Factories
+environment_factories:
+  deepmind_control:
+    id: "deepmind_control"
+    aliases: ["dmc", "DeepMind Control (ExORL)", "exorl"]
+    tasks: ["walker_walk", "walker_run", "cheetah_run"]
+    setup_metadata:
+      without_online: true
+      maximizes_expected_return: true
+      competitive_performance: true
+    availability_check: "check_dmc_available"
+    config_hook: "make_dmc_env"
+  robotics:
+    id: "robotics"
+    aliases: ["d4rl", "AntMaze (D4RL)", "Kitchen (D4RL)", "antmaze", "kitchen"]
+    tasks: ["antmaze-large-diverse-v2", "kitchen-mixed-v0"]
+    setup_metadata:
+      unique_test: true
+      determines_which: true
+      keep_all_paper_visible: true
+    availability_check: "check_robotics_available"
+    config_hook: "make_robotics_env"
+
+# 5. Dataset/Benchmark Loaders
+dataset_loaders:
+  deepmind_control:
+    id: "deepmind_control"
+    aliases: ["ExORL unlabeled trajectories"]
+    validation_check: "validate_exorl_dataset"
+    config_hook: "load_exorl_dataset"
+  robotics:
+    id: "robotics"
+    aliases: ["AntMaze-large-diverse-v2", "Kitchen-mixed-v0"]
+    validation_check: "validate_d4rl_dataset"
+    config_hook: "load_d4rl_dataset"
+
+# 6. Callable Protocol Matrix
+callable_protocol_matrix:
+  - name: "Experiment I: ExORL Main Comparison"
+    environment: "deepmind_control"
+    method_selector: "ours"
+    metric_function: "compute_reward"
+    artifact_writer: "write_table_1_artifact"
+  - name: "Experiment II: D4RL Zero-Shot Transfer"
+    environment: "robotics"
+    method_selector: "ours"
+    metric_function: "compute_success_rate"
+    artifact_writer: "write_figure_4_artifact"
+  - name: "Experiment III: Scaling with Reward Families"
+    environment: "deepmind_control"
+    method_selector: "ours"
+    metric_function: "compute_reward"
+    artifact_writer: "write_figure_5_artifact"
+  - name: "Experiment IV: Domain Knowledge Augmentation"
+    environment: "robotics"
+    method_selector: "ours"
+    metric_function: "compute_reward"
+    artifact_writer: "write_figure_6_artifact"
+  - name: "Experiment V: Extended Baselines (PPO, PBT, PQL)"
+    environment: "robotics"
+    method_selector: "ppo"
+    metric_function: "compute_reward"
+    artifact_writer: "write_figure_7_artifact"
+
+# 7. Parameter Sweeps and Defaults
+parameters:
+  K: 128
+  reward_discretization_bins: 20
+  latent_dim_size: 256
+  transformer_layers: 4
+  transformer_heads: 4
+  beta: 0.1
+  KL_weight: 0.1
+  K_prime: 6
+  state_normalization: "ensure state normalization matches the paper's preprocessing"
+  state_sampling_strategy: "sampling K states from the dataset for the encoder"
+  positional_encodings: false
+  causal_masking: false
+  unordered_set_inputs: true
+
+# 8. Method/Baseline/Attack Selectors
+method_selectors:
+  - "ours"
+  - "bc"
+  - "iql"
+  - "test_time_adaptation"
+  - "ppo"
+
+# 9. Calls Symbols Registry
+calls_symbols:
+  - "write_environment_registry_artifact"
+  - "write_environment_readiness_artifact"
+  - "run_table_1_route"
+  - "write_table_1_artifact"
+  - "run_figure_4_route"
+  - "write_figure_4_artifact"
+  - "run_figure_5_route"
+  - "write_figure_5_artifact"
+  - "run_figure_6_route"
+  - "write_figure_6_artifact"
+  - "run_figure_7_route"
+  - "write_figure_7_artifact"

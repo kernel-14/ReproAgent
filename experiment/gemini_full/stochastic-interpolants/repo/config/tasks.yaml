@@ -1,0 +1,217 @@
+# config/tasks.yaml
+# Stochastic Interpolants with Data-Dependent Couplings Task Configuration
+
+# Grounding marker: reference_grounding: paper_method_core chunk_002 chunk_005 chunk_006 chunk_011
+
+metadata:
+  project_name: "Stochastic Interpolants with Data-Dependent Couplings"
+  description: "Reproduction of in-painting and super-resolution tasks on ImageNet using data-dependent couplings."
+
+# 1. Dataset Registry
+dataset_registry:
+  imagenet:
+    id: "imagenet"
+    aliases: ["imagenet", "imagenet_1k", "imagenet-1k", "imagenet_c"]
+    loader_factory: "data_pipeline.imagenet.load_imagenet"
+    trust_remote_code: true
+    resolutions: [256, 512]
+    validation_checks:
+      - "check_dataset_exists"
+      - "check_resolution_valid"
+    setup_metadata:
+      huggingface_path: "imagenet-1k"
+      split: "validation"
+
+# 2. Environment Registry
+environment_registry:
+  imagenet_256:
+    id: "imagenet_256"
+    aliases: ["imagenet-256", "ImageNet (256x256)"]
+    task_family: "image_restoration"
+    resolution: 256
+    channels: 3
+    availability_check: "data_pipeline.tasks.check_tasks_available"
+    setup_metadata:
+      trust_remote_code: true
+      size: [256, 256]
+  imagenet_512:
+    id: "imagenet_512"
+    aliases: ["imagenet-512", "ImageNet (512x512)"]
+    task_family: "image_restoration"
+    resolution: 512
+    channels: 3
+    availability_check: "data_pipeline.tasks.check_tasks_available"
+    setup_metadata:
+      trust_remote_code: true
+      size: [512, 512]
+
+# 3. Method Registry
+method_registry:
+  ours:
+    id: "ours"
+    name: "Stochastic Interpolant with Data-Dependent Coupling"
+    class_path: "model_or_method.coupling.DataDependentCoupling"
+    selector: "ours"
+  resnet:
+    id: "resnet"
+    name: "ResNet Baseline"
+    class_path: "src.stochastic_interpolants.model.ResNetModel"
+    selector: "resnet"
+  ddpm:
+    id: "ddpm"
+    name: "Denoising Diffusion Probabilistic Models"
+    class_path: "src.stochastic_interpolants.model.DDPMModel"
+    selector: "ddpm"
+  diffusion_model:
+    id: "diffusion_model"
+    name: "Standard Diffusion Model"
+    class_path: "src.stochastic_interpolants.model.DiffusionModel"
+    selector: "diffusion_model"
+  gaussian_independent:
+    id: "gaussian_independent"
+    name: "Gaussian with independent coupling"
+    class_path: "model_or_method.coupling.IndependentCoupling"
+    selector: "Gaussian with independent coupling"
+
+# 4. Metric Registry
+metric_registry:
+  fid:
+    id: "fid"
+    name: "Fréchet Inception Distance"
+    formula: "compute_fid"
+    module: "evaluation.metrics"
+    target_path: "results/metrics.json"
+  mse:
+    id: "mse"
+    name: "Mean Squared Error"
+    formula: "compute_mse"
+    module: "evaluation.metrics"
+    target_path: "results/metrics.json"
+
+# 5. Fixed Hyperparameters
+fixed_hyperparameters:
+  batch_size_32:
+    name: "batch_size"
+    value: 32
+    description: "All experiments should use a batch size of 32."
+  mask_tiles_64:
+    name: "mask_tiles"
+    value: 64
+    description: "In-painting mask tile size."
+  mask_probability_0.3:
+    name: "mask_probability"
+    value: 0.3
+    description: "Probability of masking a tile."
+  gradient_steps:
+    name: "gradient_steps"
+    value: 200000
+    description: "All experiments should run for 200,000 gradient steps."
+
+# 6. Parameter Sweeps
+parameter_sweeps:
+  gamma:
+    name: "gamma"
+    values: [0.0, 1.0]
+    description: "SDE sampling noise parameter gamma values 0, 1."
+  time_distribution:
+    name: "time_distribution"
+    type: "uniform"
+    bounds: [0.0, 1.0]
+    description: "time t ~ U(0,1)"
+
+# 7. Callable Protocol Matrix (Named Experiments)
+experiment_specs:
+  inpainting_imagenet:
+    id: "inpainting_imagenet"
+    name: "In-painting task (Section 4.1)"
+    environment: "imagenet_256"
+    dataset: "imagenet"
+    method: "ours"
+    baseline: "gaussian_independent"
+    task_module: "data_pipeline.tasks.InpaintingTask"
+    metric_functions: ["fid", "mse"]
+    artifact_writers:
+      - name: "write_inpainting_samples_artifact"
+        path: "results/inpainting_samples.png"
+      - name: "write_metrics_artifact"
+        path: "results/metrics.json"
+      - name: "write_figure_5_artifact"
+        path: "results/figures/figure_5.png"
+    parameters:
+      batch_size: 32
+      mask_tiles: 64
+      mask_probability: 0.3
+      gamma: 0.0
+
+  super_resolution_imagenet:
+    id: "super_resolution_imagenet"
+    name: "Super-resolution task (Section 4.2)"
+    environment: "imagenet_256"
+    dataset: "imagenet"
+    method: "ours"
+    baseline: "gaussian_independent"
+    task_module: "data_pipeline.tasks.SuperResolutionTask"
+    metric_functions: ["fid", "mse"]
+    artifact_writers:
+      - name: "write_sr_samples_artifact"
+        path: "results/sr_samples.png"
+      - name: "write_metrics_artifact"
+        path: "results/metrics.json"
+    parameters:
+      batch_size: 32
+      downsample_factor: 4
+      gamma: 0.0
+
+# 8. Paper Formula & Algorithm Anchors (Executable Code/Config Mapping)
+formula_anchors:
+  introduction_transport:
+    section: "1. Introduction"
+    symbols: ["rho_0", "rho_1"]
+    numeric_defaults: [0, 1]
+    algorithm_terms: ["equation", "formula", "ema", "compute", "sample"]
+    steps:
+      - "This transport is accomplished by means of an ordinary differential equation (ODE) or stochastic differential equation (SDE), which takes as initial condition a sample from rho_0 and produces at time t=1 an approximate sample from rho_1."
+      - "Typically, the base density is taken to be something simple, analytically tractable, and easy to sample."
+
+  stochastic_interpolants_with_couplings:
+    section: "3. Stochastic interpolants with couplings"
+    symbols: ["alpha_t", "beta_t", "gamma_t^2", "alpha_0", "beta_1", "alpha_1", "beta_0", "gamma_0", "gamma_1", "alpha_t^2", "beta_t^2", "gamma_t", "x_1^i", "rho_0"]
+    numeric_defaults: [1, 0, 3.1, 2]
+    algorithm_terms: ["sample"]
+    steps:
+      - "Albergo et al., 2023), we introduce a time-dependent stochastic process that interpolates between samples from a simple base density rho_0(x_0) at time t=0 and samples from the target rho_1(x_1) at time t=1 : Definition 3.1 (Stochastic interpolant with coupling)."
+      - "They can then be used as generative models, owing to the property that the process x_t specified in Definition 3.1 satisfies I_{t=0}=x_0 ~ rho_0(x_0) and I_{t=1}=x_1 ~ rho_1(x_1), and hence samples the desired target density."
+
+  transport_equations:
+    section: "3.1. Transport equations and conditional generative models"
+    symbols: ["gamma_t", "gamma_t^-1", "I_t", "rho_t", "rho_0", "rho_1", "x_0", "x_1", "b_t", "g_t", "rho_t=0", "rho_t=1", "partial_t", "L_b"]
+    numeric_defaults: [4, 8, 0, 1, 2]
+    algorithm_terms: ["equation", "objective", "sample"]
+    steps:
+      - "The objectives (7) can readily be estimated in practice from samples (x_0, x_1) ~ rho(x_0, x_1) and z ~ N(0,1), which will enable us to learn a velocity field b_t and score field g_t."
+
+  reducing_transport_costs:
+    section: "3.3. Reducing transport costs via coupling"
+    symbols: ["alpha_t", "beta_t", "alpha", "beta", "gamma", "n_b", "x_1^i", "rho_1", "x_1", "zeta_i", "t_i", "x_0^i", "sigma", "zeta^i", "rho_z", "rho_0", "sigma^2"]
+    numeric_defaults: [1, 0, 2, 3, 19]
+    algorithm_terms: ["algorithm", "loss", "gradient", "compute", "update", "sample", "initialize"]
+    steps:
+      - "Compute x_0^i = m(x_1^i) + sigma * zeta^i"
+      - "Compute I_{t_i} = alpha_{t_i} * x_0^i + beta_{t_i} * x_1^i"
+
+  inpainting_task:
+    section: "4.1. In-painting"
+    symbols: ["alpha_t", "beta_t", "x_0", "x_1", "R^CtimesWtimesH", "rho_1", "rho_0", "b_t", "I_t"]
+    numeric_defaults: [0, 1, 0.3, 20]
+    algorithm_terms: ["mask", "select", "initialize"]
+    steps:
+      - "Given a pre-specified mask, the goal is to fill the pixels in the masked region with new values that are consistent with the entirety of the image."
+      - "For simplicity, the mask takes the same value for all channels in a given spatial location in the image."
+
+  omitted_proofs_conditioning:
+    section: "A. Omitted proofs with conditioning variables incorporated"
+    symbols: ["alpha_t", "beta_t", "gamma_t^2", "alpha_0", "beta_1", "alpha_1", "beta_0", "gamma_0", "gamma_1", "alpha_t^2", "beta_t^2", "gamma_t", "gamma_t^-1", "I_t", "rho_0", "rho_1"]
+    numeric_defaults: [4, 0, 1, 2, 3.1, 26, 23]
+    algorithm_terms: ["equation", "objective", "sample"]
+    steps:
+      - "Note that the objectives (29) can readily be estimated in practice from samples (x_0, x_1) ~ rho(x_0, x_1 | xi), z ~ N(0,1), and xi ~ eta(xi), which will enable us to learn approximations for use in a generative model."

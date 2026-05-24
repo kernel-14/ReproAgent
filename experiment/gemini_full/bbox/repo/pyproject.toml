@@ -1,0 +1,118 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bbox-adapter-repro"
+version = "0.1.0"
+description = "BBox-Adapter: Lightweight Adapting for Black-Box Large Language Models"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.21.0",
+    "pyyaml>=6.0",
+    "pydantic>=2.0.0",
+    "tqdm>=4.65.0",
+]
+
+[project.optional-dependencies]
+# Heavy dependencies for training and full evaluation
+training = [
+    "torch>=2.0.0",
+    "transformers>=4.30.0",
+    "datasets>=2.12.0",
+]
+evaluation = [
+    "openai>=1.0.0",
+    "pandas>=2.0.0",
+    "matplotlib>=3.7.0",
+    "scikit-learn>=1.2.0",
+]
+dev = [
+    "pytest>=7.0.0",
+]
+
+[project.scripts]
+bbox-adapter = "main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "configs*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.bbox_adapter.config]
+# reference_grounding: paperbench_ref_002 lora.ipynb
+datasets = ["gsm8k", "strategyqa", "truthfulqa", "scienceqa", "toxigen"]
+baselines = ["ours", "chain_of_thought", "oracle", "heuristic", "roberta", "fine_tuning", "lora", "sft_lora", "azure_sft", "mlm", "bbox_adapter", "ranking_nce"]
+base_models = ["gpt-3.5-turbo", "Mixtral-8x7B-v0"]
+
+# 4.6. Scale Analysis & Hyperparameters
+# numeric/defaults: 1, 2, 0, 4, 3, 5, 3.5, 44, 88, 66, 11, 128, 0.3, 384, 14, 21
+beam_size_values = [1, 3, 5]
+iteration_count_values = [0, 1, 2, 3, 4]
+adapter_size_values = [0.1, 0.3]
+batch_size = 64
+learning_rate = 0.0001
+max_seq_len = 384
+temperature = 0.7
+
+# 3.2. & 3.4. Formula Anchors
+# symbols: ell_2, alpha, theta, y_+^2, y_-^2, x_i, y_i^t, Y^S, Y^T, p_LLM, Z_theta, LLM, g_theta, p_theta, x_k, p_data, p_LM, prod_ineqk, sum_k, LM, min_theta, max_theta, nabla_theta, y_+
+# symbols: p_data, y_+, y_-, p_theta, theta, x_i, y_i, y_i+^t, y_i-^t, nabla_theta, theta_t, y_i,j, y_i,1, y_i,2
+alpha = 0.3
+ell_2_regularization = true
+
+[tool.bbox_adapter.paper_anchors]
+symbols = [
+    "ell_2", "alpha", "theta", "y_+^2", "y_-^2", "x_i", "y_i^t", "Y^S", "Y^T",
+    "p_LLM", "Z_theta", "LLM", "g_theta", "p_theta", "x_k", "p_data", "p_LM",
+    "prod_ineqk", "sum_k", "LM", "min_theta", "max_theta", "nabla_theta", "y_+",
+    "y_i+^t", "y_i-^t", "theta_t", "y_i,j", "y_i,1", "y_i,2"
+]
+numeric_anchors = [
+    1, 2, 0, 4, 3, 5, 3.5, 44, 88, 66, 11, 128, 0.3, 384, 14, 21
+]
+
+[tool.bbox_adapter.environment]
+registry_artifact = "results/environment_registry.json"
+readiness_artifact = "results/environment_readiness.json"
+
+[tool.bbox_adapter.ablation]
+# 4.5. Ablation Study: Effect of Ranking-based NCE Loss
+methods = ["ranking_nce", "mlm"]
+loss_types = ["ranking_nce_loss", "masked_language_modeling_loss"]
+
+[tool.bbox_adapter.scale_analysis]
+# 4.6. Scale Analysis
+unfinetuned_iteration = 0
+beam_sizes = [1, 3, 5]
+
+[tool.bbox_adapter.artifacts]
+# Canonical artifacts from contract
+figures = [
+    "results/figures/figure_1.png", "results/figures/figure_2.png",
+    "results/figures/figure_3.png", "results/figures/figure_4.png",
+    "results/figures/figure_5.png", "results/figures/figure_6.png"
+]
+tables = [
+    "results/tables/table_1.csv", "results/tables/table_2.csv",
+    "results/tables/table_3.csv", "results/tables/table_4.csv",
+    "results/tables/table_5.csv", "results/tables/table_6.csv",
+    "results/tables/table_7.csv", "results/tables/table_8.csv",
+    "results/tables/table_9.csv", "results/tables/table_10.csv"
+]
+
+[tool.bbox_adapter.route]
+entry_surface = "main.py"
+stages = ["setup_and_data_preparation", "adapter_training_and_baselines", "evaluation_and_reporting"]
+expected_outputs = [
+    "results/environment_registry.json",
+    "results/environment_readiness.json",
+    "results/figures/figure_1.png",
+    "results/tables/table_1.csv",
+    "results/figures/figure_2.png",
+    "results/tables/table_2.csv"
+]

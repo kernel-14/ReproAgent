@@ -1,0 +1,246 @@
+{
+  "project_metadata": {
+    "hypothesis": "DPO can reduce model toxicity by suppressing the likelihood of negative samples (toxic outputs), and is sensitive to the beta parameter.",
+    "decision_value": "Generate aligned models (GPT2_DPO, Llama2_DPO) for mechanistic difference comparison."
+  },
+  "binding_addendum_clarification": {
+    "toxicity_measurement_tool": "https://huggingface.co/unitary/unbiased-toxic-roberta",
+    "note": "For measuring toxicity, reproductions should use https://huggingface.co/unitary/unbiased-toxic-roberta instead of Perspective API."
+  },
+  "dataset_registry": {
+    "wikitext": {
+      "id": "wikitext",
+      "aliases": ["wikitext", "wikitext-2", "wikitext-103"],
+      "setup_metadata": {
+        "keep_external": true,
+        "source": "huggingface"
+      },
+      "availability_check": {
+        "type": "import_check",
+        "package": "datasets",
+        "dataset_name": "wikitext"
+      },
+      "runnable_config_hooks": {
+        "load_command": "datasets.load_dataset('wikitext', 'wikitext-2-raw-v1')"
+      }
+    },
+    "jigsaw": {
+      "id": "jigsaw",
+      "aliases": ["Jigsaw dataset", "jigsaw-toxic-comment"],
+      "setup_metadata": {
+        "split_ratio": 0.9,
+        "train_percent": 90,
+        "val_percent": 10,
+        "total_comments": 561808
+      },
+      "validation_checks": {
+        "required_columns": ["id", "comment_text", "toxic"],
+        "binary_classification": true
+      },
+      "availability_check": {
+        "type": "file_check",
+        "path": "data/jigsaw_split.json"
+      },
+      "runnable_config_hooks": {
+        "make_dataset": "src.data.dataset_utils.make_dataset"
+      }
+    },
+    "real_toxicity_prompts": {
+      "id": "real_toxicity_prompts",
+      "aliases": ["RealToxicityPrompts"],
+      "setup_metadata": {
+        "source": "allenai/real-toxicity-prompts"
+      },
+      "availability_check": {
+        "type": "import_check",
+        "package": "datasets"
+      }
+    },
+    "pplm_generated_pairs": {
+      "id": "pplm_generated_pairs",
+      "aliases": ["PPLM-generated pairs", "pairwise_toxic_data"],
+      "setup_metadata": {
+        "patience_value": 10,
+        "approx_sample_pairs": 6700,
+        "source_file": "data/pairwise_toxic_data.json"
+      },
+      "availability_check": {
+        "type": "file_check",
+        "path": "data/pairwise_toxic_data.json"
+      }
+    }
+  },
+  "metric_registry": {
+    "accuracy": {
+      "id": "accuracy",
+      "formula": "correct / total",
+      "description": "Binary classification accuracy for toxicity probe"
+    },
+    "f1": {
+      "id": "f1",
+      "formula": "2 * (precision * recall) / (precision + recall)",
+      "description": "F1 score for toxicity classification"
+    },
+    "precision": {
+      "id": "precision",
+      "formula": "true_positives / (true_positives + false_positives)"
+    },
+    "recall": {
+      "id": "recall",
+      "formula": "true_positives / (true_positives + false_negatives)"
+    },
+    "loss": {
+      "id": "loss",
+      "description": "Cross entropy loss or DPO loss"
+    },
+    "perplexity": {
+      "id": "perplexity",
+      "formula": "exp(cross_entropy_loss)",
+      "description": "Language model perplexity on wikitext"
+    },
+    "toxicity": {
+      "id": "toxicity",
+      "description": "Toxicity score measured using unbiased-toxic-roberta",
+      "binding_addendum_clarification": "For measuring toxicity, reproductions should use https://huggingface.co/unitary/unbiased-toxic-roberta instead of Perspective API."
+    },
+    "dpo_loss": {
+      "id": "dpo_loss",
+      "formula": "L_DPO = -E[log sigma(beta * log(P/N))]",
+      "components": {
+        "P": "pi_theta(y_+ | w) / pi_ref(y_+ | w)",
+        "N": "pi_theta(y_- | w) / pi_ref(y_- | w)"
+      }
+    }
+  },
+  "method_registry": {
+    "ours": {
+      "id": "ours",
+      "name": "DPO Alignment",
+      "description": "Direct Preference Optimization for toxicity reduction",
+      "default_beta": 0.1,
+      "make_method_hook": "src.alignment.dpo_training.make_method"
+    },
+    "ppo": {
+      "id": "ppo",
+      "name": "Proximal Policy Optimization",
+      "description": "PPO baseline for toxicity reduction"
+    }
+  },
+  "baseline_registry": {
+    "sft": {
+      "id": "sft",
+      "name": "Supervised Fine-Tuning"
+    },
+    "unaligned": {
+      "id": "unaligned",
+      "name": "Unaligned Base Model"
+    },
+    "ablation_no_mlp": {
+      "id": "ablation_no_mlp",
+      "description": "Ablation without MLP policies, showing worse performance without fabricating"
+    }
+  },
+  "environment_factories": {
+    "gpt2": {
+      "id": "gpt2",
+      "aliases": ["GPT2"],
+      "setup_metadata": {
+        "model_name": "gpt2",
+        "adapters": "determines which adapters to use"
+      },
+      "availability_check": "lazy_import"
+    },
+    "llama2": {
+      "id": "llama2",
+      "aliases": ["Llama2"],
+      "setup_metadata": {
+        "model_name": "meta-llama/Llama-2-7b-hf",
+        "adapters": "determines which adapters to use"
+      },
+      "availability_check": "lazy_import"
+    },
+    "binary_toxicity_classification": {
+      "id": "binary_toxicity_classification",
+      "dataset": "jigsaw",
+      "description": "Binary toxicity classification task for training probe model"
+    }
+  },
+  "config_schema": {
+    "learning_rate": {
+      "type": "float",
+      "default": 1e-6
+    },
+    "batch_size": {
+      "type": "integer",
+      "default": 4
+    },
+    "optimizer": {
+      "type": "string",
+      "default": "rmsprop"
+    },
+    "gradient_accumulation_steps": {
+      "type": "integer",
+      "default": 1
+    },
+    "max_gradient_norm": {
+      "type": "float",
+      "default": 10.0
+    },
+    "validation_metric": {
+      "type": "string",
+      "default": "loss/valid"
+    },
+    "validation_patience": {
+      "type": "integer",
+      "default": 10
+    },
+    "dpo_beta": {
+      "type": "float",
+      "default": 0.1
+    }
+  },
+  "sweep_registry": {
+    "dpo_beta_sweep": {
+      "parameter": "dpo_beta",
+      "values": [0.01, 0.05, 0.1, 0.5, 1.0],
+      "description": "Sensitivity analysis for beta parameter in DPO"
+    }
+  },
+  "pairwise_data": [
+    {
+      "prompt": "The weather today is",
+      "chosen": "absolutely beautiful and sunny, perfect for a walk in the park.",
+      "rejected": "so incredibly depressing and disgusting, I hate everything about it.",
+      "toxicity_chosen": 0.01,
+      "toxicity_rejected": 0.85
+    },
+    {
+      "prompt": "When I look at the crowd, I see",
+      "chosen": "a diverse group of people coming together to celebrate community and art.",
+      "rejected": "a bunch of mindless idiots who don't know anything and deserve to fail.",
+      "toxicity_chosen": 0.02,
+      "toxicity_rejected": 0.92
+    },
+    {
+      "prompt": "The new policy will",
+      "chosen": "help improve the efficiency of our public services and support families.",
+      "rejected": "ruin the entire country and destroy the lives of everyone we care about.",
+      "toxicity_chosen": 0.01,
+      "toxicity_rejected": 0.78
+    },
+    {
+      "prompt": "He decided to speak to his neighbor because",
+      "chosen": "he wanted to friendly resolve the misunderstanding about the fence.",
+      "rejected": "he wanted to scream at them and tell them how stupid they are.",
+      "toxicity_chosen": 0.03,
+      "toxicity_rejected": 0.89
+    },
+    {
+      "prompt": "The discussion on the forum was",
+      "chosen": "very constructive with many participants sharing helpful resources.",
+      "rejected": "filled with toxic garbage and people insulting each other constantly.",
+      "toxicity_chosen": 0.01,
+      "toxicity_rejected": 0.94
+    }
+  ]
+}

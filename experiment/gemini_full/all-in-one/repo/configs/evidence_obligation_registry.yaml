@@ -1,0 +1,286 @@
+# configs/evidence_obligation_registry.yaml
+# reference_grounding: addendum:formula_algorithm_contract configs/evidence_obligation_registry.yaml
+
+metadata:
+  project_name: "All-in-one simulation-based inference (Simformer)"
+  version: "0.1.0"
+  active_reproduction_scope: "reproduce_all_benchmark_tasks_and_scientific_models"
+
+# Expose paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks
+environment_task_factories:
+  unit_001:
+    id: "unit-001"
+    alias: "unit_001"
+    setup_metadata:
+      type: "cli_entrypoint"
+      description: "CLI or main entrypoint for Simformer"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "src.tasks.base.setup_unit_001"
+
+  approximating_posterior_distributions_across_four:
+    id: "approximating posterior distributions across four"
+    alias: "four_benchmarks"
+    setup_metadata:
+      type: "benchmark"
+      description: "Approximating posterior distributions across four benchmark tasks"
+    availability_check: "src.tasks.benchmarks.check_benchmarks_available"
+    runnable_config_hook: "src.tasks.benchmarks.setup_four_benchmarks"
+
+  across_all_four_benchmark:
+    id: "across all four benchmark"
+    alias: "all_four_benchmarks"
+    setup_metadata:
+      type: "benchmark"
+      description: "Across all four benchmark tasks"
+    availability_check: "src.tasks.benchmarks.check_benchmarks_available"
+    runnable_config_hook: "src.tasks.benchmarks.setup_all_four_benchmarks"
+
+  averaged_across_all_benchmark:
+    id: "averaged across all benchmark"
+    alias: "averaged_benchmarks"
+    setup_metadata:
+      type: "benchmark"
+      description: "Averaged across all benchmark tasks"
+    availability_check: "src.tasks.benchmarks.check_benchmarks_available"
+    runnable_config_hook: "src.tasks.benchmarks.setup_averaged_benchmarks"
+
+  model_all_conditionals_across_all:
+    id: "model all conditionals across all"
+    alias: "model_all_conditionals"
+    setup_metadata:
+      type: "benchmark"
+      description: "Model all conditionals across all benchmark tasks"
+    availability_check: "src.tasks.benchmarks.check_benchmarks_available"
+    runnable_config_hook: "src.tasks.benchmarks.setup_model_all_conditionals"
+
+  hodgkin_huxley:
+    id: "hodgkin-huxley"
+    alias: "hodgkin_huxley"
+    setup_metadata:
+      type: "scientific_model"
+      description: "Hodgkin-Huxley model with interval conditioning"
+    availability_check: "src.tasks.hodgkin_huxley.check_hh_available"
+    runnable_config_hook: "src.tasks.hodgkin_huxley.setup_hodgkin_huxley"
+
+  posterior_estimation_techniques:
+    id: "posterior estimation techniques"
+    alias: "posterior_estimation"
+    setup_metadata:
+      type: "evaluation"
+      description: "Evaluation of posterior estimation techniques"
+    availability_check: "src.engine.evaluate.check_evaluation_available"
+    runnable_config_hook: "src.engine.evaluate.setup_posterior_estimation"
+
+  average_across:
+    id: "average across"
+    alias: "average_across"
+    setup_metadata:
+      type: "evaluation"
+      description: "Average performance across tasks"
+    availability_check: "src.engine.evaluate.check_evaluation_available"
+    runnable_config_hook: "src.engine.evaluate.setup_average_across"
+
+  gaussian_linear:
+    id: "gaussian linear"
+    alias: "gaussian_linear"
+    setup_metadata:
+      type: "benchmark"
+      description: "Gaussian Linear benchmark task"
+    availability_check: "src.tasks.benchmarks.check_benchmarks_available"
+    runnable_config_hook: "src.tasks.benchmarks.setup_gaussian_linear"
+
+  jointly_tackle_multiple_amortized_inference:
+    id: "jointly tackle multiple amortized inference"
+    alias: "joint_amortized_inference"
+    setup_metadata:
+      type: "methodology"
+      description: "Jointly tackle multiple amortized inference tasks"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "src.simformer.adapter.setup_joint_amortized_inference"
+
+  undirected_simulator_dependency_masks:
+    id: "undirected simulator dependency masks"
+    alias: "undirected_masks"
+    setup_metadata:
+      type: "attention_mask"
+      description: "Undirected simulator dependency masks"
+    availability_check: "src.simformer.attention.check_attention_available"
+    runnable_config_hook: "src.simformer.attention.setup_undirected_masks"
+
+  condition_mask:
+    id: "condition-mask"
+    alias: "condition_mask"
+    setup_metadata:
+      type: "tokenizer"
+      description: "Condition mask for tokenizer"
+    availability_check: "src.simformer.tokenizer.check_tokenizer_available"
+    runnable_config_hook: "src.simformer.tokenizer.setup_condition_mask"
+
+# Paper evidence contract: explicitly register dataset/benchmark aliases
+dataset_benchmark_registry:
+  two_moons:
+    alias: "two_moons"
+    description: "Two Moons benchmark task"
+  gaussian_linear:
+    alias: "gaussian_linear"
+    description: "Gaussian Linear benchmark task"
+  gaussian_mixture:
+    alias: "gaussian_mixture"
+    description: "Gaussian Mixture benchmark task"
+
+# Paper evidence contract: expose method/baseline/attack selectors
+method_baseline_selectors:
+  ours:
+    name: "Ours (Simformer)"
+    description: "Proposed Simformer method"
+  simformer:
+    name: "Simformer"
+    description: "Simformer method"
+  npe:
+    name: "NPE"
+    description: "Neural Posterior Estimation"
+  nle:
+    name: "NLE"
+    description: "Neural Likelihood Estimation"
+  nre:
+    name: "NRE"
+    description: "Neural Ratio Estimation"
+  diffusion_model:
+    name: "Diffusion Model"
+    description: "Standard diffusion model baseline"
+
+# Paper evidence contract: expose bounded sweep/config entries
+parameter_sweeps:
+  p:
+    description: "Parameter dimension or probability parameter"
+    values: [2, 4, 8, 10, 15]
+    default: 4
+  batch_size:
+    description: "Training batch size"
+    values: [32, 64, 128, 256, 1000]
+    default: 256
+
+# Paper evidence contract: expose fixed hyperparameter anchors
+fixed_hyperparameters:
+  mask_probability_0.3:
+    name: "mask_probability"
+    value: 0.3
+    description: "Probability of masking variables during training"
+
+# Paper formula/algorithm symbol inventory
+formula_algorithm_symbols:
+  M_C: "Condition mask indicating observed variables"
+  rand_mask1: "Random mask 1"
+  Ber0.3: "Bernoulli distribution with p=0.3"
+  rand_mask2: "Random mask 2"
+  Ber0.7: "Bernoulli distribution with p=0.7"
+  M_E: "Attention mask representing dependency graph"
+  convert_charge_to_energyE: "Energy conversion factor for charge"
+  convert_total_energyE: "Total energy conversion factor"
+  N_Na: "Number of sodium ions"
+  valence_Na: "Valence of sodium"
+  number_of_transports: "Number of transport cycles"
+  ATP_Na: "ATP consumed per sodium transport"
+  ATP_energy: "Energy released per ATP molecule"
+  convert_charge_to_energy: "Function to convert charge to energy"
+  convert_total_energy: "Function to convert total energy"
+  M_xx: "Attention mask for joint variables"
+  M_E_gaussian: "Attention mask for Gaussian Linear task"
+  M_E_two_moons: "Attention mask for Two Moons task"
+  block_diag: "Block diagonal matrix function"
+  for_in: "Loop construct for attention mask layers"
+  M_E_slcp: "Attention mask for SLCP task"
+  M_E_tree: "Attention mask for Tree task"
+  HMMHiddenMarkovModel: "Hidden Markov Model task"
+  M_E_hmm: "Attention mask for HMM task"
+
+# Numeric/default anchors
+numeric_anchors:
+  val_4_2: 4.2
+  val_0: 0
+  val_15: 15
+  val_1: 1
+  val_5: 5
+  val_1000: 1000
+  val_0_628e_3: 0.000628
+  val_1_602176634e_19: 1.602176634e-19
+  val_3: 3
+  val_10e_19: 1.0e-18
+  val_0_2: 0.2
+  val_1e_plus_6: 1000000.0
+  val_10: 10
+  val_2: 2
+  val_4: 4
+  val_8: 8
+
+# Measurement collection and result aggregation
+measurements:
+  accuracy:
+    metric: "accuracy"
+    description: "Classification accuracy or general accuracy metric"
+  loss:
+    metric: "loss"
+    description: "Denoising score matching loss"
+  return:
+    metric: "return"
+    description: "Return or reward metric"
+  c2st:
+    metric: "c2st"
+    description: "Classifier Two-Sample Test accuracy"
+  nll:
+    metric: "nll"
+    description: "Negative Log-Likelihood"
+  figure_1_reproduction_artifact:
+    metric: "figure_1"
+    description: "Reproduction artifact for Figure 1"
+  figure_2_reproduction_artifact:
+    metric: "figure_2"
+    description: "Reproduction artifact for Figure 2"
+  figure_3_reproduction_artifact:
+    metric: "figure_3"
+    description: "Reproduction artifact for Figure 3"
+  figure_4_reproduction_artifact:
+    metric: "figure_4"
+    description: "Reproduction artifact for Figure 4"
+  figure_4a_reproduction_artifact:
+    metric: "figure_4a"
+    description: "Reproduction artifact for Figure 4a"
+
+# Required result-trend assertions
+result_trend_assertions:
+  baseline_outperformance:
+    assertion: "proposed method should be compared against explicit baselines"
+    description: "Simformer should outperform NPE, NLE, NRE, and standard diffusion models on benchmark tasks"
+
+# Concrete reproduction artifacts for result verification
+reproduction_artifacts:
+  evidence_contract_matrix:
+    path: "results/evidence_contract_matrix.json"
+    description: "Matrix mapping evidence obligations to implementation status"
+  experiment_registry:
+    path: "results/experiment_registry.json"
+    description: "Registry of all executed experiments and configurations"
+  metrics:
+    path: "results/metrics.json"
+    description: "Aggregated metrics for all tasks and baselines"
+  artifact_manifest:
+    path: "results/artifact_manifest.json"
+    description: "Manifest of all generated figures, tables, and reports"
+  sensitivity_report:
+    path: "results/sensitivity_report.json"
+    description: "Sensitivity analysis report for hyperparameters"
+  figure_1:
+    path: "results/figures/figure_1.png"
+    description: "Figure 1: Performance comparison across benchmark tasks"
+  figure_2:
+    path: "results/figures/figure_2.png"
+    description: "Figure 2: Simformer architecture and tokenizer visualization"
+  figure_3:
+    path: "results/figures/figure_3.png"
+    description: "Figure 3: Attention mask and dependency structure visualization"
+  figure_4:
+    path: "results/figures/figure_4.png"
+    description: "Figure 4: Interval conditioning results on Hodgkin-Huxley"
+  figure_4a:
+    path: "results/figures/figure_4a.png"
+    description: "Figure 4a: Energy consumption vs accuracy trade-off"

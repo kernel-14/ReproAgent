@@ -1,0 +1,12 @@
+{
+  "included_models": [
+    "BERT-base",
+    "RoBERTa-base",
+    "T5-base",
+    "T5-large"
+  ],
+  "excluded_models": [
+    "LLaMA"
+  ],
+  "reason": "addendum marks LLaMA and Alpaca evaluation outside required replication scope"
+}

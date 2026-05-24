@@ -1,0 +1,411 @@
+# SAPG: Split and Aggregate Policy Gradients - Base Configuration
+# Centralized configuration to ensure reproducibility of hyperparameter settings.
+# Captures the experimental settings described in the paper.
+
+metadata:
+  project_name: "SAPG: Split and Aggregate Policy Gradients"
+  hypothesis: "centralized configuration ensures reproducibility of hyperparameter settings"
+  decision_value: "captures the experimental settings described in the paper"
+
+# Method, Baseline, and Attack Selectors
+method_selectors:
+  ours: "sapg"
+  sapg: "sapg"
+  ppo: "ppo"
+  pbt: "pbt"
+  pql: "pql"
+  ddpg: "ddpg"
+
+# Dataset Registry
+dataset_registry:
+  path: "results/dataset_registry.json"
+  datasets:
+    - id: "allegrokuka_rollouts"
+      description: "Rollout trajectories from AllegroKuka tasks"
+      tasks: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    - id: "inhand_rollouts"
+      description: "Rollout trajectories from In-hand reorientation tasks"
+      tasks: ["AllegroHand-Reorientation", "ShadowHand-Reorientation"]
+
+# Metric Registry
+metric_registry:
+  path: "results/metrics.json"
+  metrics:
+    - id: "Success Count"
+      formula: "sum(successes)"
+      description: "Total number of successful trials"
+    - id: "Asymptotic Reward"
+      formula: "mean(rewards[-100:])"
+      description: "Average reward over the last 100 iterations"
+
+# Environment and Task Factories
+environment_factories:
+  task_family: "manipulation"
+  keep_all_paper_visible: true
+  tasks:
+    - id: "AllegroKuka-Throw"
+      alias: "AllegroKukaThrow-v0"
+      difficulty: "hard"
+      varying_exploration_noise: [0.1, 0.2, 0.3]
+      setup_metadata:
+        observation_space: "o_t = [q, q_dot, x_t, v_t, omega_t, g_t, z_t]"
+        observation_dim: 23
+        action_dim: 7
+        delta: 0.0
+      availability_check: "check_isaacgym_wrapper_available"
+      runnable_config_hook: "make_isaacgym_wrapper"
+
+    - id: "AllegroKuka-Regrasping"
+      alias: "AllegroKukaRegrasping-v0"
+      difficulty: "hard"
+      varying_exploration_noise: [0.1, 0.2, 0.3]
+      setup_metadata:
+        observation_space: "o_t = [q, q_dot, x_t, v_t, omega_t, g_t, z_t]"
+        observation_dim: 23
+        action_dim: 7
+        delta: 0.0
+      availability_check: "check_isaacgym_wrapper_available"
+      runnable_config_hook: "make_isaacgym_wrapper"
+
+    - id: "AllegroKuka-Reorientation"
+      alias: "AllegroKukaReorientation-v0"
+      difficulty: "hard"
+      varying_exploration_noise: [0.1, 0.2, 0.3]
+      setup_metadata:
+        observation_space: "o_t = [q, q_dot, x_t, v_t, omega_t, g_t, z_t]"
+        observation_dim: 23
+        action_dim: 7
+        delta: 0.0
+      availability_check: "check_isaacgym_wrapper_available"
+      runnable_config_hook: "make_isaacgym_wrapper"
+
+    - id: "AllegroHand-Reorientation"
+      alias: "AllegroHandReorientation-v0"
+      difficulty: "easy"
+      varying_exploration_noise: [0.05, 0.1, 0.15]
+      setup_metadata:
+        observation_space: "o_t = [q, q_dot, x_t, v_t, omega_t, g_t, z_t]"
+        observation_dim: 23
+        action_dim: 23
+        delta: 0.0
+      availability_check: "check_isaacgym_wrapper_available"
+      runnable_config_hook: "make_isaacgym_wrapper"
+
+    - id: "ShadowHand-Reorientation"
+      alias: "ShadowHandReorientation-v0"
+      difficulty: "easy"
+      varying_exploration_noise: [0.05, 0.1, 0.15]
+      setup_metadata:
+        observation_space: "o_t = [q, q_dot, x_t, v_t, omega_t, g_t, z_t]"
+        observation_dim: 23
+        action_dim: 24
+        delta: 0.0
+      availability_check: "check_isaacgym_wrapper_available"
+      runnable_config_hook: "make_isaacgym_wrapper"
+
+# Default Hyperparameters for SAPG, PPO, and Baselines
+hyperparameters:
+  default_ppo:
+    batch_size: 24576
+    epochs: 6
+    lr: 0.0003
+    gamma: 0.99
+    epsilon: 0.2
+    entropy_coef: 0.0
+    num_envs: 16384
+    max_iterations: 1000
+
+  default_sapg:
+    batch_size: 24576
+    epochs: 6
+    lr: 0.0003
+    gamma: 0.99
+    epsilon: 0.2
+    mu: 1.0  # importance weight threshold
+    lambda: 1.0  # symmetric aggregation weight
+    sigma: [0.0, 0.003, 0.005]  # entropy coefficients list for diversity
+    num_envs: 16384
+    max_iterations: 1000
+    num_policies: 4  # M policies
+
+  default_ddpg:
+    batch_size: 256
+    lr_actor: 0.0001
+    lr_critic: 0.001
+    gamma: 0.99
+    tau: 0.005
+
+  default_pbt:
+    population_size: 8
+    explore_fraction: 0.2
+
+  default_pql:
+    batch_size: 1024
+    lr: 0.0003
+
+# Task-Specific Overrides for the 5 Target Tasks
+task_specific_overrides:
+  AllegroKuka-Throw:
+    batch_size: 24576
+    epochs: 6
+    max_iterations: 2000
+  AllegroKuka-Regrasping:
+    batch_size: 24576
+    epochs: 6
+    max_iterations: 2000
+  AllegroKuka-Reorientation:
+    batch_size: 24576
+    epochs: 6
+    max_iterations: 2000
+  AllegroHand-Reorientation:
+    batch_size: 16384
+    epochs: 4
+    max_iterations: 1500
+  ShadowHand-Reorientation:
+    batch_size: 16384
+    epochs: 4
+    max_iterations: 1500
+
+# Executable Parameter Sweeps
+parameter_sweeps:
+  mu: [0.5, 1.0, 1.5, 2.0]
+  sigma: [0.0, 0.003, 0.005]
+  lambda: [0.5, 1.0, 2.0]
+  epochs: [3, 6, 10, 15]
+  num_envs: [4096, 8192, 16384, 32768]
+  max_iterations: [500, 1000, 1500, 2000]
+  batch_size: [8192, 16384, 24576, 32768]
+
+# Paper Formula and Algorithm Symbol Inventory
+formula_symbols:
+  s_0: "initial state"
+  a_t: "action at time t"
+  s_t: "state at time t"
+  sum_t_0_T_1: "sum_t=0^T-1"
+  gamma_t: "gamma^t"
+  A_hat: "A_hat"
+  pi_theta: "pi_theta"
+  nabla_theta: "nabla_theta"
+  rho_d: "rho_d"
+  Q_hat: "Q_hat"
+  V_hat: "V_hat"
+  L_on: "L_on"
+  pi_old: "pi_old"
+  r_t: "r_t"
+  epsilon: "epsilon"
+  A_t: "A_t"
+  pi_1: "pi_1"
+  pi_M: "pi_M"
+  pi_i: "pi_i"
+  pi_j: "pi_j"
+  L_off: "L_off"
+  mu: "mu"
+  pi_i_old: "pi_i,old"
+  lambda: "lambda"
+
+numeric_anchors:
+  anchor_0: 0
+  anchor_1: 1
+  anchor_3: 3
+  anchor_2: 2
+  anchor_30: 30
+  anchor_6: 6
+  anchor_24576: 24576
+  anchor_0_005: 0.005
+  anchor_23: 23
+  anchor_7: 7
+
+# Paper Formula and Algorithm Anchors
+formula_anchors:
+  section_4_1_off_policy_aggregation:
+    symbols:
+      pi_i: "policy_i"
+      pi_j: "policy_j"
+      L_off: "off_policy_loss"
+      mu: "importance_weight_threshold"
+      pi_i_old: "policy_i_old"
+      L_on: "on_policy_loss"
+      lambda: "off_policy_gradient_scale"
+      sum_k_t_t_2: "sum_k=t^t+2"
+      gamma_k_t: "gamma^k-t"
+      gamma_3: "gamma^3"
+      gamma: "gamma"
+      L_off_critic: "L_off^critic"
+      s_t: "state_t"
+      r_k: "reward_k"
+    numeric_defaults:
+      n_step: 3
+      lambda_default: 1
+      mu_default: 2
+    algorithm_terms: ["equation", "loss", "calculate", "update"]
+    steps:
+      - "To update policy pi_i using data from policy pi_j, j in X, we use L_off(pi_i; X)"
+      - "When i = j, then pi_j = pi_i,old and this reduces to the on-policy update as expected"
+      - "The update target for the critic is calculated using n-step returns (here n=3)"
+      - "V_off_target(s_t) = r_t + gamma * V_old(s_t+1)"
+
+  section_3_preliminaries:
+    symbols:
+      sum_t_0_T_1: "sum_t=0^T-1"
+      gamma_t: "gamma^t"
+      A_hat: "advantage_estimate"
+      pi_theta: "policy_theta"
+      nabla_theta: "policy_gradient"
+      rho_d: "state_distribution"
+      Q_hat: "Q_value_estimate"
+      V_hat: "value_estimate"
+      L_on: "on_policy_loss"
+      pi_old: "old_policy"
+      epsilon: "clip_epsilon"
+      s_0: "initial_state"
+      a_t: "action_t"
+      s_t: "state_t"
+    numeric_defaults:
+      gamma_default: 0.99
+      epsilon_default: 0.2
+    algorithm_terms: ["objective", "loss", "gradient", "ema", "update"]
+    steps:
+      - "Optimize the policy using gradient descent with Monte Carlo estimates of the gradient"
+      - "PPO Actor critic updates can be quite unstable because gradient estimates are high variance"
+      - "Restrict updates to remain within an approximate trust region where there is guaranteed improvement"
+
+  section_4_5_entropy_regularization:
+    symbols:
+      L_on: "on_policy_loss"
+      pi_i: "policy_i"
+      sigma: "entropy_coefficient"
+    numeric_defaults:
+      sigma_default: 0.005
+    algorithm_terms: ["loss", "update"]
+    steps:
+      - "Enforcing diversity through entropy regularization"
+      - "To further encourage diversity between different policies, in addition to the PPO update loss L_on we add an entropy loss to each of the followers with different coefficients"
+      - "In particular, the entropy loss is H(pi(a | s))"
+
+  section_6_3_ablations:
+    symbols:
+      sigma: "entropy_coefficient"
+    numeric_defaults:
+      sigma_choices: [0.0, 0.005, 0.003]
+    algorithm_terms: ["loss", "gradient", "update", "sample"]
+    steps:
+      - "We explore different choices for the scaling coefficient of this loss sigma in {0, 0.005, 0.003}"
+      - "Once an appreciable level of performance is achieved, it becomes better to subsample to prevent the noise in the off-policy update from drowning out the on-policy gradient"
+
+  section_4_2_symmetric_aggregation:
+    symbols:
+      lambda: "off_policy_gradient_scale"
+    numeric_defaults:
+      lambda_default: 1
+      ratio_default: 2
+    algorithm_terms: ["gradient", "update", "sample"]
+    steps:
+      - "Update each policy i in {1, 2, ..., M} and for each i use off-policy data from all other policies X = {1, 2, i-1, i+1, ..., M}"
+      - "Since gradients from off-policy data are typically noisier than gradients from on-policy data, we choose lambda=1, but subsample the off-policy data such that we use equal amounts of on-policy and off-policy data"
+
+# Evidence Obligation Matrix Registry
+evidence_obligation_matrix:
+  - name: "Algorithm 1 Implementation"
+    code_surface: "models/sapg_policy.py"
+    environment: "AllegroKuka-Throw"
+    method: "sapg"
+    parameters:
+      mu: 1.0
+      lambda: 1.0
+      sigma: [0.0, 0.003, 0.005]
+    metrics: ["Success Count", "Asymptotic Reward"]
+    artifact_writer: "write_metrics_artifact"
+    output_path: "results/metrics.json"
+
+  - name: "Hyperparameter Sweep: Epochs"
+    code_surface: "src/methods/sapg_core_method.py"
+    environment: "AllegroKuka-Throw"
+    method: "sapg"
+    parameters:
+      epochs: [3, 6, 10, 15]
+    metrics: ["Success Count"]
+    artifact_writer: "write_sensitivity_report_artifact"
+    output_path: "results/sensitivity_report.json"
+
+  - name: "Training Loop Execution"
+    code_surface: "train.py"
+    environment: "AllegroKuka-Throw"
+    method: "sapg"
+    parameters:
+      max_iterations: 1000
+    metrics: ["Asymptotic Reward"]
+    artifact_writer: "write_checkpoint_artifact"
+    output_path: "checkpoints/model_final.pt"
+
+  - name: "Environment Setup"
+    code_surface: "envs/isaacgym_wrapper.py"
+    environment: "AllegroKuka-Throw"
+    method: "sapg"
+    parameters:
+      num_envs: 16384
+    metrics: ["Success Count"]
+    artifact_writer: "write_metrics_artifact"
+    output_path: "results/metrics.json"
+
+  - name: "Experiment I: AllegroKuka tasks"
+    code_surface: "src/experiments/sapg_eval_reporting.py"
+    environments: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    methods: ["ours", "sapg", "ppo", "pbt", "pql", "ddpg"]
+    parameters:
+      batch_size: 24576
+      epochs: 6
+    metrics: ["Success Count"]
+    artifact_writer: "write_table_1_allegrokuka_artifact"
+    output_path: "results/table_1_allegrokuka.csv"
+
+  - name: "Experiment II: In-hand tasks"
+    code_surface: "src/experiments/sapg_eval_reporting.py"
+    environments: ["AllegroHand-Reorientation", "ShadowHand-Reorientation"]
+    methods: ["ours", "sapg", "ppo", "pbt", "pql", "ddpg"]
+    parameters:
+      batch_size: 16384
+      epochs: 6
+    metrics: ["Asymptotic Reward"]
+    artifact_writer: "write_table_2_inhand_artifact"
+    output_path: "results/table_2_inhand.csv"
+
+  - name: "Baseline Comparison"
+    code_surface: "src/experiments/sapg_eval_reporting.py"
+    environments: ["AllegroKuka-Throw", "ShadowHand-Reorientation"]
+    methods: ["ours", "sapg", "ppo", "ddpg"]
+    parameters:
+      batch_size: 24576
+    metrics: ["Success Count", "Asymptotic Reward"]
+    artifact_writer: "write_table_3_artifact"
+    output_path: "results/table_3.csv"
+
+  - name: "Additional Results"
+    code_surface: "src/experiments/sapg_eval_reporting.py"
+    environments: ["AllegroKuka-Regrasping", "AllegroHand-Reorientation"]
+    methods: ["ours", "sapg", "ppo", "pbt", "pql"]
+    parameters:
+      batch_size: 24576
+    metrics: ["Success Count", "Asymptotic Reward"]
+    artifact_writer: "write_table_4_artifact"
+    output_path: "results/table_4.csv"
+
+  - name: "Visual Analysis"
+    code_surface: "src/reporting/sapg_eval_reporting.py"
+    environments: ["AllegroKuka-Throw"]
+    methods: ["ours", "sapg", "ppo"]
+    parameters:
+      batch_size: 24576
+    metrics: ["Success Count"]
+    artifact_writer: "write_figure_7_artifact"
+    output_path: "results/figures/figure_7.png"
+
+  - name: "Ablation: Diversity/Aggregation"
+    code_surface: "src/methods/sapg_core_method.py"
+    environments: ["AllegroKuka-Throw"]
+    methods: ["sapg"]
+    parameters:
+      sigma: [0.0, 0.003, 0.005]
+      lambda: [0.5, 1.0, 2.0]
+    metrics: ["Success Count"]
+    artifact_writer: "write_sensitivity_report_artifact"
+    output_path: "results/sensitivity_report.json"

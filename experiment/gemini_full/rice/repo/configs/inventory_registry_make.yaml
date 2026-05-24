@@ -1,0 +1,192 @@
+# configs/inventory_registry_make.yaml
+# reference_grounding: paper chunk_013, chunk_014, chunk_015, chunk_035, chunk_036
+# reference_grounding: addendum:formula_algorithm_contract
+
+# Environment and Task Registry
+# In this file, expose paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks.
+environment_registry:
+  Hopper-v3:
+    alias: "Hopper"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+    setup_metadata:
+      sparse_reward: false
+      horizon: 1000
+  Walker2d-v3:
+    alias: "Walker2d"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+    setup_metadata:
+      sparse_reward: false
+  Reacher-v2:
+    alias: "Reacher"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  HalfCheetah-v3:
+    alias: "HalfCheetah"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  SelfishMining:
+    alias: "selfish mining"
+    group: "selfish_mining"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  CageChallenge2:
+    alias: "CAGE Challenge 2"
+    group: "network_defense"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+    # reference_grounding: paperbench_ref_001 CybORG/CybORG/Tutorial/2. Observations.ipynb
+  AutonomousDriving:
+    alias: "autonomous driving"
+    group: "autonomous_driving"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+    # reference_grounding: paperbench_ref_008 core/eval/carla_benchmark_evaluator.py
+  MalwareMutation:
+    alias: "Malware Mutation"
+    group: "malware_mutation"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+
+# Dataset and Benchmark Loaders
+# In this file, expose paper-derived dataset/benchmark loaders with ids, setup metadata, validation checks, and runnable config hooks.
+dataset_registry:
+  cage:
+    alias: "cage"
+    loader: "src.data.inventory_registry_make.load_inventory_registry_make"
+    setup_metadata:
+      source: "CAGE Challenge 2"
+  gym:
+    alias: "gym"
+    loader: "src.data.inventory_registry_make.load_inventory_registry_make"
+    setup_metadata:
+      source: "OpenAI Gym / Mujoco"
+
+# Method and Baseline Selectors
+# Paper evidence contract: expose method/baseline/attack selectors for ours, random, statemask, ppo, sac, gail, jsrl, heuristic.
+method_registry:
+  ours:
+    class: "src.rice.explanation.ExplanationGenerator"
+    refining_class: "src.rice.refining.RICETrainer"
+  random:
+    class: "src.rice.baselines.RandomBaseline"
+  statemask:
+    class: "src.rice.explanation.StateMaskWrapper"
+  ppo:
+    class: "src.rice.ppo.PPOTrainer"
+  sac:
+    class: "src.rice.baselines.SACBaseline"
+  gail:
+    class: "src.rice.baselines.GAILBaseline"
+  jsrl:
+    class: "src.rice.baselines.JSRLTrainer"
+  heuristic:
+    class: "src.rice.baselines.HeuristicBaseline"
+  ppo_fine_tuning:
+    class: "src.rice.ppo.PPOTrainer"
+    mode: "fine_tuning"
+  statemask_r:
+    class: "src.rice.refining.RICETrainer"
+    explanation_source: "statemask"
+
+# Experiment Protocol Matrix
+# In this file, materialize a callable protocol matrix linking named experiments to environments/tasks, method selectors, metric functions, and artifact writer functions.
+experiment_matrix:
+  experiment_i:
+    name: "Fidelity and Efficiency of Explanation"
+    environments: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "statemask"]
+    metrics: ["fidelity_score", "training_time"]
+    artifact_writers: ["write_figure_5_artifact", "write_table_4_artifact"]
+  experiment_ii:
+    name: "Effectiveness of Refining Method"
+    environments: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3", "SelfishMining", "CageChallenge2", "AutonomousDriving", "MalwareMutation"]
+    methods: ["ours", "random", "jsrl", "ppo_fine_tuning"]
+    metrics: ["reward"]
+    artifact_writers: ["write_table_1_artifact", "write_figure_2_artifact"]
+  experiment_iii:
+    name: "Refining based on Different Explanations"
+    environments: ["Hopper-v3", "Walker2d-v3"]
+    methods: ["ours", "statemask_r", "random"]
+    metrics: ["reward"]
+    artifact_writers: ["write_figure_3_artifact"]
+  experiment_iv:
+    name: "Sensitivity Analysis"
+    environments: ["Hopper-v3"]
+    methods: ["ours"]
+    sweeps: ["alpha", "lambda", "p"]
+    metrics: ["reward"]
+    artifact_writers: ["write_figure_4_artifact"]
+  experiment_v:
+    name: "Sparse Reward Scenarios"
+    environments: ["Walker2d-v3"]
+    methods: ["ours", "ppo_fine_tuning", "statemask_r", "jsrl"]
+    metrics: ["reward", "fidelity_score"]
+    artifact_writers: ["write_figure_10_artifact"]
+
+# Parameter Sweeps
+# In this file, expose required parameter sweeps as executable constants/default accessors.
+parameter_sweeps:
+  alpha: [0.01, 0.001, 0.0001]
+  lambda: [0, 0.1, 0.01, 0.001]
+  p: [0, 0.25, 0.5, 0.75, 1]
+  learning_rate: 0.0003
+  clip_ratio: 0.2
+  batch_size: 64
+  mask_network_architecture: [64, 64]
+  regularization_weight: 0.01
+
+# Paper Formula and Algorithm Symbol Inventory
+# Paper formula/algorithm symbol inventory must be code-visible.
+algorithm_anchors:
+  symbols:
+    d_max: 1.0
+    gamma: 0.99
+    theta: "mask_network_params"
+    pi_bar: "blind_policy"
+    pi_tilde: "state_mask_policy"
+    alpha: "intrinsic_reward_coeff"
+    lambda: "refining_coeff"
+    p: "roll_in_prob"
+    s_t: "state_at_t"
+    a_t: "action_at_t"
+    a_t_m: "mask_action_at_t"
+    a_random: "random_action"
+    V_pi: "value_function"
+    Q_pi: "q_function"
+    A_pi: "advantage_function"
+  numeric_defaults:
+    zero: 0
+    one: 1
+    two: 2
+    three_point_one: 3.1
+    three_point_six: 3.6
+    three: 3
+    ten: 10
+    twenty: 20
+    thirty: 30
+    forty: 40
+    three_point_three: 3.3
+    four: 4
+    three_point_five: 3.5
+    three_point_four: 3.4
+    zero_point_two_five: 0.25
+    zero_point_five: 0.5
+
+# Artifact Readiness and Registry Paths
+artifact_paths:
+  environment_registry: "results/environment_registry.json"
+  environment_readiness: "results/environment_readiness.json"
+  figure_1: "results/figures/figure_1.png"
+  figure_5: "results/figures/figure_5.png"
+  table_4: "results/tables/table_4.csv"
+  table_1: "results/tables/table_1.csv"
+  figure_2: "results/figures/figure_2.png"
+  figure_3: "results/figures/figure_3.png"
+  figure_10: "results/figures/figure_10.png"
+  figure_6: "results/figures/figure_6.png"

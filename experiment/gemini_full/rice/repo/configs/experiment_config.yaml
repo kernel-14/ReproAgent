@@ -1,0 +1,185 @@
+# configs/experiment_config.yaml
+# reference_grounding: paper:unit_001, paper:unit_003, addendum:formula_algorithm_contract
+# reference_grounding: paper chunk_035, chunk_014, chunk_015
+
+# Global Constants and Sub-optimality Bounds
+# reference_grounding: addendum:formula_algorithm_contract
+d_max: 1.0
+black_box_assumption: true
+
+# Environment and Task Registry
+# reference_grounding: paper:unit-001
+environments:
+  Hopper-v3:
+    alias: "Hopper"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Walker2d-v3:
+    alias: "Walker2d"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  Reacher-v2:
+    alias: "Reacher"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  HalfCheetah-v3:
+    alias: "HalfCheetah"
+    group: "mujoco"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  SelfishMining:
+    alias: "selfish mining"
+    group: "selfish_mining"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  CageChallenge2:
+    alias: "CAGE Challenge 2"
+    group: "network_defense"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  AutonomousDriving:
+    alias: "autonomous driving"
+    group: "autonomous_driving"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+  MalwareMutation:
+    alias: "Malware Mutation"
+    group: "malware_mutation"
+    factory: "src.rice.envs.make_envs"
+    availability_check: "src.rice.envs.check_envs_available"
+
+# Dataset and Benchmark Loaders
+# reference_grounding: paper:unit_001
+dataset_loaders:
+  cage: "src.rice.envs.load_cage_dataset"
+  gym: "src.rice.envs.load_gym_dataset"
+
+# Method and Baseline Selectors
+# reference_grounding: paper:unit_009
+method_selectors:
+  ours: "src.rice.explanation.ExplanationGenerator"
+  random: "src.rice.baselines.RandomBaseline"
+  statemask: "src.rice.baselines.StateMaskBaseline"
+  ppo: "src.rice.ppo.PPOTrainer"
+  sac: "src.rice.baselines.SACBaseline"
+  gail: "src.rice.baselines.GAILBaseline"
+  jsrl: "src.rice.baselines.JSRLBaseline"
+  heuristic: "src.rice.baselines.HeuristicBaseline"
+  ppo_fine_tuning: "src.rice.baselines.PPOFineTuning"
+  statemask_r: "src.rice.baselines.StateMaskR"
+
+# Parameter Sweeps
+# reference_grounding: paper chunk_035, chunk_014, chunk_015
+sweeps:
+  alpha: [0.01, 0.001, 0.0001]
+  lambda: [0, 0.1, 0.01, 0.001]
+  p: [0, 0.25, 0.5, 0.75, 1]
+  learning_rate: [3e-4, 1e-4, 5e-5]
+  clip_ratio: [0.1, 0.2, 0.3]
+  batch_size: [32, 64, 128]
+
+# Experiment Protocol Matrix
+# reference_grounding: paper:experiment_i, paper:experiment_ii, paper:experiment_iii, paper:experiment_iv, paper:experiment_v
+experiment_protocols:
+  experiment_i:
+    description: "Fidelity Scores comparison across all explanation methods"
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "statemask", "random"]
+    metrics: ["fidelity_score"]
+    artifact_writers: ["results/figures/figure_5.png"]
+    entrypoint: "main.run_experiment"
+  experiment_ii:
+    description: "Efficiency comparison when training the mask network"
+    tasks: ["SelfishMining", "CageChallenge2", "AutonomousDriving", "MalwareMutation"]
+    methods: ["ours", "statemask"]
+    metrics: ["training_time"]
+    artifact_writers: ["results/tables/table_4.csv"]
+    entrypoint: "main.run_experiment"
+  experiment_iii:
+    description: "Agent Refining Performance with dense rewards"
+    tasks: ["Hopper-v3", "Walker2d-v3", "Reacher-v2", "HalfCheetah-v3"]
+    methods: ["ours", "random", "jsrl", "ppo_fine_tuning"]
+    metrics: ["reward"]
+    artifact_writers: ["results/tables/table_1.csv"]
+    entrypoint: "main.run_experiment"
+  experiment_iv:
+    description: "Agent Refining Performance in Sparse MuJoCo Games"
+    tasks: ["SparseHopper", "SparseHalfCheetah"]
+    methods: ["ours", "statemask_r", "jsrl", "ppo_fine_tuning"]
+    metrics: ["reward"]
+    artifact_writers: ["results/figures/figure_2.png"]
+    entrypoint: "main.run_experiment"
+  experiment_v:
+    description: "SAC Agent Refining Performance in Hopper Game"
+    tasks: ["Hopper-v3"]
+    methods: ["ours", "sac"]
+    metrics: ["reward"]
+    artifact_writers: ["results/figures/figure_3.png"]
+    entrypoint: "main.run_experiment"
+
+# Metric Formulas and Aggregation
+# reference_grounding: addendum:formula_algorithm_contract
+metrics:
+  fidelity_score:
+    formula: "src.rice.explanation.compute_fidelity_score"
+    aggregation: "src.rice.explanation.aggregate_fidelity_score"
+    canonical_id: "metric_fidelity_score"
+    artifact_writer: "src.rice.explanation.write_fidelity_score_artifact"
+  reward:
+    formula: "src.rice.utils.compute_reward"
+    aggregation: "src.rice.utils.aggregate_reward"
+    canonical_id: "metric_reward"
+    artifact_writer: "main.write_main_artifact"
+  training_time:
+    formula: "src.rice.utils.compute_training_time"
+    aggregation: "sum"
+    canonical_id: "metric_training_time"
+    artifact_writer: "main.write_main_artifact"
+  final_reward:
+    formula: "src.rice.utils.compute_reward"
+    aggregation: "last"
+    canonical_id: "metric_final_reward"
+    artifact_writer: "main.write_main_artifact"
+
+# Trend Obligations and Assertions
+# reference_grounding: paper:trend_obligations
+trend_assertions:
+  baseline_outperformance:
+    condition: "RICE > Random and RICE >= StateMask"
+  endpoint_low:
+    condition: "p=0 and p=1 are lowest/minimum boundary cases"
+  sweep_insensitive:
+    condition: "alpha sweep preserves stable trend"
+
+# Artifact Mapping
+# reference_grounding: paper:artifacts
+artifacts:
+  table_1: "results/tables/table_1.csv"
+  figure_1: "results/figures/figure_1.png"
+  figure_5: "results/figures/figure_5.png"
+  table_4: "results/tables/table_4.csv"
+  figure_2: "results/figures/figure_2.png"
+  figure_3: "results/figures/figure_3.png"
+  figure_4: "results/figures/figure_4.png"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+  table_5: "results/tables/table_5.csv"
+  table_6: "results/tables/table_6.csv"
+  sensitivity_report: "results/sensitivity_report.json"
+  config_resolved: "results/config_resolved.json"
+  manifest: "results/artifact_manifest.json"
+
+# Algorithm Terms and Steps
+# reference_grounding: paper chunk_010_01, chunk_011_02
+algorithm:
+  mask_network:
+    objective: "J(theta) = max eta(bar_pi)"
+    reward_bonus: "intrinsic reward for outputting 1"
+    ema_update: true
+    sample_trajectories: true
+  refining:
+    roll_in: "reset agent to critical states"
+    exploration: "execute new exploration steps from critical states"

@@ -1,0 +1,371 @@
+# configs/synthetic.yaml
+# Faithful reproduction configuration for Batch and Match (BaM) on synthetic targets.
+# Reference Grounding: paper:unit_004 (chunk_014), addendum:formula_algorithm_contract, chunk_004, chunk_007_01, chunk_008_02
+
+# Global configuration flags and setup commands
+global_setup:
+  mode: "runtime_smoke" # Options: runtime_smoke, full_experiment, docker_validate
+  seed: 42
+  output_dir: "results"
+  artifact_dir_env_var: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  documented_setup_commands:
+    - "pip install -e ."
+    - "python main.py --mode runtime_smoke"
+
+# Config Schema definition
+config_schema:
+  version: "1.0"
+  required_fields:
+    - "global_setup"
+    - "environment_registry"
+    - "dataset_registry"
+    - "method_registry"
+    - "metric_registry"
+    - "parameter_sweeps"
+    - "experiment_specs"
+
+# Environment Registry
+# Exposes paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks.
+environment_registry:
+  cifar:
+    id: "cifar"
+    aliases:
+      - "cifar"
+      - "CIFAR-10 VAE 任务环境"
+      - "cifar_vae"
+    task_family: "cifar"
+    setup_metadata:
+      description: "CIFAR-10 Variational Autoencoder posterior inference task"
+      in_channels: 3
+      out_channels: 32 # c_hid
+      c_hid: 32
+      latent_dim: 16
+      kernel_size: 3
+      stride: 2
+    availability_check: "src.bam.vae.is_cifar_vae_available"
+    runnable_config_hook: "src.bam.vae.setup_cifar_vae"
+  synthetic:
+    id: "synthetic"
+    aliases:
+      - "synthetic"
+      - "synthetic targets"
+      - "unit-001"
+    task_family: "synthetic"
+    setup_metadata:
+      description: "Synthetically-constructed target distributions (Gaussian and non-Gaussian)"
+      dimensions: [4, 16, 64, 256]
+      covariance_types: ["correlated", "warped"]
+    availability_check: "src.data.environment_correlated_warped.is_synthetic_available"
+    runnable_config_hook: "src.data.environment_correlated_warped.make_environment_correlated_warped"
+  hierarchical:
+    id: "hierarchical"
+    aliases:
+      - "hierarchical"
+      - "8-schools"
+    task_family: "hierarchical"
+    setup_metadata:
+      description: "Hierarchical Bayesian models (e.g., 8-schools)"
+      dimensions: [10]
+    availability_check: "src.data.data_posterior_targets.is_hierarchical_available"
+    runnable_config_hook: "src.data.data_posterior_targets.load_data_posterior_targets"
+
+# Dataset Registry
+dataset_registry:
+  cifar:
+    id: "cifar"
+    aliases:
+      - "cifar"
+      - "CIFAR-10"
+    setup_metadata:
+      description: "CIFAR-10 dataset for VAE training"
+    validation_check: "src.bam.data.validate_cifar_dataset"
+    runnable_config_hook: "src.bam.data.load_cifar_data"
+
+# Method Registry
+# Exposes method/baseline/attack selectors for ours, baseline.
+method_registry:
+  ours:
+    id: "ours"
+    aliases:
+      - "ours"
+      - "Ours"
+      - "BaM"
+      - "Batch and Match"
+    description: "Batch and Match (BaM) variational inference algorithm"
+    runnable_config_hook: "src.bam.algos.setup_bam"
+  baseline:
+    id: "baseline"
+    aliases:
+      - "baseline"
+      - "ADVI"
+      - "GSM"
+    description: "Baseline algorithms (ADVI and GSM)"
+    runnable_config_hook: "src.bam.algos.setup_baselines"
+
+# Metric Registry
+metric_registry:
+  loss:
+    id: "loss"
+    formula: "score_based_divergence"
+    aggregation: "mean"
+  mse:
+    id: "mse"
+    formula: "mean_squared_error"
+    aggregation: "mean"
+  kl_divergence:
+    id: "kl_divergence"
+    formula: "kullback_leibler"
+    aggregation: "mean"
+
+# Parameter Sweeps
+# Exposes required parameter sweeps as executable constants/default accessors.
+parameter_sweeps:
+  learning_rate:
+    default: 0.01
+    values: [1e-4, 1e-3, 1e-2, 1e-1]
+  batch_size:
+    default: 4
+    values: [3, 4, 10, 50]
+  regularization:
+    default: 1.0
+    values: [0.1, 1.0, 10.0]
+  dimensions:
+    default: 2
+    values: [4, 16, 64, 256]
+  lambda:
+    default: 0.1
+    values: [0.01, 0.1, 1.0, 10.0]
+  steps:
+    default: 100
+    values: [100, 500]
+  p:
+    default: 2.0
+    values: [1.0, 2.0, 3.0]
+
+# Fixed Hyperparameter Anchors
+fixed_hyperparameters:
+  iterations: 100 # 100_iterations anchor
+
+# Callable Experiment Specs
+# Binds environments, methods, parameter defaults, metric functions, and artifact writer call sites.
+experiment_specs:
+  sweep_protocol:
+    id: "sweep_protocol"
+    environment: "synthetic"
+    method: "ours"
+    metrics: ["loss", "mse"]
+    parameters:
+      learning_rate: [1e-4, 1e-3, 1e-2, 1e-1]
+      batch_size: [3, 4, 10, 50]
+      lambda: [0.01, 0.1, 1.0]
+    artifact_writer: "src.reporting.project_skeleton.write_sensitivity_report_artifact"
+    output_path: "results/sensitivity_report.json"
+
+  main_comparison:
+    id: "main_comparison"
+    environment: "synthetic"
+    methods: ["ours", "baseline"]
+    metrics: ["kl_divergence", "loss"]
+    parameters:
+      learning_rate: 0.01
+      batch_size: 4
+      steps: 100
+    artifact_writer: "src.reporting.main_comparison.write_metrics_artifact"
+    output_path: "results/metrics.json"
+
+  per_sample_lowest_score_selection:
+    id: "per_sample_lowest_score_selection"
+    environment: "synthetic"
+    method: "ours"
+    metrics: ["loss"]
+    parameters:
+      batch_size: 4
+      steps: 100
+    artifact_writer: "src.reporting.main_comparison.write_metrics_artifact"
+    output_path: "results/metrics.json"
+
+  environment_protocol:
+    id: "environment_protocol"
+    environments: ["cifar", "synthetic", "hierarchical"]
+    artifact_writer: "src.reporting.project_skeleton.write_environment_registry_artifact"
+    output_path: "results/environment_registry.json"
+
+  method_protocol:
+    id: "method_protocol"
+    methods: ["ours", "baseline"]
+    artifact_writer: "src.reporting.project_skeleton.write_method_registry_artifact"
+    output_path: "results/method_registry.json"
+
+  dataset_inventory:
+    id: "dataset_inventory"
+    datasets: ["cifar"]
+    artifact_writer: "src.reporting.project_skeleton.write_dataset_registry_artifact"
+    output_path: "results/dataset_registry.json"
+
+# VAE Neural Network Architecture Symbols and Parameters
+vae_architecture:
+  in_channels: 3
+  out_channels: 3
+  c_hid: 32
+  latent_dim: 16
+  kernel_size: 3
+  layers:
+    - name: "convin_channels_3_out_channels_c_hid_kernel_size_3_stride_2"
+      in_channels: 3
+      out_channels: 32  # c_hid
+      kernel_size: 3
+      stride: 2
+    - name: "convin_channels_c_hid_out_channels_c_hid_kernel_size_3_stride_1"
+      in_channels: 32  # c_hid
+      out_channels: 32  # c_hid
+      kernel_size: 3
+      stride: 1
+    - name: "convin_channels_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2"
+      in_channels: 32  # c_hid
+      out_channels: 64  # 2 * c_hid
+      kernel_size: 3
+      stride: 2
+    - name: "convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_1"
+      in_channels: 64  # 2 * c_hid
+      out_channels: 64  # 2 * c_hid
+      kernel_size: 3
+      stride: 1
+    - name: "convin_channels_2_c_hid_out_channels_2_c_hid_kernel_size_3_stride_2"
+      in_channels: 64  # 2 * c_hid
+      out_channels: 64  # 2 * c_hid
+      kernel_size: 3
+      stride: 2
+    - name: "denseoutput_latent_dim"
+      in_features: 1024
+      out_features: 16  # latent_dim
+
+# Paper Formula and Algorithm Anchors
+# Explicitly maps paper-visible formulas, symbols, numeric anchors, and algorithm steps to structured config.
+formula_algorithm_anchors:
+  - anchor_id: "addendum_vae_details"
+    section: "addendum"
+    symbols:
+      - "Convin_channels=3,out_channels=c_hid,kernel_size=3,stride=2"
+      - "in_channels"
+      - "out_channels"
+      - "c_hid"
+      - "kernel_size"
+      - "Convin_channels=c_hid,out_channels=c_hid,kernel_size=3,stride=1"
+      - "Convin_channels=c_hid,out_channels=2×c_hid,kernel_size=3,stride=2"
+      - "Convin_channels=2×c_hid,out_channels=2×c_hid,kernel_size=3,stride=1"
+      - "Convin_channels=2×c_hid,out_channels=2×c_hid,kernel_size=3,stride=2"
+      - "Denseoutput=latent_dim"
+      - "latent_dim"
+    numeric_defaults:
+      batch_size: 4
+      batch_size_low_rank: 3
+      warmup_steps: 100
+      peak_learning_rate: 1e-4
+      initial_learning_rate: 0.0
+    algorithm_terms: ["gradient", "rank", "search"]
+    steps:
+      - "In sections 5.2 and 5.3, like in 5.1, a grid search was used to determine the best learning rate for the gradient-based methods."
+      - "For computing the gradient of the log density functions for the PosteriorDB models, the authors used the bridgestan library."
+
+  - anchor_id: "gaussian_score_matching_special_case"
+    section: "C.3. Gaussian score matching as a special case"
+    symbols:
+      - "lambda"
+      - "lambda_t"
+      - "KL"
+      - "z_t"
+      - "g_t"
+      - "q_t"
+      - "z_bar"
+      - "g_bar"
+    numeric_defaults:
+      batch_size: 1
+      lambda_limit: 95
+    algorithm_terms: ["eq.", "formula", "loss", "update", "sample"]
+    steps:
+      - "To see this equivalence, we set B=1, and we use z_t and g_t to denote, respectively, the single sample from q_t and its score under p at the t-th iteration of BaM."
+      - "The equivalence arises from a simple intuition: as lambda -> infinity, all the weight in the loss shifts to minimizing the divergence."
+
+  - anchor_id: "implementation_of_baselines"
+    section: "E.1. Implementation of baselines"
+    symbols:
+      - "p_tilde"
+      - "lambda_t"
+      - "mu_0"
+      - "Sigma_0"
+      - "mu_t"
+      - "Sigma_t"
+      - "sum_b=1^B"
+      - "nabla_w"
+      - "mu_T"
+      - "Sigma_T"
+      - "nabla_z"
+      - "s_b^top"
+      - "mu_b"
+      - "Sigma_b"
+    numeric_defaults:
+      iterations: 100
+      batch_size: 4
+    algorithm_terms: ["algorithm", "gradient", "compute", "calculate", "update", "sample"]
+    steps:
+      - "Algorithm 2 Implementation of ADVI: Sample z_1, ..., z_B ~ q_t, compute gradients, and update variational parameters."
+      - "Algorithm 3 Implementation of GSM: Sample z_1, ..., z_B ~ q_t, compute scores, and update variational parameters."
+
+  - anchor_id: "bam_algorithm_core"
+    section: "3.1. Algorithm"
+    symbols:
+      - "sum_b=1^B"
+      - "nabla_z"
+      - "lambda_t"
+      - "KL"
+      - "q^*"
+      - "z_b"
+      - "q_t"
+      - "q_t+1"
+    numeric_defaults:
+      batch_size: 4
+      regularization: 1.0
+    algorithm_terms: ["eq.", "algorithm", "objective", "gradient", "ema", "compute", "update", "sample"]
+    steps:
+      - "D(q; p) approx 1/B * sum_{b=1}^B ||grad_z log(q(z_b)/p(z_b))||^2_{Cov(q)}"
+      - "We compute q_{t+1} by minimizing the regularized objective function without recourse to gradient-based methods."
+
+  - anchor_id: "batch_step"
+    section: "C.1. Batch step"
+    symbols:
+      - "mu"
+      - "sum_b=1^B"
+      - "Sigma^-1"
+      - "sum_n=1^N"
+      - "z_b"
+      - "g_b"
+      - "q_t"
+      - "z_bar"
+      - "g_bar"
+    numeric_defaults:
+      batch_size: 4
+    algorithm_terms: ["eq.", "algorithm", "ema", "compute", "sample"]
+    steps:
+      - "At each iteration, Algorithm 1 solves an optimization based on samples drawn from its current Gaussian approximation."
+      - "The algorithm uses these samples to compute a empirical estimate of the score-based divergence."
+
+  - anchor_id: "match_step"
+    section: "C.2. Match step"
+    symbols:
+      - "lambda_t"
+      - "KL"
+      - "Sigma^-1"
+      - "Sigma_t"
+      - "mu"
+      - "mu_t"
+      - "mu_t+1"
+      - "Sigma_t+1"
+      - "z_bar"
+      - "g_bar"
+      - "q_t+1"
+      - "q_t"
+    numeric_defaults:
+      regularization: 1.0
+    algorithm_terms: ["eq.", "algorithm", "objective", "gradient", "compute", "update", "sample"]
+    steps:
+      - "The MATCH step of the algorithm updates the Gaussian approximation of VI to better match the recently sampled scores."

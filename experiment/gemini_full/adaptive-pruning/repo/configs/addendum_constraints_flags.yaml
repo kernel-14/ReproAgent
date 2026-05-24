@@ -1,0 +1,271 @@
+# configs/addendum_constraints_flags.yaml
+# reference_grounding: paper_addendum_constraints addendum.md
+
+# Reproduction scope boundaries from addendum
+# LLaMA models and Alpaca dataset are explicitly excluded from replication requirements.
+reproduction_scope:
+  include_llama: false
+  include_alpaca: false
+  required_models: ["bert", "roberta", "t5"]
+  required_tasks: ["glue", "squad", "cnn/dm"]
+  active_reproduction_notes: "Reproduction focuses on BERT, RoBERTa, and T5 models across GLUE, SQuAD, and CNN/DM tasks as per addendum constraints."
+
+# Environment and Task Factories
+# reference_grounding: paper_contract_environment_protocol
+environments:
+  unit-001:
+    id: "unit-001"
+    alias: "smoke_test"
+    setup_metadata:
+      description: "CLI entrypoint validation task"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  t5:
+    id: "t5"
+    alias: "t5_tasks"
+    setup_metadata:
+      description: "T5 model specific tasks"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  cnn_dm:
+    id: "cnn/dm"
+    alias: "cnn_dm"
+    setup_metadata:
+      loader: "CNN/DailyMail"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  tuning_mechanism_recovery:
+    id: "tuning mechanism that recovers"
+    alias: "recovery_mechanism"
+    setup_metadata:
+      description: "Mechanism that recovers performance after pruning"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  efficiency_claims:
+    id: "efficiency claims while maintaining high"
+    alias: "efficiency_validation"
+    setup_metadata:
+      description: "Validation of efficiency claims"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  squad:
+    id: "squad"
+    alias: "squad_v2"
+    setup_metadata:
+      description: "SQuAD v2.0 question answering task"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  glue:
+    id: "glue"
+    alias: "glue_benchmark"
+    setup_metadata:
+      description: "GLUE benchmark tasks"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  pruning_roberta:
+    id: "pruning roberta models targeting similar"
+    alias: "roberta_pruning"
+    setup_metadata:
+      description: "Pruning RoBERTa models targeting similar sparsity"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  apt_consistently_higher:
+    id: "apt consistently reach higher"
+    alias: "apt_performance_check"
+    setup_metadata:
+      description: "Verify APT consistently reaches higher accuracy"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  salience_hurts:
+    id: "salience notably hurts"
+    alias: "salience_ablation"
+    setup_metadata:
+      description: "Verify that removing salience notably hurts performance"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  sst2:
+    id: "sst2"
+    alias: "sst2_sentiment"
+    setup_metadata:
+      description: "SST-2 sentiment classification task"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  open_llm_leaderboard:
+    id: "open llm leaderboard few-shot"
+    alias: "few_shot_leaderboard"
+    setup_metadata:
+      description: "Few-shot evaluation on Open LLM Leaderboard tasks"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+
+# Dataset and Benchmark Loaders
+# reference_grounding: paper_contract_dataset_loader_protocol
+datasets:
+  SST2_MNLI_SQuAD_v2:
+    id: "SST2, MNLI, SQuAD v2.0"
+    setup_metadata:
+      tasks: ["SST2", "MNLI", "SQuAD v2.0"]
+    validation_checks: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  CNN_DailyMail_XSum:
+    id: "CNN/DailyMail, XSum"
+    setup_metadata:
+      tasks: ["CNN/DailyMail", "XSum"]
+    validation_checks: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  glue:
+    id: "glue"
+    setup_metadata:
+      tasks: ["sst2", "mnli", "cola", "mrpc", "qqp", "qnli", "rte", "sts-b"]
+    validation_checks: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  truthfulqa:
+    id: "truthfulqa"
+    setup_metadata:
+      tasks: ["generation", "multiple_choice"]
+    validation_checks: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+
+# Selectable Method/Baseline/Variant Factories
+# reference_grounding: paper_contract_method_baseline_protocol
+methods:
+  FT:
+    id: "FT"
+    name: "Full Fine-Tuning"
+    factory: "src.methods.unit_python_class.APTAdapter"
+    hyperparameters:
+      learning_rate: 2e-5
+  LoRA:
+    id: "LoRA"
+    name: "Low-Rank Adaptation"
+    factory: "src.methods.unit_python_class.APTAdapter"
+    hyperparameters:
+      r: 8
+      lora_alpha: 16
+  LoRA_Prune:
+    id: "LoRA+Prune"
+    name: "LoRA with Pruning"
+    factory: "src.methods.unit_python_class.APTAdapter"
+    hyperparameters:
+      r: 8
+      sparsity: 0.5
+  CoFi:
+    id: "CoFi"
+    name: "Coarse-grained Fine-pruning"
+    factory: "src.methods.unit_python_class.APTAdapter"
+    hyperparameters:
+      sparsity: 0.5
+  ours:
+    id: "ours"
+    name: "APT (Adaptive Pruning and Tuning)"
+    factory: "src.methods.unit_python_class.APTAdapter"
+  bert:
+    id: "bert"
+    name: "BERT-base"
+    factory: "src.methods.unit_python_class.APTAdapter"
+  roberta:
+    id: "roberta"
+    name: "RoBERTa-base"
+    factory: "src.methods.unit_python_class.APTAdapter"
+  t5:
+    id: "t5"
+    name: "T5-base"
+    factory: "src.methods.unit_python_class.APTAdapter"
+  fine_tuning:
+    id: "fine_tuning"
+    name: "Fine-Tuning Baseline"
+    factory: "src.methods.unit_python_class.APTAdapter"
+  lora_baseline:
+    id: "lora"
+    name: "LoRA Baseline"
+    factory: "src.methods.unit_python_class.APTAdapter"
+  test_time_adaptation:
+    id: "test_time_adaptation"
+    name: "Test-Time Adaptation"
+    factory: "src.methods.unit_python_class.APTAdapter"
+  ten_shot_setting:
+    id: "10_shot_setting"
+    name: "10-Shot Few-Shot Setting"
+    factory: "src.methods.unit_python_class.APTAdapter"
+  batch_size_128:
+    id: "batch_size_128"
+    name: "Batch Size 128"
+    factory: "src.methods.unit_python_class.APTAdapter"
+
+# Required Parameter Sweeps
+# reference_grounding: m_i, m_o, r_apt, batch_size
+sweeps:
+  batch_size: [32, 128]
+  m_i: [0.5, 0.7, 0.9]
+  m_o: [0.5, 0.7, 0.9]
+  r_apt: [8, 16, 32]
+
+# Full Experiment Matrix Route Contract
+# reference_grounding: datasets_or_tasks, methods_or_models, parameters
+experiment_matrix:
+  datasets_or_tasks:
+    - "unit-001"
+    - "t5"
+    - "cnn/dm"
+    - "tuning mechanism that recovers"
+    - "efficiency claims while maintaining high"
+    - "squad"
+    - "glue"
+    - "pruning roberta models targeting similar"
+    - "apt consistently reach higher"
+    - "salience notably hurts"
+  methods_or_models:
+    - "FT"
+    - "LoRA"
+    - "LoRA+Prune"
+    - "CoFi"
+    - "ours"
+    - "bert"
+    - "roberta"
+    - "t5"
+    - "fine_tuning"
+    - "lora"
+    - "test_time_adaptation"
+  parameters:
+    - "m_i"
+    - "m_o"
+    - "r_apt"
+    - "batch_size"
+
+# Active Route Closure Calls
+# reference_grounding: active_route_closure_calls
+active_route_closure:
+  compute_accuracy: "src.reporting.addendum_constraints_flags.compute_accuracy"
+  aggregate_accuracy: "src.reporting.addendum_constraints_flags.aggregate_accuracy"
+  compute_loss: "src.methods.unit_with_arguments.compute_loss"
+  aggregate_loss: "src.reporting.addendum_constraints_flags.aggregate_loss"
+  compute_f1: "src.reporting.addendum_constraints_flags.compute_accuracy"
+  aggregate_f1: "src.reporting.addendum_constraints_flags.aggregate_accuracy"
+  compute_metric_entrypoint_config_loader_entrypoint_metric_entrypoint_objective: "src.reporting.addendum_constraints_flags.compute_accuracy"
+  compute_metric_entrypoint_config_loader_entrypoint_metric_entrypoint_score: "src.reporting.addendum_constraints_flags.compute_accuracy"
+  load_main: "main.py"
+  prepare_main: "main.py"
+  compute_reward: "src.reporting.addendum_constraints_flags.compute_accuracy"
+  aggregate_reward: "src.reporting.addendum_constraints_flags.aggregate_accuracy"
+
+# Artifact Writers
+# reference_grounding: writes_artifacts
+artifact_writers:
+  figure_1: "results/figures/figure_1.png"
+  table_1: "results/tables/table_1.csv"
+  figure_2: "results/figures/figure_2.png"
+  table_2: "results/tables/table_2.csv"
+  table_4: "results/tables/table_4.csv"
+  table_11: "results/tables/table_11.csv"
+  table_3: "results/tables/table_3.csv"
+  table_12: "results/tables/table_12.csv"
+  figure_3: "results/figures/figure_3.png"
+  table_5: "results/tables/table_5.csv"
+  table_7: "results/tables/table_7.csv"
+  table_8: "results/tables/table_8.csv"
+  table_9: "results/tables/table_9.csv"
+  figure_4: "results/figures/figure_4.png"
+  figure_5: "results/figures/figure_5.png"
+  table_10: "results/tables/table_10.csv"
+  figure_5a: "results/figures/figure_5a.png"
+  experiment_results: "results/tables/experiment_results.csv"

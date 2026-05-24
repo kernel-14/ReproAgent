@@ -1,0 +1,234 @@
+# configs/config.yaml
+# Grounding Marker: reference_grounding: paper_contract_sweep_hyperparameter_protocol
+
+# 1. Global Configuration & Setup Commands
+setup:
+  commands:
+    - "pip install -r requirements.txt"
+    - "python main.py --mode runtime_smoke"
+  flags:
+    mode: "runtime_smoke"
+    verbose: true
+    seed: 42
+
+# 2. Model Registry & Factories
+models:
+  BART0_Large:
+    name: "BART0_Large"
+    alias: "bart0_large"
+    path: "facebook/bart-large"
+    type: "seq2seq"
+    parameters:
+      H: 1024
+      V: 50265
+  FLAN-T5_Large:
+    name: "FLAN-T5_Large"
+    alias: "flan_t5_large"
+    path: "google/flan-t5-large"
+    type: "seq2seq"
+    parameters:
+      H: 1024
+      V: 32128
+  FLAN-T5_3B:
+    name: "FLAN-T5_3B"
+    alias: "flan_t5_3b"
+    path: "google/flan-t5-xl"
+    type: "seq2seq"
+    parameters:
+      H: 2048
+      V: 32128
+
+# 3. Dataset Registry & Loaders
+datasets:
+  D_PT:
+    P3-Test:
+      name: "P3-Test"
+      alias: "p3_test"
+      splits: ["ID", "OOD"]
+      examples_per_task: 100
+      total_tasks: 36
+      description: "Upstream pretraining dataset, filtering out samples the model got wrong (D_hat_PT)"
+    SQuAD:
+      name: "SQuAD"
+      alias: "squad"
+      splits: ["train", "validation"]
+      description: "Stanford Question Answering Dataset"
+    GLUE:
+      name: "GLUE"
+      alias: "glue"
+      splits: ["train", "validation"]
+      description: "General Language Understanding Evaluation benchmark"
+  D_R:
+    Refinement:
+      name: "Refinement data"
+      alias: "refinement_data"
+      description: "Online learned examples or refinement data"
+
+# 4. Metric Registry
+metrics:
+  accuracy:
+    name: "Accuracy"
+    formula: "correct / total"
+  f1:
+    name: "F1 Score"
+    formula: "2 * (precision * recall) / (precision + recall)"
+  precision:
+    name: "Precision"
+    formula: "true_positives / (true_positives + false_positives)"
+  recall:
+    name: "Recall"
+    formula: "true_positives / (true_positives + false_negatives)"
+  loss:
+    name: "Loss"
+    formula: "cross_entropy"
+  success_rate:
+    name: "Edit Success Rate"
+    formula: "EM_D_R_f_i"
+    description: "proportion of examples that produces correct answers after model updates"
+  em:
+    name: "Exact Match"
+    formula: "EM_D_f"
+    description: "EM_D,f := |{<x, y> in D | f(x) = y}| / |D|"
+  training_cost:
+    name: "Training Cost"
+    formula: "compute_time + backward_passes"
+
+# 5. Method & Baseline Selectors
+methods:
+  ours:
+    name: "Representation-Based forecasting"
+    alias: "ours"
+    description: "Our proposed representation-based forgetting forecasting method"
+  t5:
+    name: "T5 Baseline"
+    alias: "t5"
+  fine_tuning:
+    name: "Fine-Tuning"
+    alias: "fine_tuning"
+  lora:
+    name: "LoRA"
+    alias: "lora"
+    config:
+      task_type: "SEQ_2_SEQ_LM"
+      inference_mode: false
+      r: 16
+      lora_alpha: 32
+      lora_dropout: 0.1
+      bias: "none"
+      target_modules: ["q", "v"]
+  frequency:
+    name: "Frequency-Threshold based forecasting"
+    alias: "frequency"
+  trainable_logit:
+    name: "Trainable Logit-based forecasting"
+    alias: "trainable_logit"
+  fixed_logit:
+    name: "Non-trained fixed-logit based forecasting"
+    alias: "fixed_logit"
+  w_o_prior:
+    name: "w/o Prior (Ablation)"
+    alias: "w_o_prior"
+
+# 6. Parameter Sweeps & Hyperparameters
+hyperparameters:
+  learning_rate:
+    default: 1e-5
+    sweep: [1e-6, 1e-5, 1e-4, 1e-3]
+  gamma:
+    default: 0.5
+    sweep: [0.1, 0.3, 0.5, 0.7, 0.9]
+  H:
+    default: 768
+    sweep: [512, 768, 1024]
+  V:
+    default: 32000
+    sweep: [32000, 50265]
+
+# 7. Experiment Protocol Matrix
+experiments:
+  Experiment_I:
+    name: "Experiment I: Performance of Forecasting Example Forgetting"
+    environments: ["squad", "glue", "p3_test"]
+    methods: ["ours", "frequency", "trainable_logit", "fixed_logit", "w_o_prior"]
+    metrics: ["f1", "precision", "recall", "training_cost"]
+    artifacts:
+      table_1: "results/tables/table_1.csv"
+      table_2: "results/tables/table_2.csv"
+      table_7: "results/tables/table_7.csv"
+      table_9: "results/tables/table_9.csv"
+      table_10: "results/tables/table_10.csv"
+      metrics_json: "results/metrics.json"
+  Experiment_II:
+    name: "Experiment II: Improving Model Refinement by Forecasting Forgetting"
+    environments: ["squad", "glue", "p3_test"]
+    methods: ["ours", "lora", "fine_tuning"]
+    metrics: ["success_rate", "em", "training_cost"]
+    artifacts:
+      table_3: "results/tables/table_3.csv"
+      figure_4: "results/figures/figure_4.png"
+      evidence_matrix: "results/evidence_contract_matrix.json"
+
+# 8. Paper Formula & Algorithm Symbol Inventory
+formula_symbols:
+  D_hat_PT: "Upstream pretraining dataset filtering out samples the model got wrong"
+  lora_config: "LoRA configuration parameters"
+  task_type: "SEQ_2_SEQ_LM"
+  inference_mode: false
+  lora_alpha: 32
+  lora_dropout: 0.1
+  target_modules: ["q", "v"]
+  EM_D_f: "Exact Match score of model f on dataset D"
+  x_i: "Input text of online learning example i"
+  y_i: "Ground truth answer of online learning example i"
+  D_R: "Refinement dataset"
+  f_i: "Model updated after learning example i"
+  D_PT: "Upstream pretraining dataset"
+  PT: "Pretraining"
+  f_0: "Base language model"
+  D_hat: "Filtered pretraining dataset"
+  x_j: "Input text of upstream pretraining example j"
+  y_j: "Ground truth answer of upstream pretraining example j"
+  z_ij: "Binary indicator of ground truth forgetting"
+  gamma: "Threshold parameter"
+  Delta: "Change of model parameters"
+  theta_i: "Model parameters after update i"
+  theta_0: "Initial model parameters"
+  nabla_theta: "Gradient with respect to theta"
+  f_hat_0: "Logits of base model"
+  f_hat_i: "Logits of updated model"
+  Theta: "Kernel measuring inner products among gradients"
+  Theta_inverse: "Inverse of kernel Theta"
+  Theta_tilde: "Approximated kernel"
+  R_TV_times_TV: "Real space of dimension TV x TV"
+  W_Head: "LM head weights"
+
+# 9. Numeric Anchors
+numeric_anchors:
+  zero: 0
+  one: 1
+  two: 2
+  three: 3
+  four: 4
+  sixteen: 16
+  thirty_two: 32
+  point_one: 0.1
+  one_hundred: 100
+
+# 10. Algorithm Steps & Rationale
+algorithms:
+  logit_change_forecasting:
+    description: "Logit-Change based Forecasting (Section 3.2)"
+    steps:
+      - "The change of model parameters Delta theta_i = theta_i - theta_0 in the model f after a single step of gradient step on the online learning example <x_i, y_i> is theta_i - theta_0 = -eta * nabla_theta * f_hat_0(x_i) * nabla_f_hat_0(x_i) * L(x_i, y_i)"
+      - "With the first-order Taylor expansion, the logit change of another example, the upstream example x_j, can be approximated as Delta f_hat_i(x_j) = f_hat_i(x_j) - f_hat_0(x_j) = -eta * Theta(x_j, x_i) * L(x_i, y_i)"
+      - "When only fine-tuning the LM heads, obtaining Theta(x_j, x_i) does not require running repetitive inference with the LM because the gradients nabla_W_Head are easily computed."
+      - "In practice, we only cache top k=100 largest logits for each token in y_j."
+  training_logit_forecaster:
+    description: "Algorithm 1 Training the logit-based forecasting model"
+    steps:
+      - "Data: Training split of online learned examples D_R^train, upstream pretraining examples D_PT, Pretrained LM f_0, maximum input sentence length T"
+      - "Result: Learned encoding function h: R^T -> R^(T x H)"
+      - "Obtain logits f_tilde_0(x_i) and f_tilde_0(x_j)"
+      - "f_i <- update f_0 with <x_i, y_i>"
+      - "Obtain updated logits f_tilde_i(x_i) and f_tilde_i(x_j)"
+      - "Ground truth forgetting z_ij <- 1 if f_0(x_i) != f_i(x_i) else 0"

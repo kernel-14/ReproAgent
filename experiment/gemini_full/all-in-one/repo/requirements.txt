@@ -1,0 +1,9 @@
+# Core lightweight dependencies
+numpy>=1.20.0
+torch>=1.9.0
+pyyaml
+
+# Optional heavy simulator/training dependencies
+sbi>=0.21.0
+scipy>=1.7.0
+matplotlib>=3.4.0

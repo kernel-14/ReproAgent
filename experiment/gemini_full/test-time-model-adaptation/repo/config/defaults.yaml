@@ -1,0 +1,292 @@
+# config/defaults.yaml
+# Faithful reproduction configuration defaults for "Test-Time Model Adaptation with Only Forward Passes" (FOA)
+
+metadata:
+  paper_title: "Test-Time Model Adaptation with Only Forward Passes"
+  method_name: "Forward-Optimization Adaptation (FOA)"
+  optimizer_name: "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"
+  backbone: "ViT-Base"
+
+# Fixed hyperparameter anchors from the paper
+fixed_hyperparameters:
+  batch_size_64: 64
+  momentum_0.9: 0.9
+
+# Default hyperparameters used by the adaptation engine
+hyperparameters:
+  batch_size: 64
+  momentum: 0.9
+  prompt_count: 3
+  learning_rate: 0.01
+  alpha: 1.0
+  lambda: 0.4
+  population_size: 28  # K = 4 + 3 * log(prompt_dim) by default
+
+# Expose required parameter sweeps as executable constants/default accessors
+parameter_sweeps:
+  alpha: [0, 1]
+  lambda: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+  population_size: [2, 28]
+  prompt_count: [1, 3, 5, 10]
+  batch_size: [1, 4, 16, 64]
+  learning_rate: [0.001, 0.005, 0.01, 0.05]
+
+# Paper evidence contract: explicitly register environment/task aliases
+environment_registry:
+  imagenet:
+    aliases: ["imagenet", "imagenet_1k"]
+    factory: "src.foa.data.loader.make_environment"
+    metadata:
+      num_classes: 1000
+  wilds:
+    aliases: ["wilds"]
+    factory: "src.foa.data.loader.make_environment"
+    metadata:
+      dataset_name: "wilds"
+
+# Paper evidence contract: explicitly register dataset/benchmark aliases
+dataset_registry:
+  autonomous_driving:
+    aliases: ["autonomous_driving"]
+    loader: "src.foa.data.loader.load_dataset"
+  wilds:
+    aliases: ["wilds"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet:
+    aliases: ["imagenet", "imagenet_1k"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet_1k:
+    aliases: ["imagenet_1k"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet_c:
+    aliases: ["imagenet_c"]
+    loader: "src.foa.data.loader.load_dataset"
+    corruptions: ["noise", "blur", "weather", "digital"]
+    severities: [1, 2, 3, 4, 5]
+  imagenet_r:
+    aliases: ["imagenet_r"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet_v2:
+    aliases: ["imagenet_v2"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet_sketch:
+    aliases: ["imagenet_sketch"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet_in_distribution:
+    aliases: ["imagenet_in_distribution", "imagenet_id"]
+    loader: "src.foa.data.loader.load_dataset"
+
+# Paper evidence contract: expose method/baseline/attack selectors
+method_registry:
+  ours:
+    class: "src.methods.foa.FOA"
+    optimizer: "cma_es"
+    description: "Forward-Only Prompt Adaptation with Activation Shifting"
+  foa:
+    class: "src.methods.foa.FOA"
+    optimizer: "cma_es"
+  vit:
+    class: "src.models.vit_wrapper.ViTWrapper"
+  resnet:
+    class: "src.models.resnet_wrapper.ResNetWrapper"
+  test_time_adaptation:
+    class: "src.methods.baselines.TTABase"
+  lame:
+    class: "src.methods.baselines.LAME"
+  t3a:
+    class: "src.methods.baselines.T3A"
+  tent:
+    class: "src.methods.baselines.TENT"
+  cotta:
+    class: "src.methods.baselines.CoTTA"
+  sar:
+    class: "src.methods.baselines.SAR"
+  cma_es:
+    class: "optimizers.cma_es.CMAES"
+  vision_mamba:
+    class: "src.methods.baselines.VisionMamba"
+  prompt_tuning:
+    class: "src.methods.baselines.PromptTuning"
+
+# Active route contracts defined in config
+active_routes:
+  "ImageNet-C Full Precision Benchmark":
+    description: "Main comparison of FOA against TTA baselines on full precision ViT models under ImageNet-C corruptions."
+    experiment_id: "experiment_i"
+  "Quantized Model Adaptation Test":
+    description: "Evaluation of TTA methods on quantized ViT models (8-bit and 6-bit) to test robustness."
+    experiment_id: "experiment_iii"
+  "FOA Component Ablation & Efficiency Analysis":
+    description: "Ablation studies on prompt length, population size, alignment weights, and activation shifting."
+    experiment_id: "experiment_iv"
+  "OOD Generalization & In-Distribution Stability":
+    description: "Evaluation of out-of-distribution generalization and clean in-distribution accuracy preservation."
+    experiment_id: "experiment_v"
+  "TTA Data Pipeline":
+    description: "Data loading pipeline for ImageNet-C, ImageNet-R, ImageNetV2, ImageNet-Sketch, autonomous_driving, and wilds."
+    loader_factory: "src.foa.data.loader.prepare_loader"
+  "ViT Model & Quantization Loader":
+    description: "Model loader for ViT-Base and quantized variants (PTQ4ViT 8-bit/6-bit)."
+    model_factory: "src.models.vit_wrapper.load_classifier"
+  "FOA Adaptation Engine":
+    description: "Core adaptation loop using CMA-ES for prompt optimization without backpropagation."
+    method_class: "src.methods.foa.FOA"
+  "Activation Shifting Mechanism":
+    description: "Back-to-source activation shifting mechanism to align target features with source statistics."
+    shifting_fn: "src.methods.foa.activation_shift"
+
+# Materialize a callable protocol matrix linking named experiments to environments/tasks, method selectors, metric functions, and artifact writer functions
+experiment_registry:
+  experiment_i:
+    name: "Main Comparison (Table 2)"
+    environment: "imagenet_c"
+    methods: ["ours", "noadapt", "lame", "t3a", "tent", "cotta", "sar"]
+    metrics: ["accuracy", "ece", "memory_usage", "gpu_memory"]
+    writer: "write_table_2_artifact"
+    runner: "run_table_2_route"
+  experiment_ii:
+    name: "OOD Generalization (Table 3)"
+    environment: "imagenet_r"
+    methods: ["ours", "noadapt", "lame", "t3a", "tent", "cotta", "sar"]
+    metrics: ["accuracy"]
+    writer: "write_table_3_artifact"
+    runner: "run_table_3_route"
+  experiment_iii:
+    name: "Quantization Robustness (Table 4)"
+    environment: "imagenet_c"
+    methods: ["ours", "noadapt", "lame", "t3a"]
+    metrics: ["accuracy"]
+    writer: "write_table_4_artifact"
+    runner: "run_table_4_route"
+  experiment_iv:
+    name: "FOA Component Ablation & Efficiency Analysis"
+    environment: "imagenet_c"
+    methods: ["ours", "foa_no_shifting", "foa_no_alignment"]
+    metrics: ["accuracy", "memory_usage", "training_time"]
+    writer: "write_ablation_registry_artifact"
+    runner: "run_ablation_route"
+  experiment_v:
+    name: "OOD Generalization & In-Distribution Stability"
+    environment: "imagenet"
+    methods: ["ours", "noadapt"]
+    metrics: ["accuracy"]
+    writer: "write_sensitivity_report_artifact"
+    runner: "run_stability_route"
+  experiment_vi:
+    name: "Sensitivity Analysis"
+    environment: "imagenet_c"
+    methods: ["ours"]
+    metrics: ["accuracy"]
+    writer: "write_sensitivity_report_artifact"
+    runner: "run_sensitivity_route"
+
+# Paper-derived evidence obligation matrix rows as specs
+obligation_matrix:
+  - method: "FOA"
+    source: "methods/foa.py"
+    mechanism: "CMA Evolution Strategy"
+    optimizer_source: "optimizers/cma_es.py"
+    shifting_mechanism: "Back-to-source activation shifting"
+    fitness_mechanism: "Alignment-based fitness function"
+    hyperparameters:
+      batch_size: 64
+      momentum: 0.9
+  - baseline: "NoAdapt"
+    source: "methods/baselines.py"
+  - baseline: "LAME"
+    source: "methods/baselines.py"
+  - baseline: "T3A"
+    source: "methods/baselines.py"
+  - baseline: "TENT"
+    source: "methods/baselines.py"
+  - baseline: "CoTTA"
+    source: "methods/baselines.py"
+  - baseline: "SAR"
+    source: "methods/baselines.py"
+
+# Formula and algorithm contract symbols, numeric defaults, and terms
+formula_algorithm_contract:
+  symbols:
+    trust_remote_code: true
+    load_dataset: "datasets.load_dataset"
+    reset_peak_memory_stats: "torch.cuda.reset_peak_memory_stats"
+    max_memory_allocated: "torch.cuda.max_memory_allocated"
+    mu_NX_1: "mu_NX_1"
+    mu_N: "mu_N"
+    X_1: "X_1"
+    f_Theta: "f_Theta"
+    E_i: "E_i"
+    e_i_j: "e_i^j"
+    L_i_plus_1: "L_i+1"
+    e_i_0: "e_i^0"
+    L_i: "L_i"
+    E_i_minus_1: "E_i-1"
+    e_N_0: "e_N^0"
+    D_train: "D_train"
+    x_i: "x_i"
+    y_i: "y_i"
+    D_test: "D_test"
+    X_t: "X_t"
+    mu: "mu"
+    sigma: "sigma"
+    m_0: "m^0"
+    tau: "tau"
+    p_k_t: "p_k^t"
+    e_n_0: "e_n^0"
+    m_t: "m^t"
+    v_k: "v_k"
+    p_star: "p^*"
+    D_S: "D_S"
+    x_q: "x_q"
+    y_hat_c: "y_hat_c"
+    lambda: "lambda"
+    sum_i_1_N: "sum_i=1^N"
+    alpha: "alpha"
+    d_t: "d_t"
+  numeric_defaults:
+    1024: 1024
+    9: 9
+    0: 0
+    1: 1
+    2: 2
+    4: 4
+    28: 28
+    3: 3
+    5: 5
+    0.4: 0.4
+    64: 64
+    0.2: 0.2
+    30: 30
+    57.9: 57.9
+    6: 6
+    60.8: 60.8
+    3.1: 3.1
+  algorithm_terms:
+    - "equation"
+    - "moving average"
+    - "initialize"
+    - "formula"
+    - "objective"
+    - "sample"
+    - "decrease"
+    - "algorithm"
+    - "calculate"
+    - "update"
+    - "select"
+    - "rank"
+    - "compute"
+    - "gradient"
+    - "ema"
+    - "teacher"
+
+# Declared runtime artifacts under the repository output paths
+declared_artifacts:
+  - "results/source_stats.json"
+  - "results/method_registry.json"
+  - "results/ablation_registry.json"
+  - "results/config_resolved.json"
+  - "results/sensitivity_report.json"
+  - "results/adaptation_trace.json"
+  - "results/loss_trace.json"
+  - "results/training_trace.json"
+  - "results/experiment_registry.json"

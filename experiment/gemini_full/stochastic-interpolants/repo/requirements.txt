@@ -1,0 +1,12 @@
+# Core lightweight dependencies
+numpy>=1.20.0
+pyyaml>=5.1
+pillow>=8.0.0
+tqdm>=4.60.0
+
+# Deep learning and vision dependencies (heavy/optional for basic import smoke tests)
+torch>=1.10.0
+torchvision>=0.11.0
+scipy>=1.7.0
+datasets>=2.0.0
+matplotlib>=3.4.0

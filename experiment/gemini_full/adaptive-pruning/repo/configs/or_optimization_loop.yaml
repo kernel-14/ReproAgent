@@ -1,0 +1,282 @@
+# configs/or_optimization_loop.yaml
+# reference_grounding: paper:paper_training_or_optimization_loop (chunk_017, chunk_005)
+
+# Global Configuration
+project: "APT_Reproduction"
+mode: "runtime_smoke"
+seed: 42
+
+# Active Reproduction Scope Notes
+# reference_grounding: paper_addendum_constraints addendum.md
+reproduction_scope:
+  include_llama: false
+  include_alpaca: false
+  required_models: ["bert", "roberta", "t5"]
+  required_tasks: ["glue", "squad", "cnn/dm"]
+  active_reproduction_notes: "Reproduction focuses on BERT, RoBERTa, and T5 models across GLUE, SQuAD, and CNN/DM tasks as per addendum constraints."
+
+# Optimization Loop Configuration
+# reference_grounding: chunk_028 "train the pruned model for 15 epochs"
+optimization:
+  max_epochs: 15
+  early_stopping_patience: 3
+  optimizer: "adamw"
+  learning_rate_scheduler: "linear"
+  few_shot_setting: 10
+  default_batch_size: 128
+
+# Expose required parameter sweeps as executable constants/default accessors
+# reference_grounding: m_i, m_o, r_apt, batch_size
+sweeps:
+  batch_size: [32, 128]
+  m_i: [0.5, 0.7, 0.9]
+  m_o: [0.5, 0.7, 0.9]
+  r_apt: [8, 16, 32]
+
+# Expose paper-derived environment/task factories
+# reference_grounding: squad, glue, sst2, t5, cnn/dm, etc.
+environments:
+  unit-001:
+    id: "unit-001"
+    alias: "smoke_test"
+    setup_metadata:
+      description: "CLI entrypoint validation task"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  t5:
+    id: "t5"
+    alias: "t5_tasks"
+    setup_metadata:
+      description: "T5 model specific tasks"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  cnn_dm:
+    id: "cnn/dm"
+    alias: "cnn_dm"
+    setup_metadata:
+      loader: "CNN/DailyMail"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  tuning_mechanism_recovery:
+    id: "tuning mechanism that recovers"
+    alias: "recovery_mechanism"
+    setup_metadata:
+      description: "Mechanism that recovers performance after pruning"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  efficiency_claims:
+    id: "efficiency claims while maintaining high"
+    alias: "efficiency_validation"
+    setup_metadata:
+      description: "Validation of efficiency claims"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  squad:
+    id: "squad"
+    alias: "squad_v2"
+    setup_metadata:
+      description: "SQuAD v2.0 question answering task"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  glue:
+    id: "glue"
+    alias: "glue_benchmark"
+    setup_metadata:
+      description: "GLUE benchmark tasks"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  pruning_roberta:
+    id: "pruning roberta models targeting similar"
+    alias: "roberta_pruning"
+    setup_metadata:
+      description: "Pruning RoBERTa models targeting similar sparsity"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  apt_consistently_higher:
+    id: "apt consistently reach higher"
+    alias: "apt_performance_check"
+    setup_metadata:
+      description: "Check if APT consistently reaches higher accuracy"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  salience_hurts:
+    id: "salience notably hurts"
+    alias: "salience_ablation"
+    setup_metadata:
+      description: "Ablation showing that removing salience hurts performance"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  sst2:
+    id: "sst2"
+    alias: "sst2_sentiment"
+    setup_metadata:
+      description: "SST-2 sentiment classification task"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+  open_llm_leaderboard:
+    id: "open llm leaderboard few-shot"
+    alias: "few_shot_leaderboard"
+    setup_metadata:
+      description: "Few-shot evaluation on Open LLM Leaderboard tasks"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    runnable_config_hook: "configs/default.yaml"
+
+# Expose paper-derived dataset/benchmark loaders
+# reference_grounding: SST2, MNLI, SQuAD v2.0, CNN/DailyMail, XSum, glue, truthfulqa
+dataset_loaders:
+  SST2:
+    id: "SST2"
+    setup_metadata:
+      task_name: "sst2"
+    validation_check: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    runnable_config_hook: "configs/inventory_registry_make.yaml"
+  MNLI:
+    id: "MNLI"
+    setup_metadata:
+      task_name: "mnli"
+    validation_check: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    runnable_config_hook: "configs/inventory_registry_make.yaml"
+  SQuAD_v2:
+    id: "SQuAD v2.0"
+    setup_metadata:
+      task_name: "squad_v2"
+    validation_check: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    runnable_config_hook: "configs/inventory_registry_make.yaml"
+  CNN_DailyMail:
+    id: "CNN/DailyMail"
+    setup_metadata:
+      task_name: "cnn_dailymail"
+    validation_check: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    runnable_config_hook: "configs/inventory_registry_make.yaml"
+  XSum:
+    id: "XSum"
+    setup_metadata:
+      task_name: "xsum"
+    validation_check: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    runnable_config_hook: "configs/inventory_registry_make.yaml"
+  glue:
+    id: "glue"
+    setup_metadata:
+      task_name: "glue"
+    validation_check: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    runnable_config_hook: "configs/inventory_registry_make.yaml"
+  truthfulqa:
+    id: "truthfulqa"
+    setup_metadata:
+      task_name: "truthfulqa"
+    validation_check: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    runnable_config_hook: "configs/inventory_registry_make.yaml"
+
+# Expose selectable method/baseline/variant factories or adapters
+# reference_grounding: FT, LoRA, LoRA+Prune, CoFi, ours, bert, roberta, t5, fine_tuning, lora, test_time_adaptation, 10_shot_setting, batch_size_128
+methods:
+  FT:
+    id: "FT"
+    alias: "fine_tuning"
+    factory: "src.methods.unit_or_implement.compute_loss"
+  LoRA:
+    id: "LoRA"
+    alias: "lora"
+    factory: "src.methods.unit_python_class.compute_loss"
+  LoRA_Prune:
+    id: "LoRA+Prune"
+    alias: "lora_prune"
+    factory: "src.methods.unit_or_implement.compute_loss"
+  CoFi:
+    id: "CoFi"
+    alias: "cofi"
+    factory: "src.methods.unit_or_implement.compute_loss"
+  ours:
+    id: "ours"
+    alias: "apt"
+    factory: "src.methods.unit_python_class.compute_loss"
+  bert:
+    id: "bert"
+    alias: "bert_model"
+    factory: "src.methods.unit_with_arguments.compute_loss"
+  roberta:
+    id: "roberta"
+    alias: "roberta_model"
+    factory: "src.methods.unit_with_arguments.compute_loss"
+  t5:
+    id: "t5"
+    alias: "t5_model"
+    factory: "src.methods.unit_with_arguments.compute_loss"
+  fine_tuning:
+    id: "fine_tuning"
+    alias: "FT"
+    factory: "src.methods.unit_or_implement.compute_loss"
+  lora:
+    id: "lora"
+    alias: "LoRA"
+    factory: "src.methods.unit_python_class.compute_loss"
+  test_time_adaptation:
+    id: "test_time_adaptation"
+    alias: "tta"
+    factory: "src.methods.unit_or_implement.compute_loss"
+  ten_shot_setting:
+    id: "10_shot_setting"
+    alias: "few_shot_10"
+    factory: "src.methods.unit_with_arguments.compute_loss"
+  batch_size_128:
+    id: "batch_size_128"
+    alias: "bs_128"
+    factory: "src.methods.unit_with_arguments.compute_loss"
+
+# Active Route Contract - Wire symbols from executable routes
+# reference_grounding: compute_accuracy, aggregate_accuracy, compute_loss, aggregate_loss, compute_f1, aggregate_f1, etc.
+active_route_contract:
+  compute_accuracy: "src.reporting.evidence_obligation_registry.compute_accuracy"
+  aggregate_accuracy: "src.reporting.evidence_obligation_registry.aggregate_accuracy"
+  compute_loss: "src.reporting.evidence_obligation_registry.compute_loss"
+  aggregate_loss: "src.reporting.evidence_obligation_registry.aggregate_loss"
+  compute_f1: "src.reporting.evidence_obligation_registry.compute_accuracy"
+  aggregate_f1: "src.reporting.evidence_obligation_registry.aggregate_accuracy"
+  compute_metric_entrypoint_config_loader_entrypoint_metric_entrypoint_objective: "src.reporting.evidence_obligation_registry.compute_accuracy"
+  compute_metric_entrypoint_config_loader_entrypoint_metric_entrypoint_score: "src.reporting.evidence_obligation_registry.compute_accuracy"
+  load_main: "main.py"
+  prepare_main: "main.py"
+  compute_reward: "src.reporting.evidence_obligation_registry.compute_loss"
+  aggregate_reward: "src.reporting.evidence_obligation_registry.aggregate_loss"
+
+# Full experiment-matrix route contract
+# reference_grounding: datasets_or_tasks, methods_or_models, parameters
+experiment_matrix:
+  datasets_or_tasks:
+    - "unit-001"
+    - "t5"
+    - "cnn/dm"
+    - "tuning mechanism that recovers"
+    - "efficiency claims while maintaining high"
+    - "squad"
+    - "glue"
+    - "pruning roberta models targeting similar"
+    - "apt consistently reach higher"
+    - "salience notably hurts"
+  methods_or_models:
+    - "FT"
+    - "LoRA"
+    - "LoRA+Prune"
+    - "CoFi"
+    - "ours"
+    - "bert"
+    - "roberta"
+    - "t5"
+    - "fine_tuning"
+    - "lora"
+    - "test_time_adaptation"
+  parameters:
+    - "m_i"
+    - "m_o"
+    - "r_apt"
+    - "batch_size"
+
+# Artifact Writers
+# reference_grounding: table 2, table 11
+artifact_writers:
+  table_2:
+    path: "results/tables/table_2.csv"
+    writer_function: "src.reporting.or_optimization_loop.compute_accuracy"
+  table_11:
+    path: "results/tables/table_11.csv"
+    writer_function: "src.reporting.or_optimization_loop.compute_accuracy"

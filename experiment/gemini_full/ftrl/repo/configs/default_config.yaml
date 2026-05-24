@@ -1,0 +1,223 @@
+# configs/default_config.yaml
+# Faithful reproduction configuration for:
+# "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+
+metadata:
+  project_name: "Fine-tuning RL as Forgetting Mitigation"
+  paper_id: "ftrl"
+  reproduction_scope: "Faithful implementation of MDP, AppleRetrieval, and Robotics experiments."
+
+# Expose paper-derived environment/task factories and registries
+environments:
+  registry:
+    - id: "two_state_mdp"
+      alias: "two-state-mdp"
+      description: "Two-state MDP with CLOSE and FAR state partitions to track forgetting."
+      state_space_partition:
+        close: "s_0"
+        far: "s_1"
+      setup_metadata:
+        gamma: 0.9
+        epsilon: 0.5
+        r_0: 0.11
+        r_1: 2.22
+        s_0: 0
+        s_1: 1
+        v_0: 10.0
+        f_0: 0.0
+        f_1: 1.0
+      availability_check: "src.envs.two_state_mdp.make_two_state_mdp"
+      runnable_config_hook: "setup_two_state_mdp"
+
+    - id: "appleretrieval"
+      alias: "apple_retrieval"
+      description: "AppleRetrieval grid-world environment exhibiting state coverage gap."
+      setup_metadata:
+        M: 13
+        c: 11
+        sigma: 30
+        asset_13: 13
+        pi_w: 1.0
+        pi_b: 0.0
+        apple_reward: 10.0
+        step_penalty: -0.1
+      availability_check: "src.envs.apple_retrieval.make_apple_retrieval"
+      runnable_config_hook: "setup_apple_retrieval"
+
+    - id: "robotics"
+      alias: "push-wall"
+      description: "Robotic manipulation task (Meta-World push-wall) for sequential transfer."
+      setup_metadata:
+        task_name: "push-wall-v2"
+        gold_score_threshold: 0.9
+        beta: 1.5
+        E_k: 200
+        E_i: 1
+        r_t: 1.0
+        r_t_prime: 1.0
+      availability_check: "src.envs.robotics.make_robotics"
+      runnable_config_hook: "setup_robotics"
+
+# Expose paper-derived dataset/benchmark loaders
+datasets:
+  registry:
+    - id: "robotics_dataset"
+      alias: "robotics"
+      setup_metadata:
+        num_trajectories: 100
+        validation_split: 0.2
+      validation_checks: "src.data.task_setup_factory.validate_robotics_dataset"
+      runnable_config_hook: "load_robotics_dataset"
+
+    - id: "nld_aa"
+      alias: "nld-aa-v0"
+      setup_metadata:
+        add_nledata_directory: "/path/to/nld-aa"
+        add_altorg_directory: "/path/to/nld-nao"
+        TtyrecDataset: "nld-aa-v0"
+        batch_size: 128
+      validation_checks: "src.data.task_setup_factory.validate_nld_dataset"
+      runnable_config_hook: "load_nld_dataset"
+
+# Expose method/baseline/attack selectors
+methods:
+  selectors:
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+
+# Expose bounded sweep/config entries and fixed hyperparameter anchors
+hyperparameters:
+  learning_rate:
+    default: 0.0003
+    sweep: [0.0001, 0.0003, 0.001]
+  batch_size:
+    default: 128
+    sweep: [32, 64, 128, 256]
+  anchors:
+    batch_size_128: 128
+
+# Paper formula/algorithm symbol inventory (code-visible anchors)
+# reference_grounding: chunk_003_01, chunk_004_02, chunk_018, chunk_019, addendum
+formula_anchors:
+  symbols:
+    add_nledata_directory: "add_nledata_directory"
+    add_altorg_directory: "add_altorg_directory"
+    TtyrecDataset_nld_aa_v0: "TtyrecDataset\"nld-aa-v0\""
+    batch_size: "batch_size"
+    L_aux: "L_aux"
+    theta: "theta"
+    sum_i: "sum_i"
+    F_i: "F^i"
+    theta_star_i: "theta_*^i"
+    theta_i: "theta^i"
+    theta_star: "theta_*"
+    L_BC: "L_BC"
+    B_BC: "B_BC"
+    D_KL: "D_KL"
+    pi_star: "pi_*"
+    pi_theta: "pi_theta"
+    L_KS: "L_KS"
+    s_0: "s_0"
+    v_0: "v_0"
+    gamma: "gamma"
+    r_0: "r_0"
+    f_theta: "f_theta"
+    r_1: "r_1"
+    epsilon: "epsilon"
+  numeric_defaults:
+    anchor_128: 128
+    anchor_2: 2
+    anchor_0: 0
+    anchor_9: 9
+    anchor_1: 1
+    anchor_0_11: 0.11
+    anchor_2_22: 2.22
+    anchor_0_5: 0.5
+    anchor_10: 10
+    anchor_0_08: 0.08
+    anchor_9_93: 9.93
+    anchor_13: 13
+    anchor_11: 11
+    anchor_30: 30
+    anchor_200: 200
+    anchor_1_5: 1.5
+
+# Measurement collection and result aggregation targets
+artifacts:
+  figure_1:
+    path: "results/figures/figure_1.png"
+    description: "Two-state MDP state space partition (CLOSE vs FAR) and forgetting illustration."
+    writer: "write_figure_1_artifact"
+  figure_2:
+    path: "results/figures/figure_2.png"
+    description: "Forgetting of pre-trained capabilities on FAR states during fine-tuning."
+    writer: "write_figure_2_artifact"
+  figure_4:
+    path: "results/figures/figure_4.png"
+    description: "Comparison of fine-tuning methods (vanilla, BC, EWC) on NetHack."
+    writer: "write_figure_4_artifact"
+  figure_12:
+    path: "results/figures/figure_12.png"
+    description: "Ablation of auxiliary loss coefficients and forgetting mitigation."
+    writer: "write_figure_12_artifact"
+  figure_3a:
+    path: "results/figures/figure_3a.png"
+    description: "AppleRetrieval performance under different c parameters."
+    writer: "write_figure_3a_artifact"
+  figure_3:
+    path: "results/figures/figure_3.png"
+    description: "AppleRetrieval trajectory visualization."
+    writer: "write_figure_3_artifact"
+  figure_3b:
+    path: "results/figures/figure_3b.png"
+    description: "AppleRetrieval weight norm analysis."
+    writer: "write_figure_3b_artifact"
+  figure_3c:
+    path: "results/figures/figure_3c.png"
+    description: "AppleRetrieval gradient steps and forgetting."
+    writer: "write_figure_3c_artifact"
+  figure_7:
+    path: "results/figures/figure_7.png"
+    description: "Robotics sequential transfer success rate."
+    writer: "write_figure_7_artifact"
+  figure_5:
+    path: "results/figures/figure_5.png"
+    description: "NetHack learning curves."
+    writer: "write_figure_5_artifact"
+  figure_6:
+    path: "results/figures/figure_6.png"
+    description: "Success rate computed every 5 million training steps."
+    writer: "write_figure_6_artifact"
+  figure_8:
+    path: "results/figures/figure_8.png"
+    description: "Robotics push-wall ablation study."
+    writer: "write_figure_8_artifact"
+  figure_14:
+    path: "results/figures/figure_14.png"
+    description: "Meta World sequential transfer results."
+    writer: "write_figure_14_artifact"
+  table_4:
+    path: "results/tables/table_4.csv"
+    description: "Meta World success rates across stages."
+    writer: "write_table_4_artifact"
+  table_5:
+    path: "results/tables/table_5.csv"
+    description: "Meta World forgetting scores."
+    writer: "write_table_5_artifact"
+  figure_15:
+    path: "results/figures/figure_15.png"
+    description: "CKA similarity analysis of policy representations."
+    writer: "write_figure_15_artifact"
+  figure_16:
+    path: "results/figures/figure_16.png"
+    description: "HSIC representation alignment."
+    writer: "write_figure_16_artifact"
+  figure_17:
+    path: "results/figures/figure_17.png"
+    description: "RoboticSequence start and goal condition sweeps."
+    writer: "write_figure_17_artifact"

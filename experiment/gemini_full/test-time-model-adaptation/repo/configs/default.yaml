@@ -1,0 +1,227 @@
+# configs/default.yaml
+# Faithful reproduction configuration for "Test-Time Model Adaptation with Only Forward Passes" (FOA)
+# reference_grounding: paper_contract_method_baseline_protocol (chunk_005, chunk_012, chunk_027)
+
+metadata:
+  paper_title: "Test-Time Model Adaptation with Only Forward Passes"
+  method_name: "Forward-Optimization Adaptation (FOA)"
+  optimizer_name: "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"
+  backbone: "ViT-Base"
+
+# Fixed hyperparameter anchors from the paper
+fixed_hyperparameters:
+  batch_size_64: 64
+  momentum_0.9: 0.9
+
+# Default hyperparameters used by the adaptation engine
+hyperparameters:
+  batch_size: 64
+  momentum: 0.9
+  prompt_count: 3
+  learning_rate: 0.01
+  alpha: 1.0
+  lambda: 0.4
+  population_size: 28  # K = 4 + 3 * log(prompt_dim) by default
+
+# Expose required parameter sweeps as executable constants/default accessors
+parameter_sweeps:
+  alpha: [0, 1]
+  lambda: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+  population_size: [2, 28]
+  prompt_count: [1, 3, 5, 10]
+  batch_size: [1, 4, 16, 64]
+  learning_rate: [0.001, 0.005, 0.01, 0.05]
+
+# Paper evidence contract: explicitly register environment/task aliases
+environment_registry:
+  imagenet:
+    aliases: ["imagenet", "imagenet_1k"]
+    factory: "src.foa.data.loader.make_environment"
+    metadata:
+      num_classes: 1000
+  wilds:
+    aliases: ["wilds"]
+    factory: "src.foa.data.loader.make_environment"
+    metadata:
+      dataset_name: "wilds"
+
+# Paper evidence contract: explicitly register dataset/benchmark aliases
+dataset_registry:
+  autonomous_driving:
+    aliases: ["autonomous_driving"]
+    loader: "src.foa.data.loader.load_dataset"
+  wilds:
+    aliases: ["wilds"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet:
+    aliases: ["imagenet", "imagenet_1k"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet_1k:
+    aliases: ["imagenet_1k"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet_c:
+    aliases: ["imagenet_c"]
+    loader: "src.foa.data.loader.load_dataset"
+    corruption_types: [
+      "gaussian_noise", "shot_noise", "impulse_noise", "defocus_blur",
+      "glass_blur", "motion_blur", "zoom_blur", "snow", "frost", "fog",
+      "brightness", "contrast", "elastic_transform", "pixelate", "jpeg_compression"
+    ]
+    severities: [1, 2, 3, 4, 5]
+  imagenet_r:
+    aliases: ["imagenet_r"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet_v2:
+    aliases: ["imagenet_v2"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet_sketch:
+    aliases: ["imagenet_sketch"]
+    loader: "src.foa.data.loader.load_dataset"
+  imagenet_in_distribution:
+    aliases: ["imagenet_in_distribution"]
+    loader: "src.foa.data.loader.load_dataset"
+
+# Method, baseline, and attack selectors
+method_registry:
+  ours:
+    class_path: "src.methods.foa.FOA"
+    description: "Forward-Optimization Adaptation (Ours)"
+  foa:
+    class_path: "src.methods.foa.FOA"
+    description: "Forward-Optimization Adaptation"
+  vit:
+    class_path: "src.models.vit_wrapper.ViTWrapper"
+    description: "Vision Transformer Backbone"
+  resnet:
+    class_path: "src.models.vit_wrapper.ResNetWrapper"
+    description: "ResNet Backbone"
+  test_time_adaptation:
+    class_path: "src.methods.baselines.TTABase"
+    description: "Generic Test-Time Adaptation"
+  lame:
+    class_path: "src.methods.baselines.LAME"
+    description: "Laplacian Adjusted Maximum Entropy"
+  t3a:
+    class_path: "src.methods.baselines.T3A"
+    description: "Test-Time Template Adaptation"
+  tent:
+    class_path: "src.methods.baselines.TENT"
+    description: "Test-Time Entropy Minimization"
+  cotta:
+    class_path: "src.methods.baselines.CoTTA"
+    description: "Continual Test-Time Adaptation"
+  sar:
+    class_path: "src.methods.baselines.SAR"
+    description: "Sharpness-Aware Entropy Minimization"
+  cma_es:
+    class_path: "src.foa.utils.cma_optimizer.CMAOptimizer"
+    description: "Covariance Matrix Adaptation Evolution Strategy"
+  vision_mamba:
+    class_path: "src.models.vit_wrapper.VisionMambaWrapper"
+    description: "Vision Mamba Backbone"
+  prompt_tuning:
+    class_path: "src.methods.foa.PromptTuning"
+    description: "Standard Prompt Tuning"
+
+# Active route contracts and components
+components:
+  TTA Data Pipeline:
+    factory: "src.foa.data.loader.prepare_loader"
+    args:
+      batch_size: 64
+  ViT Model & Quantization Loader:
+    factory: "src.models.vit_wrapper.load_classifier"
+    args:
+      quantized: false
+      bits: 8
+  FOA Adaptation Engine:
+    class_path: "src.methods.foa.FOA"
+    args:
+      prompt_count: 3
+      population_size: 28
+  Activation Shifting Mechanism:
+    function_path: "src.methods.foa.activation_shift"
+    args:
+      alpha: 1.0
+  CMA-ES Optimization Step:
+    class_path: "optimizers.cma_es.CMAES"
+  Fitness Function Calculation:
+    function_path: "src.methods.foa.compute_paper_loss"
+
+# Callable protocol matrix linking named experiments to environments, methods, metrics, and artifact writers
+experiments:
+  experiment_i:
+    name: "ImageNet-C Full Precision Benchmark"
+    environment: "imagenet"
+    dataset: "imagenet_c"
+    methods: ["ours", "noadapt", "lame", "t3a", "tent", "cotta", "sar"]
+    metrics: ["accuracy", "ece", "memory_usage", "gpu_memory"]
+    artifact_writer: "main.write_table_2_artifact"
+    run_route: "main.run_table_2_route"
+    description: "Main Comparison (Table 2) on ImageNet-C with full precision models"
+  
+  experiment_ii:
+    name: "OOD Generalization & In-Distribution Stability"
+    environment: "imagenet"
+    dataset: "imagenet_r" # also covers imagenet_v2, imagenet_sketch
+    methods: ["ours", "noadapt", "lame", "t3a", "tent", "cotta", "sar"]
+    metrics: ["accuracy", "ece"]
+    artifact_writer: "main.write_table_3_artifact"
+    run_route: "main.run_table_3_route"
+    description: "OOD Generalization (Table 3) on ImageNet-R, ImageNetV2, and ImageNet-Sketch"
+
+  experiment_iii:
+    name: "Quantized Model Adaptation Test"
+    environment: "imagenet"
+    dataset: "imagenet_c"
+    methods: ["ours", "noadapt", "lame", "t3a"] # gradient-based methods are skipped/fail
+    metrics: ["accuracy", "ece", "memory_usage"]
+    artifact_writer: "main.write_table_4_artifact"
+    run_route: "main.run_table_4_route"
+    description: "Quantization Robustness (Table 4) on 8-bit and 6-bit quantized models"
+
+  experiment_iv:
+    name: "FOA Component Ablation & Efficiency Analysis"
+    environment: "imagenet"
+    dataset: "imagenet_c"
+    methods: ["ours", "foa_no_shifting", "foa_entropy_only"]
+    metrics: ["accuracy", "training_time", "memory_usage"]
+    artifact_writer: "main.write_ablation_registry_artifact"
+    run_route: "main.run_ablation_route"
+    description: "Ablation Studies (Table 5) and efficiency profiling"
+
+  experiment_v:
+    name: "Sensitivity Analysis of Hyperparameters"
+    environment: "imagenet"
+    dataset: "imagenet_c"
+    methods: ["ours"]
+    sweeps:
+      alpha: [0, 1]
+      lambda: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+      population_size: [2, 6, 28]
+    metrics: ["accuracy"]
+    artifact_writer: "main.write_sensitivity_report_artifact"
+    run_route: "main.run_sensitivity_route"
+    description: "Sensitivity analysis of alpha, lambda, and population size K"
+
+  experiment_vi:
+    name: "Source Statistics Collection & In-Distribution Stability"
+    environment: "imagenet"
+    dataset: "imagenet_in_distribution"
+    methods: ["ours", "noadapt"]
+    metrics: ["accuracy"]
+    artifact_writer: "main.write_source_stats_artifact"
+    run_route: "main.run_source_stats_route"
+    description: "In-distribution stability check and source statistics collection"
+
+# Declared runtime artifacts to be written
+artifacts:
+  source_stats: "results/source_stats.json"
+  method_registry: "results/method_registry.json"
+  ablation_registry: "results/ablation_registry.json"
+  config_resolved: "results/config_resolved.json"
+  sensitivity_report: "results/sensitivity_report.json"
+  adaptation_trace: "results/adaptation_trace.json"
+  loss_trace: "results/loss_trace.json"
+  training_trace: "results/training_trace.json"
+  experiment_registry: "results/experiment_registry.json"

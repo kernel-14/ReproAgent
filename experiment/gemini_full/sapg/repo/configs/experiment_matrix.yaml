@@ -1,0 +1,409 @@
+# SAPG: Split and Aggregate Policy Gradients - Experiment Matrix Configuration
+# Faithful reproduction configuration capturing all paper-derived parameters, sweeps, and evidence obligations.
+
+metadata:
+  project_name: "SAPG: Split and Aggregate Policy Gradients"
+  hypothesis: "standardized evaluation of SAPG against PPO, PQL, APPO, and DDPG will reproduce the performance gains and trends in the paper"
+  decision_value: "provides the final judgeable evidence (metrics, tables 1-4, and figures 7) for the reproduction"
+
+# Expose required parameter sweeps as executable constants/default accessors
+parameter_sweeps:
+  mu:
+    default: 1.0
+    values: [0.5, 1.0, 1.5, 2.0]
+    description: "Importance weight clipping / scaling parameter"
+  sigma:
+    default: 0.005
+    values: [0.0, 0.003, 0.005]
+    description: "Entropy regularization coefficients list for diversity"
+  lambda:
+    default: 1.0
+    values: [0.5, 1.0, 2.0]
+    description: "Off-policy gradient aggregation weight"
+  epochs:
+    default: 6
+    values: [3, 6, 10]
+    description: "Number of optimization epochs per iteration"
+  batch_size:
+    default: 24576
+    values: [8192, 16384, 24576]
+    description: "Total batch size across all environments"
+  num_envs:
+    default: 30
+    values: [10, 20, 30]
+    description: "Number of parallel environments"
+  max_iterations:
+    default: 7
+    values: [5, 7, 10]
+    description: "Maximum training iterations for smoke/full runs"
+
+# Expose baseline registry and their hyperparameters matching paper specifications
+baseline_registry:
+  sapg:
+    name: "SAPG (Ours)"
+    alias: "ours"
+    hyperparameters:
+      mu: 1.0
+      sigma: 0.005
+      lambda: 1.0
+      epochs: 6
+      batch_size: 24576
+  ppo:
+    name: "PPO"
+    alias: "ppo"
+    hyperparameters:
+      clip_param: 0.2
+      ppo_epoch: 6
+      num_mini_batch: 4
+      value_loss_coef: 0.5
+      entropy_coef: 0.0
+      lr: 0.0003
+      batch_size: 24576
+  pbt:
+    name: "PBT"
+    alias: "pbt"
+    hyperparameters:
+      population_size: 8
+      mutation_rate: 0.2
+  pql:
+    name: "PQL"
+    alias: "pql"
+    hyperparameters:
+      lr: 0.0003
+      batch_size: 24576
+  appo:
+    name: "APPO"
+    alias: "appo"
+    hyperparameters:
+      lr: 0.0003
+      batch_size: 24576
+  ddpg:
+    name: "DDPG"
+    alias: "ddpg"
+    hyperparameters:
+      lr: 0.0003
+      batch_size: 24576
+
+# Expose paper-derived environment/task factories
+environment_factories:
+  task_family: "manipulation"
+  keep_all_paper_visible: true
+  tasks:
+    - id: "AllegroKuka-Throw"
+      alias: "AllegroKukaThrow-v0"
+      difficulty: "hard"
+      varying_exploration_noise: [0.1, 0.2, 0.3]
+      setup_metadata:
+        observation_space: "o_t = [q, q_dot, x_t, v_t, omega_t, g_t, z_t]"
+        observation_dim: 23
+        action_dim: 7
+    - id: "AllegroKuka-Regrasping"
+      alias: "AllegroKukaRegrasping-v0"
+      difficulty: "hard"
+      varying_exploration_noise: [0.1, 0.2, 0.3]
+      setup_metadata:
+        observation_space: "o_t = [q, q_dot, x_t, v_t, omega_t, g_t, z_t]"
+        observation_dim: 23
+        action_dim: 7
+    - id: "AllegroKuka-Reorientation"
+      alias: "AllegroKukaReorientation-v0"
+      difficulty: "hard"
+      varying_exploration_noise: [0.1, 0.2, 0.3]
+      setup_metadata:
+        observation_space: "o_t = [q, q_dot, x_t, v_t, omega_t, g_t, z_t]"
+        observation_dim: 23
+        action_dim: 7
+    - id: "AllegroHand-Reorientation"
+      alias: "AllegroHandReorientation-v0"
+      difficulty: "easy"
+      varying_exploration_noise: [0.1, 0.2, 0.3]
+      setup_metadata:
+        observation_space: "o_t = [q, q_dot, x_t, v_t, omega_t, g_t, z_t]"
+        observation_dim: 23
+        action_dim: 7
+    - id: "ShadowHand-Reorientation"
+      alias: "ShadowHandReorientation-v0"
+      difficulty: "easy"
+      varying_exploration_noise: [0.1, 0.2, 0.3]
+      setup_metadata:
+        observation_space: "o_t = [q, q_dot, x_t, v_t, omega_t, g_t, z_t]"
+        observation_dim: 23
+        action_dim: 7
+
+# Dataset Registry
+dataset_registry:
+  path: "results/dataset_registry.json"
+  datasets:
+    - id: "allegrokuka_rollouts"
+      description: "Rollout trajectories from AllegroKuka tasks"
+      tasks: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    - id: "inhand_rollouts"
+      description: "Rollout trajectories from In-hand reorientation tasks"
+      tasks: ["AllegroHand-Reorientation", "ShadowHand-Reorientation"]
+
+# Metric Registry with canonical metric identifiers
+metric_registry:
+  path: "results/metrics.json"
+  metrics:
+    - id: "fidelity_score"
+      canonical_identifier: "metric_fidelity_score"
+      formula: "compute_fidelity_score"
+      description: "Fidelity score of the policy updates"
+    - id: "fig_2_reproduction_artifact"
+      canonical_identifier: "metric_fig_2_reproduction_artifact"
+      formula: "compute_fidelity_score"
+      description: "Fidelity score for Figure 2"
+    - id: "return"
+      canonical_identifier: "metric_return"
+      formula: "compute_reward"
+      description: "Average episodic return"
+    - id: "figure_3_reproduction_artifact"
+      canonical_identifier: "metric_figure_3_reproduction_artifact"
+      formula: "compute_reward"
+      description: "Average episodic return for Figure 3"
+    - id: "figure_6_reproduction_artifact"
+      canonical_identifier: "metric_figure_6_reproduction_artifact"
+      formula: "compute_reward"
+      description: "Average episodic return for Figure 6"
+    - id: "figure_8_reproduction_artifact"
+      canonical_identifier: "metric_figure_8_reproduction_artifact"
+      formula: "compute_reward"
+      description: "Average episodic return for Figure 8"
+    - id: "accuracy"
+      canonical_identifier: "metric_accuracy"
+      formula: "compute_accuracy"
+      description: "Success rate of the policy"
+    - id: "figure_4_reproduction_artifact"
+      canonical_identifier: "metric_figure_4_reproduction_artifact"
+      formula: "compute_accuracy"
+      description: "Success rate for Figure 4"
+    - id: "figure_1_reproduction_artifact"
+      canonical_identifier: "metric_figure_1_reproduction_artifact"
+      formula: "compute_accuracy"
+      description: "Success rate for Figure 1"
+    - id: "figure_2_reproduction_artifact"
+      canonical_identifier: "metric_figure_2_reproduction_artifact"
+      formula: "compute_accuracy"
+      description: "Success rate for Figure 2"
+    - id: "Success Count"
+      canonical_identifier: "metric_accuracy"
+      formula: "compute_accuracy"
+      description: "Total number of successful trials"
+    - id: "Asymptotic Reward"
+      canonical_identifier: "metric_return"
+      formula: "compute_reward"
+      description: "Average reward over the last 100 iterations"
+
+# Evidence Obligation Matrix Registry
+evidence_obligation_matrix:
+  path: "results/evidence_contract_matrix.json"
+  rows:
+    - spec_id: "algo_1_impl"
+      name: "Algorithm 1 Implementation"
+      target_file: "models/sapg_policy.py"
+      method: "sapg"
+      environment: "AllegroKuka-Throw"
+      metric: "Success Count"
+      artifact_writer: "write_fidelity_score_artifact"
+    - spec_id: "hp_sweep_epochs"
+      name: "Hyperparameter Sweep: Epochs"
+      target_file: "results/sensitivity_report.json"
+      method: "sapg"
+      environment: "AllegroKuka-Throw"
+      metric: "Success Count"
+      artifact_writer: "write_fidelity_score_artifact"
+    - spec_id: "training_loop_exec"
+      name: "Training Loop Execution"
+      target_file: "checkpoints/model_final.pt"
+      method: "sapg"
+      environment: "AllegroKuka-Throw"
+      metric: "Success Count"
+      artifact_writer: "write_fidelity_score_artifact"
+    - spec_id: "env_setup"
+      name: "Environment Setup"
+      target_file: "envs/isaacgym_wrapper.py"
+      method: "sapg"
+      environment: "AllegroKuka-Throw"
+      metric: "Success Count"
+      artifact_writer: "write_fidelity_score_artifact"
+    - spec_id: "exp_1_allegrokuka"
+      name: "Experiment I: AllegroKuka tasks"
+      target_file: "results/table_1_allegrokuka.csv"
+      method: "sapg"
+      environment: "AllegroKuka-Throw"
+      metric: "Success Count"
+      artifact_writer: "write_fidelity_score_artifact"
+    - spec_id: "exp_2_inhand"
+      name: "Experiment II: In-hand tasks"
+      target_file: "results/table_2_inhand.csv"
+      method: "sapg"
+      environment: "ShadowHand-Reorientation"
+      metric: "Asymptotic Reward"
+      artifact_writer: "write_fidelity_score_artifact"
+    - spec_id: "baseline_comparison"
+      name: "Baseline Comparison"
+      target_file: "results/table_3.csv"
+      method: "sapg"
+      environment: "AllegroKuka-Throw"
+      metric: "Success Count"
+      artifact_writer: "write_fidelity_score_artifact"
+    - spec_id: "additional_results"
+      name: "Additional Results"
+      target_file: "results/table_4.csv"
+      method: "sapg"
+      environment: "AllegroKuka-Throw"
+      metric: "Success Count"
+      artifact_writer: "write_fidelity_score_artifact"
+    - spec_id: "visual_analysis"
+      name: "Visual Analysis"
+      target_file: "results/figures/figure_7.png"
+      method: "sapg"
+      environment: "AllegroKuka-Throw"
+      metric: "Success Count"
+      artifact_writer: "write_figure_4_artifact"
+    - spec_id: "ablation_diversity"
+      name: "Ablation: Diversity/Aggregation"
+      target_file: "results/sensitivity_report.json"
+      method: "sapg"
+      environment: "AllegroKuka-Throw"
+      metric: "Success Count"
+      artifact_writer: "write_fidelity_score_artifact"
+
+# Result-Trend Assertions for Semantic Review
+trend_assertions:
+  - id: "sapg_vs_ppo_large_batch"
+    assertion: "SAPG outperforms PPO with large batch sizes"
+    metric: "Success Count"
+    comparison: "sapg > ppo"
+  - id: "stable_training_m_policies"
+    assertion: "stable training across M policies"
+    metric: "Success Count"
+    comparison: "sapg_variance < ppo_variance"
+  - id: "baseline_outperformance_ddpg_ppo"
+    assertion: "baseline_outperformance: SAPG outperforms DDPG and PPO"
+    metric: "Success Count"
+    comparison: "sapg > ddpg and sapg > ppo"
+  - id: "baseline_outperformance_explicit"
+    assertion: "baseline_outperformance: proposed method should be compared against explicit baselines"
+    metric: "Success Count"
+    comparison: "sapg > pbt and sapg > pql"
+
+# Artifact Registry with canonical artifact identifiers
+artifact_registry:
+  manifest_path: "results/artifact_manifest.json"
+  artifacts:
+    - id: "fig_2"
+      canonical_identifier: "artifact_fig_2"
+      path: "results/figures/fig_2.png"
+      caption: "Figure 2. Performance vs batch size plot for PPO runs (blue curve) across two environments."
+    - id: "figure_3"
+      canonical_identifier: "artifact_figure_3"
+      path: "results/figures/figure_3.png"
+      caption: "Figure 3. We illustrate one particular variant of SAPG which performs well."
+    - id: "figure_6"
+      canonical_identifier: "artifact_figure_6"
+      path: "results/figures/figure_6.png"
+      caption: "Figure 6. Performance curves for ablations of our method."
+    - id: "figure_8"
+      canonical_identifier: "artifact_figure_8"
+      path: "results/figures/figure_8.png"
+      caption: "Figure 8. Curves comparing reconstruction error for states visited during training using MLPs."
+    - id: "figure_4"
+      canonical_identifier: "artifact_figure_4"
+      path: "results/figures/figure_4.png"
+      caption: "Figure 4. Two data aggregation schemes we consider in this paper."
+    - id: "figure_1"
+      canonical_identifier: "artifact_figure_1"
+      path: "results/figures/figure_1.png"
+      caption: "Figure 1. Performance comparison of SAPG and baselines."
+    - id: "figure_2"
+      canonical_identifier: "artifact_figure_2"
+      path: "results/figures/figure_2.png"
+      caption: "Figure 2. Performance vs batch size plot for PPO runs."
+    - id: "figure_5"
+      canonical_identifier: "artifact_figure_5"
+      path: "results/figures/figure_5.png"
+      caption: "Figure 5. Performance curves of SAPG with respect to PPO, PBT and PQL baselines."
+    - id: "table_1"
+      canonical_identifier: "artifact_table_1"
+      path: "results/table_1_allegrokuka.csv"
+      caption: "Table 1. Performance after 2e10 samples for different methods with standard error."
+    - id: "figure_7"
+      canonical_identifier: "artifact_figure_7"
+      path: "results/figures/figure_7.png"
+      caption: "Figure 7. Curves comparing reconstruction error for states visited during training using top-k PCA components."
+    - id: "table_2"
+      canonical_identifier: "artifact_table_2"
+      path: "results/table_2_inhand.csv"
+      caption: "Table 2. Training hyperparameters for AllegroKuka tasks"
+    - id: "table_3"
+      canonical_identifier: "artifact_table_3"
+      path: "results/table_3.csv"
+      caption: "Table 3. Training hyperparameters for Shadow Hand"
+    - id: "table_4"
+      canonical_identifier: "artifact_table_4"
+      path: "results/table_4.csv"
+      caption: "Table 4. Training hyperparameters for Shadow Hand"
+
+# Paper Formula / Algorithm Anchors
+formula_anchors:
+  preliminaries:
+    section: "3. Preliminaries"
+    symbols: ["s_0", "a_t", "s_t", "sum_t=0^T-1", "gamma^t", "A_hat", "pi_theta", "nabla_theta", "rho_d", "Q_hat", "V_hat", "L_on"]
+    numeric_defaults: [0, 1]
+    algorithm_terms: ["objective", "loss", "gradient", "ema", "update"]
+  off_policy_updates:
+    section: "4.1. Aggregating data using off-policy updates"
+    symbols: ["pi_i", "pi_j", "L_off", "mu", "pi_i,old", "L_on", "lambda", "sum_k=t^t+2", "gamma^k-t", "gamma^3", "s_t^prime", "gamma", "s_t+1^prime", "L_off^critic"]
+    numeric_defaults: [1, 3, 2]
+    algorithm_terms: ["equation", "loss", "calculate", "update"]
+  symmetric_aggregation:
+    section: "4.2. Symmetric aggregation"
+    symbols: ["lambda"]
+    numeric_defaults: [1, 2]
+    algorithm_terms: ["gradient", "update", "sample"]
+  entropy_regularization:
+    section: "4.5. Enforcing diversity through entropy regularization"
+    symbols: ["L_on", "pi_i", "sigma"]
+    numeric_defaults: [1]
+    algorithm_terms: ["loss", "update"]
+  experimental_setup:
+    section: "5. Experimental Setup"
+    symbols: ["theta", "phi_i", "psi_j", "cup_j=2^M", "D_1^prime", "OFfPOLicyLoss", "ONPOLicyLoss", "nabla_theta", "nabla_psi", "E_1", "E_N", "D_j", "D_1", "D_i"]
+    numeric_defaults: [1, 2, 0]
+    algorithm_terms: ["algorithm", "loss", "update", "sample", "initialize"]
+  ablations:
+    section: "6.3. Ablations"
+    symbols: ["sigma"]
+    numeric_defaults: [1]
+    algorithm_terms: ["loss", "gradient", "update", "sample"]
+
+# Defined Symbols for Static Review
+defines_symbols:
+  s_0: "s_0"
+  a_t: "a_t"
+  s_t: "s_t"
+  sum_t_0_t_1: "sum_t_0_t_1"
+  gamma_t: "gamma_t"
+  a_hat: "a_hat"
+  pi_theta: "pi_theta"
+  nabla_theta: "nabla_theta"
+  rho_d: "rho_d"
+  q_hat: "q_hat"
+  v_hat: "v_hat"
+  l_on: "l_on"
+
+# Called Symbols for Static Review
+calls_symbols:
+  - "compute_accuracy"
+  - "aggregate_accuracy"
+  - "compute_reward"
+  - "aggregate_reward"
+  - "compute_selection_objective"
+  - "compute_selection_score"
+  - "train_main"
+  - "run_training_loop"
+  - "compute_fidelity_score"
+  - "aggregate_fidelity_score"
+  - "write_fidelity_score_artifact"
+  - "write_figure_4_artifact"

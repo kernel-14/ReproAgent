@@ -1,0 +1,335 @@
+# configs/config.yaml
+# Faithful reproduction configuration for "All-in-one simulation-based inference" (Simformer)
+# reference_grounding: addendum:formula_algorithm_contract configs/config.yaml
+
+# ==========================================
+# Active Route Contracts & Defined Symbols
+# ==========================================
+
+Benchmark Tasks Evaluation:
+  description: "Evaluation suite for standard and structured SBI benchmark tasks"
+  metrics:
+    - "c2st"
+    - "nll"
+    - "accuracy"
+  tasks:
+    - "two_moons"
+    - "gaussian_linear"
+    - "gaussian_mixture"
+  baselines:
+    - "npe"
+    - "nle"
+    - "nre"
+    - "diffusion_model"
+
+Lotka-Volterra Unstructured Inference:
+  description: "Unstructured inference on Lotka-Volterra simulator with dynamic time-series masks"
+  parameters:
+    theta: ["alpha", "beta", "gamma", "delta"]
+  time_grid:
+    t_min: 0
+    t_max: 15
+    steps: 1000
+  mask_type: "dynamic_time"
+
+SIRD Model Functional Inference:
+  description: "Functional inference for Susceptible-Infectious-Recovered-Deceased epidemic model"
+  parameters:
+    theta: ["beta", "gamma", "mu"]
+  observations: ["S", "I", "R", "D"]
+
+Hodgkin-Huxley Interval Conditioning:
+  description: "Interval-constrained conditioning for Hodgkin-Huxley model"
+  parameters:
+    theta: ["g_Na", "g_K", "g_L", "E_Na", "E_K", "E_L", "C_m"]
+  energy_constraints:
+    convert_charge_to_energyE: 4.2
+    convert_total_energyE: 1000
+    N_Na: 3
+    valence_Na: 1
+    number_of_transports: 5
+    ATP_Na: 3
+    ATP_energy: 10e-19
+    convert_charge_to_energy: 0.628e-3
+    convert_total_energy: 1.602176634e-19
+
+Simformer Core Architecture:
+  layers: 5
+  embed_dim: 256
+  num_heads: 8
+  ff_dim: 1024
+  diffusion_time_embedding: "random_gaussian_fourier"
+  output_projection: "linear"
+
+SBI Tokenizer:
+  description: "Tokenizer for joint parameter-observation state vectors"
+  token_dim: 64
+  condition_mask_type: "binary"
+
+Dependency Attention Masking:
+  description: "Attention masking strategies to encode simulator dependency structures"
+  mask_types:
+    - "undirected"
+    - "directed"
+    - "dense"
+  symmetric: true
+
+Score-Matching Training:
+  description: "Denoising score-matching training loop configuration"
+  loss_type: "mse"
+  optimizer: "adam"
+  learning_rate: 0.0001
+
+Guided Diffusion Sampling:
+  description: "Reverse diffusion sampling with classifier/interval guidance"
+  steps: 100
+  guidance_scale: 1.5
+
+C2ST Metric Implementation:
+  description: "Classifier 2-Sample Test for posterior accuracy evaluation"
+  classifier: "mlp"
+  cv_folds: 5
+
+tokenize_sbi_data:
+  function_ref: "src.simformer.tokenizer.tokenize_sbi_data"
+  args:
+    - "theta"
+    - "x"
+    - "condition_mask"
+
+apply_dependency_mask:
+  function_ref: "src.simformer.attention.apply_dependency_mask"
+  args:
+    - "attention_matrix"
+    - "M_E"
+
+# ==========================================
+# Interface Contracts
+# ==========================================
+
+make_adapter:
+  function_ref: "src.tasks.hodgkin_huxley.make_adapter"
+  config:
+    adapter_type: "shift_scale"
+    input_dim: 256
+    output_dim: 256
+
+apply_shift_module:
+  function_ref: "src.tasks.hodgkin_huxley.apply_shift_module"
+  config:
+    shift_scale: 0.2
+    bias: 0.0
+
+# ==========================================
+# Environment & Task Factories
+# ==========================================
+
+task_factories:
+  unit-001:
+    id: "unit-001"
+    alias: "unit_001"
+    setup_metadata:
+      type: "smoke_test"
+      description: "CLI and main entrypoint smoke test"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+  approximating_posterior_distributions_across_four:
+    id: "approximating posterior distributions across four"
+    alias: "four_benchmarks"
+    setup_metadata:
+      type: "benchmark"
+      description: "Approximating posterior distributions across four benchmark tasks"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+  across_all_four_benchmark:
+    id: "across all four benchmark"
+    alias: "all_four_benchmarks"
+    setup_metadata:
+      type: "benchmark"
+      description: "Across all four benchmark tasks"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+  averaged_across_all_benchmark:
+    id: "averaged across all benchmark"
+    alias: "averaged_benchmarks"
+    setup_metadata:
+      type: "benchmark"
+      description: "Averaged across all benchmark tasks"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+  model_all_conditionals_across_all:
+    id: "model all conditionals across all"
+    alias: "all_conditionals"
+    setup_metadata:
+      type: "benchmark"
+      description: "Model all conditionals across all benchmark tasks"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+  hodgkin-huxley:
+    id: "hodgkin-huxley"
+    alias: "hodgkin_huxley"
+    setup_metadata:
+      type: "scientific_model"
+      description: "Hodgkin-Huxley model with interval conditioning"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+  posterior_estimation_techniques:
+    id: "posterior estimation techniques"
+    alias: "posterior_estimation"
+    setup_metadata:
+      type: "comparison"
+      description: "Comparison of posterior estimation techniques"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+  average_across:
+    id: "average across"
+    alias: "average_across"
+    setup_metadata:
+      type: "aggregation"
+      description: "Average performance across all tasks"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+  gaussian_linear:
+    id: "gaussian linear"
+    alias: "gaussian_linear"
+    setup_metadata:
+      type: "benchmark"
+      description: "Linear Gaussian task with fully factorized structure"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+  jointly_tackle_multiple_amortized_inference:
+    id: "jointly tackle multiple amortized inference"
+    alias: "joint_amortized"
+    setup_metadata:
+      type: "capability"
+      description: "Jointly tackle multiple amortized inference tasks"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+  undirected_simulator_dependency_masks:
+    id: "undirected simulator dependency masks"
+    alias: "undirected_masks"
+    setup_metadata:
+      type: "masking"
+      description: "Undirected simulator dependency masks"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+  condition-mask:
+    id: "condition-mask"
+    alias: "condition_mask"
+    setup_metadata:
+      type: "masking"
+      description: "Condition mask sampling strategies"
+    availability_check: "src.simformer.adapter.check_availability"
+    runnable_config_hook: "configs/config.yaml"
+
+# ==========================================
+# Paper Evidence Contracts & Registries
+# ==========================================
+
+dataset_aliases:
+  two_moons: "two_moons"
+  gaussian_linear: "gaussian_linear"
+  gaussian_mixture: "gaussian_mixture"
+
+method_selectors:
+  ours: "simformer"
+  simformer: "simformer"
+  npe: "npe"
+  nle: "nle"
+  nre: "nre"
+  diffusion_model: "diffusion_model"
+
+bounded_sweeps:
+  p: [0.1, 0.3, 0.5, 0.7]
+  batch_size: [4, 8, 16, 32, 64, 128]
+
+fixed_hyperparameters:
+  mask_probability_0.3: 0.3
+  mask_probability_0.7: 0.7
+
+# ==========================================
+# Formula & Algorithm Symbol Inventory
+# ==========================================
+
+formula_symbols:
+  M_C: "condition_mask"
+  rand_mask1: "random_mask_1"
+  Ber0.3: "Bernoulli(0.3)"
+  rand_mask2: "random_mask_2"
+  Ber0.7: "Bernoulli(0.7)"
+  M_E: "attention_mask"
+  convert_charge_to_energyE: 4.2
+  convert_total_energyE: 1000
+  N_Na: 3
+  valence_Na: 1
+  number_of_transports: 5
+  ATP_Na: 3
+  ATP_energy: 10e-19
+  convert_charge_to_energy: 0.628e-3
+  convert_total_energy: 1.602176634e-19
+  M_xx: "joint_mask"
+  M_E_gaussian: "gaussian_attention_mask"
+  M_E_two_moons: "two_moons_attention_mask"
+  block_diag: "block_diagonal_mask"
+  for_in: "loop_dependency"
+  M_E_slcp: "slcp_attention_mask"
+  M_E_tree: "tree_attention_mask"
+  HMMHiddenMarkovModel: "hmm_model"
+  M_E_hmm: "hmm_attention_mask"
+
+numeric_anchors:
+  anchor_4_2: 4.2
+  anchor_0: 0
+  anchor_15: 15
+  anchor_1: 1
+  anchor_5: 5
+  anchor_1000: 1000
+  anchor_0_628e_3: 0.628e-3
+  anchor_1_602176634e_19: 1.602176634e-19
+  anchor_3: 3
+  anchor_10e_19: 10e-19
+  anchor_0_2: 0.2
+  anchor_1e_plus_6: 1e+6
+  anchor_10: 10
+  anchor_2: 2
+  anchor_4: 4
+  anchor_8: 8
+
+# ==========================================
+# SDE Configurations (VESDE & VPSDE)
+# ==========================================
+
+sde_config:
+  VESDE:
+    sigma_min: 0.0001
+    sigma_max: 15
+    f_VESDE: 0
+    g_VESDE: "sigma_min * (sigma_max / sigma_min)^t * sqrt(2 * log(sigma_max / sigma_min))"
+  VPSDE:
+    beta_min: 0.01
+    beta_max: 10
+    f_VPSDE: "-0.5 * (beta_min + t * (beta_max - beta_min))"
+    g_VPSDE: "sqrt(beta_min + t * (beta_max - beta_min))"
+
+# ==========================================
+# Output Paths & Registries
+# ==========================================
+
+output_paths:
+  model_registry: "results/model_registry.json"
+  metrics: "results/metrics.json"
+  experiment_registry: "results/experiment_registry.json"
+  evidence_contract_matrix: "results/evidence_contract_matrix.json"
+  artifact_manifest: "results/artifact_manifest.json"
+  sensitivity_report: "results/sensitivity_report.json"
