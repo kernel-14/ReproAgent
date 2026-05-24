@@ -1,3 +1,5 @@
+> Experiment artifacts are stored in this repository's `experiment` branch. For anonymous review, please use: https://anonymous.4open.science/r/ReproAgent-4C1E/experiment/README.md
+
 # ReproAgent
 
 ReproAgent is an automated pipeline for PaperBench-style paper reproduction.
@@ -205,10 +207,43 @@ REPROAGENT_STAGE=generate bash experiment_runners/run_main_experiment.sh rice
 ## Notes
 
 This first public bundle contains the reproduction pipeline and ablation
-entrypoints. Benchmark scoring scripts, internal experiment outputs, raw
-PaperBench data, and generated repositories are intentionally excluded.
+entrypoints. Benchmark scoring scripts, internal pipeline traces, raw
+PaperBench data, and judge score artifacts are intentionally excluded from the
+main branch. Generated reproduction repositories are available on the
+`experiment` branch; for anonymous review, see:
+https://anonymous.4open.science/r/ReproAgent-4C1E/experiment/README.md
 
 PaperBench resources:
 
 - Benchmark repository: https://github.com/openai/frontier-evals/tree/main/project/paperbench
 - Dataset directory: https://github.com/openai/frontier-evals/tree/main/project/paperbench/data
+
+## Experiment Results
+
+Scores are percentages. `Gemini full` is the full ReproAgent pipeline.
+`w/o Ref. Evidence` removes the reference-evidence channel, and `w/o Impl.
+Req.` removes the implementation-requirement channel.
+
+| Paper | Claude | Gemini full | w/o Ref. Evidence | w/o Impl. Req. | DeepCode | Basic | Iter | RUC AiSci |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **Mean** | **73.7** | **39.7** | **21.6** | **25.6** | **73.5** | **19.3** | **20.6** | **30.5** |
+| `adaptive-pruning` | 67.8 | 41.9 | 6.2 | 14.3 | 54.4 | 24.5 | 3.0 | 27.2 |
+| `all-in-one` | 76.9 | 51.6 | 23.7 | 28.0 | 75.9 | 20.9 | 45.1 | 46.3 |
+| `bam` | 61.8 | 48.5 | 20.7 | 30.8 | 74.8 | 48.5 | 45.0 | 56.6 |
+| `bbox` | 86.4 | 15.6 | 14.6 | 14.2 | 64.4 | 15.4 | 8.3 | 33.8 |
+| `bridging-data-gaps` | 66.0 | 50.6 | 13.9 | 38.4 | 58.1 | 12.6 | 12.4 | 23.1 |
+| `fre` | 76.8 | 26.9 | 12.7 | 25.1 | 81.4 | 21.7 | 23.9 | 35.2 |
+| `ftrl` | 63.9 | 40.1 | 11.7 | 13.4 | 59.8 | 5.9 | 4.2 | 10.1 |
+| `lbcs` | 65.8 | 42.5 | 34.6 | 23.2 | 74.7 | 17.8 | 15.3 | 27.9 |
+| `lca-on-the-line` | 64.9 | 41.8 | 33.8 | 16.1 | 74.9 | 13.0 | 18.3 | 30.2 |
+| `mechanistic-understanding` | 75.7 | 48.1 | 25.9 | 4.6 | 92.5 | 14.9 | 21.9 | 29.9 |
+| `pinn` | 81.5 | 61.3 | 52.2 | 53.3 | 91.0 | 26.6 | 30.8 | 49.9 |
+| `rice` | 75.1 | 31.0 | 19.9 | 27.8 | 70.2 | 10.4 | 8.9 | 10.9 |
+| `robust-clip` | 63.0 | 29.5 | 15.7 | 25.6 | 73.3 | 15.4 | 10.4 | 18.3 |
+| `sample-specific-masks` | 82.0 | 53.8 | 28.0 | 21.3 | 67.1 | 25.4 | 33.3 | 36.8 |
+| `sapg` | 86.5 | 29.0 | 21.5 | 24.2 | 73.8 | 11.4 | 12.7 | 19.9 |
+| `sequential-neural-score-estimation` | 78.0 | 45.7 | 21.5 | 42.6 | 87.0 | 53.5 | 60.2 | 64.9 |
+| `stay-on-topic-with-classifier-free-guidance` | 58.5 | 25.3 | 21.2 | 22.2 | 70.5 | 8.4 | 13.7 | 20.1 |
+| `stochastic-interpolants` | 80.8 | 39.1 | 21.5 | 29.9 | 81.5 | 17.0 | 17.4 | 18.8 |
+| `test-time-model-adaptation` | 75.6 | 54.9 | 23.8 | 47.1 | 64.9 | 15.3 | 18.1 | 32.5 |
+| `what-will-my-model-forget` | 87.6 | 16.8 | 8.4 | 10.7 | 80.8 | 6.6 | 9.0 | 17.9 |
