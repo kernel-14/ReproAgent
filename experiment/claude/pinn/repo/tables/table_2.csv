@@ -1,0 +1,3 @@
+problem,baseline_loss,method,fine_tuned_loss,L2RE,dry_run
+convection,1.0,NNCG after Adam+L-BFGS,0.08,0.12,True
+convection,1.0,GD after Adam+L-BFGS,0.95,0.45,True

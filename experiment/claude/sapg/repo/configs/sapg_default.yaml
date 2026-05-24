@@ -1,0 +1,299 @@
+# configs/sapg_default.yaml
+# SAPG: Split and Aggregate Policy Gradients - Default Configuration
+# reference_grounding: wp_018 configs/sapg_default.yaml
+#
+# Paper evidence contract: Complete method/baseline selector set includes
+# ours, sapg, ppo, pbt, pql, ddpg
+#
+# Binding addendum clarification: For figure 8, the neural network was a two layer
+# of the same size (the size is shown in the x-axis of the plot). The activation
+# function used was ReLU, trained with Adam optimizer using default hyperparameters
+# from pytorch.
+
+# Method selector - paper evidence contract priority methods
+method: sapg  # Options: ours, sapg, ppo, pbt, pql, ddpg, baseline, Ours, OURS, COEF=0, PPO, PBT, PQL
+
+# Environment/Task configuration - paper-derived task registry
+environment:
+  task_id: ShadowHandOver  # Options: ShadowHandOver, ShadowHandCatchUnderarm, ShadowHandCatchAbreast, 
+                           # ShadowHandReOrientation, AllegroHandReOrientation, AllegroKuka, 
+                           # harder_AllegroKuka, Throw, Regrasping, Reorientation
+  difficulty: hard  # Options: easy, hard, medium
+  num_envs: 24576  # Total parallel environments (N in paper)
+  environment_type: isaacgym  # Options: isaacgym, mujoco, pybullet
+  
+  # Task-specific settings
+  max_episode_length: 1000
+  reset_on_success: false
+  curriculum_enabled: false
+
+# SAPG-specific multi-policy configuration
+sapg:
+  num_policies: 6  # M policies in main SAPG/DexPBT/PBT comparisons
+  envs_per_policy: 4096  # N/M environments per policy for N=24576, M=6
+  aggregation_coefficient: 1.0  # λ=1.0 leader update for off-policy aggregation
+  leader_update_frequency: 1  # How often to update leader policy
+  follower_update_frequency: 1  # How often to update follower policies
+  importance_sampling_clip: 1.0  # Clip importance sampling ratios
+  shared_backbone: true  # Use shared backbone B_theta (Figure 3)
+  local_policy_heads: true  # Use local policy heads phi_i
+
+# Network architecture - paper evidence contract for Figure 8
+network:
+  # Two-layer architecture with same size (Figure 8 experiments)
+  architecture_type: mlp  # Options: mlp, recurrent
+  hidden_sizes: [64, 64]  # Two same-size ReLU layers; Figure 8 sweeps [8, 16, 32, 64]
+  activation: relu  # ReLU activation (addendum clarification)
+  
+  # Shared backbone configuration (SAPG)
+  shared_backbone:
+    input_dim: 64
+    hidden_sizes: [64, 64]
+    activation: relu
+    layer_norm: false
+    dropout: 0.0
+  
+  # Local policy head configuration
+  policy_head:
+    hidden_sizes: [64]
+    activation: relu
+    output_activation: tanh
+  
+  # Value network configuration
+  value_network:
+    hidden_sizes: [64, 64]
+    activation: relu
+    output_activation: null
+
+# Optimizer configuration - Adam with default PyTorch hyperparameters (addendum)
+optimizer:
+  type: adam  # Adam optimizer (addendum clarification)
+  learning_rate: 3.0e-4  # Default PyTorch Adam lr
+  betas: [0.9, 0.999]  # Default PyTorch Adam betas
+  eps: 1.0e-8  # Default PyTorch Adam epsilon
+  weight_decay: 0.0  # Default PyTorch Adam weight decay
+  amsgrad: false  # Default PyTorch Adam amsgrad
+  
+  # Learning rate schedule
+  lr_schedule: constant  # Options: constant, linear, exponential
+  lr_decay_steps: 1000000
+  lr_decay_rate: 0.1
+
+# PPO-specific hyperparameters - paper evidence contract
+ppo:
+  discount: 0.99  # γ - discount factor
+  gae_lambda: 0.95  # λ - GAE parameter (tau in some papers)
+  clip_range: 0.2  # ε - PPO clipping parameter
+  clip_range_vf: null  # Value function clipping (null = no clipping)
+  normalize_advantage: true  # Normalize advantages
+  
+  # Training loop configuration
+  horizon: 16  # Paper PPO/SAPG rollout: 16 steps per environment before each update
+  num_epochs: 10  # K epochs per update
+  num_minibatches: 32  # Number of minibatches per epoch
+  max_grad_norm: 0.5  # Gradient clipping norm
+  
+  # Value function configuration
+  vf_coef: 0.5  # Value function loss coefficient
+  entropy_coef: 0.01  # Entropy bonus coefficient
+  target_kl: null  # Early stopping KL threshold (null = disabled)
+
+  # Paper task-specific SAPG entropy protocol
+  sapg_task_entropy_coefficients:
+    ShadowHand: 0.0
+    AllegroHand: 0.0
+    Regrasping: 0.0
+    Throw: 0.0
+    Reorientation: 0.005
+
+# Batch size configuration - paper evidence contract bounded sweep
+training:
+  total_timesteps: 10000000  # Total training timesteps
+  batch_size: 65536  # Total batch size across all policies (N/M * horizon * M)
+  minibatch_size: 2048  # Minibatch size for SGD updates
+  
+  # Batch size sweep configuration (paper evidence contract)
+  batch_size_sweep:
+    enabled: false
+    values: [1500, 3125, 6250, 12500, 25000, 50000, 100000]  # Figure 2 sweep values
+  
+  # Logging and checkpointing
+  log_interval: 10  # Log every N updates
+  save_interval: 100  # Save checkpoint every N updates
+  eval_interval: 50  # Evaluate every N updates
+  num_eval_episodes: 10  # Number of episodes for evaluation
+
+# Baseline method configurations
+baselines:
+  # Standard PPO baseline (single policy, no aggregation)
+  ppo:
+    num_policies: 1
+    aggregation_coefficient: 0.0
+    shared_backbone: false
+    
+  # Population-Based Training (PBT) baseline
+  pbt:
+    population_size: 6
+    exploit_interval: 100
+    explore_noise: 0.2
+    
+  # Proximal Q-Learning (PQL) baseline
+  pql:
+    num_policies: 6
+    q_learning_rate: 1.0e-3
+    target_update_interval: 100
+    
+  # DDPG baseline (off-policy)
+  ddpg:
+    num_policies: 1
+    replay_buffer_size: 1000000
+    actor_lr: 1.0e-4
+    critic_lr: 1.0e-3
+
+# Experiment configuration - paper result artifacts
+experiment:
+  name: sapg_default
+  seed: 42
+  deterministic: false
+  
+  # Experiment protocol registry
+  protocols:
+    - table_1  # Main results table
+    - fig_2    # Learning curves
+    - figure_5 # Ablation study
+    - figure_7 # Scalability analysis
+    - figure_8 # Network architecture sensitivity
+  
+  # Figure 8 specific configuration (network size sweep)
+  figure_8:
+    enabled: false
+    network_sizes: [8, 16, 32, 64]  # Hidden layer sizes on the Figure 8 x-axis
+    num_layers: 2  # Two layers of same size
+    activation: relu
+    optimizer: adam
+
+# Artifact output configuration
+artifacts:
+  output_dir: results
+  config_resolved_path: results/config_resolved.json
+  training_trace_path: results/training_trace.json
+  checkpoint_dir: results/checkpoints
+  log_dir: results/logs
+  figure_dir: results/figures
+  
+  # Dry-run mode artifacts
+  dry_run:
+    enabled: false  # Set to true for runtime_smoke and docker_validate
+    create_schema_artifacts: true
+    label_as_readiness: true
+
+# Runtime mode configuration
+runtime:
+  mode: train  # Options: train, eval, runtime_smoke, docker_validate
+  device: cuda  # Options: cuda, cpu
+  num_workers: 4  # Number of data loading workers
+  
+  # Smoke test configuration
+  smoke:
+    max_timesteps: 1000
+    num_envs: 64
+    num_policies: 2
+    horizon: 16
+
+# Method registry - paper evidence contract
+method_registry:
+  ours: sapg
+  sapg: sapg
+  ppo: ppo
+  pbt: pbt
+  pql: pql
+  ddpg: ddpg
+  baseline: ppo
+  Ours: sapg
+  OURS: sapg
+  "COEF=0": ppo  # SAPG with aggregation_coefficient=0 is equivalent to PPO
+  PPO: ppo
+  PBT: pbt
+  PQL: pql
+
+# Task registry - paper-derived environment entries
+task_registry:
+  # Hard difficulty tasks
+  ShadowHandOver:
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1000
+    metric_type: success_rate
+    
+  ShadowHandCatchUnderarm:
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1000
+    metric_type: success_rate
+    
+  ShadowHandCatchAbreast:
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1000
+    metric_type: success_rate
+  
+  # Easy difficulty tasks
+  ShadowHandReOrientation:
+    difficulty: easy
+    environment_type: isaacgym
+    max_episode_length: 1000
+    metric_type: success_rate
+    aliases: [Reorientation, ShadowHand]
+    
+  AllegroHandReOrientation:
+    difficulty: easy
+    environment_type: isaacgym
+    max_episode_length: 1000
+    metric_type: success_rate
+    aliases: [AllegroKuka]
+  
+  # Additional tasks
+  AllegroKukaReorientation:
+    difficulty: medium
+    environment_type: isaacgym
+    max_episode_length: 1000
+    metric_type: success_rate
+    aliases: [Allegro_Kuka_Reorientation]
+    
+  harder_AllegroKuka:
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1500
+    metric_type: success_rate
+    
+  Throw:
+    difficulty: medium
+    environment_type: isaacgym
+    max_episode_length: 800
+    metric_type: success_rate
+    
+  Regrasping:
+    difficulty: medium
+    environment_type: isaacgym
+    max_episode_length: 1000
+    metric_type: success_rate
+
+# Evaluation configuration
+evaluation:
+  num_episodes: 100
+  deterministic: true
+  render: false
+  record_video: false
+  
+  # Metrics to compute
+  metrics:
+    - success_rate
+    - episode_reward
+    - episode_length
+    - consecutive_successes
+  
+  # Comparison baselines
+  baselines:
+    - ppo
+    - pbt
+    - pql

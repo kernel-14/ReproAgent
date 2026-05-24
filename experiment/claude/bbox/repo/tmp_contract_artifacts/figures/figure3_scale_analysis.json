@@ -1,0 +1,26 @@
+{
+  "figure_id": "figure3_scale_analysis",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.944698Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Figure 3: Scale analysis on StrategyQA with (a) different beam sizes and (b) different iterations of online adaptation.",
+    "x_axes": {
+      "a": "beam_width",
+      "b": "num_iterations"
+    },
+    "y_axis": "accuracy_pct",
+    "sweep_a": [
+      1,
+      3,
+      5
+    ],
+    "sweep_b": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  }
+}

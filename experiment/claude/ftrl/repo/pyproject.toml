@@ -1,0 +1,481 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ftrl-repro"
+version = "0.1.0"
+description = "Code reproduction for Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+  { name = "PaperBench Reproduction" }
+]
+keywords = [
+  "reinforcement-learning",
+  "fine-tuning",
+  "continual-learning",
+  "forgetting",
+  "behavior-cloning",
+  "ewc",
+  "episodic-memory",
+  "nethack",
+  "montezuma",
+  "robotics"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+dependencies = [
+  "numpy>=1.23",
+  "PyYAML>=6.0",
+  "typing-extensions>=4.8; python_version < '3.11'"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "ruff>=0.3",
+  "mypy>=1.7"
+]
+plots = [
+  "matplotlib>=3.7",
+  "pandas>=2.0"
+]
+torch = [
+  "torch>=2.0"
+]
+atari = [
+  "gymnasium[atari,accept-rom-license]>=0.29",
+  "ale-py>=0.8",
+  "opencv-python>=4.8"
+]
+nethack = [
+  "nle>=0.9"
+]
+robotics = [
+  "gymnasium>=0.29"
+]
+full = [
+  "ftrl-repro[dev,plots,torch,atari,nethack,robotics]"
+]
+
+[project.urls]
+Paper = "https://arxiv.org/"
+NLE = "https://github.com/facebookresearch/nle"
+NLD-AA = "https://github.com/dungeonsdatasubmission/dungeonsdata-neurips2022"
+
+[project.scripts]
+ftrl-repro = "main:main"
+ftrl-run-experiments = "scripts.run_experiments:main"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["main"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ftrl_repro*", "src*", "scripts*"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-q"
+markers = [
+  "runtime_smoke: bounded execution that validates the canonical route without full training",
+  "full: expensive simulator/training route requiring optional dependencies"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+extend-exclude = [
+  "results",
+  "artifacts",
+  "checkpoints"
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+warn_unused_configs = true
+exclude = "(results|artifacts|checkpoints)/"
+
+[tool.paperbench_repro]
+paper_title = "Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem"
+canonical_entrypoint = "scripts/run_experiments.py"
+default_command = "python scripts/run_experiments.py --mode runtime_smoke"
+config_command = "python scripts/run_experiments.py --config configs/setup.yaml --mode runtime_smoke"
+callable_main = "main.main"
+default_output_dir = "results"
+artifact_env_var = "PAPERBENCH_REPRO_ARTIFACT_DIR"
+blacklisted_repository = "https://github.com/BartekCupial/finetuning-RL-as-CL"
+uses_blacklisted_repository = false
+reference_grounding = "paperbench_ref_001 README.md; paperbench_ref_001 eval.py; paperbench_ref_001 envs.py"
+scope = "Default runtime_smoke validates the same config, registry, environment-factory, method-selection, evaluation, and artifact-writer route used by full mode while bounding budgets and avoiding expensive simulator training."
+
+[tool.paperbench_repro.dependencies]
+core = [
+  "numpy",
+  "PyYAML"
+]
+optional_heavy = [
+  "torch",
+  "gymnasium[atari,accept-rom-license]",
+  "ale-py",
+  "opencv-python",
+  "nle",
+  "matplotlib",
+  "pandas"
+]
+nle_dataset_addendum = "Install NLE from the main branch when needed, then load NLD folders once so NLE creates the local sqlite3 database before full NetHack/NLD-AA dataset routes."
+
+[tool.paperbench_repro.modes]
+default = "runtime_smoke"
+available = [
+  "dry_run",
+  "runtime_smoke",
+  "smoke",
+  "train",
+  "eval",
+  "report",
+  "full",
+  "docker_validate"
+]
+full_requires_explicit_mode = true
+
+[tool.paperbench_repro.budgets]
+seed_list = [0, 1, 2]
+runtime_smoke_steps = 4
+smoke_training_steps = 8
+smoke_evaluation_episodes = 2
+full_training_steps = 1000000
+full_evaluation_episodes = 200
+batch_size_128 = 128
+fisher_batches_full = 10000
+
+[tool.paperbench_repro.artifacts]
+metrics = "results/metrics.json"
+run_manifest = "results/run_manifest.json"
+config_resolved = "results/config_resolved.json"
+reproduction_inventory = "results/reproduction_inventory.json"
+artifact_manifest = "results/artifact_manifest.json"
+summary = "results/summary.csv"
+readiness = "readiness.json"
+evaluation_result = "evaluation_result.json"
+environment_registry = "results/environment_registry.json"
+method_registry = "results/method_registry.json"
+state_region_metrics = "results/state_region_metrics.json"
+training_trace = "results/training_trace.json"
+loss_trace = "results/loss_trace.json"
+fisher_diagonal = "artifacts/fisher_diagonal.pt"
+bc_buffer_manifest = "artifacts/bc_buffer_manifest.json"
+policy_checkpoint = "checkpoints/policy_latest.pt"
+
+[tool.paperbench_repro.protocols.section_3_experimental_setup]
+name = "Section 3 Experimental setup"
+environments = [
+  "nethack",
+  "montezuma",
+  "robotic_sequence"
+]
+methods = [
+  "scratch",
+  "vanilla_finetune",
+  "finetune_bc",
+  "finetune_ewc",
+  "finetune_em"
+]
+metrics = [
+  "return",
+  "success_rate",
+  "retained_pretrained_performance",
+  "Close_performance",
+  "FAR_performance"
+]
+artifacts = [
+  "results/config_resolved.json",
+  "results/reproduction_inventory.json",
+  "results/environment_registry.json",
+  "results/method_registry.json"
+]
+
+[tool.paperbench_repro.protocols.section_4_main_result]
+name = "Section 4 Main result"
+environments = [
+  "nethack",
+  "montezuma",
+  "robotic_sequence"
+]
+methods = [
+  "scratch",
+  "vanilla_finetune",
+  "finetune_bc",
+  "finetune_ewc",
+  "finetune_em"
+]
+metrics = [
+  "return",
+  "success_rate",
+  "learning_curve",
+  "final_performance",
+  "forgetting_gap"
+]
+artifacts = [
+  "results/metrics.json",
+  "results/summary.csv",
+  "results/plots/main_comparison.png",
+  "results/tables/table_1.csv",
+  "results/figures/figure_9.png"
+]
+trend_assertions = [
+  "vanilla fine-tuning often fails to leverage pre-trained knowledge",
+  "knowledge retention methods mitigate forgetting without hard-coding benchmark scores"
+]
+
+[tool.paperbench_repro.protocols.section_5_analysis]
+name = "Section 5 Analysis"
+environments = [
+  "nethack",
+  "montezuma",
+  "robotic_sequence"
+]
+methods = [
+  "vanilla_finetune",
+  "finetune_bc",
+  "finetune_ewc",
+  "finetune_em",
+  "scratch"
+]
+metrics = [
+  "Close_performance",
+  "FAR_performance",
+  "maximum_dungeon_level",
+  "turns",
+  "stage_success_rate",
+  "forgetting_gap"
+]
+artifacts = [
+  "results/plots/forgetting_analysis.png",
+  "results/plots/robotic_sequence_stage_success.png",
+  "results/figures/figure_4.png",
+  "results/figures/figure_7.png",
+  "results/figures/figure_22.png",
+  "results/figures/figure_23.png",
+  "results/figures/figure_25.png",
+  "results/figures/figure_26.png"
+]
+
+[tool.paperbench_repro.protocols.appendix_a_toy_examples]
+name = "Appendix A Toy Examples"
+environments = [
+  "two_state_mdp",
+  "apple_retrieval"
+]
+methods = [
+  "pretrained_policy",
+  "vanilla_finetune",
+  "scratch",
+  "finetune_bc",
+  "finetune_ewc",
+  "finetune_em"
+]
+metrics = [
+  "return",
+  "Close_performance",
+  "FAR_performance",
+  "forgetting_gap"
+]
+artifacts = [
+  "results/toy_diagnostics.json",
+  "results/figures/figure_1.png",
+  "results/figures/figure_2.png",
+  "results/figures/figure_9.png"
+]
+
+[tool.paperbench_repro.environments.nethack]
+display_name = "NetHack Learning Environment"
+aliases = [
+  "NetHack",
+  "NetHack Human Monk",
+  "NLE",
+  "nethack learning"
+]
+factory = "ftrl_repro.envs:make_envs"
+availability_check = "ftrl_repro.envs:check_envs_available"
+optional_dependency = "nle"
+dataset = "NLD-AA"
+dataset_setup = "Load nld folders once after NLE installation to create the local sqlite3 database."
+metrics = [
+  "return",
+  "maximum_dungeon_level",
+  "turns",
+  "FAR_performance",
+  "Close_performance"
+]
+
+[tool.paperbench_repro.environments.montezuma]
+display_name = "Montezuma's Revenge"
+aliases = [
+  "Montezuma",
+  "MontezumaRevengeNoFrameskip-v4",
+  "Atari Montezuma's Revenge"
+]
+factory = "ftrl_repro.envs:make_envs"
+availability_check = "ftrl_repro.envs:check_envs_available"
+optional_dependency = "gymnasium[atari,accept-rom-license]"
+metrics = [
+  "return",
+  "success_rate",
+  "FAR_performance",
+  "Close_performance"
+]
+
+[tool.paperbench_repro.environments.robotic_sequence]
+display_name = "RoboticSequence"
+aliases = [
+  "robotics",
+  "RoboticSequence",
+  "peg-unplug-side",
+  "push-wall"
+]
+factory = "ftrl_repro.envs:make_envs"
+availability_check = "ftrl_repro.envs:check_envs_available"
+optional_dependency = "gymnasium"
+metrics = [
+  "return",
+  "success_rate",
+  "stage_success_rate",
+  "retained_pretrained_performance"
+]
+stages = [
+  "peg-unplug-side",
+  "push-wall"
+]
+
+[tool.paperbench_repro.environments.two_state_mdp]
+display_name = "Two-state MDPs"
+aliases = [
+  "toy MDP",
+  "two-state MDP",
+  "Two-state MDPs"
+]
+factory = "ftrl_repro.toy_tasks:make_toy_tasks"
+availability_check = "ftrl_repro.toy_tasks:check_toy_tasks_available"
+metrics = [
+  "return",
+  "Close_performance",
+  "FAR_performance",
+  "forgetting_gap"
+]
+
+[tool.paperbench_repro.environments.apple_retrieval]
+display_name = "AppleRetrieval"
+aliases = [
+  "AppleRetrieval",
+  "apple retrieval"
+]
+factory = "ftrl_repro.toy_tasks:make_toy_tasks"
+availability_check = "ftrl_repro.toy_tasks:check_toy_tasks_available"
+metrics = [
+  "return",
+  "Close_performance",
+  "FAR_performance",
+  "forgetting_gap"
+]
+
+[tool.paperbench_repro.methods.scratch]
+display_name = "training from scratch"
+trainer = "ftrl_repro.training:run_training_loop"
+model_factory = "ftrl_repro.models:build_models"
+uses_pretrained_policy = false
+retention = "none"
+
+[tool.paperbench_repro.methods.vanilla_finetune]
+display_name = "vanilla fine-tuning"
+trainer = "ftrl_repro.training:run_training_loop"
+model_factory = "ftrl_repro.models:load_models"
+uses_pretrained_policy = true
+retention = "none"
+
+[tool.paperbench_repro.methods.finetune_bc]
+display_name = "Fine-tuning + BC"
+trainer = "ftrl_repro.retention:train_retention"
+model_factory = "ftrl_repro.models:load_models"
+uses_pretrained_policy = true
+retention = "behavior_cloning"
+loss = "KL or cross-entropy on S_BC with pi_* action labels or distributions plus target-task RL loss"
+
+[tool.paperbench_repro.methods.finetune_ewc]
+display_name = "Fine-tuning + EWC"
+trainer = "ftrl_repro.retention:train_retention"
+model_factory = "ftrl_repro.models:load_models"
+uses_pretrained_policy = true
+retention = "ewc"
+loss = "target-task RL loss plus sum_i F_i(theta_pre_i - theta_i)^2"
+
+[tool.paperbench_repro.methods.finetune_em]
+display_name = "Fine-tuning + EM"
+trainer = "ftrl_repro.replay:train_replay"
+model_factory = "ftrl_repro.models:load_models"
+uses_pretrained_policy = true
+retention = "episodic_memory"
+replay_old_sample_fraction = 0.10
+
+[tool.paperbench_repro.evidence_matrix.section_4_main_result]
+row = "Section 4 Main result -> NetHack / Montezuma's Revenge / RoboticSequence x scratch / vanilla fine-tuning / Fine-tuning + BC / Fine-tuning + EWC / Fine-tuning + EM -> results/metrics.json and main-comparison table or figure inputs"
+
+[tool.paperbench_repro.evidence_matrix.section_5_analysis]
+row = "Section 5 Analysis -> FAR/CLOSE, NetHack density, RoboticSequence stage success -> analysis data and figure artifacts"
+
+[tool.paperbench_repro.evidence_matrix.appendix_a]
+row = "Appendix A Toy Examples -> Two-state MDPs and AppleRetrieval -> toy diagnostic artifacts"
+
+[tool.paperbench_repro.evidence_matrix.global_artifacts]
+row = "Global artifact contract -> figure 9, figure 22, figure 23, figure 25, figure 26, table 1 are registered and bound to analysis/report writers"
+
+[tool.paperbench_repro.entrypoint_contract]
+cli_flags = [
+  "--config",
+  "--mode",
+  "--experiment",
+  "--env",
+  "--method",
+  "--seed",
+  "--train-budget",
+  "--eval-budget",
+  "--output-dir",
+  "--dry-run",
+  "--smoke-steps"
+]
+writes = [
+  "results/metrics.json",
+  "results/run_manifest.json",
+  "results/config_resolved.json",
+  "results/reproduction_inventory.json",
+  "results/artifact_manifest.json",
+  "results/summary.csv",
+  "readiness.json",
+  "evaluation_result.json"
+]
+must_call_artifact_writers = [
+  "write_metrics_artifact",
+  "write_run_manifest_artifact",
+  "write_config_resolved_artifact",
+  "write_reproduction_inventory_artifact",
+  "write_artifact_manifest_artifact",
+  "write_summary_artifact"
+]

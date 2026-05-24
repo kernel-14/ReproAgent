@@ -1,0 +1,10 @@
+{
+  "figure_id": "figure7_learning_curve_strategyqa",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.945390Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Figure 7: Learning curves for training BBox-ADAPTER on StrategyQA.",
+    "dataset": "strategyqa"
+  }
+}

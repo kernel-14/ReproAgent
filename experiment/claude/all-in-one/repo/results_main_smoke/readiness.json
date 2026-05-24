@@ -1,0 +1,66 @@
+{
+  "canonical_outputs_present": {
+    "artifact_manifest": true,
+    "attention_mask_registry": false,
+    "diffusion_config": false,
+    "evidence_contract_matrix": true,
+    "experiment_registry": true,
+    "loss_trace": false,
+    "metrics": true,
+    "model_registry": false,
+    "run_summary": true,
+    "samples": true,
+    "sampling_trace": false,
+    "tokenizer_registry": false
+  },
+  "core_contract_artifacts": {
+    "status": "ok",
+    "validation": {
+      "checked_obligations": {
+        "M_C_noising_loss_sampling_path": true,
+        "M_E_attention_path": true,
+        "binary_condition_state": true,
+        "blacklist_declared_not_used": true,
+        "joint_distribution_training": true,
+        "named_sde_ode_samplers": true,
+        "tokenizer_encode_contract": true,
+        "training_condition_resampling": true,
+        "training_metadata_surface": true
+      },
+      "failures": [],
+      "valid": true
+    },
+    "written": {
+      "results/attention_mask_registry.json": "results_main_smoke/results/attention_mask_registry.json",
+      "results/diffusion_config.json": "results_main_smoke/results/diffusion_config.json",
+      "results/evaluation_result.json": "results_main_smoke/results/evaluation_result.json",
+      "results/loss_trace.json": "results_main_smoke/results/loss_trace.json",
+      "results/model_registry.json": "results_main_smoke/results/model_registry.json",
+      "results/readiness.json": "results_main_smoke/results/readiness.json",
+      "results/sampling_trace.json": "results_main_smoke/results/sampling_trace.json",
+      "results/tokenizer_registry.json": "results_main_smoke/results/tokenizer_registry.json"
+    }
+  },
+  "exercised_surfaces": [
+    "entrypoint",
+    "artifact_writer",
+    "paper_figure_registry",
+    "data_pipeline",
+    "config",
+    "evaluation",
+    "baseline_or_ablation",
+    "tests"
+  ],
+  "expensive_training_skipped": true,
+  "instantiated": [
+    "dataset_factory",
+    "task_registry",
+    "model_loader",
+    "sampler",
+    "evaluator",
+    "artifact_writer",
+    "package_registry_contract"
+  ],
+  "mode": "dry_run",
+  "ready": true
+}

@@ -1,0 +1,26 @@
+# Core runtime dependencies for the PaperBench BaM reproduction.
+# These are intentionally lightweight enough for import-time smoke checks and
+# dry-run artifact closure.
+# reference_grounding: paper:unit_001 paper.md
+numpy>=1.24,<3.0
+scipy>=1.10,<2.0
+jax>=0.4.23
+jaxlib>=0.4.23
+PyYAML>=6.0,<7.0
+typing_extensions>=4.8
+
+# Evaluation, tabular summaries, and artifact writing used by the canonical
+# runner and schema-complete dry-run outputs.
+pandas>=2.0,<3.0
+matplotlib>=3.7,<4.0
+
+# Test/smoke validation dependencies.
+pytest>=7.4,<9.0
+
+# Optional heavy/data dependencies are deliberately not installed by default.
+# Install only when running full CIFAR/deep-generative experiments:
+#   pip install torch torchvision
+#
+# Optional accelerator selection for JAX:
+#   CPU default: jax + jaxlib above
+#   GPU/TPU: install the platform-specific jaxlib wheel recommended by JAX.

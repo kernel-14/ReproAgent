@@ -1,0 +1,15 @@
+{
+  "figure_id": "figure2_overview",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.944547Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Figure 2: Overview of BBox-ADAPTER for black-box LLM adaptation from the source to the target domain. BBOX-ADAPTER adopts an online adaptation framework, iteratively sampling from previous inferences and updating the adapter.",
+    "components": [
+      "black_box_llm",
+      "energy_adapter",
+      "beam_search",
+      "online_update"
+    ]
+  }
+}

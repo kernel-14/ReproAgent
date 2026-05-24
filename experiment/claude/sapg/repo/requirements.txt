@@ -1,0 +1,87 @@
+# requirements.txt
+# SAPG: Split and Aggregate Policy Gradients - Reproduction
+# reference_grounding: wp_006 requirements.txt
+#
+# Dependencies are split into two tiers:
+#   1. CORE: lightweight packages required for import, smoke validation, config
+#      parsing, artifact writing, and evaluation logic. These must install in a
+#      minimal code-only environment without GPU or simulator access.
+#   2. OPTIONAL (TRAINING / SIMULATOR): heavy packages needed for actual RL
+#      training. Importing project modules must not fail when these are absent;
+#      all such imports are guarded with lazy-import patterns inside the
+#      functions/classes that need them.
+#
+# IsaacGym is NOT available on PyPI. Install it separately following NVIDIA's
+# instructions before running full training:
+#   https://developer.nvidia.com/isaac-gym
+#   pip install isaacgym  (from the downloaded package directory)
+
+# ---------------------------------------------------------------------------
+# CORE DEPENDENCIES
+# Required for: config parsing, artifact writing, evaluation metrics,
+# experiment registry, result aggregation, smoke/dry-run validation, tests.
+# ---------------------------------------------------------------------------
+
+# Numerical and scientific computing
+numpy>=1.21.0,<2.0.0
+scipy>=1.7.0
+
+# Configuration management
+PyYAML>=6.0
+omegaconf>=2.1.0
+
+# Data handling and artifact writing
+pandas>=1.3.0
+
+# Progress reporting
+tqdm>=4.62.0
+
+# Plotting and figure generation (used in src/reporting/plotting.py)
+matplotlib>=3.4.0
+seaborn>=0.11.0
+
+# JSON schema validation for artifact contracts
+jsonschema>=4.0.0
+
+# Utilities
+click>=8.0.0
+python-dotenv>=0.19.0
+
+# ---------------------------------------------------------------------------
+# OPTIONAL: TRAINING DEPENDENCIES
+# Required for: neural network forward/backward passes, policy gradient
+# updates, importance sampling computations, rollout buffer operations.
+# All torch imports in src/ and sapg/ are lazy (inside functions/classes).
+# Install these to run actual training; smoke validation works without them.
+# ---------------------------------------------------------------------------
+
+# PyTorch - install the CUDA-appropriate wheel from https://pytorch.org/
+# For CPU-only smoke/test environments:
+#   pip install torch>=1.12.0 --index-url https://download.pytorch.org/whl/cpu
+# For GPU training (CUDA 11.8 example):
+#   pip install torch>=1.12.0 --index-url https://download.pytorch.org/whl/cu118
+torch>=1.12.0
+
+# Gym interface (used by environment wrappers; lazy-imported)
+gymnasium>=0.26.0
+
+# ---------------------------------------------------------------------------
+# OPTIONAL: SIMULATOR DEPENDENCIES
+# Required for: IsaacGym parallel environment execution (24576 envs).
+# These packages are NOT on PyPI and must be installed from vendor sources.
+# All simulator imports are guarded with importlib availability checks.
+#
+# isaacgym        -- install from NVIDIA Isaac Gym package (not on PyPI)
+# isaacgymenvs    -- install from: pip install isaacgymenvs
+#                    or: https://github.com/NVIDIA-Omniverse/IsaacGymEnvs
+#
+# Uncomment and install manually:
+# isaacgymenvs>=1.3.0
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# DEVELOPMENT AND TESTING
+# ---------------------------------------------------------------------------
+
+pytest>=7.0.0
+pytest-cov>=3.0.0

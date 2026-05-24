@@ -1,0 +1,81 @@
+{
+  "artifact_kind": "dry-run contract artifact",
+  "attention_masks": {
+    "causal_time_series": {
+      "artifact_path": "results/attention_mask_registry.json",
+      "dependency_sources": [
+        "time_index",
+        "observation_dependencies",
+        "simulator_graph"
+      ],
+      "enters_transformer_attention": true,
+      "factory": "all_in_one_sbi.attention_masks:build_dependency_attention_mask",
+      "mask_shape": "batch_or_single x sequence_length x sequence_length",
+      "name": "causal_time_series",
+      "semantic_role": "Structured observations/time-series M_E with causal or local temporal dependencies."
+    },
+    "fully_connected": {
+      "artifact_path": "results/attention_mask_registry.json",
+      "dependency_sources": [
+        "all_variables"
+      ],
+      "enters_transformer_attention": true,
+      "factory": "all_in_one_sbi.attention_masks:build_dependency_attention_mask",
+      "mask_shape": "batch_or_single x sequence_length x sequence_length",
+      "name": "fully_connected",
+      "semantic_role": "Unstructured ablation mask: every token may attend to every token."
+    },
+    "simulator_dependencies": {
+      "artifact_path": "results/attention_mask_registry.json",
+      "dependency_sources": [
+        "simulator_graph",
+        "variable_metadata",
+        "task_structural_dependencies"
+      ],
+      "enters_transformer_attention": true,
+      "factory": "all_in_one_sbi.attention_masks:build_dependency_attention_mask",
+      "mask_shape": "batch_or_single x sequence_length x sequence_length",
+      "name": "simulator_dependencies",
+      "semantic_role": "Paper-core M_E: simulator dependency graph over theta, observations, function parameters, and summaries; supplied to transformer attention."
+    }
+  },
+  "conditioning_masks": {
+    "mask_probability_0.3": {
+      "artifact_path": "results/diffusion_config.json",
+      "binary_state": true,
+      "enters_conditional_sampling": true,
+      "enters_forward_noising": true,
+      "enters_loss_masking": true,
+      "name": "mask_probability_0.3",
+      "named_patterns": [
+        "bernoulli_p_0.3",
+        "bounded_smoke_anchor"
+      ],
+      "sampler_factory": "all_in_one_sbi.attention_masks:sample_condition_mask"
+    },
+    "uniform_random_conditioning": {
+      "artifact_path": "results/diffusion_config.json",
+      "binary_state": true,
+      "enters_conditional_sampling": true,
+      "enters_forward_noising": true,
+      "enters_loss_masking": true,
+      "name": "uniform_random_conditioning",
+      "named_patterns": [
+        "posterior_theta_given_x",
+        "likelihood_x_given_theta",
+        "missing_observation_imputation",
+        "forecasting",
+        "arbitrary_subset"
+      ],
+      "sampler_factory": "all_in_one_sbi.attention_masks:sample_condition_mask"
+    }
+  },
+  "contract": {
+    "M_C_enters_conditional_sampling": true,
+    "M_C_enters_forward_noising": true,
+    "M_C_enters_loss_masking": true,
+    "M_E_enters_transformer_attention": true
+  },
+  "created_at": "2026-05-21T19:06:58Z",
+  "mode": "runtime_smoke"
+}

@@ -1,0 +1,70 @@
+{
+  "model_name": "gpt2-medium",
+  "rows": [
+    {
+      "activation": 0.9369713554977919,
+      "layer_idx": 19,
+      "neuron_idx": 770,
+      "prompt": "The discussion should remain civil while people disagree. #0",
+      "prompt_index": 0,
+      "status": "fallback_fixture"
+    },
+    {
+      "activation": 0.9247614560811551,
+      "layer_idx": 19,
+      "neuron_idx": 770,
+      "prompt": "A reviewer asks for a neutral summary of the issue. #1",
+      "prompt_index": 1,
+      "status": "fallback_fixture"
+    },
+    {
+      "activation": 0.4759213714560115,
+      "layer_idx": 19,
+      "neuron_idx": 770,
+      "prompt": "The moderator reminds everyone to avoid personal attacks. #2",
+      "prompt_index": 2,
+      "status": "fallback_fixture"
+    },
+    {
+      "activation": 0.05183272293744301,
+      "layer_idx": 19,
+      "neuron_idx": 770,
+      "prompt": "The reply should stay calm and constructive. #3",
+      "prompt_index": 3,
+      "status": "fallback_fixture"
+    },
+    {
+      "activation": 0.08843408851193568,
+      "layer_idx": 19,
+      "neuron_idx": 770,
+      "prompt": "The discussion should remain civil while people disagree. #4",
+      "prompt_index": 4,
+      "status": "fallback_fixture"
+    },
+    {
+      "activation": 0.5481013834117283,
+      "layer_idx": 19,
+      "neuron_idx": 770,
+      "prompt": "A reviewer asks for a neutral summary of the issue. #5",
+      "prompt_index": 5,
+      "status": "fallback_fixture"
+    },
+    {
+      "activation": 0.9583232410027376,
+      "layer_idx": 19,
+      "neuron_idx": 770,
+      "prompt": "The moderator reminds everyone to avoid personal attacks. #6",
+      "prompt_index": 6,
+      "status": "fallback_fixture"
+    },
+    {
+      "activation": 0.8974153415515873,
+      "layer_idx": 19,
+      "neuron_idx": 770,
+      "prompt": "The reply should stay calm and constructive. #7",
+      "prompt_index": 7,
+      "status": "fallback_fixture"
+    }
+  ],
+  "status": "fallback_fixture"
+}

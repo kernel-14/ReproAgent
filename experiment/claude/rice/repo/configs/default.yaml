@@ -1,0 +1,592 @@
+# RICE: Breaking Through the Training Bottlenecks of Reinforcement Learning with Explanation
+# Default Configuration File
+# Implements: environment registry, method registry, experiment protocols, parameter sweeps, scope constraints
+
+# ============================================================================
+# Environment Registry
+# ============================================================================
+environments:
+  # MuJoCo Standard Environments
+  hopper:
+    id: Hopper-v3
+    aliases: [hopper, hopper-v3, Hopper, Hopper-v3]
+    category: mujoco
+    task_alias: robotics
+    observation_dim: 11
+    action_dim: 3
+    action_space: continuous
+    reward_type: dense
+    difficulty: medium
+    pretrain_timesteps: 1000000
+    refine_timesteps: 200000
+    
+  walker2d:
+    id: Walker2d-v3
+    aliases: [walker2d, walker2d-v3, Walker2d, Walker2d-v3]
+    category: mujoco
+    task_alias: robotics
+    observation_dim: 17
+    action_dim: 6
+    action_space: continuous
+    reward_type: dense
+    difficulty: medium
+    pretrain_timesteps: 1000000
+    refine_timesteps: 200000
+    
+  reacher:
+    id: Reacher-v2
+    aliases: [reacher, reacher-v2, Reacher, Reacher-v2]
+    category: mujoco
+    task_alias: robotics
+    observation_dim: 11
+    action_dim: 2
+    action_space: continuous
+    reward_type: dense
+    difficulty: easy
+    pretrain_timesteps: 500000
+    refine_timesteps: 100000
+    
+  halfcheetah:
+    id: HalfCheetah-v3
+    aliases: [halfcheetah, halfcheetah-v3, HalfCheetah, HalfCheetah-v3]
+    category: mujoco
+    task_alias: robotics
+    observation_dim: 17
+    action_dim: 6
+    action_space: continuous
+    reward_type: dense
+    difficulty: medium
+    pretrain_timesteps: 1000000
+    refine_timesteps: 200000
+    
+  # Sparse Reward Variants
+  hopper_sparse:
+    id: Hopper-sparse
+    aliases: [hopper-sparse, Hopper-sparse]
+    category: mujoco
+    task_alias: robotics
+    observation_dim: 11
+    action_dim: 3
+    action_space: continuous
+    reward_type: sparse
+    difficulty: hard
+    pretrain_timesteps: 2000000
+    refine_timesteps: 400000
+    base_env: Hopper-v3
+    
+  walker2d_sparse:
+    id: Walker2d-sparse
+    aliases: [walker2d-sparse, Walker2d-sparse]
+    category: mujoco
+    task_alias: robotics
+    observation_dim: 17
+    action_dim: 6
+    action_space: continuous
+    reward_type: sparse
+    difficulty: hard
+    pretrain_timesteps: 2000000
+    refine_timesteps: 400000
+    base_env: Walker2d-v3
+    
+  halfcheetah_sparse:
+    id: HalfCheetah-sparse
+    aliases: [halfcheetah-sparse, HalfCheetah-sparse]
+    category: mujoco
+    task_alias: robotics
+    observation_dim: 17
+    action_dim: 6
+    action_space: continuous
+    reward_type: sparse
+    difficulty: hard
+    pretrain_timesteps: 2000000
+    refine_timesteps: 400000
+    base_env: HalfCheetah-v3
+    
+  # Real-World Application Environments
+  selfish_mining:
+    id: selfish_mining
+    aliases: [selfish_mining, selfish-mining, SelfishMining]
+    category: real_world
+    task_alias: selfish_mining
+    observation_dim: 8
+    action_dim: 2
+    action_space: discrete
+    reward_type: sparse
+    difficulty: hard
+    pretrain_timesteps: 500000
+    refine_timesteps: 100000
+    description: "Blockchain selfish mining attack optimization"
+    
+  network_defense:
+    id: network_defense
+    aliases: [network_defense, network-defense, NetworkDefense, cage]
+    category: real_world
+    task_alias: network_defense
+    benchmark_alias: cage
+    observation_dim: 52
+    action_dim: 133
+    action_space: discrete
+    reward_type: sparse
+    difficulty: hard
+    pretrain_timesteps: 1000000
+    refine_timesteps: 200000
+    description: "CAGE Challenge network defense scenario"
+    
+  autonomous_driving:
+    id: autonomous_driving
+    aliases: [autonomous_driving, autonomous-driving, AutonomousDriving, metadrive]
+    category: real_world
+    task_alias: autonomous_driving
+    observation_dim: 259
+    action_dim: 2
+    action_space: continuous
+    reward_type: dense
+    difficulty: hard
+    pretrain_timesteps: 1000000
+    refine_timesteps: 200000
+    description: "MetaDrive autonomous driving scenario"
+    
+  malware_mutation:
+    id: malware_mutation
+    aliases: [malware_mutation, malware-mutation, MalwareMutation]
+    category: real_world
+    task_alias: malware_mutation
+    observation_dim: 2381
+    action_dim: 2381
+    action_space: discrete
+    reward_type: sparse
+    difficulty: hard
+    pretrain_timesteps: 500000
+    refine_timesteps: 100000
+    description: "Malware mutation for evasion"
+
+# ============================================================================
+# Method and Baseline Registry
+# ============================================================================
+methods:
+  ours:
+    name: RICE
+    aliases: [ours, rice, RICE]
+    type: explanation_based_refinement
+    explanation_method: rice_explanation
+    uses_explanation: true
+    uses_refining: true
+    description: "RICE: Explanation-based reinforcement learning refinement"
+    
+  statemask:
+    name: StateMask
+    aliases: [statemask, StateMask, statemask_baseline]
+    type: explanation_baseline
+    explanation_method: statemask_explanation
+    uses_explanation: true
+    uses_refining: true
+    description: "StateMask: Gradient-based state importance explanation"
+    
+  random:
+    name: Random
+    aliases: [random, Random, random_baseline]
+    type: explanation_baseline
+    explanation_method: random_explanation
+    uses_explanation: true
+    uses_refining: true
+    description: "Random state selection baseline"
+    
+  ppo:
+    name: PPO
+    aliases: [ppo, PPO]
+    type: training_baseline
+    algorithm: ppo
+    uses_explanation: false
+    uses_refining: false
+    description: "Proximal Policy Optimization baseline"
+    
+  sac:
+    name: SAC
+    aliases: [sac, SAC]
+    type: training_baseline
+    algorithm: sac
+    uses_explanation: false
+    uses_refining: false
+    description: "Soft Actor-Critic baseline"
+    
+  gail:
+    name: GAIL
+    aliases: [gail, GAIL]
+    type: imitation_baseline
+    algorithm: gail
+    uses_explanation: false
+    uses_refining: false
+    description: "Generative Adversarial Imitation Learning baseline"
+    
+  jsrl:
+    name: JSRL
+    aliases: [jsrl, JSRL]
+    type: explanation_baseline
+    algorithm: jsrl
+    uses_explanation: true
+    uses_refining: false
+    description: "Jointly-trained State Representation Learning baseline"
+    
+  baseline:
+    name: Vanilla
+    aliases: [baseline, vanilla, Vanilla]
+    type: training_baseline
+    algorithm: vanilla
+    uses_explanation: false
+    uses_refining: false
+    description: "Vanilla policy gradient baseline"
+    
+  adapter:
+    name: Adapter
+    aliases: [adapter, Adapter]
+    type: transfer_baseline
+    uses_explanation: false
+    uses_refining: true
+    description: "Adapter-based transfer learning"
+    
+  fine_tuning:
+    name: FineTuning
+    aliases: [fine_tuning, fine-tuning, FineTuning]
+    type: transfer_baseline
+    uses_explanation: false
+    uses_refining: true
+    description: "Fine-tuning baseline"
+
+# ============================================================================
+# Experiment Protocol Matrix
+# ============================================================================
+experiments:
+  experiment_i:
+    name: "Experiment I: Fidelity and Efficiency Comparison"
+    description: "Compare RICE explanation with StateMask on fidelity and efficiency"
+    environments: [hopper, walker2d, reacher, halfcheetah]
+    methods: [ours, statemask]
+    metrics: [fidelity_score, training_time, sample_count]
+    measurements:
+      - fidelity_score
+      - training_time
+      - sample_count
+      - convergence_timesteps
+    artifact_paths:
+      - results/experiment_i_fidelity.json
+      - results/figure5_fidelity.png
+      - results/figures/figure_5.png
+      - results/experiment_i_efficiency.json
+    hypothesis: "RICE explanation achieves comparable fidelity to StateMask with higher efficiency"
+    decision_value: "Validates that RICE explanation provides sufficient explanation quality"
+    
+  experiment_ii:
+    name: "Experiment II: Refining Performance Comparison"
+    description: "Compare refining performance using RICE, StateMask, and Random explanations"
+    environments: [hopper, walker2d, reacher, halfcheetah, hopper_sparse, walker2d_sparse, halfcheetah_sparse]
+    methods: [ours, statemask, random, ppo]
+    metrics: [mean_episode_reward, reward_improvement, sample_efficiency]
+    measurements:
+      - mean_episode_reward
+      - reward_improvement
+      - sample_efficiency
+      - convergence_timesteps
+    artifact_paths:
+      - results/experiment_ii_performance.json
+      - results/figures/figure_2.png
+      - results/table_1_performance.json
+    hypothesis: "RICE refining outperforms StateMask and Random baselines"
+    decision_value: "Demonstrates end-to-end effectiveness of RICE method"
+    
+  experiment_iii:
+    name: "Experiment III: Ablation Studies"
+    description: "Ablation studies for RICE hyperparameters and design choices"
+    environments: [hopper, walker2d]
+    methods: [ours]
+    metrics: [mean_episode_reward, reward_improvement]
+    measurements:
+      - mean_episode_reward
+      - reward_improvement
+      - parameter_sensitivity
+    artifact_paths:
+      - results/ablation_studies.json
+      - results/figures/figure_6.png
+      - results/ablation_entropy.json
+      - results/ablation_top_k.json
+      - results/ablation_roll_in.json
+    hypothesis: "Key hyperparameters impact RICE performance in predictable ways"
+    decision_value: "Identifies critical components and parameters for RICE success"
+    ablation_parameters:
+      - entropy_coefficient
+      - top_K
+      - roll_in_frequency
+      - alpha
+      - lambda_reg
+      - p_exploration
+      
+  experiment_iv:
+    name: "Experiment IV: Real-World Applications"
+    description: "Evaluate RICE on real-world DRL applications"
+    environments: [selfish_mining, network_defense, autonomous_driving, malware_mutation]
+    methods: [ours, statemask, random, ppo]
+    metrics: [mean_episode_reward, reward_improvement, sample_efficiency]
+    measurements:
+      - mean_episode_reward
+      - reward_improvement
+      - sample_efficiency
+      - task_success_rate
+    artifact_paths:
+      - results/experiment_iv_real_world.json
+      - results/table_2_real_world.json
+    hypothesis: "RICE generalizes to complex real-world DRL tasks"
+    decision_value: "Validates practical applicability of RICE method"
+    
+  experiment_v:
+    name: "Experiment V: Sparse Reward Sensitivity"
+    description: "Evaluate RICE on sparse reward MuJoCo variants"
+    environments: [hopper_sparse, walker2d_sparse, halfcheetah_sparse]
+    methods: [ours, statemask, random, ppo]
+    metrics: [mean_episode_reward, reward_improvement, sample_efficiency]
+    measurements:
+      - mean_episode_reward
+      - reward_improvement
+      - convergence_timesteps
+    artifact_paths:
+      - results/experiment_v_sparse.json
+    hypothesis: "RICE handles sparse reward settings effectively"
+    decision_value: "Tests robustness to reward sparsity"
+    out_of_scope: true
+    reason: "Sensitivity results of all sparse MuJoCo games are out of scope for reproduction"
+
+# ============================================================================
+# Parameter Sweep Configuration
+# ============================================================================
+parameter_sweeps:
+  entropy_coefficient:
+    description: "Entropy regularization coefficient for exploration"
+    values: [0.0, 0.001, 0.01, 0.1]
+    default: 0.01
+    experiment: experiment_iii
+    
+  top_K:
+    description: "Number of top critical states to select"
+    values: [5, 10, 20, 50]
+    default: 20
+    experiment: experiment_iii
+    
+  roll_in_frequency:
+    description: "Frequency of roll-in from critical states"
+    values: [1, 5, 10, 20]
+    default: 10
+    experiment: experiment_iii
+    
+  alpha:
+    description: "Learning rate for explanation network"
+    values: [0.01, 0.001, 0.0001]
+    default: 0.001
+    experiment: experiment_iii
+    
+  lambda_reg:
+    description: "Regularization coefficient for explanation network"
+    values: [0, 0.001, 0.01, 0.1]
+    default: 0.01
+    experiment: experiment_iii
+    
+  p_exploration:
+    description: "Exploration probability during refining"
+    values: [0, 0.25, 0.5, 0.75, 1.0]
+    default: 0.5
+    experiment: experiment_iii
+
+# ============================================================================
+# Training Configuration
+# ============================================================================
+training:
+  ppo:
+    learning_rate: 3e-4
+    clip_ratio: 0.2
+    n_epochs: 10
+    batch_size: 64
+    gamma: 0.99
+    gae_lambda: 0.95
+    
+  sac:
+    learning_rate: 3e-4
+    buffer_size: 1000000
+    learning_starts: 10000
+    batch_size: 256
+    gamma: 0.99
+    tau: 0.005
+    alpha: 0.2
+    
+  rice:
+    explanation_lr: 0.001
+    refining_lr: 3e-4
+    top_K: 20
+    roll_in_frequency: 10
+    entropy_coefficient: 0.01
+    lambda_reg: 0.01
+    p_exploration: 0.5
+    
+  statemask:
+    gradient_steps: 1000
+    learning_rate: 0.001
+    sample_size: 10000
+
+# ============================================================================
+# Evaluation Configuration
+# ============================================================================
+evaluation:
+  n_eval_episodes: 100
+  eval_frequency: 10000
+  save_best_model: true
+  
+  metrics:
+    fidelity_score:
+      description: "Top-K agreement between predicted and ground-truth important states"
+      higher_is_better: true
+      
+    training_time:
+      description: "Wall-clock time for training explanation network"
+      unit: seconds
+      higher_is_better: false
+      
+    sample_count:
+      description: "Number of environment samples used"
+      unit: samples
+      higher_is_better: false
+      
+    mean_episode_reward:
+      description: "Average cumulative reward per episode"
+      higher_is_better: true
+      
+    reward_improvement:
+      description: "Relative improvement over pretrained baseline"
+      higher_is_better: true
+      
+    sample_efficiency:
+      description: "Reward improvement per sample"
+      higher_is_better: true
+
+# ============================================================================
+# Scope Constraints and Out-of-Scope Filters
+# ============================================================================
+scope:
+  included:
+    - "Experiment I: Fidelity and efficiency comparison (Hopper, Walker2d, Reacher, HalfCheetah)"
+    - "Experiment II: Refining performance comparison with RICE, StateMask, Random, PPO"
+    - "Experiment III: Ablation studies for entropy_coefficient, top_K, roll_in_frequency, alpha, lambda, p"
+    - "Experiment IV: Real-world applications (selfish mining, network defense, autonomous driving, malware)"
+    - "Core method implementation: RICE explanation and refining algorithm"
+    - "Baseline implementations: StateMask, Random, PPO, SAC, GAIL, JSRL"
+    
+  out_of_scope:
+    - reason: "Sensitivity results of all sparse MuJoCo games are out of scope for reproduction"
+      experiments: [experiment_v]
+      details: "Full sparse reward sensitivity analysis not required"
+      
+    - reason: "Qualitative analysis of autonomous driving case is out of scope"
+      environments: [autonomous_driving]
+      analysis_type: qualitative
+      details: "Only quantitative metrics required for autonomous driving"
+      
+    - reason: "Exhaustive parameter grids beyond paper-specified values"
+      constraint: "Only run parameter values explicitly mentioned in paper"
+      
+    - reason: "Full training runs during code generation"
+      constraint: "Implement training code paths without expensive execution"
+      
+    - reason: "External baseline repositories"
+      constraint: "Implement baselines from scratch, do not clone blacklisted repos"
+      blacklist: ["https://github.com/chengzelei/RICE"]
+      
+  execution_mode:
+    default: runtime_smoke
+    description: "Safe smoke test that validates wiring with bounded inputs"
+    smoke_steps: 100
+    smoke_episodes: 2
+    full_mode_flag: "--mode full"
+
+# ============================================================================
+# Artifact Configuration
+# ============================================================================
+artifacts:
+  output_dir: results
+  checkpoint_dir: checkpoints
+  figure_dir: results/figures
+  
+  experiment_i:
+    - results/experiment_i_fidelity.json
+    - results/experiment_i_efficiency.json
+    - results/figure5_fidelity.png
+    - results/figures/figure_5.png
+    
+  experiment_ii:
+    - results/experiment_ii_performance.json
+    - results/table_1_performance.json
+    - results/figures/figure_2.png
+    
+  experiment_iii:
+    - results/ablation_studies.json
+    - results/ablation_entropy.json
+    - results/ablation_top_k.json
+    - results/ablation_roll_in.json
+    - results/figures/figure_6.png
+    
+  experiment_iv:
+    - results/experiment_iv_real_world.json
+    - results/table_2_real_world.json
+    
+  smoke_validation:
+    - results/readiness.json
+    - results/evaluation_result.json
+    - results/metrics.json
+    
+  checkpoints:
+    - checkpoints/pretrained_agent.pth
+    - checkpoints/explanation_network.pth
+    - checkpoints/refined_agent.pth
+
+# ============================================================================
+# Dataset and Benchmark Registry
+# ============================================================================
+datasets:
+  mujoco:
+    name: MuJoCo Continuous Control
+    environments: [hopper, walker2d, reacher, halfcheetah, hopper_sparse, walker2d_sparse, halfcheetah_sparse]
+    source: gymnasium
+    
+  selfish_mining:
+    name: Blockchain Selfish Mining
+    environments: [selfish_mining]
+    source: custom
+    
+  cage:
+    name: CAGE Challenge Network Defense
+    environments: [network_defense]
+    source: cage_challenge
+
+benchmarks:
+  mujoco:
+    name: MuJoCo Benchmark Suite
+    tasks: [hopper, walker2d, reacher, halfcheetah]
+    
+  selfish_mining:
+    name: Selfish Mining Benchmark
+    tasks: [selfish_mining]
+    
+  cage:
+    name: CAGE Challenge Benchmark
+    tasks: [network_defense]
+
+# ============================================================================
+# Default Runtime Configuration
+# ============================================================================
+runtime:
+  mode: runtime_smoke
+  seed: 42
+  device: auto
+  num_workers: 1
+  log_level: INFO
+  
+  smoke_config:
+    max_timesteps: 1000
+    max_episodes: 10
+    eval_episodes: 2
+    create_artifacts: true
+    artifact_label: "dry_run_contract_artifact"

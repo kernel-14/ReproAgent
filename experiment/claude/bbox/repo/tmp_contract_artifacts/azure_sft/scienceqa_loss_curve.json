@@ -1,0 +1,25 @@
+{
+  "dataset": "scienceqa",
+  "epochs": 3,
+  "method": "Azure-SFT",
+  "service_batch_size": "auto",
+  "service_learning_rate": "auto",
+  "steps": [
+    0,
+    1000,
+    2000,
+    3000,
+    4000,
+    5000,
+    6000
+  ],
+  "training_loss": [
+    1.55,
+    1.271032,
+    1.047653,
+    0.868784,
+    0.725557,
+    0.61087,
+    0.519036
+  ]
+}

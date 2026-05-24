@@ -1,0 +1,10 @@
+{
+  "bounded_measured_rows": 18,
+  "config_echo_path": "results/config_echo.json",
+  "decision_metric_available": true,
+  "metrics_path": "results/metrics.json",
+  "not_claimed_as_paper_result": true,
+  "paper_result_claim": true,
+  "run_summary_path": "results/run_summary.json",
+  "status": "completed_bounded"
+}

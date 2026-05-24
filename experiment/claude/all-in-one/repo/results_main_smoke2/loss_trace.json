@@ -1,0 +1,50 @@
+{
+  "artifact_kind": "dry-run contract artifact",
+  "created_at": "2026-05-21T19:07:00Z",
+  "example_bounded_trace": [
+    {
+      "M_C_used_for_forward_noising": true,
+      "M_C_used_for_loss_masking": true,
+      "conditioning_pattern": "mask_probability_0.3",
+      "diffusion_time_t": 0.5,
+      "mask_variant": "simulator_dependencies",
+      "masked_denoising_score_loss": null,
+      "result_status": "dry_run_schema_only",
+      "simulation_budget": 8,
+      "step": 0
+    }
+  ],
+  "loss_trace_schema": {
+    "M_C_used_for_forward_noising": "bool",
+    "M_C_used_for_loss_masking": "bool",
+    "conditioning_pattern": "str",
+    "diffusion_time_t": "float",
+    "mask_variant": "str",
+    "masked_denoising_score_loss": "float",
+    "simulation_budget": "int",
+    "step": "int"
+  },
+  "mode": "dry_run",
+  "objective": {
+    "artifact_path": "results/loss_trace.json",
+    "family": "score_based_diffusion",
+    "forward_noising_uses_condition_mask": true,
+    "loss_mask_uses_condition_mask": true,
+    "metric_formula": "loss = mean(((score_pred - score_target)^2) * (1 - M_C) * valid_variable_mask); conditioned variables are preserved in forward noising and excluded from target loss",
+    "name": "masked_joint_score_matching",
+    "score_target": "epsilon/noise or equivalent score for unconditioned target variables",
+    "time_sampling": "uniform t in diffusion interval for each batch item",
+    "trained_distribution": "joint simulator distribution p(theta, x)"
+  },
+  "semantics": "Schema/readiness artifact.  Values below are not paper-scale training results and do not claim trained-model performance.",
+  "training_metadata_required": [
+    "method",
+    "mask_variant",
+    "conditioning_pattern",
+    "simulation_budget",
+    "fixed_hyperparameters",
+    "trained_distribution",
+    "blacklisted_repository_check",
+    "reference_grounding"
+  ]
+}

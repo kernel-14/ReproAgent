@@ -1,0 +1,7 @@
+layer,index,paper_notation,top_token,toxic_dot_product,toxic_cosine_similarity,selection_rule
+14,2,v^{14}_{2},hateful,1.2086,0.998036,"highest dot-products with toxic vector W_toxic[:, 1]"
+6,13,v^{6}_{13},idiot,1.0933,0.997633,"highest dot-products with toxic vector W_toxic[:, 1]"
+8,41,v^{8}_{41},stupid,1.064,0.993836,"highest dot-products with toxic vector W_toxic[:, 1]"
+12,7,v^{12}_{7},awful,1.0466,0.99013,"highest dot-products with toxic vector W_toxic[:, 1]"
+3,5,v^{3}_{5},careful,-0.3353,-0.417569,"highest dot-products with toxic vector W_toxic[:, 1]"
+10,22,v^{10}_{22},thanks,-0.4659,-0.489616,"highest dot-products with toxic vector W_toxic[:, 1]"

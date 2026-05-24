@@ -1,0 +1,47 @@
+paper: "Stay on topic with Classifier-Free Guidance"
+blacklisted_repositories:
+  - "https://github.com/Vermeille/lm-evaluation-harness-cfg"
+zero_shot:
+  tasks:
+    - arc_challenge
+    - arc_easy
+    - boolq
+    - hellaswag
+    - piqa
+    - sciq
+    - triviaqa
+    - winogrande
+    - lambada_openai
+  models:
+    - gpt2
+    - gpt2-medium
+    - EleutherAI/pythia-70m
+    - EleutherAI/pythia-160m
+  gammas: [1.0, 1.5]
+  harness: "EleutherAI/lm-evaluation-harness compatible route"
+cot:
+  tasks: [gsm8k, aqua]
+  models: [WizardLM/WizardLM-30B, timdettmers/guanaco-65b]
+  gammas: [1.0, 1.1, 1.25, 1.5, 1.75, 2.0]
+  self_consistency_samples: 40
+code_generation:
+  dataset: humaneval
+  models: [Salesforce/codegen-350M-mono, Salesforce/codegen-2B-mono, Salesforce/codegen-6B-mono]
+  gammas: [1.0, 1.1, 1.25, 1.5, 1.75, 2.0]
+  temperatures: [0.2, 0.6, 0.8]
+  pass_at: [1, 10, 100]
+mechanism:
+  p3_samples: 32902
+  p3_samples_per_dataset: 50
+  p3_max_input_tokens: 200
+  falcon_base: tiiuae/falcon-7b
+  falcon_instruct: tiiuae/falcon-7b-instruct
+  top_p: 0.9
+classifier_guidance:
+  datasets:
+    sentiment: imdb
+    toxicity: thesofakillers/jigsaw-toxic-comment-classification-challenge
+  baselines: [fudge, cfg]
+outputs:
+  directory: results
+

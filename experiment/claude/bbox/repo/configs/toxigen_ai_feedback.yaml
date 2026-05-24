@@ -1,0 +1,884 @@
+# configs/toxigen_ai_feedback.yaml
+# BBox-Adapter: ToxiGen experiment configuration — AI feedback mode
+#
+# Reference grounding: paperbench_ref_005 toxigen/alice.py
+# Reference grounding: paperbench_ref_002 src/models/qa/transformer_qa.py
+# Reference grounding: paperbench_ref_006 readme.md
+#
+# Paper evidence contract: Experiment 5 (ToxiGen) — ours vs base_model
+# Metrics: toxicity, toxicity_probability, hate_speech_rate, tox_score
+# Artifact paths:
+#   results/toxigen/metrics.json
+#   results/online_adaptation_log.json
+#   results/positive_negative_curves.json
+#   logs/training.log
+#
+# paperbench_ref_005 toxigen/alice.py grounding:
+#   beam_search(prompt, language_model, classifier, mode, device,
+#               end_token="\n", weights=[.5,.5], num_beams=10,
+#               vocab_size=100, max_length=30, length_penalty=1)
+#   BeamHypotheses(num_beams, max_length, length_penalty, early_stopping=False)
+#   ToxiGen uses beam search with classifier guidance to steer generation
+#   toward (mode=1) or away from (mode=0) toxicity.
+#
+# paperbench_ref_002 src/models/qa/transformer_qa.py grounding:
+#   TransformerQA.forward(question_with_context, context_span, yes_no_span,
+#                         answer_span, metadata) → Dict[str, torch.Tensor]
+#   QA format with yes_no_span mirrors binary toxicity label (toxic / non-toxic).
+
+# ============================================================
+# Core experiment identity
+# ============================================================
+experiment_id: toxigen_ai_feedback
+dataset: toxigen
+feedback_mode: ai_feedback    # trainer accepts: ground_truth | ai_feedback | combined
+description: >
+  ToxiGen toxicity reduction benchmark using AI feedback as the reward signal.
+  BBox-Adapter adapts the black-box LLM online via ranking NCE loss with
+  positive/negative sampling determined by a hate-speech classifier judge
+  (HateBERT or equivalent) that scores candidate outputs.
+  Corresponds to Experiment 5 in the paper (Table 7).
+  AI feedback: a hate-speech classifier scores each generated candidate;
+  candidates with low toxicity probability become positive examples,
+  candidates with high toxicity probability become negative examples.
+  The energy-based adapter learns to up-weight low-toxicity candidates
+  and down-weight high-toxicity candidates in the re-ranking step.
+  Beam inference with beam_size=5 and iteration_count=4 is used at test time.
+
+# ============================================================
+# Environment / task registry
+# reference_grounding: paperbench_ref_006 readme.md
+# ============================================================
+environment_registry:
+  # Primary black-box LLM used in ToxiGen experiment
+  mixtral_8x7b:
+    id: mixtral_8x7b
+    aliases:
+      - Mixtral-8x7B-v0
+      - Mixtral-8x7B-Instruct-v0.1
+      - mixtral
+    provider: huggingface
+    model_name: mistralai/Mixtral-8x7B-Instruct-v0.1
+    api_type: black_box
+    context_length: 32768
+    description: >
+      Mixtral-8x7B Sparse Mixture-of-Experts model. Used as black-box LLM
+      for ToxiGen detoxification. BBox-Adapter wraps this model and adapts
+      it without any access to internal weights.
+    factory_hook: src.config.model_config.load_mixtral_8x7b
+    setup_notes: >
+      Requires HuggingFace API token (HF_TOKEN env variable) or local weights.
+      Standard deviation reported across 3 seeds per paper's evaluation details.
+
+  gpt35_turbo:
+    id: gpt35_turbo
+    aliases:
+      - gpt-3.5-turbo
+      - chatgpt
+      - GPT-3.5
+    provider: openai
+    model_name: gpt-3.5-turbo
+    api_type: black_box
+    context_length: 4096
+    description: >
+      OpenAI GPT-3.5-turbo used as the primary black-box LLM in main comparison.
+      Also used as AI feedback judge for StrategyQA and ToxiGen experiments.
+    factory_hook: src.config.model_config.load_gpt35_turbo
+    setup_notes: >
+      Requires OPENAI_API_KEY environment variable.
+
+  hatebert_classifier:
+    id: hatebert_classifier
+    aliases:
+      - HateBERT
+      - hate_speech_classifier
+      - toxicity_classifier
+    provider: huggingface
+    model_name: GroNLP/hateBERT
+    api_type: local_classifier
+    description: >
+      HateBERT classifier used as AI feedback signal for ToxiGen.
+      Scores each candidate for hate speech probability. Used to define
+      positive (low toxicity) and negative (high toxicity) samples.
+      reference_grounding: paperbench_ref_005 toxigen/alice.py
+    factory_hook: src.config.model_config.load_hatebert
+    setup_notes: >
+      Downloaded from HuggingFace model hub. No API key required.
+
+  roberta_toxicity:
+    id: roberta_toxicity
+    aliases:
+      - RoBERTa-toxicity
+      - roberta_hate
+    provider: huggingface
+    model_name: s-nlp/roberta_toxicity_classifier
+    api_type: local_classifier
+    description: >
+      RoBERTa-based toxicity classifier used as additional evaluation metric.
+      Computes toxicity_probability for each generated text.
+    factory_hook: src.config.model_config.load_roberta_toxicity
+
+# ============================================================
+# Dataset registry — all five benchmarks from the paper
+# reference_grounding: paperbench_ref_006 readme.md
+# ============================================================
+dataset_registry:
+  gsm8k:
+    id: gsm8k
+    aliases: [grade_school_math, gsm, math_reasoning]
+    hf_path: openai/gsm8k
+    hf_name: main
+    split_train: train
+    split_test: test
+    num_train: 7473
+    num_test: 1319
+    answer_type: numeric
+    answer_extractor: regex_boxed_or_last_number
+    loader_hook: src.data.gsm8k.load_gsm8k
+    metric: exact_match_numeric
+    description: Grade-school math word problems requiring multi-step reasoning.
+
+  strategyqa:
+    id: strategyqa
+    aliases: [strategy_qa, implicit_reasoning]
+    hf_path: tau/commonsense_qa
+    hf_name: null
+    local_path: data/strategyqa
+    split_train: train
+    split_test: test
+    num_train: 2290
+    num_test: 490
+    answer_type: binary_yes_no
+    answer_extractor: yes_no_classifier
+    loader_hook: src.data.strategyqa.load_strategyqa
+    metric: exact_match_binary
+    description: Strategy reasoning requiring implicit multi-hop inference over commonsense.
+
+  truthfulqa:
+    id: truthfulqa
+    aliases: [truthful_qa, truthfulness]
+    hf_path: truthful_qa
+    hf_name: generation
+    split_train: validation
+    split_test: validation
+    num_train: 817
+    num_test: 817
+    answer_type: open_generation
+    answer_extractor: truthfulness_classifier
+    loader_hook: src.data.truthfulqa.load_truthfulqa
+    metric: truthfulness_accuracy
+    description: Open-ended questions testing model truthfulness vs. common misconceptions.
+
+  scienceqa:
+    id: scienceqa
+    aliases: [science_qa, multi_choice_science]
+    hf_path: derek-thomas/ScienceQA
+    hf_name: null
+    split_train: train
+    split_test: test
+    num_train: 12726
+    num_test: 4241
+    answer_type: multiple_choice
+    answer_extractor: choice_letter_extractor
+    loader_hook: src.data.scienceqa.load_scienceqa
+    metric: exact_match_choice
+    description: Science domain multi-choice questions with image context (text-only mode used).
+
+  toxigen:
+    id: toxigen
+    aliases: [tox_gen, toxicity_generation, hate_speech_generation]
+    hf_path: skg/toxigen-data
+    hf_name: annotated
+    local_path: data/toxigen
+    split_train: train
+    split_test: test
+    num_train: 8960
+    num_test: 940
+    answer_type: open_generation
+    answer_extractor: toxicity_classifier_hatebert
+    loader_hook: src.data.toxigen.load_toxigen
+    metric_primary: hate_speech_rate
+    metric_secondary: toxicity_probability
+    metrics: [hate_speech_rate, toxicity_probability, tox_score]
+    description: >
+      ToxiGen benchmark for measuring and reducing toxicity in LLM-generated text.
+      Targets: 13 demographic groups. Positive samples = low-toxicity outputs.
+      AI feedback signal: HateBERT classifier scores each candidate.
+      reference_grounding: paperbench_ref_005 toxigen/alice.py
+    target_groups:
+      - asian
+      - black
+      - chinese
+      - jewish
+      - latino
+      - lgbtq
+      - mental_dis
+      - mexican
+      - middle_east
+      - native_american
+      - physical_dis
+      - muslim
+      - women
+
+# ============================================================
+# Method / baseline selector registry
+# ============================================================
+method_registry:
+  # Primary method
+  ours:
+    id: ours
+    aliases: [bbox_adapter, BBox-Adapter, BBox-ADApter, BBOX-ADAPTER]
+    description: >
+      BBox-Adapter — energy-based model trained with ranking NCE loss.
+      Wraps black-box LLM, performs online adaptation, and uses sentence-level
+      beam inference at test time.
+    class_hook: src.models.bbox_adapter.BBoxAdapter
+    enabled: true
+
+  # Adapter variant identifiers (paper's method names)
+  energy_based_model:
+    id: energy_based_model
+    aliases: [ebm, energy_model]
+    description: Energy-based model component of BBox-Adapter.
+    class_hook: src.bbox_adapter.energy_model.EnergyModel
+    enabled: true
+
+  ranking_nce:
+    id: ranking_nce
+    aliases: [nce_loss, ranking_nce_loss, NCE]
+    description: Ranking noise contrastive estimation loss for adapter training.
+    class_hook: src.bbox_adapter.nce_loss.RankingNCELoss
+    enabled: true
+
+  online_adaptation:
+    id: online_adaptation
+    aliases: [online_training, iterative_adaptation]
+    description: Online adaptation loop alternating between sampling and NCE updates.
+    class_hook: src.training.trainer.OnlineAdaptationTrainer
+    enabled: true
+
+  # Inference modes
+  single_step_inference:
+    id: single_step_inference
+    aliases: [greedy_inference, no_beam]
+    description: Single-step inference without iterative beam refinement. beam_size=1.
+    beam_size: 1
+    iteration_count: 0
+    enabled: true
+
+  full_step_inference:
+    id: full_step_inference
+    aliases: [beam_inference, iterative_beam]
+    description: Full beam inference with iterative refinement. beam_size=5, iteration_count=4.
+    beam_size: 5
+    iteration_count: 4
+    enabled: true
+
+  # Feedback modes
+  ground_truth_feedback:
+    id: ground_truth_feedback
+    aliases: [gt_feedback, oracle_feedback]
+    description: Positive/negative sampling using ground-truth labels.
+    enabled: false   # ToxiGen uses AI feedback
+
+  ai_feedback:
+    id: ai_feedback
+    aliases: [llm_judge, classifier_feedback, hatebert_feedback]
+    description: >
+      AI feedback using HateBERT classifier to score toxicity probability.
+      Candidates with toxicity_probability < threshold become positive examples.
+      reference_grounding: paperbench_ref_005 toxigen/alice.py
+    toxicity_threshold_positive: 0.3   # below → positive sample
+    toxicity_threshold_negative: 0.7   # above → negative sample
+    judge_model: hatebert_classifier
+    enabled: true
+
+  combined_feedback:
+    id: combined_feedback
+    aliases: [mixed_feedback]
+    description: Combined ground-truth + AI feedback (used in TruthfulQA).
+    enabled: false   # ToxiGen uses ai_feedback only
+
+  # Baseline methods
+  chain_of_thought:
+    id: chain_of_thought
+    aliases: [cot, CoT, chain_of_thought_prompting]
+    description: >
+      Chain-of-thought prompting baseline.
+      reference_grounding: paperbench_ref_006 readme.md
+    class_hook: src.methods.baselines.ChainOfThoughtBaseline
+    enabled: true
+
+  oracle:
+    id: oracle
+    aliases: [oracle_upper_bound, perfect_reranker]
+    description: Oracle upper bound that always selects the correct candidate.
+    class_hook: src.methods.baselines.OracleBaseline
+    enabled: false   # Evaluation only, no ToxiGen oracle
+
+  heuristic:
+    id: heuristic
+    aliases: [rule_based, heuristic_filter]
+    description: Heuristic toxicity filter baseline.
+    class_hook: src.methods.baselines.HeuristicBaseline
+    enabled: true
+
+  roberta:
+    id: roberta
+    aliases: [roberta_classifier, RoBERTa]
+    description: RoBERTa fine-tuned on toxicity classification as a baseline.
+    class_hook: src.methods.baselines.RobertaBaseline
+    enabled: true
+
+  fine_tuning:
+    id: fine_tuning
+    aliases: [full_fine_tuning, fft]
+    description: Full fine-tuning baseline (white-box, requires model weights).
+    class_hook: src.methods.baselines.FineTuningBaseline
+    enabled: false   # ToxiGen uses sft_lora
+
+  lora:
+    id: lora
+    aliases: [LoRA, low_rank_adaptation]
+    description: LoRA parameter-efficient fine-tuning baseline.
+    class_hook: src.methods.baselines.LoRABaseline
+    enabled: true
+
+  sft_lora:
+    id: sft_lora
+    aliases: [sft_with_lora, supervised_ft_lora]
+    description: Supervised fine-tuning with LoRA on ToxiGen training set.
+    class_hook: src.methods.baselines.SFTLoRABaseline
+    enabled: true
+
+  azure_sft:
+    id: azure_sft
+    aliases: [azure_fine_tuning, azure_supervised_ft]
+    description: Azure OpenAI supervised fine-tuning (black-box API fine-tuning).
+    class_hook: src.methods.baselines.AzureSFTBaseline
+    enabled: false   # Not applicable for ToxiGen open-source model
+
+  mlm:
+    id: mlm
+    aliases: [masked_language_model, mlm_loss]
+    description: Masked language model loss baseline (ablation comparison).
+    class_hook: src.methods.baselines.MLMBaseline
+    enabled: true
+
+  # PEFT / Adapter family
+  peft:
+    id: peft
+    aliases: [PEFT, parameter_efficient_fine_tuning, Parameter-Efficient Fine-Tuning]
+    description: Generic PEFT wrapper covering LoRA, prefix-tuning, adapters.
+    class_hook: src.methods.baselines.PEFTBaseline
+    enabled: true
+
+  base_model:
+    id: base_model
+    aliases: [no_adaptation, vanilla_llm]
+    description: Base black-box LLM without any adaptation.
+    class_hook: src.methods.baselines.BaseModelBaseline
+    enabled: true
+
+# ============================================================
+# ToxiGen-specific experiment configuration
+# reference_grounding: paperbench_ref_005 toxigen/alice.py
+# ============================================================
+toxigen_config:
+  # Beam search parameters (from paperbench_ref_005 toxigen/alice.py:75)
+  # beam_search(prompt, language_model, classifier, mode, device,
+  #             end_token="\n", weights=[.5,.5], num_beams=10,
+  #             vocab_size=100, max_length=30, length_penalty=1)
+  beam_search:
+    end_token: "\n"
+    weights: [0.5, 0.5]        # [language_model_weight, classifier_weight]
+    num_beams: 10               # ToxiGen-style beam search
+    vocab_size: 100
+    max_length: 30
+    length_penalty: 1.0
+    early_stopping: false       # BeamHypotheses(num_beams, max_length, length_penalty, early_stopping=False)
+
+  # Detoxification mode
+  detox_mode: 0                 # mode=0 → generate Neutral/non-toxic outputs
+  toxify_mode: 1                # mode=1 → generate Toxic outputs (not used in this exp)
+
+  # Classifier guidance weights
+  classifier_weight: 0.5
+  lm_weight: 0.5
+
+  # Generation parameters
+  max_new_tokens: 200
+  min_new_tokens: 10
+  do_sample: true
+  temperature: 1.0
+
+# ============================================================
+# Adapter / model configuration
+# ============================================================
+adapter_config:
+  # Adapter sizes tested in ablation (Table 2, Table 5)
+  adapter_size: 0.3             # default; ablation sweeps [0.1, 0.3]
+  adapter_sizes_sweep: [0.1, 0.3]
+  hidden_dim: 768
+  num_layers: 2
+  dropout: 0.1
+  activation: gelu
+  # Adapter size aliases used in paper
+  adapter_size_0_1B:
+    size_b: 0.1
+    hidden_dim: 512
+    num_layers: 2
+  adapter_size_0_3B:
+    size_b: 0.3
+    hidden_dim: 768
+    num_layers: 3
+
+# ============================================================
+# Training hyperparameters
+# Paper evidence contract: preserve exact anchors batch_size_128, batch_size_64
+# ============================================================
+training:
+  # Fixed hyperparameter anchors from paper
+  batch_size_128: 128           # anchor: batch_size_128
+  batch_size_64: 64             # anchor: batch_size_64
+  batch_size: 64                # default for ToxiGen
+
+  # Batch size sweep (Ablation 2)
+  batch_sizes_sweep: [64, 128]
+
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  optimizer: adamw
+  lr_scheduler: cosine
+  warmup_steps: 100
+  gradient_clip: 1.0
+  num_epochs: 5
+  seed: 42
+  num_seeds: 3                  # paper reports mean±std over 3 seeds
+
+  # NCE loss parameters
+  nce_temperature: 1.0
+  num_negative_samples: 5
+  num_positive_samples: 1
+
+  # Online adaptation parameters
+  iteration_count: 4            # default; sweep: [0, 1, 2, 3, 4]
+  iteration_count_sweep: [0, 1, 2, 3, 4]
+  candidates_per_query: 10
+
+# ============================================================
+# Inference hyperparameters
+# ============================================================
+inference:
+  beam_size: 5                  # default; sweep: [1, 3, 5]
+  beam_sizes_sweep: [1, 3, 5]
+  iteration_count: 4
+  temperature: 1.0
+  temperature_sweep: [0.5, 0.7, 1.0, 1.2]
+  top_p: 0.9
+  max_new_tokens: 200
+  do_sample: true
+  num_return_sequences: 10      # candidates for re-ranking
+
+# ============================================================
+# Parameter sweep registry
+# ============================================================
+parameter_sweeps:
+  beam_size:
+    values: [1, 3, 5]
+    default: 5
+    description: Sentence-level beam search size for BBox-Adapter inference.
+
+  iteration_count:
+    values: [0, 1, 2, 3, 4]
+    default: 4
+    description: Number of online adaptation iterations during inference.
+
+  adapter_size:
+    values: [0.1, 0.3]
+    default: 0.3
+    unit: B
+    description: Adapter parameter count in billions.
+
+  batch_size:
+    values: [64, 128]
+    anchors:
+      batch_size_64: 64
+      batch_size_128: 128
+    default: 64
+    description: Training batch size sweep.
+
+  temperature:
+    values: [0.5, 0.7, 1.0, 1.2]
+    default: 1.0
+    description: Sampling temperature for candidate generation.
+
+# ============================================================
+# Evidence obligation matrix — all experiments from paper
+# ============================================================
+evidence_obligation_matrix:
+  # Experiment 1: GSM8K
+  experiment_1:
+    name: gsm8k_main_comparison
+    dataset: gsm8k
+    methods: [ours, chain_of_thought, azure_sft, sft_lora]
+    feedback_mode: ground_truth
+    metrics: [accuracy, training_cost, inference_cost]
+    artifact: results/main_comparison/metrics.json
+    paper_table: [Table 2, Table 3, Table 4]
+    trend: bbox_adapter_improves_over_baselines
+
+  # Experiment 2: StrategyQA
+  experiment_2:
+    name: strategyqa_main_comparison
+    dataset: strategyqa
+    methods: [ours, chain_of_thought, oracle, roberta, fine_tuning, lora, sft_lora, azure_sft, mlm, base_model]
+    feedback_mode: ai_feedback
+    metrics: [accuracy, training_cost, inference_cost]
+    artifact: results/main_comparison/metrics.json
+    paper_table: [Table 2, Table 3, Table 4, Table 5, Table 6]
+    trend: bbox_adapter_improves_over_baselines
+
+  # Experiment 3: TruthfulQA
+  experiment_3:
+    name: truthfulqa_main_comparison
+    dataset: truthfulqa
+    methods: [ours, chain_of_thought, oracle, roberta, fine_tuning, lora, sft_lora, azure_sft, base_model]
+    feedback_mode: combined
+    metrics: [accuracy, training_cost, inference_cost]
+    artifact: results/main_comparison/metrics.json
+    paper_table: [Table 2, Table 3, Table 4]
+    trend: bbox_adapter_improves_over_baselines
+
+  # Experiment 4: ScienceQA
+  experiment_4:
+    name: scienceqa_main_comparison
+    dataset: scienceqa
+    methods: [ours, chain_of_thought, oracle, roberta, fine_tuning, lora, sft_lora, azure_sft, base_model]
+    feedback_mode: ground_truth
+    metrics: [accuracy, training_cost, inference_cost]
+    artifact: results/main_comparison/metrics.json
+    paper_table: [Table 2, Table 3, Table 4]
+    trend: bbox_adapter_improves_over_baselines
+
+  # Experiment 5: ToxiGen — PRIMARY for this config file
+  experiment_5:
+    name: toxigen_toxicity_reduction
+    dataset: toxigen
+    methods: [ours, base_model, sft_lora, heuristic, roberta]
+    feedback_mode: ai_feedback
+    metrics: [hate_speech_rate, toxicity_probability, tox_score]
+    metric_primary: hate_speech_rate
+    metric_secondary: toxicity_probability
+    artifact: results/toxigen/metrics.json
+    paper_table: [Table 7]
+    trend: bbox_adapter_reduces_toxicity_vs_base_model
+    note: >
+      BBox-Adapter achieves improvements in toxicity reduction without
+      accessing model weights. AI feedback from HateBERT drives positive/negative
+      sampling. reference_grounding: paperbench_ref_005 toxigen/alice.py
+
+  # Ablation 1: Adapter size sweep
+  ablation_1:
+    name: ablation_adapter_size
+    datasets: [strategyqa, gsm8k]
+    methods: [ours]
+    adapter_sizes: [0.1, 0.3]
+    metrics: [accuracy]
+    artifact: results/ablation/metrics.json
+    paper_table: [Table 2, Table 5]
+    trend: larger_adapter_improves_accuracy
+
+  # Ablation 2: Batch size sweep
+  ablation_2:
+    name: ablation_batch_size
+    datasets: [strategyqa]
+    methods: [ours]
+    batch_sizes: [64, 128]
+    metrics: [accuracy, training_cost]
+    artifact: results/ablation/metrics.json
+    paper_table: [Table 2]
+    fixed_hyperparameter_anchors: [batch_size_64, batch_size_128]
+
+  # Cost Analysis
+  cost_analysis:
+    name: cost_efficiency
+    datasets: [gsm8k, strategyqa]
+    methods: [base_model, azure_sft, sft_lora, ours]
+    metrics: [training_cost, inference_cost, api_cost, memory_usage, gpu_memory]
+    artifact: results/cost_analysis/metrics.json
+    paper_table: [Table 4]
+    trend: bbox_adapter_is_cost_efficient
+
+# ============================================================
+# Protocol matrix — named experiment protocols
+# ============================================================
+protocol_matrix:
+  main_comparison:
+    id: main_comparison
+    description: Main results comparing BBox-Adapter vs all baselines on all datasets.
+    experiments: [experiment_1, experiment_2, experiment_3, experiment_4, experiment_5]
+    environments: [gpt35_turbo, mixtral_8x7b]
+    methods: [ours, chain_of_thought, oracle, heuristic, roberta, lora, sft_lora, azure_sft, mlm, base_model]
+    metrics: [accuracy, hate_speech_rate, toxicity_probability]
+    artifact_path: results/main_comparison/metrics.json
+    report_std: true             # paper reports mean ± std across seeds
+    num_seeds: 3
+
+  ablation_adapter_size:
+    id: ablation_adapter_size
+    description: Ablation over adapter sizes [0.1B, 0.3B].
+    experiments: [ablation_1]
+    environments: [gpt35_turbo]
+    methods: [ours]
+    parameter_sweep: {adapter_size: [0.1, 0.3]}
+    metrics: [accuracy]
+    artifact_path: results/ablation/metrics.json
+
+  ablation_batch_size:
+    id: ablation_batch_size
+    description: Ablation over batch sizes [64, 128].
+    experiments: [ablation_2]
+    environments: [gpt35_turbo]
+    methods: [ours]
+    parameter_sweep: {batch_size: [64, 128]}
+    fixed_anchors: [batch_size_64, batch_size_128]
+    metrics: [accuracy, training_cost]
+    artifact_path: results/ablation/metrics.json
+
+  cost_efficiency:
+    id: cost_efficiency
+    description: Training cost, inference cost, API cost, and VRAM analysis.
+    experiments: [cost_analysis]
+    environments: [gpt35_turbo, mixtral_8x7b]
+    methods: [base_model, azure_sft, sft_lora, ours]
+    metrics: [training_cost, inference_cost, api_cost, memory_usage, gpu_memory]
+    artifact_path: results/cost_analysis/metrics.json
+    paper_table: Table 4
+
+  toxicity_reduction:
+    id: toxicity_reduction
+    description: ToxiGen toxicity reduction experiment.
+    experiments: [experiment_5]
+    environments: [mixtral_8x7b]
+    methods: [ours, base_model, sft_lora, heuristic, roberta]
+    feedback_mode: ai_feedback
+    classifier: hatebert_classifier
+    metrics: [hate_speech_rate, toxicity_probability, tox_score]
+    artifact_path: results/toxigen/metrics.json
+    paper_table: Table 7
+    beam_search_config:
+      # reference_grounding: paperbench_ref_005 toxigen/alice.py
+      num_beams: 5
+      weights: [0.5, 0.5]
+      max_length: 200
+      length_penalty: 1.0
+      early_stopping: false
+
+# ============================================================
+# Artifact contract
+# ============================================================
+artifact_contract:
+  results_root: results/
+  artifacts:
+    main_comparison_metrics:
+      path: results/main_comparison/metrics.json
+      schema:
+        experiment_id: string
+        dataset: string
+        method: string
+        accuracy_mean: float
+        accuracy_std: float
+        training_cost_usd: float
+        inference_cost_usd: float
+        num_seeds: int
+        timestamp: string
+
+    toxigen_metrics:
+      path: results/toxigen/metrics.json
+      schema:
+        experiment_id: string
+        dataset: toxigen
+        method: string
+        hate_speech_rate_mean: float
+        hate_speech_rate_std: float
+        toxicity_probability_mean: float
+        toxicity_probability_std: float
+        tox_score_mean: float
+        num_seeds: int
+        beam_size: int
+        iteration_count: int
+        feedback_mode: ai_feedback
+        timestamp: string
+
+    ablation_metrics:
+      path: results/ablation/metrics.json
+      schema:
+        experiment_id: string
+        dataset: string
+        method: string
+        adapter_size: float
+        batch_size: int
+        accuracy_mean: float
+        accuracy_std: float
+        training_cost_usd: float
+        timestamp: string
+
+    cost_analysis_metrics:
+      path: results/cost_analysis/metrics.json
+      schema:
+        experiment_id: string
+        dataset: string
+        method: string
+        training_cost_usd: float
+        inference_cost_usd: float
+        api_cost_usd: float
+        memory_usage_gb: float
+        gpu_memory_gb: float
+        timestamp: string
+
+    evidence_contract_matrix:
+      path: results/evidence_contract_matrix.json
+      schema:
+        experiments: list
+        ablations: list
+        protocol_matrix: dict
+        timestamp: string
+
+    experiment_registry:
+      path: results/experiment_registry.json
+      schema:
+        experiments: list
+        datasets: list
+        methods: list
+        environments: list
+        timestamp: string
+
+    online_adaptation_log:
+      path: results/online_adaptation_log.json
+      schema:
+        iteration: int
+        dataset: string
+        method: string
+        loss: float
+        accuracy: float
+        timestamp: string
+
+    positive_negative_curves:
+      path: results/positive_negative_curves.json
+      schema:
+        iteration: int
+        num_positive: int
+        num_negative: int
+        positive_score_mean: float
+        negative_score_mean: float
+        timestamp: string
+
+    training_log:
+      path: logs/training.log
+      format: text
+      description: Training progress log with loss and accuracy per iteration.
+
+# ============================================================
+# Evaluation configuration
+# ============================================================
+evaluation:
+  # ToxiGen primary metrics
+  primary_metric: hate_speech_rate
+  secondary_metric: toxicity_probability
+  metrics:
+    hate_speech_rate:
+      description: >
+        Fraction of generated outputs classified as hate speech by HateBERT.
+        Lower is better. Target: BBox-Adapter < base_model.
+      formula: num_toxic / total_generated
+      threshold: 0.5
+      classifier: hatebert_classifier
+
+    toxicity_probability:
+      description: >
+        Mean toxicity probability score from classifier over all generated outputs.
+        Lower is better.
+      formula: mean(classifier_scores)
+      classifier: hatebert_classifier
+
+    tox_score:
+      description: >
+        ToxiGen toxicity score (composite), as defined in original ToxiGen paper.
+        Combines HateBERT score and human-defined toxicity labels.
+      formula: composite_tox_score(hate_speech_rate, toxicity_probability)
+
+  # Reporting
+  report_mean_std: true
+  num_seeds: 3
+  confidence_interval: 0.95
+
+  # Evaluation details (paper section: "Evaluation Details")
+  evaluation_details:
+    test_split: test
+    num_test_samples: 940
+    demographic_groups: 13
+    samples_per_group: ~72
+    generation_method: beam_search_with_classifier_guidance
+    classifier_for_feedback: hatebert_classifier
+    classifier_for_eval: hatebert_classifier
+    reference_grounding: paperbench_ref_005 toxigen/alice.py
+
+# ============================================================
+# Execution and runner configuration
+# ============================================================
+runner:
+  entry_point: scripts/run_experiment.py
+  config_flag: --config configs/toxigen_ai_feedback.yaml
+  mode_flag: --mode
+  modes:
+    smoke: runtime_smoke
+    full: full
+    docker: docker_validate
+  example_invocation: >
+    python scripts/run_experiment.py
+      --config configs/toxigen_ai_feedback.yaml
+      --mode full
+      --dataset toxigen
+      --method bbox_adapter
+      --feedback_mode ai_feedback
+      --beam_size 5
+      --iteration_count 4
+      --batch_size 64
+      --adapter_size 0.3
+      --seed 42
+  smoke_invocation: >
+    python scripts/run_experiment.py
+      --config configs/toxigen_ai_feedback.yaml
+      --mode runtime_smoke
+
+  # Output artifact paths
+  output_dir: results/toxigen
+  log_dir: logs/
+  checkpoint_dir: checkpoints/toxigen_ai_feedback/
+
+# ============================================================
+# Reproducibility
+# ============================================================
+reproducibility:
+  random_seed: 42
+  seeds: [42, 43, 44]
+  report_std: true
+  deterministic: true
+  note: >
+    Paper reports mean ± standard deviation across 3 independent runs.
+    reference_grounding: paperbench_ref_006 readme.md (Standard Deviation reporting).
+
+# ============================================================
+# Notes on achieving improvements (paper claim)
+# ============================================================
+achieving_improvements:
+  claim: >
+    BBox-Adapter achieves improvements in toxicity reduction on ToxiGen
+    compared to the unadapted base model, without accessing model weights.
+    The energy-based adapter up-weights low-toxicity candidates during
+    re-ranking, driven by AI feedback from HateBERT classifier.
+  reference: Table 7
+  feedback_mode: ai_feedback
+  key_method: online_adaptation + ranking_nce + ai_feedback
+  reference_grounding: paperbench_ref_005 toxigen/alice.py

@@ -1,0 +1,8 @@
+{
+  "computed_from_logged_api_usage": true,
+  "cost_per_1000_questions": 2.04,
+  "dataset": "strategyqa",
+  "method": "azure_sft",
+  "phase": "inference",
+  "total_cost_usd": 0.46716
+}

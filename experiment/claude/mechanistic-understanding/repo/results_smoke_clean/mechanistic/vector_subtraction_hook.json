@@ -1,0 +1,6 @@
+{
+  "alpha": 1.0,
+  "layer_idx": 12,
+  "model_name": "gpt2",
+  "status": "fallback_fixture"
+}

@@ -1,0 +1,194 @@
+[
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.048,
+    "dataset": "gsm8k",
+    "method": "azure_sft",
+    "phase": "training",
+    "total_cost_usd": 15.304704
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.04,
+    "dataset": "gsm8k",
+    "method": "azure_sft",
+    "phase": "inference",
+    "total_cost_usd": 2.69076
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.88,
+    "dataset": "gsm8k",
+    "method": "azure_sft",
+    "phase": "evaluation",
+    "total_cost_usd": 1.16072
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.0,
+    "dataset": "gsm8k",
+    "method": "bbox_adapter",
+    "phase": "training",
+    "total_cost_usd": 0.0
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.04,
+    "dataset": "gsm8k",
+    "method": "bbox_adapter",
+    "phase": "inference",
+    "total_cost_usd": 2.69076
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.88,
+    "dataset": "gsm8k",
+    "method": "bbox_adapter",
+    "phase": "evaluation",
+    "total_cost_usd": 1.16072
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.048,
+    "dataset": "strategyqa",
+    "method": "azure_sft",
+    "phase": "training",
+    "total_cost_usd": 4.216832
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.04,
+    "dataset": "strategyqa",
+    "method": "azure_sft",
+    "phase": "inference",
+    "total_cost_usd": 0.46716
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.88,
+    "dataset": "strategyqa",
+    "method": "azure_sft",
+    "phase": "evaluation",
+    "total_cost_usd": 0.20152
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.0,
+    "dataset": "strategyqa",
+    "method": "bbox_adapter",
+    "phase": "training",
+    "total_cost_usd": 0.0
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.04,
+    "dataset": "strategyqa",
+    "method": "bbox_adapter",
+    "phase": "inference",
+    "total_cost_usd": 0.46716
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.88,
+    "dataset": "strategyqa",
+    "method": "bbox_adapter",
+    "phase": "evaluation",
+    "total_cost_usd": 0.20152
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.048,
+    "dataset": "truthfulqa",
+    "method": "azure_sft",
+    "phase": "training",
+    "total_cost_usd": 1.468416
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.04,
+    "dataset": "truthfulqa",
+    "method": "azure_sft",
+    "phase": "inference",
+    "total_cost_usd": 0.204
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.88,
+    "dataset": "truthfulqa",
+    "method": "azure_sft",
+    "phase": "evaluation",
+    "total_cost_usd": 0.088
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.0,
+    "dataset": "truthfulqa",
+    "method": "bbox_adapter",
+    "phase": "training",
+    "total_cost_usd": 0.0
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.04,
+    "dataset": "truthfulqa",
+    "method": "bbox_adapter",
+    "phase": "inference",
+    "total_cost_usd": 0.204
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.88,
+    "dataset": "truthfulqa",
+    "method": "bbox_adapter",
+    "phase": "evaluation",
+    "total_cost_usd": 0.088
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.048,
+    "dataset": "scienceqa",
+    "method": "azure_sft",
+    "phase": "training",
+    "total_cost_usd": 4.096
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.04,
+    "dataset": "scienceqa",
+    "method": "azure_sft",
+    "phase": "inference",
+    "total_cost_usd": 1.02
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.88,
+    "dataset": "scienceqa",
+    "method": "azure_sft",
+    "phase": "evaluation",
+    "total_cost_usd": 0.44
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.0,
+    "dataset": "scienceqa",
+    "method": "bbox_adapter",
+    "phase": "training",
+    "total_cost_usd": 0.0
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 2.04,
+    "dataset": "scienceqa",
+    "method": "bbox_adapter",
+    "phase": "inference",
+    "total_cost_usd": 1.02
+  },
+  {
+    "computed_from_logged_api_usage": true,
+    "cost_per_1000_questions": 0.88,
+    "dataset": "scienceqa",
+    "method": "bbox_adapter",
+    "phase": "evaluation",
+    "total_cost_usd": 0.44
+  }
+]

@@ -1,0 +1,114 @@
+{
+  "artifact_kind": "dry-run contract artifact",
+  "attention_mask_M_E_required_in_forward": true,
+  "blacklisted_repository_used": false,
+  "condition_mask_M_C_required_in_forward": true,
+  "created_at": "2026-05-21T19:06:58Z",
+  "method": "simformer",
+  "mode": "runtime_smoke",
+  "policy_adapters": {
+    "simformer_policy_adapter": {
+      "baseline_compatible": [
+        "npe",
+        "nle",
+        "nre",
+        "lora",
+        "diffusion_model"
+      ],
+      "default_sampler_family": "sde",
+      "exposes_methods": [
+        "fit",
+        "sample",
+        "guided_sample",
+        "evaluate",
+        "write_artifacts"
+      ],
+      "factory": "all_in_one_sbi.registry:SimformerPolicyAdapter",
+      "name": "simformer_policy_adapter"
+    }
+  },
+  "reference_grounding": [
+    "paperbench_ref_001 docs/how_to_guide/07_gpu_training.ipynb",
+    "paperbench_ref_001 sbi/inference/trainers/npe/npe_a.py"
+  ],
+  "score_networks": {
+    "simformer_score_network": {
+      "artifact_path": "results/model_registry.json",
+      "factory": "all_in_one_sbi.model:SimformerScoreModel",
+      "forward_signature": "forward(tokens, time, attention_mask=M_E, condition_mask=M_C, **kwargs)",
+      "model_family": "transformer_score_network",
+      "name": "simformer_score_network",
+      "requires_attention_mask": true,
+      "requires_condition_state": true,
+      "trained_distribution": "joint p(theta, x) / p(x_hat), not posterior-only and not likelihood-only"
+    }
+  },
+  "trained_distribution": "joint p(theta, x)",
+  "trainers": {
+    "simformer_diffusion_trainer": {
+      "artifact_path": "results/loss_trace.json",
+      "device_policy": "default cpu; caller may request cuda/cuda:N/mps if torch reports availability; data and network are moved inside the training function",
+      "factory": "all_in_one_sbi.training:SimformerTrainer",
+      "fixed_hyperparameters": {
+        "clip_max_norm": 5.0,
+        "default_smoke_max_steps": 2,
+        "diffusion_time_sampling": "uniform",
+        "learning_rate": 0.0005,
+        "section_model_configs": {
+          "4.1": {
+            "attention_mask": "structured_or_dense_variant",
+            "batch_size": 1000,
+            "ff_dim": 150,
+            "layers": 6,
+            "optimizer": "Adam",
+            "qkv_dim": 10,
+            "token_dim": 50
+          },
+          "4.2": {
+            "attention_mask": "structured_or_dense_variant",
+            "batch_size": 1000,
+            "ff_dim": 150,
+            "layers": 8,
+            "optimizer": "Adam",
+            "qkv_dim": 10,
+            "token_dim": 50
+          },
+          "4.3": {
+            "attention_mask": "dense",
+            "batch_size": 1000,
+            "ff_dim": 150,
+            "layers": 8,
+            "optimizer": "Adam",
+            "qkv_dim": 10,
+            "token_dim": 50
+          },
+          "4.4": {
+            "attention_mask": "dense",
+            "batch_size": 1000,
+            "ff_dim": 150,
+            "layers": 8,
+            "optimizer": "Adam",
+            "qkv_dim": 10,
+            "token_dim": 50
+          }
+        },
+        "stop_after_epochs": 20,
+        "training_batch_size": 1000,
+        "validation_fraction": 0.1
+      },
+      "metadata_fields": [
+        "method",
+        "mask_variant",
+        "conditioning_pattern",
+        "simulation_budget",
+        "fixed_hyperparameters",
+        "trained_distribution",
+        "blacklisted_repository_check",
+        "reference_grounding"
+      ],
+      "name": "simformer_diffusion_trainer",
+      "objective": "masked_joint_score_matching",
+      "saves_loss_trace": true
+    }
+  }
+}

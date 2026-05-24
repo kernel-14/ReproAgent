@@ -1,0 +1,161 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rice-rl"
+version = "1.0.0"
+description = "RICE: Breaking Through the Training Bottlenecks of Reinforcement Learning with Explanation"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "RICE Authors", email = "rice@example.com"}
+]
+keywords = ["reinforcement learning", "explanation", "deep learning", "critical states", "sample efficiency"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Core lightweight dependencies
+dependencies = [
+    "numpy>=1.21.0,<2.0.0",
+    "pyyaml>=6.0",
+    "pathlib2>=2.3.7; python_version < '3.4'",
+]
+
+[project.optional-dependencies]
+# RL training and policy dependencies
+rl = [
+    "torch>=1.13.0,<3.0.0",
+    "torchvision>=0.14.0",
+    "gymnasium>=0.28.0",
+    "stable-baselines3>=2.0.0",
+]
+
+# MuJoCo environments
+mujoco = [
+    "mujoco>=2.3.0",
+    "gymnasium[mujoco]>=0.28.0",
+]
+
+# Visualization and plotting
+viz = [
+    "matplotlib>=3.5.0",
+    "seaborn>=0.12.0",
+    "pillow>=9.0.0",
+]
+
+# Analysis and metrics
+analysis = [
+    "scipy>=1.7.0",
+    "scikit-learn>=1.0.0",
+    "pandas>=1.3.0",
+]
+
+# Progress and logging
+monitoring = [
+    "tqdm>=4.62.0",
+    "tensorboard>=2.8.0",
+]
+
+# Real-world application simulators (optional, heavy)
+simulators = [
+    "pygame>=2.1.0",
+]
+
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=0.950",
+]
+
+# Full installation with all features
+all = [
+    "torch>=1.13.0,<3.0.0",
+    "torchvision>=0.14.0",
+    "gymnasium>=0.28.0",
+    "gymnasium[mujoco]>=0.28.0",
+    "stable-baselines3>=2.0.0",
+    "mujoco>=2.3.0",
+    "matplotlib>=3.5.0",
+    "seaborn>=0.12.0",
+    "pillow>=9.0.0",
+    "scipy>=1.7.0",
+    "scikit-learn>=1.0.0",
+    "pandas>=1.3.0",
+    "tqdm>=4.62.0",
+    "tensorboard>=2.8.0",
+    "pygame>=2.1.0",
+]
+
+[project.scripts]
+rice = "main:main"
+rice-train = "main:main"
+rice-eval = "src.evaluation:main"
+
+[project.urls]
+Homepage = "https://github.com/paperbench/rice-reproduction"
+Documentation = "https://github.com/paperbench/rice-reproduction/blob/main/README.md"
+Repository = "https://github.com/paperbench/rice-reproduction"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+packages = ["src"]
+
+[tool.setuptools.package-data]
+src = ["*.yaml", "*.json"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+  | __pycache__
+)/
+'''
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --cov=src --cov-report=term-missing --cov-report=html"
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+]

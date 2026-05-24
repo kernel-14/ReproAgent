@@ -1,0 +1,7 @@
+{
+  "model_name": "gpt2",
+  "scale": 10.0,
+  "selected": [],
+  "status": "fallback_fixture",
+  "top_k": 7
+}

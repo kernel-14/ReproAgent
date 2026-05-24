@@ -1,0 +1,62 @@
+{
+  "data_model_method_train_eval_artifact_path_exercised": true,
+  "experiment_id": "smm_smoke",
+  "mode": "runtime_smoke",
+  "paper": "Sample-specific Masks for Visual Reprogramming-based Prompting",
+  "paper_visible_artifacts_computed": [
+    {
+      "computed": true,
+      "kind": "figure",
+      "paper_visible_name": "Figure 13",
+      "path": "/tmp/pytest-of-root/pytest-694/test_canonical_smoke_manifest_0/figures/figure_13.png"
+    },
+    {
+      "computed": true,
+      "kind": "metrics",
+      "paper_visible_name": "results/metrics.json",
+      "path": "/tmp/pytest-of-root/pytest-694/test_canonical_smoke_manifest_0/metrics.json"
+    },
+    {
+      "computed": true,
+      "kind": "metrics",
+      "metric": "fidelity_score",
+      "paper_visible_name": "results/fidelity_score.json",
+      "path": "/tmp/pytest-of-root/pytest-694/test_canonical_smoke_manifest_0/fidelity_score.json"
+    },
+    {
+      "computed": true,
+      "kind": "registry",
+      "paper_visible_name": "results/dataset_registry.json",
+      "path": "/tmp/pytest-of-root/pytest-694/test_canonical_smoke_manifest_0/dataset_registry.json"
+    },
+    {
+      "computed": true,
+      "kind": "registry",
+      "paper_visible_name": "results/environment_registry.json",
+      "path": "/tmp/pytest-of-root/pytest-694/test_canonical_smoke_manifest_0/environment_registry.json"
+    },
+    {
+      "computed": true,
+      "kind": "registry",
+      "paper_visible_name": "results/experiment_registry.json",
+      "path": "/tmp/pytest-of-root/pytest-694/test_canonical_smoke_manifest_0/experiment_registry.json"
+    },
+    {
+      "computed": true,
+      "kind": "config",
+      "paper_visible_name": "results/config_resolved.json",
+      "path": "/tmp/pytest-of-root/pytest-694/test_canonical_smoke_manifest_0/config_resolved.json"
+    }
+  ],
+  "readiness_only": true,
+  "record_count": 1,
+  "route_exercised": [
+    "setup_config",
+    "build_data",
+    "build_reprogramming",
+    "train_or_adapt",
+    "evaluate_predictions",
+    "aggregate_accuracy",
+    "write_artifacts"
+  ]
+}

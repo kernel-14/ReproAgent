@@ -1,0 +1,59 @@
+# Requirements for the PaperBench reproduction:
+# "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity"
+#
+# Install the lightweight smoke/runtime surface with:
+#   python -m pip install -r requirements.txt
+#
+# The default command remains bounded and safe:
+#   python scripts/run_reproduction.py --mode runtime_smoke
+#
+# Full training/evaluation dependencies are intentionally declared below as
+# optional commented groups so importing the repository and running smoke tests
+# does not require GPU/model/dataset packages. Install only the groups needed
+# for full reproduction runs.
+#
+# reference_grounding: paperbench_ref_001 releases/20170613-score_normalization_v1.md
+# The grounded Perspective score-normalization reference motivates keeping
+# toxicity-score calibration, thresholds, and protocol metadata explicit in
+# configuration/artifact code rather than hidden in undeclared service behavior.
+
+# ---------------------------------------------------------------------------
+# Lightweight core dependencies: config/schema parsing, deterministic bounded
+# data pipeline, registry/evaluation artifact writing, and smoke tests.
+# ---------------------------------------------------------------------------
+PyYAML>=6.0
+numpy>=1.23,<3
+tqdm>=4.64
+typing-extensions>=4.7
+packaging>=23.0
+jsonschema>=4.18
+pytest>=7.4
+
+# ---------------------------------------------------------------------------
+# Optional data/probe extras for full dataset preparation and classical probe
+# evaluation. Install manually when running real Jigsaw/toxicity data routes:
+#   python -m pip install "datasets>=2.18" "pandas>=2.0" "scikit-learn>=1.3"
+# ---------------------------------------------------------------------------
+# datasets>=2.18
+# pandas>=2.0
+# scikit-learn>=1.3
+
+# ---------------------------------------------------------------------------
+# Optional full model-training extras for DPO, PPLM-style guidance,
+# intervention, and un-aligning experiments. Project modules must lazy-import
+# these inside full-mode functions only:
+#   python -m pip install "torch>=2.1" "transformers>=4.39" "accelerate>=0.27" "peft>=0.10" "trl>=0.8"
+# ---------------------------------------------------------------------------
+# torch>=2.1
+# transformers>=4.39
+# accelerate>=0.27
+# peft>=0.10
+# trl>=0.8
+
+# ---------------------------------------------------------------------------
+# Optional reporting extras for full paper-visible tables/figures after
+# measured evaluation runs:
+#   python -m pip install "matplotlib>=3.7" "seaborn>=0.13"
+# ---------------------------------------------------------------------------
+# matplotlib>=3.7
+# seaborn>=0.13

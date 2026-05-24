@@ -1,0 +1,8 @@
+{
+  "eval_backend": "davinci-002",
+  "max_generation_length": 512,
+  "paper_surface": "Table 3",
+  "retrain_adapter": false,
+  "temperature": 1.0,
+  "train_backend": "gpt-3.5-turbo"
+}

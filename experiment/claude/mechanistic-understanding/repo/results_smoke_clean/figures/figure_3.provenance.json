@@ -1,0 +1,7 @@
+{
+  "artifact": "figure_3",
+  "created_at": "2026-05-21T19:35:11Z",
+  "metric": "accuracy",
+  "paper": "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity",
+  "route": "run_figure_3_route"
+}

@@ -1,0 +1,401 @@
+[build-system]
+requires = ["setuptools>=68", "wheel>=0.41"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "all-in-one-sbi-paperbench-repro"
+version = "0.1.0"
+description = "PaperBench reproduction of All-in-one simulation-based inference with a safe smoke/default route and explicit experiment registry."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "PaperBench Reproduction Workflow" }
+]
+dependencies = [
+  "numpy>=1.24,<3",
+]
+
+[project.optional-dependencies]
+core = [
+  "scipy>=1.10",
+]
+evaluation = [
+  "scikit-learn>=1.3",
+]
+training = [
+  "torch>=2.1",
+  "tqdm>=4.66",
+]
+visualization = [
+  "matplotlib>=3.7",
+  "pandas>=2.0",
+]
+sbi = [
+  "sbi>=0.22",
+]
+simulators = [
+  "gymnasium>=0.29",
+]
+dev = [
+  "pytest>=7.4",
+  "ruff>=0.4",
+]
+
+[project.scripts]
+paperbench-repro = "run_experiments:main"
+all-in-one-sbi = "run_experiments:main"
+main = "main:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["all_in_one_sbi*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.paperbench_repro]
+project_name = "All-in-one simulation-based inference"
+paper_title = "All-in-one simulation-based inference"
+canonical_entrypoint = "run_experiments.py"
+default_mode = "runtime_smoke"
+artifact_dir_env = "PAPERBENCH_REPRO_ARTIFACT_DIR"
+blacklisted_repositories = [
+  "https://github.com/mackelab/simformer",
+]
+smoke_command = "python run_experiments.py --mode runtime_smoke"
+full_command = "python run_experiments.py --mode train"
+readiness_artifacts = [
+  "readiness.json",
+  "evaluation_result.json",
+]
+paper_visible_artifacts = [
+  "results/metrics.json",
+  "results/samples.npz",
+  "results/run_summary.json",
+  "results/experiment_registry.json",
+  "results/evidence_contract_matrix.json",
+  "results/artifact_manifest.json",
+]
+
+[tool.paperbench_repro.contract]
+cli_surface = "run_experiments:main"
+callable_main = "main:main"
+dataset_prepare_validate_path = "all_in_one_sbi.registry:dataset_prepare_validate"
+model_loader_factory_path = "all_in_one_sbi.registry:model_loader_factory"
+evaluation_path = "all_in_one_sbi.evaluation:evaluate"
+artifact_writer_path = "all_in_one_sbi.artifacts:write_artifacts"
+baseline_or_ablation_path = "all_in_one_sbi.baselines:build_baseline"
+registry_path = "all_in_one_sbi.registry:EXPERIMENT_REGISTRY"
+environment_path = "all_in_one_sbi.registry:build_environment"
+mode_selector = ["dry_run", "train", "eval", "runtime_smoke", "docker_validate"]
+bounded_smoke_policy = "Instantiate dataset factory, model loader, task, model, sampler, evaluator, and artifact writer without expensive full training."
+artifact_contract_policy = "Smoke mode may write readiness.json and evaluation_result.json only as auxiliary contract artifacts; paper-visible metrics and tables must come from bounded measured code paths or explicit full-mode commands."
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/22_experiment_tracking.ipynb"
+
+[tool.paperbench_repro.dependencies]
+core = [
+  "numpy>=1.24,<3",
+]
+optional_heavy = [
+  "torch>=2.1",
+  "scipy>=1.10",
+  "scikit-learn>=1.3",
+  "matplotlib>=3.7",
+  "pandas>=2.0",
+  "sbi>=0.22",
+  "gymnasium>=0.29",
+]
+
+[tool.paperbench_repro.registry]
+canonical_stage_sequence = [
+  "project_skeleton",
+  "core_method",
+  "evaluation_protocol",
+]
+named_result_sections = [
+  "4.1 Benchmark tasks",
+  "4.2 Lotka-Volterra",
+  "4.3 SIRD-model",
+  "4.4 Hodgkin-Huxley",
+]
+selectors = [
+  "ours",
+  "simformer",
+  "npe",
+  "nle",
+  "nre",
+  "lora",
+  "diffusion_model",
+  "ground_truth_feedback",
+]
+metrics = [
+  "c2st",
+  "nll",
+  "return",
+  "constraint_satisfaction_rate",
+  "posterior_coverage",
+]
+
+[[tool.paperbench_repro.experiments]]
+name = "4.1 Benchmark tasks"
+task = "benchmark"
+methods = ["ours", "simformer", "npe", "nle", "nre", "lora"]
+datasets = ["two_moons", "gaussian_linear", "gaussian_mixture", "slcp"]
+metrics = ["c2st", "nll"]
+mode = "eval"
+artifact_paths = ["results/metrics.json", "results/experiment_registry.json"]
+notes = "Explicit benchmark registry entry, not collapsed into a generic evaluation."
+reference_grounding = "paperbench_ref_001 sbi/inference/trainers/npe/npe_a.py"
+
+[[tool.paperbench_repro.experiments]]
+name = "4.2 Lotka-Volterra"
+task = "lotka_volterra"
+methods = ["ours", "simformer"]
+variants = ["structured_observation", "unstructured_observation", "metadata_dependent_mask"]
+metrics = ["posterior_coverage", "nll"]
+mode = "eval"
+artifact_paths = ["results/metrics.json", "results/evidence_contract_matrix.json"]
+notes = "Mask is metadata dependent and encodes which T time points of prey/predator are observed."
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/04_embedding_networks.ipynb"
+
+[[tool.paperbench_repro.experiments]]
+name = "4.3 SIRD-model"
+task = "sird_model"
+methods = ["ours", "simformer", "npe", "nre"]
+variants = ["structured_observation", "unstructured_observation"]
+metrics = ["c2st", "nll", "return"]
+mode = "eval"
+artifact_paths = ["results/metrics.json", "results/run_summary.json"]
+notes = "Preserves named paper-visible comparison surface for SIRD posterior inference."
+reference_grounding = "paperbench_ref_001 sbi/inference/trainers/nre/nre_base.py"
+
+[[tool.paperbench_repro.experiments]]
+name = "4.4 Hodgkin-Huxley"
+task = "hodgkin_huxley"
+methods = ["ours", "simformer", "ground_truth_feedback"]
+variants = ["interval_guidance", "metabolic_cost_constraint", "probability_flow_ode", "sde"]
+metrics = ["constraint_satisfaction_rate", "posterior_coverage"]
+mode = "eval"
+artifact_paths = ["results/metrics.json", "results/samples.npz"]
+notes = "Interval-guidance and metabolic-cost constraint routes remain explicit and bounded."
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/22_experiment_tracking.ipynb"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "front_matter_abstract"
+paper_section = "front_matter/abstract"
+claim = "All-in-one simulation-based inference"
+implementation_surface = "Simformer core path"
+canonical_artifact = "results/metrics.json"
+method = "transformer score-based diffusion over joint simulator variables"
+parameters = ["M_E dependency masks", "M_C condition masks", "conditional sampling"]
+trend_or_decision = "Expose benchmark-visible metrics through a stable evaluation route."
+artifact_status = "bounded_full_mode_or_explicit_smoke"
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/22_experiment_tracking.ipynb"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "intro_amortized_sbi"
+paper_section = "1. Introduction"
+claim = "amortized Bayesian inference and simulation-based inference"
+implementation_surface = "train/eval dry_run entrypoint"
+canonical_artifact = "readiness.json"
+method = "single CLI or callable main(config)"
+parameters = ["method", "task", "experiment", "mode=train|eval|dry_run"]
+trend_or_decision = "Smoke path must instantiate real factories without expensive full training."
+artifact_status = "readiness_only_auxiliary"
+reference_grounding = "paperbench_ref_001 sbi/inference/trainers/npe/npe_a.py"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "results_named_sections"
+paper_section = "4. Results"
+claim = "named result sections"
+implementation_surface = "experiment registry entries"
+canonical_artifact = "results/experiment_registry.json"
+method = "explicit named experiment registry"
+parameters = ["4.1 Benchmark tasks", "4.2 Lotka-Volterra", "4.3 SIRD-model", "4.4 Hodgkin-Huxley"]
+trend_or_decision = "Keep paper-named experiments visible instead of generic evaluation."
+artifact_status = "stable_registry_contract"
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/22_experiment_tracking.ipynb"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "protocol_artifacts"
+paper_section = "paper_contract_experiment_artifact_protocol"
+claim = "stable metrics/tables/figures artifact schema"
+implementation_surface = "artifact_writer"
+canonical_artifact = "results/artifact_manifest.json"
+method = "artifact contract registry with bounded smoke readiness artifacts"
+parameters = ["metrics.json", "samples.npz", "run_summary.json", "experiment_registry.json", "evidence_contract_matrix.json"]
+trend_or_decision = "Do not replace paper-visible outputs with schema-only shells."
+artifact_status = "schema_plus_measured_paths"
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/22_experiment_tracking.ipynb"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "addendum_constraints"
+paper_section = "paper_addendum_constraints"
+claim = "addendum-derived constraints preserved in config and artifacts"
+implementation_surface = "config"
+canonical_artifact = "results/evidence_contract_matrix.json"
+method = "lotka-volterra metadata-dependent mask configuration"
+parameters = ["M_theta_theta = I", "M_theta_x", "M_x1x1", "M_x2x2", "causal cross-data dependence"]
+trend_or_decision = "Preserve addendum clarifications in repository configuration and evaluation behavior."
+artifact_status = "config_visible_and_machine_readable"
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/04_embedding_networks.ipynb"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "transformers_attention"
+paper_section = "2.2 Transformers and attention mechanisms"
+claim = "transformer score network"
+implementation_surface = "config"
+canonical_artifact = "results/run_summary.json"
+method = "transformer score network with explicit dependency attention masks"
+parameters = ["tokenizer", "identifier/value/condition-state tokens", "dependency mask builder"]
+trend_or_decision = "Model loader must validate method name and config path."
+artifact_status = "importable_factory_contract"
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/04_embedding_networks.ipynb"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "diffusion_sde_ode"
+paper_section = "2.3 Score-based diffusion models"
+claim = "SDE and probability-flow ODE sampler interfaces"
+implementation_surface = "evaluation"
+canonical_artifact = "results/samples.npz"
+method = "conditional sampler family selectors"
+parameters = ["sde", "ode", "guided diffusion", "interval guidance"]
+trend_or_decision = "Expose sampler family through executable configuration defaults."
+artifact_status = "sampled_bounded_route"
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/22_experiment_tracking.ipynb"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "methods_joint_training"
+paper_section = "3. Methods"
+claim = "Simformer trained on p(theta,x)=p(x_hat)"
+implementation_surface = "data_pipeline"
+canonical_artifact = "results/metrics.json"
+method = "joint token training dataset adapter"
+parameters = ["simulation budget", "condition masks", "batch-wise joint tokens"]
+trend_or_decision = "Training route must consume joint simulator variables and preserve token-level conditioning."
+artifact_status = "bounded_train_or_dry_run"
+reference_grounding = "paperbench_ref_001 sbi/inference/trainers/npe/npe_a.py"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "tokenizer_sbi"
+paper_section = "3.1 A Tokenizer for SBI"
+claim = "identifier/value/condition-state tokenizer"
+implementation_surface = "data_pipeline"
+canonical_artifact = "results/run_summary.json"
+method = "SBI tokenizer"
+parameters = ["identifier tokens", "value tokens", "condition-state tokens"]
+trend_or_decision = "Tokenizer must be a concrete callable surface, not a comment-only schema."
+artifact_status = "importable_and_lazy"
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/04_embedding_networks.ipynb"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "dependency_structures"
+paper_section = "3.2 Modelling dependency structures"
+claim = "attention mask M_E builder and model integration"
+implementation_surface = "config"
+canonical_artifact = "results/evidence_contract_matrix.json"
+method = "dependency attention mask builder"
+parameters = ["M_E", "mask variants", "structured vs unstructured observations"]
+trend_or_decision = "Attention mask construction must be explicit and metadata aware."
+artifact_status = "config_visible_registry_entry"
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/04_embedding_networks.ipynb"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "training_sampling"
+paper_section = "3.3 Simformer training and sampling"
+claim = "denoising score-matching trainer and conditional sampler"
+implementation_surface = "evaluation"
+canonical_artifact = "results/samples.npz"
+method = "denoising score matching with conditional sampling"
+parameters = ["learning rate", "validation fraction", "clip max norm", "sampling family"]
+trend_or_decision = "Bounded smoke mode may instantiate trainer and sampler but must not claim full-scale completion."
+artifact_status = "executed_bounded_or_smoke"
+reference_grounding = "paperbench_ref_001 sbi/inference/trainers/npe/npe_a.py"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "conditioning_intervals"
+paper_section = "3.4 Conditioning on intervals with diffusion guidance"
+claim = "guided score modifier interface"
+implementation_surface = "artifact_writer"
+canonical_artifact = "results/metrics.json"
+method = "interval and energy constraint score modifier"
+parameters = ["observation interval", "lower/upper bounds", "target variables", "energy threshold"]
+trend_or_decision = "Guidance must alter the score path, not only post-filter samples."
+artifact_status = "bounded_eval_route"
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/22_experiment_tracking.ipynb"
+
+[[tool.paperbench_repro.evidence_matrix]]
+row_id = "lotka_addendum_mask"
+paper_section = "addendum"
+claim = "Lotka-Volterra metadata dependent mask"
+implementation_surface = "config"
+canonical_artifact = "results/evidence_contract_matrix.json"
+method = "mask depends on which T time points predator or prey variables are observed"
+parameters = [
+  "M_theta_theta = I",
+  "M_theta_x = [[1]*T + [0]*T, [1]*T + [0]*T, [0]*T + [1]*T, [0]*T + [1]*T]",
+  "M_x1x1 = M_x2x2 = I + diag(1,-1)",
+  "causal dependency on past predator variables"
+]
+trend_or_decision = "Lotka-Volterra routing must preserve metadata-dependent causal structure."
+artifact_status = "machine_readable_config_constraint"
+reference_grounding = "paperbench_ref_001 docs/how_to_guide/04_embedding_networks.ipynb"
+
+[[tool.paperbench_repro.artifact_contract]]
+path = "results/metrics.json"
+kind = "json"
+role = "paper_visible_metrics"
+claim_policy = "bounded_measured_or_full_mode_only"
+
+[[tool.paperbench_repro.artifact_contract]]
+path = "results/samples.npz"
+kind = "npz"
+role = "conditional_samples"
+claim_policy = "bounded_measured_or_full_mode_only"
+
+[[tool.paperbench_repro.artifact_contract]]
+path = "results/run_summary.json"
+kind = "json"
+role = "run_summary"
+claim_policy = "smoke_and_full"
+
+[[tool.paperbench_repro.artifact_contract]]
+path = "results/experiment_registry.json"
+kind = "json"
+role = "experiment_registry"
+claim_policy = "smoke_and_full"
+
+[[tool.paperbench_repro.artifact_contract]]
+path = "results/evidence_contract_matrix.json"
+kind = "json"
+role = "evidence_obligation_matrix"
+claim_policy = "smoke_and_full"
+
+[[tool.paperbench_repro.artifact_contract]]
+path = "results/artifact_manifest.json"
+kind = "json"
+role = "artifact_manifest"
+claim_policy = "smoke_and_full"
+
+[[tool.paperbench_repro.artifact_contract]]
+path = "readiness.json"
+kind = "json"
+role = "auxiliary_readiness"
+claim_policy = "smoke_only"
+
+[[tool.paperbench_repro.artifact_contract]]
+path = "evaluation_result.json"
+kind = "json"
+role = "auxiliary_evaluation_result"
+claim_policy = "smoke_only"

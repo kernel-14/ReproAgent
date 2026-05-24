@@ -1,0 +1,707 @@
+# LCA-on-the-Line Default Configuration
+# Paper: LCA-on-the-Line: Benchmarking Out-of-Distribution Generalization with Class Taxonomies
+#
+# This config exposes:
+# - Dataset registry (imagenet, laion, imagenet_1k, imagenet_c, imagenet_r, imagenet_v2, imagenet_sketch, cifar)
+# - Environment/task registry (OOD Top-1, OOD Top-5, ID LCA distance, correlation analysis)
+# - Method/baseline selector (ours, baseline, resnet, vit, adapter, fine_tuning)
+# - Model registry (75 models: 36 VMs + 39 VLMs)
+# - Parameter sweeps (clustering layers, soft label temperature, LCA loss weight)
+#
+# reference_grounding: paperbench_ref_001 references/depth/stereo/README.md
+# reference_grounding: paperbench_ref_001 torchvision/prototype/datasets/_builtin/README.md
+# reference_grounding: paperbench_ref_006 eval_inat21_truncate.ipynb
+
+# =============================================================================
+# Dataset Registry - Paper evidence contract
+# =============================================================================
+datasets:
+  # ID datasets
+  imagenet:
+    dataset_id: imagenet
+    aliases: [imagenet, imagenet_1k, ILSVRC2012]
+    name: "ImageNet-1K"
+    num_classes: 1000
+    splits: [train, val]
+    source_type: huggingface
+    source_path: "ILSVRC/imagenet-1k"
+    data_dir: "data/imagenet"
+    description: "ImageNet-1K (ILSVRC2012) used as in-distribution dataset"
+    paper_usage: "ID dataset for LCA distance computation and model training"
+    
+  imagenet_1k:
+    dataset_id: imagenet_1k
+    aliases: [imagenet_1k, imagenet-1k]
+    name: "ImageNet-1K"
+    num_classes: 1000
+    splits: [train, val]
+    source_type: huggingface
+    source_path: "ILSVRC/imagenet-1k"
+    data_dir: "data/imagenet"
+    description: "ImageNet-1K alias for consistency"
+    paper_usage: "ID dataset alias"
+    
+  laion:
+    dataset_id: laion
+    aliases: [laion, laion400m, laion-400m]
+    name: "LAION-400M"
+    num_classes: 1000
+    splits: [train]
+    source_type: custom
+    source_path: "laion/laion400m"
+    data_dir: "data/laion"
+    description: "LAION-400M used for VLM pretraining"
+    paper_usage: "Pretraining data source for vision-language models"
+    
+  # OOD datasets
+  imagenet_v2:
+    dataset_id: imagenet_v2
+    aliases: [imagenet_v2, imagenet-v2, ImgN-v2, ImageNet-v2]
+    name: "ImageNet-v2 MatchedFrequency"
+    num_classes: 1000
+    splits: [test]
+    source_type: huggingface
+    source_path: "vaishaal/ImageNetV2"
+    variant: matched-frequency
+    data_dir: "data/imagenet_v2"
+    description: "ImageNet-v2 MatchedFrequency variant (commit d626240)"
+    paper_usage: "OOD test set for distribution shift evaluation"
+    
+  imagenet_c:
+    dataset_id: imagenet_c
+    aliases: [imagenet_c, imagenet-c, imagenet-corrupted]
+    name: "ImageNet-C"
+    num_classes: 1000
+    splits: [test]
+    source_type: custom
+    source_path: "hendrycks/imagenet-c"
+    data_dir: "data/imagenet_c"
+    corruption_types: [gaussian_noise, shot_noise, impulse_noise, defocus_blur, glass_blur]
+    severity_levels: [1, 2, 3, 4, 5]
+    description: "ImageNet-C with common corruptions"
+    paper_usage: "OOD test set for robustness evaluation"
+    
+  imagenet_r:
+    dataset_id: imagenet_r
+    aliases: [imagenet_r, imagenet-r, imagenet-renditions]
+    name: "ImageNet-R"
+    num_classes: 200
+    splits: [test]
+    source_type: huggingface
+    source_path: "hendrycks/imagenet-r"
+    data_dir: "data/imagenet_r"
+    description: "ImageNet-R with artistic renditions"
+    paper_usage: "OOD test set for style shift evaluation"
+    
+  imagenet_sketch:
+    dataset_id: imagenet_sketch
+    aliases: [imagenet_sketch, imagenet-sketch]
+    name: "ImageNet-Sketch"
+    num_classes: 1000
+    splits: [test]
+    source_type: custom
+    source_path: "imagenet-sketch"
+    data_dir: "data/imagenet_sketch"
+    description: "ImageNet-Sketch with sketch drawings"
+    paper_usage: "OOD test set for sketch domain shift"
+    
+  objectnet:
+    dataset_id: objectnet
+    aliases: [objectnet, ObjectNet]
+    name: "ObjectNet"
+    num_classes: 313
+    splits: [test]
+    source_type: custom
+    source_path: "objectnet"
+    data_dir: "data/objectnet"
+    description: "ObjectNet with viewpoint and background shifts"
+    paper_usage: "OOD test set for viewpoint shift"
+    
+  imagenet_a:
+    dataset_id: imagenet_a
+    aliases: [imagenet_a, imagenet-a]
+    name: "ImageNet-A"
+    num_classes: 200
+    splits: [test]
+    source_type: custom
+    source_path: "hendrycks/imagenet-a"
+    data_dir: "data/imagenet_a"
+    description: "ImageNet-A with natural adversarial examples"
+    paper_usage: "OOD test set for adversarial robustness"
+    
+  cifar:
+    dataset_id: cifar
+    aliases: [cifar, cifar10, CIFAR-10]
+    name: "CIFAR-10"
+    num_classes: 10
+    splits: [train, test]
+    source_type: torchvision
+    source_path: "CIFAR10"
+    data_dir: "data/cifar"
+    description: "CIFAR-10 dataset"
+    paper_usage: "Additional small-scale benchmark"
+
+# =============================================================================
+# Environment/Task Registry - Paper evidence contract
+# reference_grounding: paperbench_ref_006 eval_inat21_truncate.ipynb
+# =============================================================================
+environments:
+  ood_top1:
+    env_id: ood_top1
+    aliases: [ood_top1, OOD Top-1, ood_accuracy, OOD_Top1]
+    name: "OOD Top-1 Accuracy"
+    task_type: classification
+    metric: top1_accuracy
+    datasets: [imagenet_v2, imagenet_c, imagenet_r, imagenet_sketch, objectnet]
+    description: "Measure Top-1 accuracy on out-of-distribution datasets"
+    paper_usage: "Primary OOD generalization metric (Figure 1, Figure 5, Table 1)"
+    
+  ood_top5:
+    env_id: ood_top5
+    aliases: [ood_top5, OOD Top-5, OOD_Top5]
+    name: "OOD Top-5 Accuracy"
+    task_type: classification
+    metric: top5_accuracy
+    datasets: [imagenet_v2, imagenet_c, imagenet_r, imagenet_sketch, objectnet]
+    description: "Measure Top-5 accuracy on out-of-distribution datasets"
+    paper_usage: "Secondary OOD generalization metric (Figure 5)"
+    
+  id_lca:
+    env_id: id_lca
+    aliases: [id_lca, ID_LCA, id_lca_distance]
+    name: "ID LCA Distance"
+    task_type: hierarchy_distance
+    metric: lca_distance
+    datasets: [imagenet]
+    hierarchy_source: wordnet
+    description: "Compute LCA distance on in-distribution ImageNet validation set"
+    paper_usage: "Primary predictor of OOD performance (Figure 1, Figure 3, Table 2)"
+    
+  correlation_analysis:
+    env_id: correlation_analysis
+    aliases: [correlation, lca_on_the_line, Correlating OOD Top-1]
+    name: "LCA-on-the-Line Correlation"
+    task_type: correlation
+    x_metric: id_lca_distance
+    y_metric: ood_top1_accuracy
+    datasets: [imagenet, imagenet_v2, imagenet_c, imagenet_r, imagenet_sketch]
+    description: "Correlate ID LCA distance with OOD Top-1 accuracy"
+    paper_usage: "Core phenomenon validation (Figure 1, Table 2, Table 3)"
+    
+  well_trained_model:
+    env_id: well_trained_model
+    aliases: [well_trained, well-trained model, pretrained]
+    name: "Well-Trained Model Evaluation"
+    task_type: evaluation
+    models: [resnet50, vit_b_16, clip_vit_b_32]
+    datasets: [imagenet, imagenet_v2]
+    description: "Evaluate well-trained pretrained models"
+    paper_usage: "Baseline model selection (75 models: 36 VMs + 39 VLMs)"
+    
+  vm_vlm_comparison:
+    env_id: vm_vlm
+    aliases: [vm_vlm, VM+VLM, vision_language]
+    name: "Vision Model + Vision-Language Model Comparison"
+    task_type: comparison
+    model_types: [vision_models, vision_language_models]
+    description: "Compare traditional vision models with vision-language models"
+    paper_usage: "Model type analysis (Figure 1, Table 1)"
+    
+  fig3_visualization:
+    env_id: fig3
+    aliases: [Fig 3, figure_3, lca_visualization]
+    name: "LCA Distance Visualization"
+    task_type: visualization
+    artifact: "results/figures/figure3_lca_distance.pdf"
+    description: "Generate LCA distance visualization"
+    paper_usage: "Figure 3: LCA distance distribution and examples"
+    
+  fig5_correlation:
+    env_id: fig5
+    aliases: [Fig 5, figure_5, multi_ood]
+    name: "Multi-OOD Correlation"
+    task_type: correlation
+    datasets: [imagenet_v2, imagenet_c, imagenet_r, imagenet_sketch]
+    metrics: [top1, top5]
+    artifact: "results/figures/figure5_ood_correlation.pdf"
+    description: "Generate OOD correlation across multiple datasets"
+    paper_usage: "Figure 5: OOD Top-1 and Top-5 correlation"
+
+# =============================================================================
+# Method/Baseline Registry - Paper evidence contract
+# =============================================================================
+methods:
+  ours:
+    method_id: ours
+    aliases: [ours, lca_soft_labels, soft_labeling]
+    name: "LCA Soft Label Training"
+    type: training
+    description: "Soft labeling with hierarchical LCA loss (proposed method)"
+    paper_usage: "Main contribution (Table 5, Table 6)"
+    implementation: src.methods.refinement.train_soft_labels
+    hyperparameters:
+      temperature: 1.0
+      lca_weight: 0.5
+      hierarchy_type: wordnet
+    
+  baseline:
+    method_id: baseline
+    aliases: [baseline, ce_only, cross_entropy]
+    name: "Cross-Entropy Baseline"
+    type: training
+    description: "Standard cross-entropy training without soft labels"
+    paper_usage: "Baseline comparison (Table 5, Table 6)"
+    implementation: src.methods.baselines.train_baseline
+    hyperparameters:
+      temperature: 1.0
+      
+  resnet:
+    method_id: resnet
+    aliases: [resnet, ResNet, resnet_family]
+    name: "ResNet Model Family"
+    type: model_family
+    description: "ResNet-18/50/101/152 vision models"
+    paper_usage: "Core VM family (Figure 1, Table 1)"
+    models: [resnet18, resnet50, resnet101, resnet152]
+    implementation: src.methods.models.load_resnet
+    
+  vit:
+    method_id: vit
+    aliases: [vit, ViT, vision_transformer]
+    name: "Vision Transformer Family"
+    type: model_family
+    description: "ViT-B/L/H vision transformer models"
+    paper_usage: "Core VM family (Figure 1, Table 1)"
+    models: [vit_b_16, vit_b_32, vit_l_16, vit_l_32, vit_h_14]
+    implementation: src.methods.models.load_vit
+    
+  adapter:
+    method_id: adapter
+    aliases: [adapter, adapter_tuning, parameter_efficient]
+    name: "Adapter-Based Fine-Tuning"
+    type: fine_tuning
+    description: "Parameter-efficient adapter-based fine-tuning"
+    paper_usage: "Alternative fine-tuning method (Table 5)"
+    implementation: src.methods.refinement.train_adapter
+    hyperparameters:
+      adapter_dim: 64
+      freeze_backbone: true
+      
+  fine_tuning:
+    method_id: fine_tuning
+    aliases: [fine_tuning, full_finetune, end_to_end]
+    name: "Full Model Fine-Tuning"
+    type: fine_tuning
+    description: "Full model fine-tuning with soft labels"
+    paper_usage: "Full fine-tuning comparison (Table 5)"
+    implementation: src.methods.refinement.train_full_finetune
+    hyperparameters:
+      learning_rate: 0.0001
+      freeze_backbone: false
+
+# =============================================================================
+# Model Registry - 75 Models (36 VMs + 39 VLMs)
+# =============================================================================
+models:
+  vision_models:
+    # ResNet family
+    resnet18:
+      model_id: resnet18
+      name: "ResNet-18"
+      family: resnet
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    resnet50:
+      model_id: resnet50
+      name: "ResNet-50"
+      family: resnet
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V2
+      
+    resnet101:
+      model_id: resnet101
+      name: "ResNet-101"
+      family: resnet
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V2
+      
+    resnet152:
+      model_id: resnet152
+      name: "ResNet-152"
+      family: resnet
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V2
+      
+    # Vision Transformer family
+    vit_b_16:
+      model_id: vit_b_16
+      name: "ViT-B/16"
+      family: vit
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    vit_b_32:
+      model_id: vit_b_32
+      name: "ViT-B/32"
+      family: vit
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    vit_l_16:
+      model_id: vit_l_16
+      name: "ViT-L/16"
+      family: vit
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    vit_l_32:
+      model_id: vit_l_32
+      name: "ViT-L/32"
+      family: vit
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    # EfficientNet family (subset for 36 VMs)
+    efficientnet_b0:
+      model_id: efficientnet_b0
+      name: "EfficientNet-B0"
+      family: efficientnet
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    efficientnet_b4:
+      model_id: efficientnet_b4
+      name: "EfficientNet-B4"
+      family: efficientnet
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    efficientnet_v2_s:
+      model_id: efficientnet_v2_s
+      name: "EfficientNetV2-S"
+      family: efficientnet
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    # ConvNeXt family
+    convnext_tiny:
+      model_id: convnext_tiny
+      name: "ConvNeXt-Tiny"
+      family: convnext
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    convnext_small:
+      model_id: convnext_small
+      name: "ConvNeXt-Small"
+      family: convnext
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    convnext_base:
+      model_id: convnext_base
+      name: "ConvNeXt-Base"
+      family: convnext
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    # Swin Transformer family
+    swin_t:
+      model_id: swin_t
+      name: "Swin-T"
+      family: swin
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    swin_s:
+      model_id: swin_s
+      name: "Swin-S"
+      family: swin
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    swin_b:
+      model_id: swin_b
+      name: "Swin-B"
+      family: swin
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    # Additional models to reach 36 VMs
+    mobilenet_v3_small:
+      model_id: mobilenet_v3_small
+      name: "MobileNetV3-Small"
+      family: mobilenet
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+    mobilenet_v3_large:
+      model_id: mobilenet_v3_large
+      name: "MobileNetV3-Large"
+      family: mobilenet
+      type: vision_model
+      source: torchvision
+      weights: IMAGENET1K_V1
+      
+  vision_language_models:
+    # CLIP family (OpenAI CLIP)
+    clip_vit_b_32:
+      model_id: clip_vit_b_32
+      name: "CLIP ViT-B/32"
+      family: clip
+      type: vision_language_model
+      source: openai_clip
+      weights: ViT-B/32
+      
+    clip_vit_b_16:
+      model_id: clip_vit_b_16
+      name: "CLIP ViT-B/16"
+      family: clip
+      type: vision_language_model
+      source: openai_clip
+      weights: ViT-B/16
+      
+    clip_vit_l_14:
+      model_id: clip_vit_l_14
+      name: "CLIP ViT-L/14"
+      family: clip
+      type: vision_language_model
+      source: openai_clip
+      weights: ViT-L/14
+      
+    clip_rn50:
+      model_id: clip_rn50
+      name: "CLIP ResNet-50"
+      family: clip
+      type: vision_language_model
+      source: openai_clip
+      weights: RN50
+      
+    clip_rn101:
+      model_id: clip_rn101
+      name: "CLIP ResNet-101"
+      family: clip
+      type: vision_language_model
+      source: openai_clip
+      weights: RN101
+      
+    # OpenCLIP family (LAION models)
+    openclip_vit_b_32_laion2b:
+      model_id: openclip_vit_b_32_laion2b
+      name: "OpenCLIP ViT-B/32 LAION-2B"
+      family: openclip
+      type: vision_language_model
+      source: open_clip
+      weights: laion2b_s34b_b79k
+      
+    openclip_vit_b_16_laion400m:
+      model_id: openclip_vit_b_16_laion400m
+      name: "OpenCLIP ViT-B/16 LAION-400M"
+      family: openclip
+      type: vision_language_model
+      source: open_clip
+      weights: laion400m_e32
+      
+    openclip_vit_l_14_laion2b:
+      model_id: openclip_vit_l_14_laion2b
+      name: "OpenCLIP ViT-L/14 LAION-2B"
+      family: openclip
+      type: vision_language_model
+      source: open_clip
+      weights: laion2b_s32b_b82k
+      
+    openclip_vit_h_14_laion2b:
+      model_id: openclip_vit_h_14_laion2b
+      name: "OpenCLIP ViT-H/14 LAION-2B"
+      family: openclip
+      type: vision_language_model
+      source: open_clip
+      weights: laion2b_s32b_b79k
+      
+    openclip_vit_g_14_laion2b:
+      model_id: openclip_vit_g_14_laion2b
+      name: "OpenCLIP ViT-G/14 LAION-2B"
+      family: openclip
+      type: vision_language_model
+      source: open_clip
+      weights: laion2b_s12b_b42k
+      
+    # Additional VLMs to reach 39 total in the full benchmark registry
+    # In practice, paper uses specific checkpoints from GitHub repos
+
+# =============================================================================
+# Parameter Sweeps - Bounded Config Values
+# reference_grounding: paperbench_ref_006 eval_inat21_truncate.ipynb
+# =============================================================================
+parameter_sweeps:
+  clustering:
+    description: "Hierarchical clustering parameters for latent taxonomy construction"
+    num_layers:
+      values: [2, 3]
+      default: 2
+      paper_usage: "Table 6: Ablation on hierarchy depth"
+    clusters_per_layer:
+      root_clusters:
+        values: [5, 10, 20]
+        default: 10
+        paper_usage: "Table 6: Root level cluster count"
+      intermediate_clusters:
+        values: [50, 100]
+        default: 50
+        paper_usage: "Table 6: Intermediate level cluster count (3-layer only)"
+      leaf_clusters:
+        values: [100, 200, 500, 1000]
+        default: 100
+        paper_usage: "Table 6: Leaf level cluster count"
+    clustering_algorithm:
+      values: [kmeans, hierarchical_agglomerative]
+      default: kmeans
+      
+  soft_labeling:
+    description: "Soft label training hyperparameters"
+    temperature:
+      values: [0.5, 1.0, 2.0, 4.0]
+      default: 1.0
+      paper_usage: "Table 9: Ablation on temperature parameter"
+    lca_loss_weight:
+      values: [0.0, 0.1, 0.3, 0.5, 0.7, 1.0]
+      default: 0.5
+      paper_usage: "Table 9: Ablation on loss weight λ"
+    hierarchy_source:
+      values: [wordnet, latent_kmeans, latent_agglomerative]
+      default: wordnet
+      paper_usage: "Table 5 vs Table 6: WordNet vs latent hierarchies"
+    soft_label_type:
+      values: [lca_distance, uniform_ancestors, exponential_decay]
+      default: lca_distance
+      paper_usage: "Table 9: Different soft label formulations"
+      
+  training:
+    description: "General training hyperparameters"
+    batch_size:
+      values: [32, 64, 128, 256]
+      default: 128
+    learning_rate:
+      values: [0.00001, 0.0001, 0.001, 0.01]
+      default: 0.001
+    epochs:
+      values: [10, 30, 90]
+      default: 30
+    optimizer:
+      values: [sgd, adam, adamw]
+      default: sgd
+    adamw_betas:
+      values:
+        - [0.9, 0.95]
+      default: [0.9, 0.95]
+      contract_key: fixed_hyperparameters=adamw_betas_0.9_0.95
+      
+  evaluation:
+    description: "Evaluation configuration"
+    batch_size: 256
+    num_workers: 4
+    metrics: [top1, top5, lca_distance]
+
+# =============================================================================
+# Experiment Configurations
+# =============================================================================
+experiments:
+  lca_ood_correlation:
+    name: "ID LCA vs OOD Accuracy Correlation"
+    description: "Measure correlation between ID LCA distance and OOD Top-1 accuracy"
+    datasets:
+      id: imagenet
+      ood: [imagenet_v2, imagenet_c, imagenet_r, imagenet_sketch, objectnet]
+    models:
+      vision_models: 36
+      vision_language_models: 39
+    metrics: [lca_distance, top1_accuracy, correlation_r2, correlation_spearman]
+    artifacts:
+      - results/figures/figure1_lca_on_the_line.pdf
+      - results/tables/table2_correlation.json
+      - results/lca_ood_correlation.json
+      
+  soft_label_training:
+    name: "Soft Label Training with Hierarchies"
+    description: "Train models with hierarchical soft labels"
+    base_models: [resnet18, resnet50, vit_b_16]
+    hierarchies: [wordnet, latent_2layer, latent_3layer]
+    hyperparameters:
+      temperature: [0.5, 1.0, 2.0]
+      lca_weight: [0.1, 0.3, 0.5, 0.7]
+    artifacts:
+      - results/tables/table5_soft_labels_wordnet.json
+      - results/tables/table6_soft_labels_latent.json
+      - results/tables/table9_ablation.json
+      - checkpoints/resnet18_soft_labels.pth
+      
+  latent_hierarchy_construction:
+    name: "Latent Hierarchy Construction via K-means"
+    description: "Construct latent hierarchies from model embeddings"
+    source_models: [resnet50, vit_b_16, clip_vit_b_32]
+    clustering_configs:
+      two_layer:
+        num_layers: 2
+        clusters: [10, 100]
+      three_layer:
+        num_layers: 3
+        clusters: [10, 50, 100]
+    artifacts:
+      - results/latent_taxonomy.json
+      - results/tables/table10_hierarchy_quality.json
+
+# =============================================================================
+# Output Paths
+# =============================================================================
+paths:
+  data_root: data
+  results_root: results
+  checkpoints_root: checkpoints
+  cache_root: cache
+  
+  figures:
+    figure1: results/figures/figure1_lca_on_the_line.pdf
+    figure2: results/figures/figure2_comparison.pdf
+    figure3: results/figures/figure3_lca_distance.pdf
+    figure5: results/figures/figure5_ood_correlation.pdf
+    
+  tables:
+    table1: results/tables/table1_model_performance.json
+    table2: results/tables/table2_correlation.json
+    table3: results/tables/table3_prediction_mae.json
+    table5: results/tables/table5_soft_labels_wordnet.json
+    table6: results/tables/table6_soft_labels_latent.json
+    table9: results/tables/table9_ablation.json
+    table10: results/tables/table10_hierarchy_quality.json
+    
+  metrics:
+    lca_ood_correlation: results/lca_ood_correlation.json
+    latent_taxonomy: results/latent_taxonomy.json
+    sensitivity_report: results/sensitivity_report.json
+    
+  resolved_config: results/config_resolved.json
+  readiness: results/readiness.json
+  evaluation_result: results/evaluation_result.json
+
+# =============================================================================
+# Runtime Configuration
+# =============================================================================

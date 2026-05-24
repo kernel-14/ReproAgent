@@ -1,0 +1,170 @@
+{
+  "gsm8k": {
+    "0.1": {
+      "adapter_size_b": 0.1,
+      "backbone": "microsoft/deberta-v3-base",
+      "dataset": "gsm8k",
+      "hyperparameters": {
+        "batch_size": 64,
+        "learning_rate_eta": 5e-06,
+        "max_generation_length": 512,
+        "nce_alpha": 0.01,
+        "optimizer": "AdamW",
+        "spectral_normalization": true,
+        "temperature": 1.0,
+        "training_steps": 6000,
+        "weight_decay": 0.01
+      },
+      "input_contract": "paired_text_x_y_through_encoder",
+      "parameter_count": "86M",
+      "tokenizer_loader": "AutoTokenizer.from_pretrained",
+      "transformers_loader": "AutoModel.from_pretrained"
+    },
+    "0.3": {
+      "adapter_size_b": 0.3,
+      "backbone": "microsoft/deberta-v3-large",
+      "dataset": "gsm8k",
+      "hyperparameters": {
+        "batch_size": 64,
+        "learning_rate_eta": 5e-06,
+        "max_generation_length": 512,
+        "nce_alpha": 0.01,
+        "optimizer": "AdamW",
+        "spectral_normalization": true,
+        "temperature": 1.0,
+        "training_steps": 6000,
+        "weight_decay": 0.01
+      },
+      "input_contract": "paired_text_x_y_through_encoder",
+      "parameter_count": "304M",
+      "tokenizer_loader": "AutoTokenizer.from_pretrained",
+      "transformers_loader": "AutoModel.from_pretrained"
+    }
+  },
+  "scienceqa": {
+    "0.1": {
+      "adapter_size_b": 0.1,
+      "backbone": "microsoft/deberta-v3-base",
+      "dataset": "scienceqa",
+      "hyperparameters": {
+        "batch_size": 64,
+        "learning_rate_eta": 5e-06,
+        "max_generation_length": 512,
+        "nce_alpha": 0.01,
+        "optimizer": "AdamW",
+        "spectral_normalization": true,
+        "temperature": 1.0,
+        "training_steps": 6000,
+        "weight_decay": 0.01
+      },
+      "input_contract": "paired_text_x_y_through_encoder",
+      "parameter_count": "86M",
+      "tokenizer_loader": "AutoTokenizer.from_pretrained",
+      "transformers_loader": "AutoModel.from_pretrained"
+    },
+    "0.3": {
+      "adapter_size_b": 0.3,
+      "backbone": "microsoft/deberta-v3-large",
+      "dataset": "scienceqa",
+      "hyperparameters": {
+        "batch_size": 64,
+        "learning_rate_eta": 5e-06,
+        "max_generation_length": 512,
+        "nce_alpha": 0.01,
+        "optimizer": "AdamW",
+        "spectral_normalization": true,
+        "temperature": 1.0,
+        "training_steps": 6000,
+        "weight_decay": 0.01
+      },
+      "input_contract": "paired_text_x_y_through_encoder",
+      "parameter_count": "304M",
+      "tokenizer_loader": "AutoTokenizer.from_pretrained",
+      "transformers_loader": "AutoModel.from_pretrained"
+    }
+  },
+  "strategyqa": {
+    "0.1": {
+      "adapter_size_b": 0.1,
+      "backbone": "microsoft/deberta-v3-base",
+      "dataset": "strategyqa",
+      "hyperparameters": {
+        "batch_size": 64,
+        "learning_rate_eta": 5e-06,
+        "max_generation_length": 512,
+        "nce_alpha": 0.01,
+        "optimizer": "AdamW",
+        "spectral_normalization": true,
+        "temperature": 1.0,
+        "training_steps": 6000,
+        "weight_decay": 0.01
+      },
+      "input_contract": "paired_text_x_y_through_encoder",
+      "parameter_count": "86M",
+      "tokenizer_loader": "AutoTokenizer.from_pretrained",
+      "transformers_loader": "AutoModel.from_pretrained"
+    },
+    "0.3": {
+      "adapter_size_b": 0.3,
+      "backbone": "microsoft/deberta-v3-large",
+      "dataset": "strategyqa",
+      "hyperparameters": {
+        "batch_size": 64,
+        "learning_rate_eta": 5e-06,
+        "max_generation_length": 512,
+        "nce_alpha": 0.01,
+        "optimizer": "AdamW",
+        "spectral_normalization": true,
+        "temperature": 1.0,
+        "training_steps": 6000,
+        "weight_decay": 0.01
+      },
+      "input_contract": "paired_text_x_y_through_encoder",
+      "parameter_count": "304M",
+      "tokenizer_loader": "AutoTokenizer.from_pretrained",
+      "transformers_loader": "AutoModel.from_pretrained"
+    }
+  },
+  "truthfulqa": {
+    "0.1": {
+      "adapter_size_b": 0.1,
+      "backbone": "bert-base-cased",
+      "dataset": "truthfulqa",
+      "hyperparameters": {
+        "batch_size": 64,
+        "learning_rate_eta": 5e-06,
+        "max_generation_length": 512,
+        "nce_alpha": 0.01,
+        "optimizer": "AdamW",
+        "spectral_normalization": true,
+        "temperature": 1.0,
+        "training_steps": 6000,
+        "weight_decay": 0.01
+      },
+      "input_contract": "paired_text_x_y_through_encoder",
+      "parameter_count": "110M",
+      "tokenizer_loader": "AutoTokenizer.from_pretrained",
+      "transformers_loader": "AutoModel.from_pretrained"
+    },
+    "0.3": {
+      "adapter_size_b": 0.3,
+      "backbone": "bert-base-cased",
+      "dataset": "truthfulqa",
+      "hyperparameters": {
+        "batch_size": 64,
+        "learning_rate_eta": 5e-06,
+        "max_generation_length": 512,
+        "nce_alpha": 0.01,
+        "optimizer": "AdamW",
+        "spectral_normalization": true,
+        "temperature": 1.0,
+        "training_steps": 6000,
+        "weight_decay": 0.01
+      },
+      "input_contract": "paired_text_x_y_through_encoder",
+      "parameter_count": "110M",
+      "tokenizer_loader": "AutoTokenizer.from_pretrained",
+      "transformers_loader": "AutoModel.from_pretrained"
+    }
+  }
+}

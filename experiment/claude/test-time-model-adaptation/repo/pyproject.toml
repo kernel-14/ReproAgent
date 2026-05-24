@@ -1,0 +1,177 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "foa-test-time-adaptation"
+version = "1.0.0"
+description = "Test-Time Model Adaptation with Only Forward Passes - PaperBench Reproduction"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "PaperBench Repro Team"}
+]
+keywords = [
+    "test-time-adaptation",
+    "forward-only-adaptation",
+    "computer-vision",
+    "deep-learning",
+    "model-adaptation",
+    "cma-es",
+    "imagenet"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Core lightweight dependencies required for configuration, smoke tests, and static analysis
+# These must NOT include heavy simulator/training packages to enable minimal environment operation
+dependencies = [
+    "numpy>=1.21.0",
+    "pyyaml>=5.4.0",
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+# Heavy dependencies for actual training, evaluation, and model execution
+# Separated from core to enable smoke validation without GPU/model packages
+full = [
+    "torch>=1.12.0",
+    "torchvision>=0.13.0",
+    "timm>=0.9.0",
+    "transformers>=4.25.0",
+    "datasets>=2.10.0",
+    "Pillow>=9.0.0",
+    "scipy>=1.7.0",
+    "scikit-learn>=1.0.0",
+    "pandas>=1.3.0",
+    "open-clip-torch>=2.20.0",
+    "clip-benchmark>=1.0.0",
+]
+
+# Visualization dependencies (optional, lazy imported)
+viz = [
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
+]
+
+# Testing and validation
+test = [
+    "pytest>=7.0.0",
+    "pytest-timeout>=2.1.0",
+]
+
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "pytest-timeout>=2.1.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=0.950",
+    "isort>=5.10.0",
+]
+
+# All optional dependencies combined
+all = [
+    "torch>=1.12.0",
+    "torchvision>=0.13.0",
+    "timm>=0.9.0",
+    "transformers>=4.25.0",
+    "datasets>=2.10.0",
+    "Pillow>=9.0.0",
+    "scipy>=1.7.0",
+    "scikit-learn>=1.0.0",
+    "pandas>=1.3.0",
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
+    "open-clip-torch>=2.20.0",
+    "clip-benchmark>=1.0.0",
+    "pytest>=7.0.0",
+    "pytest-timeout>=2.1.0",
+]
+
+[project.scripts]
+foa-reproduce = "main:main"
+foa-smoke = "main:run_smoke_test"
+
+[project.urls]
+Homepage = "https://github.com/paperbench/foa-test-time-adaptation"
+Repository = "https://github.com/paperbench/foa-test-time-adaptation"
+Documentation = "https://github.com/paperbench/foa-test-time-adaptation/blob/main/README.md"
+
+[tool.setuptools]
+packages = ["src"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38", "py39", "py310", "py311"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | \.tox
+  | build
+  | dist
+  | results
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--timeout=300",
+]
+markers = [
+    "smoke: marks tests as smoke/quick validation tests",
+    "integration: marks tests as integration tests",
+    "slow: marks tests as slow running",
+    "gpu: marks tests requiring GPU",
+]
+
+# Environment-specific configuration
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+]

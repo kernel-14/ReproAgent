@@ -1,0 +1,13 @@
+{
+  "beam_sizes": [
+    1,
+    3,
+    5
+  ],
+  "decomposition": "y -> [s_1, ..., s_L]",
+  "max_generation_length": 512,
+  "proposal": "M samples per beam from p_LLM(s_l | x, s_<l)",
+  "scoring": "g_theta(s_1:l, x) on partial chains",
+  "stop": "stop at L or LLM stop signal",
+  "temperature": 1.0
+}

@@ -1,0 +1,17 @@
+{
+  "table_id": "table10_full_main_results",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.944187Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Table 10: Full main results (all datasets, all baselines, all feedback modes)",
+    "columns": [
+      "method",
+      "feedback_mode",
+      "gsm8k",
+      "strategyqa",
+      "truthfulqa",
+      "scienceqa"
+    ]
+  }
+}

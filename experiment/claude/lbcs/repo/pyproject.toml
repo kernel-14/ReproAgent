@@ -1,0 +1,152 @@
+# pyproject.toml
+# Refined Coreset Selection: Towards Minimal Coreset Size under Model Performance Constraints
+#
+# reference_grounding: paperbench_ref_003 train.py
+# reference_grounding: paperbench_ref_004 cnn_mnist_probability_1step_pixel_shared_rein.py
+# reference_grounding: paperbench_ref_003 datasets/dataset.py
+# reference_grounding: paperbench_ref_006 imagenet_inat/models/DotProductClassifier.py
+#
+# Dependency structure: lightweight core dependencies are listed separately from
+# optional heavy simulator/training dependencies to support lazy imports and smoke
+# validation in minimal environments.
+
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "refined-coreset-selection"
+version = "1.0.0"
+description = "Code reproduction for 'Refined Coreset Selection: Towards Minimal Coreset Size under Model Performance Constraints'"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "PaperBench Reproduction", email = "paperbench@example.com"}
+]
+keywords = ["coreset selection", "bilevel optimization", "lexicographic optimization", "dataset distillation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# ============================================================================
+# Core lightweight dependencies
+# These dependencies are required for basic configuration, data pipeline setup,
+# environment registry, and lightweight smoke validation without GPU/training.
+# reference_grounding: paperbench_ref_003 train.py
+# ============================================================================
+dependencies = [
+    "numpy>=1.21.0",
+    "pyyaml>=5.4.1",
+    "scipy>=1.7.0",
+]
+
+[project.optional-dependencies]
+# ============================================================================
+# Training dependencies (heavy, optional for import smoke)
+# Deep learning frameworks and vision libraries for actual training and evaluation.
+# These can be lazily imported inside training/model functions to keep module
+# import lightweight.
+# reference_grounding: paperbench_ref_004 cnn_mnist_probability_1step_pixel_shared_rein.py
+# reference_grounding: paperbench_ref_003 datasets/dataset.py
+# ============================================================================
+training = [
+    "torch>=1.10.0",
+    "torchvision>=0.11.0",
+]
+
+# ============================================================================
+# Visualization and reporting dependencies
+# For generating figures and tables (Figures 1-2, Tables 1-3)
+# reference_grounding: paperbench_ref_003 train.py
+# ============================================================================
+reporting = [
+    "matplotlib>=3.3.0",
+    "pillow>=8.0.0",
+]
+
+# ============================================================================
+# Full dependencies (all optional groups)
+# ============================================================================
+full = [
+    "refined-coreset-selection[training,reporting]",
+]
+
+# ============================================================================
+# Development dependencies
+# ============================================================================
+dev = [
+    "pytest>=6.2.0",
+    "black>=21.0",
+    "flake8>=3.9.0",
+]
+
+[project.scripts]
+rcs-main = "main:main"
+
+[project.urls]
+Homepage = "https://github.com/paperbench/refined-coreset-selection"
+Repository = "https://github.com/paperbench/refined-coreset-selection"
+
+[tool.setuptools]
+packages = ["src", "src.data", "src.methods", "src.experiments", "src.reporting"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json"]
+
+# ============================================================================
+# Environment/Task Registry Configuration
+# Paper evidence contract: explicitly register dataset/benchmark aliases for
+# cifar, imagenet, mnist, svhn, imagenet_1k
+# reference_grounding: paperbench_ref_003 datasets/dataset.py
+# ============================================================================
+[tool.rcs]
+environment_registry = [
+    "cifar10",
+    "cifar100",
+    "fmnist",
+]
+
+dataset_registry = [
+    "CIFAR-10",
+    "CIFAR-100",
+    "Fashion-MNIST",
+]
+
+method_registry = [
+    "LBCS",
+    "Uniform",
+    "EL2N",
+    "GraNd",
+    "Influential",
+    "Moderate",
+    "CCS",
+    "Probabilistic",
+]
+
+# ============================================================================
+# Experiment Registry
+# Defines paper-visible experiments: Tables 1-3, Figure 2
+# reference_grounding: paperbench_ref_003 train.py
+# reference_grounding: paperbench_ref_003 selection.py
+# ============================================================================
+[tool.rcs.experiments]
+table_1 = {description = "Preliminary presentation of LBCS algorithm superiority", artifact_path = "results/tables/table_1.csv"}
+table_2 = {description = "Comparison of LBCS with 7 baselines", artifact_path = "results/tables/table_2.csv"}
+table_3 = {description = "ImageNet-1k evaluation", artifact_path = "results/tables/table_3.csv"}
+figure_2 = {description = "Robustness against 30% symmetric label noise", artifact_path = "results/figures/figure_2.png"}
+
+# ============================================================================
+# Smoke/Runtime Validation Configuration
+# ============================================================================
+[tool.rcs.smoke]
+timeout_seconds = 300
+bounded_epochs = 2
+bounded_samples = 100
+artifact_dir = "results/smoke"

@@ -1,0 +1,241 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pinn-loss-landscape-repro"
+version = "0.1.0"
+description = "Standalone reproduction code for Challenges in Training PINNs: A Loss Landscape Perspective"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "PaperBench Reproduction Agent" }
+]
+keywords = [
+  "physics-informed-neural-networks",
+  "PINN",
+  "loss-landscape",
+  "optimization",
+  "L-BFGS",
+  "NysNewton-CG",
+  "reproducibility"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Mathematics"
+]
+dependencies = [
+  "numpy>=1.23",
+  "PyYAML>=6.0",
+  "typing-extensions>=4.8"
+]
+
+[project.optional-dependencies]
+train = [
+  "torch>=2.0",
+  "scipy>=1.10"
+]
+report = [
+  "matplotlib>=3.7",
+  "pandas>=2.0"
+]
+analysis = [
+  "scipy>=1.10",
+  "pandas>=2.0"
+]
+dev = [
+  "pytest>=7.4",
+  "ruff>=0.4"
+]
+all = [
+  "torch>=2.0",
+  "scipy>=1.10",
+  "matplotlib>=3.7",
+  "pandas>=2.0",
+  "pytest>=7.4"
+]
+
+[project.scripts]
+pinn-loss-landscape = "run_experiments:main"
+pinn-loss-landscape-main = "main:main"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["run_experiments", "main"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pinn_landscape*", "src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.paperbench_repro]
+paper_title = "Challenges in Training PINNs: A Loss Landscape Perspective"
+canonical_entrypoint = "run_experiments.py"
+default_command = "python run_experiments.py --mode runtime_smoke"
+docker_validate_command = "python run_experiments.py --mode docker_validate"
+artifact_env_var = "PAPERBENCH_REPRO_ARTIFACT_DIR"
+blacklisted_repositories = ["https://github.com/pratikrathore8/opt_for_pinns"]
+package_obligation = "experiment_reporting"
+status = "code-generation-only; smoke paths write readiness/schema artifacts and do not claim paper results"
+
+[tool.paperbench_repro.dependencies]
+core_lightweight = ["numpy", "PyYAML", "typing-extensions"]
+optional_training = ["torch", "scipy"]
+optional_reporting = ["matplotlib", "pandas"]
+dependency_policy = "Optional heavy numerical/reporting packages are exposed through extras and must be imported lazily by implementation modules."
+
+[tool.paperbench_repro.method_contract]
+hypothesis = "Adam+L-BFGS improves loss and L2RE over Adam-only or L-BFGS-only, and NysNewton-CG after Adam+L-BFGS can further reduce under-optimized PINN losses."
+decision_value = "Expose a registry, metric schema, artifact schema, and smoke/full execution routes that can evaluate optimizer comparisons for convection, reaction, and wave problems."
+stop_rule_or_pruning_rationale = "Default smoke mode validates wiring with bounded budgets; full paper-scale training requires an explicit mode/config to avoid unbounded sweeps."
+
+[tool.paperbench_repro.surfaces]
+config = true
+analysis = true
+data_pipeline = true
+training_loop = true
+optimizer = true
+artifact_writer = true
+metric_formula = true
+evaluation = true
+
+[tool.paperbench_repro.metric_schema]
+required_record_keys = [
+  "problem",
+  "optimizer",
+  "width",
+  "seed",
+  "iteration",
+  "loss",
+  "L2RE"
+]
+loss_component_keys = [
+  "loss_total",
+  "loss_residual",
+  "loss_initial",
+  "loss_boundary"
+]
+diagnostic_keys = [
+  "gradient_norm",
+  "hessian_min_eigenvalue",
+  "hessian_max_eigenvalue",
+  "condition_number_kappa_L",
+  "residual_point_count"
+]
+l2re_formula = "sqrt(sum_i((u_pred_i-u_ref_i)^2) / max(sum_i(u_ref_i^2), eps))"
+gradient_norm_proxy = "global_l2_norm_of_available_parameter_gradients_or_schema_null_in_dry_run"
+
+[tool.paperbench_repro.experiment_registry]
+config_path = "configs/pinn_loss_landscape.yaml"
+registry_artifact = "results/experiment_registry.json"
+matrix_axes = ["problem", "optimizer", "width", "seed"]
+problems = ["convection", "reaction", "wave"]
+optimizers = ["adam", "lbfgs", "adam_lbfgs", "nncg_after_adam_lbfgs"]
+widths = [50, 100, 200, 400]
+seeds = [0, 1, 2, 3, 4]
+default_smoke_widths = [50]
+default_smoke_seeds = [0]
+paper_iteration_budget = 41000
+default_smoke_iterations = 3
+section_anchors = ["Section 6", "Figure 1", "Figure 4", "Figure 8", "Figure 10", "Appendix D", "Appendix G"]
+
+# reference_grounding: paper:unit_004 paper.md
+[tool.paperbench_repro.optimizer_comparison]
+semantic_anchor = "Section 6 / Appendix D optimizer comparison"
+decisive_comparison = "Adam vs L-BFGS vs Adam+L-BFGS on convection, reaction, and wave"
+decisive_metrics = ["loss", "L2RE", "gradient_norm"]
+required_training_loops = ["adam_only", "lbfgs_only_with_closure", "adam_then_lbfgs"]
+
+# reference_grounding: paper:unit_005 paper.md
+[tool.paperbench_repro.nncg_refinement]
+semantic_anchor = "Loss is Often Under-optimized / damped Newton refinement"
+method = "NysNewton-CG after Adam+L-BFGS"
+decisive_metrics = ["loss", "L2RE", "condition_number_kappa_L"]
+smoke_policy = "instantiate route and bounded linear-algebra diagnostics only"
+
+# reference_grounding: paper:unit_006 paper.md
+[tool.paperbench_repro.loss_l2re_protocol]
+semantic_anchor = "PINNs must be trained to near-zero loss to obtain low L2RE"
+artifact_paths = ["results/metrics.json", "results/figure2_loss_vs_l2re.csv"]
+required_fields = ["problem", "optimizer", "width", "seed", "iteration", "loss", "L2RE", "status"]
+
+[tool.paperbench_repro.runtime_routes]
+figure_1 = "wave PDE optimizer trajectory: Adam, Adam+L-BFGS, NNCG after Adam+L-BFGS"
+figure_2 = "loss vs L2RE aggregation route"
+figure_3 = "component spectra / residual-initial-boundary diagnostics"
+figure_4 = "best Adam+L-BFGS run per PDE by L2RE"
+figure_8 = "Appendix D Adam+L-BFGS vs Adam vs L-BFGS on convection, reaction, wave"
+figure_10 = "residual point count, Hessian eigenvalues, condition number kappa_L"
+table_1 = "optimizer comparison summary schema"
+table_2 = "quality gate manifest schema"
+table_3 = "artifact closure and readiness schema"
+
+[tool.paperbench_repro.artifacts]
+results_dir = "results"
+required = [
+  "results/metrics.json",
+  "results/experiment_registry.json",
+  "results/artifact_manifest.json",
+  "results/figure1_wave_trajectory.json",
+  "results/figure2_loss_vs_l2re.csv",
+  "results/figure3_component_spectra.json",
+  "results/figure10_hessian_conditioning.json",
+  "results/loss_curves.json",
+  "results/experiment_index.json",
+  "results/loss_trace.json",
+  "results/method_registry.json",
+  "results/optimizer_comparison_metrics.json",
+  "results/readiness.json",
+  "results/evaluation_result.json"
+]
+dry_run_label = "dry-run contract artifact; schema/readiness only; not a paper result"
+smoke_modes = ["runtime_smoke", "docker_validate"]
+
+[tool.paperbench_repro.artifacts.metrics_json]
+path = "results/metrics.json"
+format = "json"
+record_contract = "list of metric records; each record binds problem, optimizer, width, seed, iteration, loss, L2RE, loss components, gradient norm, and dry-run/full status"
+
+[tool.paperbench_repro.artifacts.figure1_wave_trajectory]
+path = "results/figure1_wave_trajectory.json"
+format = "json"
+semantic_anchor = "Figure 1"
+required_optimizers = ["adam", "adam_lbfgs", "nncg_after_adam_lbfgs"]
+problem = "wave"
+
+[tool.paperbench_repro.artifacts.figure10_conditioning]
+path = "results/figure10_hessian_conditioning.json"
+format = "json"
+semantic_anchor = "Figure 10"
+required_fields = ["residual_point_count", "hessian_eigenvalues", "condition_number_kappa_L"]
+
+[tool.paperbench_repro.quality_gates]
+accuracy = "manifest_status_required"
+precision = "manifest_status_required"
+return = "manifest_status_required"
+population_size = "manifest_status_required"
+per_sample_lowest_score_selection = "manifest_status_required"
+policy = "Quality gates must appear in artifact_manifest.json/readiness.json as declared, measured, not_applicable, or dry_run_schema; smoke mode must not fabricate scores."
+
+[tool.paperbench_repro.smoke_contract]
+must_create_all_declared_artifact_paths = true
+must_write_readiness_json = true
+must_write_evaluation_result_json = true
+must_label_dry_run_artifacts = true
+must_call_real_surfaces = ["config", "data_pipeline", "optimizer_selector", "metric_formula", "evaluation", "artifact_writer"]
+must_not_claim_completed_experiments = true

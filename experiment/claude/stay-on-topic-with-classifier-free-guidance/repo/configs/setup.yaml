@@ -1,0 +1,15 @@
+runtime:
+  default_mode: runtime_smoke
+  output_dir: results
+  expensive_execution_requires_explicit_full_mode: true
+models:
+  optional_backend: transformers
+  lazy_import: true
+  supported_routes:
+    - gpt2
+    - pythia
+    - falcon
+    - wizardlm
+    - guanaco
+    - codegen
+

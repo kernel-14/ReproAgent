@@ -1,0 +1,6 @@
+artifact,method,intervention_strength,toxicity_rate,perplexity,provenance
+table_6,dpo,0.0,0.5,12.672822309845182,measured_interventions_route
+table_6,dpo_plus_toxicity_vector_intervention,0.0,0.5,12.672822309845182,measured_interventions_route
+table_6,dpo_plus_toxicity_vector_intervention,0.5,0.5,12.565388058477076,measured_interventions_route
+table_6,dpo_plus_toxicity_vector_intervention,1.0,0.5,12.565388058477076,measured_interventions_route
+table_6,pretrained,0.0,0.5,12.401213158531482,measured_interventions_route

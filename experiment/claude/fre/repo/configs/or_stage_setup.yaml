@@ -1,0 +1,1017 @@
+schema_version: "1.0"
+stage_id: "setup_or_config_stage"
+paper: "Unsupervised Zero-Shot Reinforcement Learning via Functional Reward Encodings"
+work_package_id: "fre_core"
+canonical_entrypoint: "scripts/run_fre_experiments.py"
+default_mode: "runtime_smoke"
+
+public_contract:
+  defines_symbols:
+    build_domain_prior_config_matrix:
+      kind: "config_matrix"
+      yaml_path: "matrices.domain_prior_config_matrix"
+      python_loader_hint: "fre_repro.configs.build_domain_prior_config_matrix"
+      purpose: "Materializes domain-specific random reward prior settings for FRE."
+    build_main_benchmark_config_matrix:
+      kind: "config_matrix"
+      yaml_path: "matrices.main_benchmark_config_matrix"
+      python_loader_hint: "fre_repro.configs.build_main_benchmark_config_matrix"
+      purpose: "Materializes paper-visible method x benchmark comparison settings."
+    build_reward_scaling_config_matrix:
+      kind: "config_matrix"
+      yaml_path: "matrices.reward_scaling_config_matrix"
+      python_loader_hint: "fre_repro.configs.build_reward_scaling_config_matrix"
+      purpose: "Materializes bounded scaling variants over random reward form subsets."
+  required_interfaces:
+    - name: "sample_reward_prior"
+      signature: "sample_reward_prior(domain, seed)"
+      implementation_hint: "fre_repro.reward_priors.sample_reward_prior"
+    - name: "train_policy"
+      signature: "train_policy(offline_dataset, reward_prior, encoder)"
+      implementation_hint: "fre_repro.algorithms.train_policy"
+    - name: "evaluate_zero_shot_transfer"
+      signature: "evaluate_zero_shot_transfer(agent, tasks)"
+      implementation_hint: "fre_repro.evaluation.evaluate_zero_shot_transfer"
+    - name: "run_benchmark_comparison"
+      signature: "run_benchmark_comparison(methods, benchmarks)"
+      implementation_hint: "scripts/run_fre_experiments.py"
+
+hypothesis:
+  core: "FRE learns a functional representation z of sampled reward functions η from unlabeled offline transitions, enabling a latent-conditioned policy π(a|s,z) to zero-shot transfer to unseen reward tasks without online interaction."
+  decisive_comparison: "ours/FRE vs bc, iql, test_time_adaptation, ppo, pbt, pql plus FB/SF/CRL where the benchmark protocol exposes them."
+  decisive_metric: "zero-shot normalized return and task success rate on held-out reward tasks."
+  decision_value: "Confirms whether random functional reward encodings provide transferable task conditioning in offline zero-shot RL."
+  stop_rule_or_pruning_rationale: "Default smoke executes bounded synthetic fixtures only. Full mode executes the paper protocol. Reward-family sweeps are bounded to paper-specified subsets and same-budget variants; unrelated reward types and exhaustive unreported sweeps are out of scope."
+
+scope_constraints:
+  in_scope:
+    - "offline unlabeled transition datasets"
+    - "random reward functions η sampled from paper-specified priors"
+    - "state-reward pair encoder using permutation-invariant transformer semantics"
+    - "latent-conditioned policy adapter π(a|s,z)"
+    - "zero-shot evaluation on unseen test rewards without online environment updates"
+    - "bounded benchmark comparison against declared baselines"
+  out_of_scope:
+    - "reward families not mentioned by the paper-derived protocol"
+    - "online fine-tuning except explicitly labeled test_time_adaptation baseline"
+    - "unbounded exhaustive hyperparameter sweeps"
+    - "claiming benchmark-visible scores from readiness/dry-run artifacts"
+    - "out_of_scope: 1"
+
+artifact_policy:
+  root_env_var: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  default_root: "."
+  smoke_artifacts:
+    readiness_json: "readiness.json"
+    evaluation_result_json: "evaluation_result.json"
+    label: "readiness/schema/contract only; does not claim benchmark scores"
+  benchmark_visible_artifacts:
+    metrics: "results/metrics.json"
+    encoder_checkpoint: "results/checkpoints/fre_encoder.pt"
+    policy_checkpoint: "results/checkpoints/fre_policy.pt"
+    reward_prior_config: "results/reward_prior_config.json"
+    zero_shot_figure: "results/fig3_zero_shot_transfer.png"
+    eval_summary: "results/eval_summary.json"
+    evidence_contract_matrix: "results/evidence_contract_matrix.json"
+    experiment_registry: "results/experiment_registry.json"
+    environment_registry: "results/environment_registry.json"
+    dataset_registry: "results/dataset_registry.json"
+    artifact_manifest: "results/artifact_manifest.json"
+    sensitivity_report: "results/sensitivity_report.json"
+  write_rules:
+    - "Create parent directories during smoke validation."
+    - "Write benchmark-visible metrics/figures/checkpoints only from bounded measured code paths or explicit full-mode execution."
+    - "Readiness manifests may describe missing optional dependencies and full-mode requirements."
+
+runtime:
+  entrypoint_command: "python scripts/run_fre_experiments.py"
+  smoke_command: "python scripts/run_fre_experiments.py --mode runtime_smoke"
+  docker_validate_command: "python scripts/run_fre_experiments.py --mode docker_validate"
+  full_command: "python scripts/run_fre_experiments.py --mode full"
+  timeout_seconds_smoke: 10
+  seed: 0
+  smoke_limits:
+    max_transitions: 64
+    max_reward_priors: 3
+    max_encoder_steps: 2
+    max_policy_steps: 2
+    max_eval_episodes: 2
+    max_methods:
+      - "ours"
+      - "bc"
+      - "iql"
+    allow_heavy_dependencies: false
+  full_limits:
+    allow_heavy_dependencies: true
+    paper_default_eval_episodes: 20
+    paper_default_eval_seeds: 5
+
+data_pipeline:
+  input_contract: "offline dataset of unlabeled transitions"
+  transition_schema:
+    observation: "float vector or image/state tensor"
+    action: "float or discrete action"
+    next_observation: "same schema as observation"
+    terminal: "bool"
+    timeout: "bool, optional"
+    reward: "optional; ignored for unsupervised FRE pretraining except benchmark evaluation labels"
+  unlabeled_pretraining_fields:
+    - "observation"
+    - "action"
+    - "next_observation"
+    - "terminal"
+    - "timeout"
+  d4rl_replay_buffer_protocol:
+    reference_grounding: "paperbench_ref_001 url_benchmark/d4rl_benchmark.py"
+    intent: "Load environment dataset, optionally filter short episodes, construct replay transitions, and handle terminal/timeout flags without relying on qlearning_dataset reward semantics."
+    loader_hook: "fre_repro.data.load_offline_transition_dataset"
+    builder_hook: "fre_repro.data.prepare_replay_buffer"
+    filter_dataset_by_episode_length:
+      enabled: true
+      minimum_episode_length_default: 2
+      terminal_keys:
+        - "terminals"
+        - "timeouts"
+      behavior: "Keep transitions belonging to episodes with length >= minimum_episode_length; leave synthetic smoke datasets untouched when keys are absent."
+    terminal_handling:
+      ignore_terminals_default: false
+      terminal_source_priority:
+        - "terminals"
+        - "timeouts"
+        - "episode_boundary_inference"
+      next_observation_policy: "Use dataset next_observations when present; otherwise shift observations and mark final transition terminal."
+  loaders:
+    synthetic_unlabeled:
+      id: "synthetic_unlabeled"
+      kind: "offline trajectory dataset / unlabeled transitions"
+      loader: "fre_repro.data.make_synthetic_unlabeled_dataset"
+      smoke_default: true
+      config:
+        num_transitions: 64
+        state_dim: 4
+        action_dim: 2
+        horizon: 16
+    exorl:
+      id: "exorl"
+      aliases:
+        - "ExORL benchmark"
+        - "deepmind_control"
+      kind: "offline trajectory dataset / unlabeled transitions"
+      loader: "fre_repro.data.load_exorl_dataset"
+      requires_optional_dependencies:
+        - "dm-control"
+      setup_metadata:
+        source: "DeepMind Control / ExORL-style offline datasets"
+        reward_visibility_for_pretraining: "unlabeled"
+        domains:
+          - "walker"
+          - "quadruped"
+          - "jaco"
+    d4rl_antmaze:
+      id: "d4rl_antmaze"
+      aliases:
+        - "AntMaze"
+        - "robotics"
+      kind: "offline state-action pairs"
+      loader: "fre_repro.data.load_d4rl_dataset"
+      reference_grounding: "paperbench_ref_001 url_benchmark/d4rl_benchmark.py"
+      requires_optional_dependencies:
+        - "gym"
+        - "d4rl"
+        - "mujoco"
+      setup_metadata:
+        source: "D4RL AntMaze offline trajectories"
+        reward_visibility_for_pretraining: "unlabeled"
+        minimum_episode_length: 2
+    d4rl_kitchen:
+      id: "d4rl_kitchen"
+      aliases:
+        - "Kitchen"
+        - "robotics"
+      kind: "offline state-action pairs"
+      loader: "fre_repro.data.load_d4rl_dataset"
+      reference_grounding: "paperbench_ref_001 url_benchmark/d4rl_benchmark.py"
+      requires_optional_dependencies:
+        - "gym"
+        - "d4rl"
+        - "mujoco"
+      setup_metadata:
+        source: "D4RL Kitchen offline trajectories"
+        reward_visibility_for_pretraining: "unlabeled"
+        minimum_episode_length: 2
+
+environment_task_registry:
+  unsupervised_offline_rl:
+    id: "unsupervised_offline_rl"
+    aliases:
+      - "unsupervised offline reinforcement learning setting"
+      - "offline dataset of trajectories"
+      - "zero-shot offline rl"
+      - "offline-dataset"
+      - "without online"
+    factory_hook: "fre_repro.data.make_offline_rl_task"
+    setup_metadata:
+      online_interaction: false
+      pretraining_reward_labels: false
+      objective: "learn task-conditioned behavior from unlabeled offline state-action transitions and random reward priors"
+  reward_function_task:
+    id: "reward_function_task"
+    aliases:
+      - "reward-function"
+      - "reward-prior"
+      - "that maximizes expected return"
+    factory_hook: "fre_repro.reward_priors.sample_reward_prior"
+    setup_metadata:
+      task_definition: "A task is represented by K state-reward examples sampled from a reward function η."
+      conditioning: "Encode state-reward pairs into z; optimize/evaluate π(a|s,z)."
+  zero_shot_standard_offline_rl:
+    id: "zero_shot_standard_offline_rl"
+    aliases:
+      - "standard offline rl"
+      - "zero-shot"
+      - "without online"
+    factory_hook: "fre_repro.evaluation.make_zero_shot_task_suite"
+    setup_metadata:
+      adaptation_gradient_steps: 0
+      allowed_exception: "test_time_adaptation baseline is explicitly labeled and measured separately."
+  exorl_benchmark:
+    id: "exorl_benchmark"
+    aliases:
+      - "ExORL benchmark"
+      - "deepmind_control"
+    dataset_id: "exorl"
+    factory_hook: "fre_repro.data.load_exorl_dataset"
+    task_hook: "fre_repro.evaluation.make_exorl_tasks"
+    setup_metadata:
+      domains:
+        - "walker"
+        - "quadruped"
+        - "jaco"
+      measurements:
+        - "normalized_return"
+  antmaze:
+    id: "antmaze"
+    aliases:
+      - "AntMaze"
+      - "d4rl_antmaze"
+    dataset_id: "d4rl_antmaze"
+    factory_hook: "fre_repro.data.load_d4rl_dataset"
+    task_hook: "fre_repro.evaluation.make_antmaze_tasks"
+    setup_metadata:
+      measurements:
+        - "success_rate"
+        - "normalized_return"
+  kitchen:
+    id: "kitchen"
+    aliases:
+      - "Kitchen"
+      - "d4rl_kitchen"
+    dataset_id: "d4rl_kitchen"
+    factory_hook: "fre_repro.data.load_d4rl_dataset"
+    task_hook: "fre_repro.evaluation.make_kitchen_tasks"
+    setup_metadata:
+      measurements:
+        - "success_rate"
+        - "normalized_return"
+
+reward_prior:
+  sampler_contract:
+    name: "sample_reward_prior"
+    arguments:
+      - "domain"
+      - "seed"
+    implementation_hook: "fre_repro.reward_priors.sample_reward_prior"
+    output: "callable reward function η plus serializable reward_prior_config"
+  paper_sections:
+    - section: "4.2 Random Functions as a Prior Reward Distribution"
+      obligation: "prior over reward functions η from unlabeled trajectories"
+    - section: "4.3 Offline RL with FRE"
+      obligation: "sample η, encode it into z, optimize π(a|s,z)"
+  allowed_reward_forms:
+    singleton_goal:
+      id: "singleton_goal"
+      description: "Sparse goal-like rewards centered on sampled states."
+      parameters:
+        distance_metric: "l2"
+        radius: 0.1
+        magnitude_values:
+          - -1.0
+          - 0.0
+          - 1.0
+    random_linear:
+      id: "random_linear"
+      description: "Random linear functions over state features such as XY positions and velocity."
+      parameters:
+        feature_groups:
+          - "xy_positions"
+          - "velocity"
+        weight_scale: 1.0
+        bias_scale: 0.1
+    random_mlp:
+      id: "random_mlp"
+      description: "Random two-layer MLP reward function with increasing complexity."
+      parameters:
+        hidden_dim: 64
+        activation: "tanh"
+        output_scale: 1.0
+  mixed_reward_types:
+    low_complexity:
+      forms:
+        - "singleton_goal"
+    medium_complexity:
+      forms:
+        - "singleton_goal"
+        - "random_linear"
+    high_complexity:
+      forms:
+        - "singleton_goal"
+        - "random_linear"
+        - "random_mlp"
+  encoder_pair_sampling:
+    K_encoder_states_default: 32
+    K_encoder_states_smoke: 4
+    reward_discretization_by_magnitude:
+      enabled: true
+      bins:
+        - -1.0
+        - -0.5
+        - 0.0
+        - 0.5
+        - 1.0
+    representation: "K sampled states, reward magnitude discretization"
+  output_artifact: "results/reward_prior_config.json"
+
+encoder:
+  id: "functional_reward_encoder"
+  aliases:
+    - "Functional Reward Encoding (FRE)"
+    - "FRE"
+    - "permutation-invariant transformer"
+    - "state-reward pair encoder"
+  implementation_hook: "fre_repro.models.FunctionalRewardEncoder"
+  input: "set of K (state, reward) pairs"
+  output: "latent task vector z"
+  architecture:
+    encoder_type: "permutation_invariant_transformer"
+    state_embedding_dim: 128
+    reward_embedding_dim: 32
+    latent_dim: 64
+    num_layers: 2
+    num_heads: 4
+    pooling: "set_mean_or_cls"
+  training:
+    objective: "Encode sampled reward functions so latent z conditions offline RL policy learning."
+    checkpoint_artifact: "results/checkpoints/fre_encoder.pt"
+    checkpoint_protocol:
+      reference_grounding: "paperbench_ref_001 url_benchmark/pretrain.py"
+      intent: "Expose explicit checkpoint load/save and partial reload semantics for reproducible pretraining artifacts."
+      save_hook: "fre_repro.artifacts.save_checkpoint"
+      load_hook: "fre_repro.artifacts.load_checkpoint"
+      partial_reload_keys:
+        - "encoder"
+        - "policy"
+      exclude_keys_default: []
+
+policy_conditioning_adapter:
+  id: "latent_conditioned_policy"
+  aliases:
+    - "policy conditioning adapter"
+    - "π(a|s,z)"
+    - "s, z)"
+    - "off-the-shelf RL algorithm"
+  implementation_hook: "fre_repro.algorithms.LatentConditionedPolicy"
+  input:
+    state: "s"
+    latent_reward_encoding: "z"
+  output: "action distribution or deterministic action"
+  training_loop_hook: "fre_repro.algorithms.train_policy"
+  checkpoint_artifact: "results/checkpoints/fre_policy.pt"
+  offline_training:
+    reference_grounding: "paperbench_ref_001 url_benchmark/agent/ddpg.py"
+    intent: "Preserve explicit actor/critic learning-rate, target-update, update-frequency, hidden-dimension, and device configuration semantics while keeping FRE implementation independent."
+    algorithm_family: "latent-conditioned offline actor-critic or lightweight smoke fallback"
+    reward_free: true
+    lr: 0.0001
+    critic_target_tau: 0.01
+    update_every_steps: 2
+    hidden_dim: 1024
+    batch_size: 512
+    device: "auto"
+    smoke_steps: 2
+    full_steps:
+      antmaze: 150000
+      exorl: 1000000
+      kitchen: 1000000
+
+method_registry:
+  ours:
+    id: "ours"
+    display_name: "Ours / Functional Reward Encoding (FRE)"
+    aliases:
+      - "Ours"
+      - "ours"
+      - "Functional Reward Encoding (FRE)"
+      - "FRE"
+    selector: "ours"
+    adapter_hook: "fre_repro.algorithms.FREAgent"
+    uses_reward_prior: true
+    uses_encoder: true
+    zero_shot: true
+    default_enabled: true
+  fre:
+    id: "fre"
+    display_name: "Functional Reward Encoding"
+    aliases:
+      - "FRE"
+      - "permutation-invariant transformer"
+    selector: "fre"
+    adapter_hook: "fre_repro.algorithms.FREAgent"
+    uses_reward_prior: true
+    uses_encoder: true
+    zero_shot: true
+  bc:
+    id: "bc"
+    display_name: "Behavioral Cloning"
+    aliases:
+      - "BC"
+      - "bc"
+    selector: "bc"
+    adapter_hook: "fre_repro.baselines.BehaviorCloningBaseline"
+    uses_reward_prior: false
+    zero_shot: false
+  iql:
+    id: "iql"
+    display_name: "Implicit Q-Learning"
+    aliases:
+      - "IQL"
+      - "iql"
+    selector: "iql"
+    adapter_hook: "fre_repro.baselines.IQLBaseline"
+    uses_reward_prior: false
+    zero_shot: false
+  test_time_adaptation:
+    id: "test_time_adaptation"
+    display_name: "Test-Time Adaptation"
+    aliases:
+      - "test_time_adaptation"
+      - "TTA"
+    selector: "test_time_adaptation"
+    adapter_hook: "fre_repro.baselines.TestTimeAdaptationBaseline"
+    uses_reward_prior: true
+    zero_shot: false
+    adaptation_gradient_steps: "explicit_baseline_only"
+  ppo:
+    id: "ppo"
+    display_name: "Proximal Policy Optimization"
+    aliases:
+      - "PPO"
+      - "ppo"
+    selector: "ppo"
+    adapter_hook: "fre_repro.baselines.PPOBaseline"
+    uses_reward_prior: false
+    online_interaction_required: true
+    default_enabled: false
+  pbt:
+    id: "pbt"
+    display_name: "Population-Based Training"
+    aliases:
+      - "PBT"
+      - "pbt"
+    selector: "pbt"
+    adapter_hook: "fre_repro.baselines.PBTBaseline"
+    uses_reward_prior: false
+    online_interaction_required: true
+    default_enabled: false
+  pql:
+    id: "pql"
+    display_name: "PQL"
+    aliases:
+      - "PQL"
+      - "pql"
+    selector: "pql"
+    adapter_hook: "fre_repro.baselines.PQLBaseline"
+    uses_reward_prior: false
+    default_enabled: false
+  fb:
+    id: "fb"
+    display_name: "Forward-Backward (FB) method"
+    aliases:
+      - "Forward-Backward (FB) method"
+      - "Forward-Backward (FB), prior methods in unsupervised RL"
+      - "FB"
+    selector: "fb"
+    adapter_hook: "src.backward_unsupervised_fb_in.build_backward_unsupervised_fb_in"
+    uses_successor_representation: true
+  sf:
+    id: "sf"
+    display_name: "Successor Features (SF) method"
+    aliases:
+      - "Successor Features (SF) method"
+      - "SF"
+    selector: "sf"
+    adapter_hook: "fre_repro.baselines.SuccessorFeaturesBaseline"
+    uses_successor_representation: true
+  crl:
+    id: "crl"
+    display_name: "Contrastive RL"
+    aliases:
+      - "Contrastive RL (CRL)"
+      - "CRL"
+    selector: "crl"
+    adapter_hook: "fre_repro.baselines.ContrastiveRLBaseline"
+    uses_contrastive_objective: true
+
+required_priority_method_selectors:
+  - "ours"
+  - "bc"
+  - "iql"
+  - "test_time_adaptation"
+  - "ppo"
+  - "pbt"
+  - "pql"
+
+protocol_matrix:
+  - id: "fre_main_path"
+    display_name: "FRE 方法主路径"
+    paper_section: "4.1 Functional Reward Encoding"
+    environments:
+      - "unsupervised_offline_rl"
+    datasets:
+      - "synthetic_unlabeled"
+      - "exorl"
+      - "d4rl_antmaze"
+      - "d4rl_kitchen"
+    methods:
+      - "ours"
+    steps:
+      - "load unlabeled offline transitions"
+      - "sample random reward function η"
+      - "sample K state-reward pairs"
+      - "encode pairs into z"
+      - "train latent-conditioned π(a|s,z) offline"
+      - "evaluate held-out reward tasks zero-shot"
+    measurements:
+      - "normalized_return"
+      - "success_rate"
+      - "reward_decoding_error"
+    artifacts:
+      - "results/reward_prior_config.json"
+      - "results/checkpoints/fre_encoder.pt"
+      - "results/checkpoints/fre_policy.pt"
+      - "results/metrics.json"
+      - "results/eval_summary.json"
+  - id: "random_functions_prior"
+    display_name: "4.2 Random Functions as a Prior Reward Distribution"
+    paper_section: "4.2"
+    environments:
+      - "reward_function_task"
+    datasets:
+      - "synthetic_unlabeled"
+      - "exorl"
+      - "d4rl_antmaze"
+      - "d4rl_kitchen"
+    methods:
+      - "ours"
+    parameters:
+      reward_forms:
+        - "singleton_goal"
+        - "random_linear"
+        - "random_mlp"
+      K_encoder_states:
+        - 4
+        - 16
+        - 32
+      reward_discretization_by_magnitude: true
+    expected_trend: "More expressive random reward forms should improve held-out reward encoding until bounded by dataset coverage and training budget."
+    artifacts:
+      - "results/reward_prior_config.json"
+      - "results/sensitivity_report.json"
+  - id: "offline_rl_with_fre"
+    display_name: "4.3 Offline RL with FRE"
+    paper_section: "4.3"
+    environments:
+      - "zero_shot_standard_offline_rl"
+    datasets:
+      - "synthetic_unlabeled"
+      - "exorl"
+      - "d4rl_antmaze"
+      - "d4rl_kitchen"
+    methods:
+      - "ours"
+    parameters:
+      policy_form: "π(a|s,z)"
+      algorithm: "latent-conditioned offline RL"
+      same_training_budget: true
+    expected_trend: "Latent conditioning on encoded η should enable selecting actions for unseen reward functions without online updates."
+    artifacts:
+      - "results/checkpoints/fre_policy.pt"
+      - "results/metrics.json"
+  - id: "zero_shot_transfer_unseen_tasks"
+    display_name: "5.1 zero-shot transfer to unseen test tasks"
+    paper_section: "5.1"
+    environments:
+      - "exorl_benchmark"
+      - "antmaze"
+      - "kitchen"
+    datasets:
+      - "exorl"
+      - "d4rl_antmaze"
+      - "d4rl_kitchen"
+    methods:
+      - "ours"
+      - "bc"
+      - "iql"
+      - "test_time_adaptation"
+    measurements:
+      - "normalized_return"
+      - "success_rate"
+    expected_trend: "FRE should transfer to held-out tasks by encoding state-reward examples instead of retraining per task."
+    artifacts:
+      - "results/metrics.json"
+      - "results/fig3_zero_shot_transfer.png"
+      - "results/eval_summary.json"
+  - id: "benchmark_comparison_prior_methods"
+    display_name: "5.2 zero-shot offline RL benchmarks compared to prior methods"
+    paper_section: "5.2"
+    environments:
+      - "exorl_benchmark"
+      - "antmaze"
+      - "kitchen"
+    datasets:
+      - "exorl"
+      - "d4rl_antmaze"
+      - "d4rl_kitchen"
+    methods:
+      - "ours"
+      - "fb"
+      - "sf"
+      - "crl"
+      - "bc"
+      - "iql"
+      - "test_time_adaptation"
+      - "ppo"
+      - "pbt"
+      - "pql"
+    measurements:
+      - "normalized_return"
+      - "success_rate"
+      - "mean"
+      - "std"
+    expected_trend: "FRE should be competitive with or improve over prior zero-shot/unsupervised offline RL baselines under matched data and budget."
+    artifacts:
+      - "results/metrics.json"
+      - "results/eval_summary.json"
+      - "results/experiment_registry.json"
+  - id: "reward_family_scaling"
+    display_name: "5.3 scaling properties of FRE as the space of random rewards increases"
+    paper_section: "5.3"
+    environments:
+      - "reward_function_task"
+      - "exorl_benchmark"
+      - "antmaze"
+    datasets:
+      - "synthetic_unlabeled"
+      - "exorl"
+      - "d4rl_antmaze"
+    methods:
+      - "ours"
+    parameters:
+      subset_policy: "all possible subsets of the random reward forms"
+      same_training_budget: true
+      feature_groups:
+        - "XY positions"
+        - "velocity"
+    measurements:
+      - "normalized_return"
+      - "success_rate"
+      - "scaling_trend"
+    expected_trend: "Increasing reward prior diversity should improve transfer when reward forms remain aligned with downstream tasks."
+    artifacts:
+      - "results/trends.json"
+      - "results/sensitivity_report.json"
+  - id: "prior_domain_specificity"
+    display_name: "5.4 prior domain knowledge and specificity"
+    paper_section: "5.4"
+    environments:
+      - "exorl_benchmark"
+      - "antmaze"
+      - "kitchen"
+    datasets:
+      - "exorl"
+      - "d4rl_antmaze"
+      - "d4rl_kitchen"
+    methods:
+      - "ours"
+    parameters:
+      domain_specific_priors:
+        - "xy_positions"
+        - "velocity"
+        - "mixed_reward_types"
+      omitted_cases: "Do not add unmentioned reward types."
+    measurements:
+      - "normalized_return"
+      - "success_rate"
+    artifacts:
+      - "results/sensitivity_report.json"
+  - id: "multi_task_rl_usage"
+    display_name: "multi-task RL usage of FRE"
+    paper_section: "multi-task RL usage of FRE"
+    environments:
+      - "zero_shot_standard_offline_rl"
+    datasets:
+      - "synthetic_unlabeled"
+      - "exorl"
+    methods:
+      - "ours"
+    parameters:
+      conditioning: "shared policy with task latent z"
+    measurements:
+      - "normalized_return"
+    artifacts:
+      - "results/eval_summary.json"
+
+matrices:
+  domain_prior_config_matrix:
+    description: "Config surface for build_domain_prior_config_matrix."
+    rows:
+      - row_id: "synthetic_smoke_mixed"
+        domain: "synthetic"
+        dataset_id: "synthetic_unlabeled"
+        environment_id: "unsupervised_offline_rl"
+        reward_forms:
+          - "singleton_goal"
+          - "random_linear"
+          - "random_mlp"
+        K_encoder_states: 4
+        reward_discretization_by_magnitude: true
+        feature_groups:
+          - "xy_positions"
+          - "velocity"
+        training_budget: "smoke"
+        seed: 0
+        output_artifact: "results/reward_prior_config.json"
+      - row_id: "exorl_xy_velocity_mixed"
+        domain: "exorl"
+        dataset_id: "exorl"
+        environment_id: "exorl_benchmark"
+        reward_forms:
+          - "singleton_goal"
+          - "random_linear"
+          - "random_mlp"
+        K_encoder_states: 32
+        reward_discretization_by_magnitude: true
+        feature_groups:
+          - "xy_positions"
+          - "velocity"
+        training_budget: "full"
+        seed: 0
+        output_artifact: "results/reward_prior_config.json"
+      - row_id: "antmaze_goal_linear"
+        domain: "antmaze"
+        dataset_id: "d4rl_antmaze"
+        environment_id: "antmaze"
+        reward_forms:
+          - "singleton_goal"
+          - "random_linear"
+        K_encoder_states: 32
+        reward_discretization_by_magnitude: true
+        feature_groups:
+          - "xy_positions"
+        training_budget: "full"
+        seed: 0
+        output_artifact: "results/reward_prior_config.json"
+      - row_id: "kitchen_mixed"
+        domain: "kitchen"
+        dataset_id: "d4rl_kitchen"
+        environment_id: "kitchen"
+        reward_forms:
+          - "singleton_goal"
+          - "random_linear"
+          - "random_mlp"
+        K_encoder_states: 32
+        reward_discretization_by_magnitude: true
+        feature_groups:
+          - "object_state"
+          - "velocity"
+        training_budget: "full"
+        seed: 0
+        output_artifact: "results/reward_prior_config.json"
+
+  main_benchmark_config_matrix:
+    description: "Config surface for build_main_benchmark_config_matrix."
+    default_smoke_subset:
+      environments:
+        - "unsupervised_offline_rl"
+      datasets:
+        - "synthetic_unlabeled"
+      methods:
+        - "ours"
+        - "bc"
+        - "iql"
+    full_rows:
+      - row_id: "exorl_all_methods"
+        benchmark_id: "exorl_benchmark"
+        dataset_id: "exorl"
+        methods:
+          - "ours"
+          - "fb"
+          - "sf"
+          - "crl"
+          - "bc"
+          - "iql"
+          - "test_time_adaptation"
+          - "ppo"
+          - "pbt"
+          - "pql"
+        measurements:
+          - "normalized_return"
+        eval_episodes: 20
+        eval_seeds: 5
+        artifact_paths:
+          metrics: "results/metrics.json"
+          summary: "results/eval_summary.json"
+      - row_id: "antmaze_all_methods"
+        benchmark_id: "antmaze"
+        dataset_id: "d4rl_antmaze"
+        methods:
+          - "ours"
+          - "fb"
+          - "sf"
+          - "crl"
+          - "bc"
+          - "iql"
+          - "test_time_adaptation"
+          - "ppo"
+          - "pbt"
+          - "pql"
+        measurements:
+          - "success_rate"
+          - "normalized_return"
+        eval_episodes: 20
+        eval_seeds: 5
+        artifact_paths:
+          metrics: "results/metrics.json"
+          summary: "results/eval_summary.json"
+          figure: "results/fig3_zero_shot_transfer.png"
+      - row_id: "kitchen_all_methods"
+        benchmark_id: "kitchen"
+        dataset_id: "d4rl_kitchen"
+        methods:
+          - "ours"
+          - "fb"
+          - "sf"
+          - "crl"
+          - "bc"
+          - "iql"
+          - "test_time_adaptation"
+          - "ppo"
+          - "pbt"
+          - "pql"
+        measurements:
+          - "success_rate"
+          - "normalized_return"
+        eval_episodes: 20
+        eval_seeds: 5
+        artifact_paths:
+          metrics: "results/metrics.json"
+          summary: "results/eval_summary.json"
+
+  reward_scaling_config_matrix:
+    description: "Config surface for build_reward_scaling_config_matrix."
+    bounded_execution_note: "Expose all paper-specified reward-form subsets as selectable rows; default smoke executes only singleton and full mixed rows."
+    same_training_budget: true
+    reward_form_universe:
+      - "singleton_goal"
+      - "random_linear"
+      - "random_mlp"
+    rows:
+      - row_id: "subset_singleton_goal"
+        reward_forms:
+          - "singleton_goal"
+        complexity_level: 1
+        default_smoke_enabled: true
+        K_encoder_states:
+          - 4
+          - 32
+        expected_trend: "Lowest diversity; useful lower bound for goal-like tasks."
+      - row_id: "subset_random_linear"
+        reward_forms:
+          - "random_linear"
+        complexity_level: 1
+        default_smoke_enabled: false
+        K_encoder_states:
+          - 32
+        expected_trend: "Tests XY positions and velocity linear task prior."
+      - row_id: "subset_random_mlp"
+        reward_forms:
+          - "random_mlp"
+        complexity_level: 1
+        default_smoke_enabled: false
+        K_encoder_states:
+          - 32
+        expected_trend: "Tests expressive but less structured reward prior."
+      - row_id: "subset_goal_linear"
+        reward_forms:
+          - "singleton_goal"
+          - "random_linear"
+        complexity_level: 2
+        default_smoke_enabled: false
+        K_encoder_states:
+          - 32
+        expected_trend: "Intermediate mixed reward-function type."
+      - row_id: "subset_goal_mlp"
+        reward_forms:
+          - "singleton_goal"
+          - "random_mlp"
+        complexity_level: 2
+        default_smoke_enabled: false
+        K_encoder_states:
+          - 32
+        expected_trend: "Tests sparse goals plus nonlinear random rewards."
+      - row_id: "subset_linear_mlp"
+        reward_forms:
+          - "random_linear"
+          - "random_mlp"
+        complexity_level: 2
+        default_smoke_enabled: false
+        K_encoder_states:
+          - 32
+        expected_trend: "Tests dense random reward prior without singleton goals."
+      - row_id: "subset_goal_linear_mlp"
+        reward_forms:
+          - "singleton_goal"
+          - "random_linear"
+          - "random_mlp"
+        complexity_level: 3
+        default_smoke_enabled: true
+        K_encoder_states:
+          - 4
+          - 32
+        expected_trend: "Highest paper-specified prior diversity under same training budget."
+
+evaluation:
+  zero_shot_transfer:
+    hook: "fre_repro.evaluation.evaluate_zero_shot_transfer"
+    adaptation_steps_default: 0
+    input: "agent plus held-out tasks represented by state-reward examples"
+    metrics:
+      normalized_return:
+        aggregation:
+          - "mean"
+          - "std"
+          - "per_seed"
+      success_rate:
+        aggregation:
+          - "mean"
+          - "std"
+          - "per_seed"
+      reward_decoding_error:
+        aggregation:
+          - "mean"
+    artifact_paths:
+      metrics: "results/metrics.json"
+      figure: "results/fig3_zero_shot_transfer.png"
+      summary: "results/eval_summary.json"
+  benchmark_comparison:
+    hook: "fre_repro.evaluation.run_benchmark_comparison"
+    methods_from_registry: true
+    benchmarks:
+      - "exorl_benchmark"
+      - "antmaze"
+      - "kitchen"
+    artifact_paths:
+      metrics: "results/metrics.json"
+      summary: "results/eval_summary.json"
+
+readiness_checks:
+  - id: "config_loadable"
+    description: "YAML is parseable and exposes required public contract names."
+  - id: "method_selectors_complete"
+    description: "Selector set includes ours, bc, iql, test_time_adaptation, ppo, pbt, pql."
+  - id: "dataset_registry_complete"
+    description: "Registry includes deepmind_control/ExORL, robotics/AntMaze/Kitchen, offline trajectory datasets, and offline state-action pairs."
+  - id: "reward_prior_sampler_wired"
+    description: "sample_reward_prior(domain, seed) hook is present and serializes reward_prior_config."
+  - id: "encoder_policy_training_wired"
+    description: "Encoder checkpoint and latent-conditioned policy checkpoint paths are declared."
+  - id: "smoke_artifact_safety"
+    description: "Smoke mode writes readiness.json and evaluation_result.json only as readiness artifacts unless measured bounded computation produces benchmark-visible outputs."
+
+reference_grounding:
+  - id: "paperbench_ref_001"
+    source_path: "url_benchmark/d4rl_benchmark.py"
+    applied_to:
+      - "data_pipeline.d4rl_replay_buffer_protocol"
+      - "data_pipeline.loaders.d4rl_antmaze"
+      - "data_pipeline.loaders.d4rl_kitchen"
+    adaptation_note: "Dataset filtering by episode length and terminal/timeout handling are represented as executable loader configuration hooks rather than copied implementation."
+  - id: "paperbench_ref_001"
+    source_path: "url_benchmark/agent/ddpg.py"
+    applied_to:
+      - "policy_conditioning_adapter.offline_training"
+    adaptation_note: "Actor-critic hyperparameter semantics are preserved for latent-conditioned offline policy training configuration."
+  - id: "paperbench_ref_001"
+    source_path: "url_benchmark/pretrain.py"
+    applied_to:
+      - "encoder.training.checkpoint_protocol"
+    adaptation_note: "Checkpoint save/load and partial reload intent is represented in artifact hooks for FRE encoder and policy checkpoints."

@@ -1,0 +1,635 @@
+# =============================================================================
+# configs/ddpm_church.yaml
+# DPMs-ANT – DDPM Framework / LSUN-Church Source Domain Configuration
+# Paper: "Bridging Data Gaps in Diffusion Models with Adversarial Noise-Based
+#         Transfer Learning"
+#
+# reference_grounding: paper_method_core configs/ddpm_church.yaml
+# reference_grounding: paper_semantic_chunk_012 10-shot image generation experiments
+# reference_grounding: paper_semantic_chunk_014_01 DDPM + LDM framework evaluation
+#
+# Evidence obligation matrix rows bound here:
+#   addendum约束   -> batch_size=64, omega=0.02, adversarial_inner_steps=10,
+#                     5000_iterations, 300_training_iterations -> 配置文件
+#   DDPM框架+ShiftAdaptor(c=4,d=8) -> 10-shot LSUN Church目标域(2个) -> FID评估
+#   配置系统       -> framework选择+domain映射+超参数 -> results/metrics.json
+#   experiment_did: DPMs-ANT(ours) -> Algorithm 1完整流程 -> DDPM+LDM两框架 -> 7个目标域
+# =============================================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Framework selector  (ddpm | ldm)
+# ─────────────────────────────────────────────────────────────────────────────
+framework: ddpm
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Method selector
+# Complete method/baseline selector set per paper evidence contract.
+# Values: ours | diffusion_model | ddpm | ldm | dpms_ant |
+#         similarity_guided_training | adversarial_noise_selection |
+#         ddpm_pa | tgan | ada | ewc | cdc | dcl | pgd | ddim
+# reference_grounding: paper_method_core method_registry
+# ─────────────────────────────────────────────────────────────────────────────
+method: dpms_ant
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Source domain
+# ─────────────────────────────────────────────────────────────────────────────
+source_domain: lsun_church
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Target domains for this config (LSUN-Church → 2 target domains per paper)
+# reference_grounding: paper_semantic_chunk_014_01 LSUN Church target domains
+# ─────────────────────────────────────────────────────────────────────────────
+target_domains:
+  - haunted_houses
+  - landscape_drawings
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DDPM UNet model configuration
+# ─────────────────────────────────────────────────────────────────────────────
+model:
+  type: ddpm_unet
+  image_size: 256
+  in_channels: 3
+  model_channels: 128
+  out_channels: 3
+  num_res_blocks: 2
+  attention_resolutions: [16, 8]
+  channel_mult: [1, 1, 2, 2, 4, 4]
+  num_heads: 4
+  use_scale_shift_norm: true
+  resblock_updown: true
+  dropout: 0.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Diffusion process configuration
+# ─────────────────────────────────────────────────────────────────────────────
+diffusion:
+  timesteps: 1000
+  beta_schedule: linear
+  beta_start: 0.0001
+  beta_end: 0.02
+  # DDIM sampling for fast inference
+  ddim_sampling_steps: 100
+  ddim_eta: 0.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shift Adaptor configuration
+# Paper: DDPM framework uses c=4, d=8 bottleneck structure
+# reference_grounding: paper_method_core ShiftAdaptor(c=4,d=8)
+# ─────────────────────────────────────────────────────────────────────────────
+shift_adaptor:
+  enabled: true
+  # c: bottleneck compression factor
+  c: 4
+  # d: bottleneck depth/width multiplier
+  d: 8
+  # Only adaptor parameters are trained; base model is frozen
+  freeze_base_model: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Addendum-fixed hyperparameters (MUST NOT be overridden)
+# reference_grounding: paper_semantic_chunk_012 fixed hyperparameters addendum
+# Anchors: 5000_iterations, 300_training_iterations, batch_size_64,
+#          omega_0.02, adversarial_inner_steps_10, gamma_5, 10_shot_setting
+# ─────────────────────────────────────────────────────────────────────────────
+training:
+  # anchor: 5000_iterations
+  total_iterations: 5000
+  # anchor: 300_training_iterations (ablation / sensitivity cap)
+  ablation_iterations: 300
+  # anchor: batch_size_64
+  batch_size: 64
+  # anchor: 10_shot_setting
+  shot_count: 10
+  learning_rate: 2.0e-5
+  ema_rate: 0.9999
+  log_interval: 100
+  save_interval: 500
+  seed: 42
+  mixed_precision: false
+  gradient_clip_norm: 1.0
+  # Pretrained checkpoint path for LSUN-Church DDPM
+  pretrained_checkpoint: checkpoints/ddpm/lsun_church_256.pt
+  # Output checkpoint directory
+  output_dir: checkpoints/ddpm/lsun_church_finetuned
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Similarity-Guided Training configuration
+# Paper: MobileNet classifier pretrained on ImageNet, fine-tuned for 300 steps,
+#        gamma=5 KL divergence scale.
+# reference_grounding: paper_method_core similarity_guided_training
+# ─────────────────────────────────────────────────────────────────────────────
+similarity_guidance:
+  enabled: true
+  # anchor: gamma_5
+  gamma: 5
+  # anchor: 300_training_iterations for classifier fine-tuning
+  classifier_finetune_steps: 300
+  classifier_backbone: mobilenet_v2
+  classifier_pretrained: imagenet
+  classifier_lr: 1.0e-4
+  classifier_batch_size: 32
+  use_sim_guide: true   # set False for Ablation-SimGuide
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Adversarial Noise Selection (ANT / PGD) configuration
+# Paper: PGD inner loop with 10 steps, perturbation budget omega=0.02
+# reference_grounding: paper_method_core adversarial_noise_selection
+# ─────────────────────────────────────────────────────────────────────────────
+adversarial_noise:
+  enabled: true
+  # anchor: adversarial_inner_steps_10
+  inner_steps: 10
+  # anchor: omega_0.02 – perturbation budget
+  omega: 0.02
+  # alpha: per-step PGD step size (default = omega / inner_steps)
+  alpha: 0.002
+  pgd_norm: linf
+  use_adv_noise: true  # set False for Ablation-AdvNoise
+  targeted: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dataset / Data Pipeline configuration
+# reference_grounding: paper_semantic_chunk_014_01 dataset registry
+# ─────────────────────────────────────────────────────────────────────────────
+data:
+  image_size: 256
+  # Source domain data (used for similarity guidance reference)
+  source:
+    id: lsun_church
+    aliases: [lsun-church, lsun_church_outdoor, church_outdoor]
+    root: data/lsun_church
+    split: train
+    loader: lsun_loader
+    setup_cmd: "python -m dpms_ant.data.few_shot_dataset --prepare lsun_church"
+  # Target domain datasets (10-shot each)
+  targets:
+    - id: haunted_houses
+      aliases: [haunted-houses, haunted_house]
+      root: data/few_shot/haunted_houses
+      shot_count: 10
+      loader: image_folder_loader
+      setup_cmd: "python -m dpms_ant.data.few_shot_dataset --prepare haunted_houses"
+    - id: landscape_drawings
+      aliases: [landscape-drawings, landscape_drawing]
+      root: data/few_shot/landscape_drawings
+      shot_count: 10
+      loader: image_folder_loader
+      setup_cmd: "python -m dpms_ant.data.few_shot_dataset --prepare landscape_drawings"
+  # Classifier training data (ImageNet subset)
+  classifier_data:
+    id: imagenet
+    aliases: [ImageNet, ILSVRC]
+    root: data/imagenet
+    loader: imagenet_loader
+    setup_cmd: "python -m dpms_ant.data.few_shot_dataset --prepare imagenet"
+  # Data augmentation
+  augmentation:
+    random_flip: true
+    random_crop: false
+    normalize_mean: [0.5, 0.5, 0.5]
+    normalize_std: [0.5, 0.5, 0.5]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dataset registry
+# Exposes all paper-derived dataset/benchmark entries.
+# reference_grounding: paper_semantic_chunk_014_01 dataset registry
+# ─────────────────────────────────────────────────────────────────────────────
+dataset_registry:
+  imagenet:
+    id: imagenet
+    aliases: [ImageNet, ILSVRC, imagenet1k]
+    role: classifier_pretrain
+    loader_hook: dpms_ant.data.few_shot_dataset.ImageNetDataset
+    image_size: 224
+    num_classes: 1000
+  ffhq:
+    id: ffhq
+    aliases: [FFHQ, flickr-faces-hq]
+    role: source_domain
+    loader_hook: dpms_ant.data.few_shot_dataset.FFHQDataset
+    image_size: 256
+  lsun_church:
+    id: lsun_church
+    aliases: [lsun-church, church_outdoor]
+    role: source_domain
+    loader_hook: dpms_ant.data.few_shot_dataset.LSUNDataset
+    image_size: 256
+    lsun_category: church_outdoor
+  babies:
+    id: babies
+    aliases: [baby, babies_dataset]
+    role: target_domain
+    loader_hook: dpms_ant.data.few_shot_dataset.FewShotImageFolder
+    image_size: 256
+    default_shot_count: 10
+  sunglasses:
+    id: sunglasses
+    aliases: [sunglasses_dataset]
+    role: target_domain
+    loader_hook: dpms_ant.data.few_shot_dataset.FewShotImageFolder
+    image_size: 256
+    default_shot_count: 10
+  raphael_peale:
+    id: raphael_peale
+    aliases: [raphael-peale, Raphael_Peale, raphael]
+    role: target_domain
+    loader_hook: dpms_ant.data.few_shot_dataset.FewShotImageFolder
+    image_size: 256
+    default_shot_count: 10
+  sketches:
+    id: sketches
+    aliases: [sketch, face_sketches]
+    role: target_domain
+    loader_hook: dpms_ant.data.few_shot_dataset.FewShotImageFolder
+    image_size: 256
+    default_shot_count: 10
+  modigliani:
+    id: modigliani
+    aliases: [Modigliani, amedeo_modigliani]
+    role: target_domain
+    loader_hook: dpms_ant.data.few_shot_dataset.FewShotImageFolder
+    image_size: 256
+    default_shot_count: 10
+  haunted_houses:
+    id: haunted_houses
+    aliases: [haunted-houses, haunted_house]
+    role: target_domain
+    loader_hook: dpms_ant.data.few_shot_dataset.FewShotImageFolder
+    image_size: 256
+    default_shot_count: 10
+  landscape_drawings:
+    id: landscape_drawings
+    aliases: [landscape-drawings, landscape_drawing]
+    role: target_domain
+    loader_hook: dpms_ant.data.few_shot_dataset.FewShotImageFolder
+    image_size: 256
+    default_shot_count: 10
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Environment / Task registry
+# Exposes paper-derived environment and task entries.
+# reference_grounding: paper_semantic_chunk_014_01 environment/task registry
+# ─────────────────────────────────────────────────────────────────────────────
+environment_registry:
+  ANT:
+    id: ANT
+    aliases: [adversarial_noise_transfer, dpms_ant]
+    description: "Full DPMs-ANT training environment: Shift Adaptor + Similarity-Guided Training + Adversarial Noise Selection"
+    factory_hook: dpms_ant.trainer.ant_trainer.ANTTrainer
+    config_hook: configs/ddpm_church.yaml
+  shot_image_generation:
+    id: shot_image_generation
+    aliases: [few_shot_generation, 10_shot_generation]
+    description: "10-shot target domain image generation task"
+    factory_hook: dpms_ant.data.few_shot_dataset.FewShotDataModule
+    default_shot_count: 10
+  intra_lpips:
+    id: intra_lpips
+    aliases: [Intra-LPIPS, diversity_metric]
+    description: "Intra-set LPIPS diversity metric for generated images"
+    factory_hook: dpms_ant.evaluation.metrics.IntraLPIPS
+  experimental_setup:
+    id: experimental_setup
+    aliases: [paper_setup, ddpm_ant_setup]
+    description: "Paper experimental setup: DDPM/LDM + 7 target domains, 10-shot"
+    factory_hook: src.experiment_registry.ExperimentRegistry
+  lsun_church_env:
+    id: lsun_church_env
+    aliases: [LSUN-Church, lsun_church_source]
+    description: "LSUN-Church source domain environment"
+    factory_hook: dpms_ant.data.few_shot_dataset.LSUNDataset
+    config_hook: configs/ddpm_church.yaml
+  raphael_peale_env:
+    id: raphael_peale_env
+    aliases: [Raphael-Peale, raphael_peale_target]
+    description: "Raphael Peale painting target domain (FFHQ source)"
+    factory_hook: dpms_ant.data.few_shot_dataset.FewShotImageFolder
+    shot_count: 10
+  modigliani_env:
+    id: modigliani_env
+    aliases: [Amedeo-Modigliani, modigliani_target]
+    description: "Amedeo Modigliani painting target domain (FFHQ source)"
+    factory_hook: dpms_ant.data.few_shot_dataset.FewShotImageFolder
+    shot_count: 10
+  haunted_houses_env:
+    id: haunted_houses_env
+    aliases: [Haunted-Houses, haunted_houses_target]
+    description: "Haunted Houses target domain (LSUN-Church source)"
+    factory_hook: dpms_ant.data.few_shot_dataset.FewShotImageFolder
+    shot_count: 10
+  imagenet_classifier_env:
+    id: imagenet_classifier_env
+    aliases: [ImageNet-Classifier, imagenet_pretrain_env]
+    description: "ImageNet environment for MobileNet classifier pretraining"
+    factory_hook: dpms_ant.classifier.domain_classifier.DomainClassifier
+  ffhq_source_env:
+    id: ffhq_source_env
+    aliases: [FFHQ-source, ffhq_pretrain_env]
+    description: "FFHQ source domain environment for DDPM pretraining"
+    factory_hook: dpms_ant.data.few_shot_dataset.FFHQDataset
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Method / Baseline selector registry
+# All paper-required methods and baselines explicitly registered.
+# reference_grounding: paper_method_core method_registry
+# ─────────────────────────────────────────────────────────────────────────────
+method_registry:
+  ours:
+    id: ours
+    aliases: [dpms_ant, DPMs-ANT, DDPM-ANT]
+    description: "Full DPMs-ANT method: Shift Adaptor + Similarity-Guided + ANT"
+    adapter_hook: dpms_ant.trainer.ant_trainer.ANTTrainer
+  diffusion_model:
+    id: diffusion_model
+    aliases: [vanilla_diffusion, baseline_ddpm]
+    description: "Standard diffusion model fine-tuning baseline"
+    adapter_hook: src.methods.baselines.DiffusionModelBaseline
+  ddpm:
+    id: ddpm
+    aliases: [DDPM, denoising_diffusion_probabilistic_model]
+    description: "DDPM framework"
+    adapter_hook: src.models.ddpm.DDPM
+  ldm:
+    id: ldm
+    aliases: [LDM, latent_diffusion_model]
+    description: "LDM framework"
+    adapter_hook: src.models.ldm.LDM
+  dpms_ant:
+    id: dpms_ant
+    aliases: [DPMs-ANT, DDPM-ANT, ours]
+    description: "Full DPMs-ANT Algorithm 1"
+    adapter_hook: dpms_ant.trainer.ant_trainer.ANTTrainer
+  similarity_guided_training:
+    id: similarity_guided_training
+    aliases: [sim_guide, similarity_guidance]
+    description: "Similarity-Guided Training component only"
+    adapter_hook: dpms_ant.trainer.similarity_guidance.SimilarityGuidedTrainer
+  adversarial_noise_selection:
+    id: adversarial_noise_selection
+    aliases: [ant, adv_noise, pgd_noise]
+    description: "Adversarial Noise Selection (PGD inner loop) component only"
+    adapter_hook: dpms_ant.trainer.adversarial_noise.AdversarialNoiseSelector
+  ddpm_pa:
+    id: ddpm_pa
+    aliases: [DDPM-PA, ddpm_patch_attention]
+    description: "DDPM-PA baseline method"
+    adapter_hook: src.methods.baselines.DDPMPABaseline
+  tgan:
+    id: tgan
+    aliases: [TGAN, traditional_gan_baseline]
+    description: "TGAN baseline"
+    adapter_hook: src.methods.baselines.TGANBaseline
+  ada:
+    id: ada
+    aliases: [ADA, adaptive_data_augmentation]
+    description: "ADA baseline"
+    adapter_hook: src.methods.baselines.ADABaseline
+  ewc:
+    id: ewc
+    aliases: [EWC, elastic_weight_consolidation]
+    description: "EWC baseline"
+    adapter_hook: src.methods.baselines.EWCBaseline
+  cdc:
+    id: cdc
+    aliases: [CDC, content_deformable_convolution]
+    description: "CDC baseline"
+    adapter_hook: src.methods.baselines.CDCBaseline
+  dcl:
+    id: dcl
+    aliases: [DCL, dual_contrastive_learning]
+    description: "DCL baseline"
+    adapter_hook: src.methods.baselines.DCLBaseline
+  pgd:
+    id: pgd
+    aliases: [PGD, projected_gradient_descent]
+    description: "PGD optimizer used in adversarial noise selection"
+    adapter_hook: dpms_ant.trainer.adversarial_noise.PGDOptimizer
+  ddim:
+    id: ddim
+    aliases: [DDIM, denoising_diffusion_implicit_model]
+    description: "DDIM fast sampler"
+    adapter_hook: src.models.ddim.DDIMSampler
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Metric registry
+# reference_grounding: paper_semantic_chunk_012 evaluation metrics
+# ─────────────────────────────────────────────────────────────────────────────
+metric_registry:
+  fid:
+    id: fid
+    aliases: [FID, frechet_inception_distance]
+    description: "Fréchet Inception Distance – primary generation quality metric"
+    formula_hook: dpms_ant.evaluation.fid.FIDCalculator
+    artifact_path: results/metrics.json
+    lower_is_better: true
+  accuracy:
+    id: accuracy
+    aliases: [acc, classifier_accuracy]
+    description: "Domain classifier accuracy on generated images"
+    formula_hook: dpms_ant.evaluation.metrics.DomainAccuracy
+    artifact_path: results/metrics.json
+    lower_is_better: false
+  intra_lpips:
+    id: intra_lpips
+    aliases: [Intra-LPIPS, diversity, lpips_diversity]
+    description: "Intra-set LPIPS diversity of generated samples"
+    formula_hook: dpms_ant.evaluation.metrics.IntraLPIPS
+    artifact_path: results/metrics.json
+    lower_is_better: false
+  fidelity_score:
+    id: fidelity_score
+    aliases: [fidelity, quality_score]
+    description: "Fidelity score measuring similarity to target domain"
+    formula_hook: dpms_ant.evaluation.metrics.FidelityScore
+    artifact_path: results/metrics.json
+    lower_is_better: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Protocol matrix – named experiments bound to environments, methods,
+# measurements, and artifact paths
+# reference_grounding: paper_semantic_chunk_014_01 experiment protocol matrix
+# ─────────────────────────────────────────────────────────────────────────────
+experiment_protocol_matrix:
+
+  # Primary method experiment (this config: LSUN-Church source)
+  Experiment-FullDomain-Church:
+    experiment_id: Experiment-FullDomain-Church
+    description: "DPMs-ANT on all LSUN-Church target domains (Table 2 subset)"
+    framework: ddpm
+    source_domain: lsun_church
+    target_domains: [haunted_houses, landscape_drawings]
+    method: dpms_ant
+    shot_count: 10
+    total_iterations: 5000
+    measurements: [fid, intra_lpips, fidelity_score]
+    artifact_path: results/metrics.json
+    config_hook: configs/ddpm_church.yaml
+    checkpoint_dir: checkpoints/ddpm/lsun_church_finetuned
+
+  # DPMs-ANT main method vs all baselines (LSUN-Church targets)
+  Experiment-TableMain-Church:
+    experiment_id: Experiment-TableMain-Church
+    description: "Full method comparison table for LSUN-Church source domain"
+    framework: ddpm
+    source_domain: lsun_church
+    target_domains: [haunted_houses, landscape_drawings]
+    methods:
+      - ours
+      - ddpm_pa
+      - tgan
+      - ada
+      - ewc
+      - cdc
+      - dcl
+      - diffusion_model
+    shot_count: 10
+    total_iterations: 5000
+    measurements: [fid, intra_lpips, accuracy]
+    artifact_path: results/metrics.json
+    config_hook: configs/ddpm_church.yaml
+
+  # Ablation: remove similarity-guided training
+  Ablation-SimGuide-Church:
+    experiment_id: Ablation-SimGuide-Church
+    description: "Ablation: DPMs-ANT without similarity-guided training (LSUN-Church source)"
+    framework: ddpm
+    source_domain: lsun_church
+    target_domains: [haunted_houses, landscape_drawings]
+    method: dpms_ant
+    shot_count: 10
+    total_iterations: 5000
+    ablation_iterations: 300
+    use_sim_guide: false
+    use_adv_noise: true
+    measurements: [fid]
+    expected_trend: "FID increases vs full DPMs-ANT, validating sim-guide contribution"
+    artifact_path: results/metrics.json
+    config_hook: configs/ddpm_church.yaml
+
+  # Ablation: remove adversarial noise selection
+  Ablation-AdvNoise-Church:
+    experiment_id: Ablation-AdvNoise-Church
+    description: "Ablation: DPMs-ANT without adversarial noise selection (LSUN-Church source)"
+    framework: ddpm
+    source_domain: lsun_church
+    target_domains: [haunted_houses, landscape_drawings]
+    method: dpms_ant
+    shot_count: 10
+    total_iterations: 5000
+    ablation_iterations: 300
+    use_sim_guide: true
+    use_adv_noise: false
+    measurements: [fid]
+    expected_trend: "FID increases vs full DPMs-ANT, validating adv-noise contribution"
+    artifact_path: results/metrics.json
+    config_hook: configs/ddpm_church.yaml
+
+  # Ablation: ShiftAdaptor hyperparameter sweep (c/d configurations)
+  Ablation-AdaptorHyper-Church:
+    experiment_id: Ablation-AdaptorHyper-Church
+    description: "Ablation: different c/d Shift Adaptor configurations (LSUN-Church)"
+    framework: ddpm
+    source_domain: lsun_church
+    target_domains: [haunted_houses]
+    method: dpms_ant
+    shot_count: 10
+    total_iterations: 5000
+    adaptor_configs:
+      - {c: 4, d: 8}   # default (paper Table ablation)
+      - {c: 2, d: 8}
+      - {c: 8, d: 8}
+      - {c: 4, d: 4}
+      - {c: 4, d: 16}
+    measurements: [fid]
+    artifact_path: results/metrics.json
+    config_hook: configs/ddpm_church.yaml
+
+  # Sensitivity: alpha parameter sweep
+  SensitivityAnalysis-Alpha-Church:
+    experiment_id: SensitivityAnalysis-Alpha-Church
+    description: "Sensitivity of DPMs-ANT to PGD alpha perturbation budget (LSUN-Church)"
+    framework: ddpm
+    source_domain: lsun_church
+    target_domains: [haunted_houses]
+    method: dpms_ant
+    shot_count: 10
+    total_iterations: 5000
+    sweep_param: alpha
+    sweep_values: [0.001, 0.002, 0.004, 0.008, 0.01]
+    measurements: [fid]
+    artifact_path: results/metrics.json
+    config_hook: configs/ddpm_church.yaml
+
+  # Sensitivity: iteration count sweep
+  SensitivityAnalysis-Iterations-Church:
+    experiment_id: SensitivityAnalysis-Iterations-Church
+    description: "Sensitivity of DPMs-ANT to training iteration count (LSUN-Church)"
+    framework: ddpm
+    source_domain: lsun_church
+    target_domains: [haunted_houses]
+    method: dpms_ant
+    shot_count: 10
+    sweep_param: training_iteration_count
+    # anchor: training_iteration_count values 0,50,100,150,200,250,300,350
+    sweep_values: [0, 50, 100, 150, 200, 250, 300, 350]
+    measurements: [fid]
+    artifact_path: results/metrics.json
+    config_hook: configs/ddpm_church.yaml
+
+  # Sensitivity: omega (adversarial noise scale) sweep
+  SensitivityAnalysis-Omega-Church:
+    experiment_id: SensitivityAnalysis-Omega-Church
+    description: "Sensitivity of DPMs-ANT to omega adversarial noise scale (LSUN-Church)"
+    framework: ddpm
+    source_domain: lsun_church
+    target_domains: [haunted_houses]
+    method: dpms_ant
+    shot_count: 10
+    total_iterations: 5000
+    sweep_param: adversarial_noise_scale
+    # anchor: adversarial_noise_scale values 0.01, 0.02, 0.03, 0.04, 0.05
+    sweep_values: [0.01, 0.02, 0.03, 0.04, 0.05]
+    measurements: [fid]
+    artifact_path: results/metrics.json
+    config_hook: configs/ddpm_church.yaml
+
+  # Sensitivity: gamma (similarity guidance scale) sweep
+  SensitivityAnalysis-Gamma-Church:
+    experiment_id: SensitivityAnalysis-Gamma-Church
+    description: "Sensitivity of DPMs-ANT to similarity_guidance_scale gamma (LSUN-Church)"
+    framework: ddpm
+    source_domain: lsun_church
+    target_domains: [haunted_houses]
+    method: dpms_ant
+    shot_count: 10
+    total_iterations: 5000
+    sweep_param: similarity_guidance_scale
+    # anchor: similarity_guidance_scale values 1, 3, 5, 7, 9, 10, 2
+    sweep_values: [1, 2, 3, 5, 7, 9, 10]
+    measurements: [fid]
+    artifact_path: results/metrics.json
+    config_hook: configs/ddpm_church.yaml
+
+  # Shot count sensitivity
+  SensitivityAnalysis-ShotCount-Church:
+    experiment_id: SensitivityAnalysis-ShotCount-Church
+    description: "Sensitivity to shot count (LSUN-Church source)"
+    framework: ddpm
+    source_domain: lsun_church
+    target_domains: [haunted_houses]
+    method: dpms_ant
+    sweep_param: shot_count
+    # anchor: shot_count values 10, 100
+    sweep_values: [10, 100]
+    total_iterations: 5000
+    measurements: [fid]
+    artifact_path: results/metrics.json
+    config_hook: configs/ddpm_church.yaml
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bounded parameter sweeps (fully enumerated per paper evidence contract)
+# reference_grounding: paper_method_core parameter_sweeps
+# ─────────────────────────────────────────────────────────────────────────────
+parameter_sweeps:

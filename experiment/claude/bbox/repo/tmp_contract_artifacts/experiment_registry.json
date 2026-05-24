@@ -1,0 +1,896 @@
+{
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.938604Z",
+  "schema_version": "1.0.0",
+  "experiments": {
+    "gsm8k_main": {
+      "experiment_id": "gsm8k_main",
+      "protocol_group": "main_comparison",
+      "description": "Table 2 / Table 10: Adapt gpt-3.5-turbo on GSM8K (math reasoning). BBox-Adapter vs chain_of_thought, azure_sft, azure_lora, sft_lora baselines. Positive samples from ground-truth labels. CoT prompting (Wei et al., 2022).",
+      "datasets": [
+        "gsm8k"
+      ],
+      "methods": [
+        "chain_of_thought",
+        "azure_sft",
+        "azure_lora",
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "measurements": [
+        "accuracy",
+        "training_cost",
+        "inference_cost"
+      ],
+      "feedback_mode": "groundtruth",
+      "hyperparams": {
+        "adapter_model": "microsoft/deberta-v3-base",
+        "adapter_size_b": 0.1,
+        "hidden_size": 768,
+        "learning_rate": 2e-05,
+        "batch_size": 128,
+        "num_iterations": 3,
+        "num_negatives": 9,
+        "max_seq_len": 512,
+        "warmup_steps": 100,
+        "weight_decay": 0.01,
+        "gradient_clip": 1.0,
+        "beam_width": 3,
+        "temperature": 1.0,
+        "max_new_tokens": 256,
+        "length_penalty": 1.0,
+        "feedback_mode": "groundtruth",
+        "loss_type": "ranking_nce",
+        "judge_model": "roberta-base",
+        "toxicity_threshold": 0.5,
+        "seed": 42
+      },
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+      "paper_tables": [
+        "Table2",
+        "Table10"
+      ],
+      "paper_figures": [
+        "Figure8"
+      ],
+      "sweep_params": {
+        "adapter_size_b": [
+          0.1,
+          0.3
+        ],
+        "beam_width": [
+          1,
+          3,
+          5
+        ]
+      },
+      "is_ablation": false,
+      "is_default_run": true
+    },
+    "strategyqa_main": {
+      "experiment_id": "strategyqa_main",
+      "protocol_group": "main_comparison",
+      "description": "Table 2 / Table 10: Adapt gpt-3.5-turbo on StrategyQA (implicit reasoning). AI feedback as positive sample source. CoT prompting.",
+      "datasets": [
+        "strategyqa"
+      ],
+      "methods": [
+        "chain_of_thought",
+        "azure_sft",
+        "azure_lora",
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "measurements": [
+        "accuracy",
+        "training_cost",
+        "inference_cost"
+      ],
+      "feedback_mode": "ai_feedback",
+      "hyperparams": {
+        "adapter_model": "microsoft/deberta-v3-base",
+        "adapter_size_b": 0.1,
+        "hidden_size": 768,
+        "learning_rate": 2e-05,
+        "batch_size": 128,
+        "num_iterations": 3,
+        "num_negatives": 9,
+        "max_seq_len": 512,
+        "warmup_steps": 100,
+        "weight_decay": 0.01,
+        "gradient_clip": 1.0,
+        "beam_width": 3,
+        "temperature": 1.0,
+        "max_new_tokens": 256,
+        "length_penalty": 1.0,
+        "feedback_mode": "groundtruth",
+        "loss_type": "ranking_nce",
+        "judge_model": "roberta-base",
+        "toxicity_threshold": 0.5,
+        "seed": 42
+      },
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+      "paper_tables": [
+        "Table2",
+        "Table4",
+        "Table10"
+      ],
+      "paper_figures": [
+        "Figure3",
+        "Figure7"
+      ],
+      "sweep_params": {
+        "adapter_size_b": [
+          0.1,
+          0.3
+        ],
+        "beam_width": [
+          1,
+          3,
+          5
+        ],
+        "num_iterations": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "is_ablation": false,
+      "is_default_run": true
+    },
+    "truthfulqa_main": {
+      "experiment_id": "truthfulqa_main",
+      "protocol_group": "main_comparison",
+      "description": "Table 2 / Table 10: Adapt gpt-3.5-turbo on TruthfulQA (truthfulness). Combined (ground-truth + AI) feedback. CoT prompting.",
+      "datasets": [
+        "truthfulqa"
+      ],
+      "methods": [
+        "chain_of_thought",
+        "azure_sft",
+        "azure_lora",
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "measurements": [
+        "accuracy",
+        "training_cost",
+        "inference_cost"
+      ],
+      "feedback_mode": "combined",
+      "hyperparams": {
+        "adapter_model": "microsoft/deberta-v3-base",
+        "adapter_size_b": 0.1,
+        "hidden_size": 768,
+        "learning_rate": 2e-05,
+        "batch_size": 128,
+        "num_iterations": 3,
+        "num_negatives": 9,
+        "max_seq_len": 512,
+        "warmup_steps": 100,
+        "weight_decay": 0.01,
+        "gradient_clip": 1.0,
+        "beam_width": 3,
+        "temperature": 1.0,
+        "max_new_tokens": 256,
+        "length_penalty": 1.0,
+        "feedback_mode": "groundtruth",
+        "loss_type": "ranking_nce",
+        "judge_model": "roberta-base",
+        "toxicity_threshold": 0.5,
+        "seed": 42
+      },
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+      "paper_tables": [
+        "Table2",
+        "Table10"
+      ],
+      "paper_figures": [
+        "Figure9"
+      ],
+      "sweep_params": {
+        "adapter_size_b": [
+          0.1,
+          0.3
+        ]
+      },
+      "is_ablation": false,
+      "is_default_run": true
+    },
+    "scienceqa_main": {
+      "experiment_id": "scienceqa_main",
+      "protocol_group": "main_comparison",
+      "description": "Table 2 / Table 10: Adapt gpt-3.5-turbo on ScienceQA (science domain). Ground-truth positive samples. CoT prompting.",
+      "datasets": [
+        "scienceqa"
+      ],
+      "methods": [
+        "chain_of_thought",
+        "azure_sft",
+        "azure_lora",
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "measurements": [
+        "accuracy",
+        "training_cost",
+        "inference_cost"
+      ],
+      "feedback_mode": "groundtruth",
+      "hyperparams": {
+        "adapter_model": "microsoft/deberta-v3-base",
+        "adapter_size_b": 0.1,
+        "hidden_size": 768,
+        "learning_rate": 2e-05,
+        "batch_size": 128,
+        "num_iterations": 3,
+        "num_negatives": 9,
+        "max_seq_len": 512,
+        "warmup_steps": 100,
+        "weight_decay": 0.01,
+        "gradient_clip": 1.0,
+        "beam_width": 3,
+        "temperature": 1.0,
+        "max_new_tokens": 256,
+        "length_penalty": 1.0,
+        "feedback_mode": "groundtruth",
+        "loss_type": "ranking_nce",
+        "judge_model": "roberta-base",
+        "toxicity_threshold": 0.5,
+        "seed": 42
+      },
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+      "paper_tables": [
+        "Table2",
+        "Table10"
+      ],
+      "paper_figures": [
+        "Figure10"
+      ],
+      "sweep_params": {
+        "adapter_size_b": [
+          0.1,
+          0.3
+        ]
+      },
+      "is_ablation": false,
+      "is_default_run": true
+    },
+    "toxigen_main": {
+      "experiment_id": "toxigen_main",
+      "protocol_group": "toxicity_reduction",
+      "description": "Table 7: Adapt Mixtral-8x7B-v0.1 on ToxiGen (toxicity reduction). AI feedback with RoBERTa judge (roberta-base). Metrics: HateSpeechRate and ToxicityProbability (lower is better). BBox-Adapter vs base_model and SFT-LoRA baselines.",
+      "datasets": [
+        "toxigen"
+      ],
+      "methods": [
+        "base_model",
+        "sft_lora",
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "measurements": [
+        "hate_speech_rate",
+        "toxicity_probability"
+      ],
+      "feedback_mode": "ai_feedback",
+      "hyperparams": {
+        "adapter_model": "microsoft/deberta-v3-base",
+        "adapter_size_b": 0.1,
+        "hidden_size": 768,
+        "learning_rate": 2e-05,
+        "batch_size": 128,
+        "num_iterations": 3,
+        "num_negatives": 9,
+        "max_seq_len": 512,
+        "warmup_steps": 100,
+        "weight_decay": 0.01,
+        "gradient_clip": 1.0,
+        "beam_width": 3,
+        "temperature": 1.0,
+        "max_new_tokens": 256,
+        "length_penalty": 1.0,
+        "feedback_mode": "groundtruth",
+        "loss_type": "ranking_nce",
+        "judge_model": "roberta-base",
+        "toxicity_threshold": 0.5,
+        "seed": 42
+      },
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/toxigen/metrics.json",
+      "paper_tables": [
+        "Table7"
+      ],
+      "paper_figures": [],
+      "sweep_params": {
+        "adapter_size_b": [
+          0.1,
+          0.3
+        ],
+        "beam_width": [
+          1,
+          3,
+          5
+        ]
+      },
+      "is_ablation": false,
+      "is_default_run": true
+    },
+    "ablation_adapter_size": {
+      "experiment_id": "ablation_adapter_size",
+      "protocol_group": "ablation_adapter_size",
+      "description": "Ablation: sweep adapter_size in [0.1B, 0.3B] on StrategyQA and GSM8K. Shows positive_parameter_improves trend: larger adapter -> higher accuracy.",
+      "datasets": [
+        "strategyqa",
+        "gsm8k"
+      ],
+      "methods": [
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "measurements": [
+        "accuracy"
+      ],
+      "feedback_mode": "groundtruth",
+      "hyperparams": {
+        "adapter_model": "microsoft/deberta-v3-base",
+        "adapter_size_b": 0.1,
+        "hidden_size": 768,
+        "learning_rate": 2e-05,
+        "batch_size": 128,
+        "num_iterations": 3,
+        "num_negatives": 9,
+        "max_seq_len": 512,
+        "warmup_steps": 100,
+        "weight_decay": 0.01,
+        "gradient_clip": 1.0,
+        "beam_width": 3,
+        "temperature": 1.0,
+        "max_new_tokens": 256,
+        "length_penalty": 1.0,
+        "feedback_mode": "groundtruth",
+        "loss_type": "ranking_nce",
+        "judge_model": "roberta-base",
+        "toxicity_threshold": 0.5,
+        "seed": 42
+      },
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/ablation/metrics.json",
+      "paper_tables": [
+        "Table2"
+      ],
+      "paper_figures": [],
+      "sweep_params": {
+        "adapter_size_b": [
+          0.1,
+          0.3
+        ]
+      },
+      "is_ablation": true,
+      "is_default_run": false
+    },
+    "ablation_batch_size": {
+      "experiment_id": "ablation_batch_size",
+      "protocol_group": "ablation_batch_size",
+      "description": "Ablation: sweep batch_size in [64, 128] on StrategyQA. Reports accuracy and training_cost at each batch size.",
+      "datasets": [
+        "strategyqa"
+      ],
+      "methods": [
+        "bbox_adapter"
+      ],
+      "measurements": [
+        "accuracy",
+        "training_cost"
+      ],
+      "feedback_mode": "ai_feedback",
+      "hyperparams": {
+        "adapter_model": "microsoft/deberta-v3-base",
+        "adapter_size_b": 0.1,
+        "hidden_size": 768,
+        "learning_rate": 2e-05,
+        "batch_size": 128,
+        "num_iterations": 3,
+        "num_negatives": 9,
+        "max_seq_len": 512,
+        "warmup_steps": 100,
+        "weight_decay": 0.01,
+        "gradient_clip": 1.0,
+        "beam_width": 3,
+        "temperature": 1.0,
+        "max_new_tokens": 256,
+        "length_penalty": 1.0,
+        "feedback_mode": "groundtruth",
+        "loss_type": "ranking_nce",
+        "judge_model": "roberta-base",
+        "toxicity_threshold": 0.5,
+        "seed": 42
+      },
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/ablation/metrics.json",
+      "paper_tables": [
+        "Table2"
+      ],
+      "paper_figures": [],
+      "sweep_params": {
+        "batch_size": [
+          64,
+          128
+        ]
+      },
+      "is_ablation": true,
+      "is_default_run": false
+    },
+    "ablation_nce_vs_mlm": {
+      "experiment_id": "ablation_nce_vs_mlm",
+      "protocol_group": "ablation_nce_vs_mlm",
+      "description": "Table 5: Compare ranking-based NCE loss against MLM loss on StrategyQA, GSM8K, TruthfulQA, ScienceQA.",
+      "datasets": [
+        "strategyqa",
+        "gsm8k",
+        "truthfulqa",
+        "scienceqa"
+      ],
+      "methods": [
+        "bbox_adapter_mlm",
+        "bbox_adapter_nce"
+      ],
+      "measurements": [
+        "accuracy"
+      ],
+      "feedback_mode": "groundtruth",
+      "hyperparams": {
+        "adapter_model": "microsoft/deberta-v3-base",
+        "adapter_size_b": 0.1,
+        "hidden_size": 768,
+        "learning_rate": 2e-05,
+        "batch_size": 128,
+        "num_iterations": 3,
+        "num_negatives": 9,
+        "max_seq_len": 512,
+        "warmup_steps": 100,
+        "weight_decay": 0.01,
+        "gradient_clip": 1.0,
+        "beam_width": 3,
+        "temperature": 1.0,
+        "max_new_tokens": 256,
+        "length_penalty": 1.0,
+        "feedback_mode": "groundtruth",
+        "loss_type": "ranking_nce",
+        "judge_model": "roberta-base",
+        "toxicity_threshold": 0.5,
+        "seed": 42
+      },
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/ablation/metrics.json",
+      "paper_tables": [
+        "Table5"
+      ],
+      "paper_figures": [],
+      "sweep_params": {
+        "loss_type": [
+          "mlm",
+          "ranking_nce"
+        ]
+      },
+      "is_ablation": true,
+      "is_default_run": false
+    },
+    "ablation_scale_analysis": {
+      "experiment_id": "ablation_scale_analysis",
+      "protocol_group": "ablation_scale_analysis",
+      "description": "Figure 3: Scale analysis on StrategyQA with (a) beam_size in [1,3,5] and (b) num_iterations in [0,1,2,3,4]. Two-shot prompting. Shows positive_parameter_improves trend.",
+      "datasets": [
+        "strategyqa"
+      ],
+      "methods": [
+        "bbox_adapter"
+      ],
+      "measurements": [
+        "accuracy"
+      ],
+      "feedback_mode": "ai_feedback",
+      "hyperparams": {
+        "adapter_model": "microsoft/deberta-v3-base",
+        "adapter_size_b": 0.1,
+        "hidden_size": 768,
+        "learning_rate": 2e-05,
+        "batch_size": 128,
+        "num_iterations": 3,
+        "num_negatives": 9,
+        "max_seq_len": 512,
+        "warmup_steps": 100,
+        "weight_decay": 0.01,
+        "gradient_clip": 1.0,
+        "beam_width": 3,
+        "temperature": 1.0,
+        "max_new_tokens": 256,
+        "length_penalty": 1.0,
+        "feedback_mode": "groundtruth",
+        "loss_type": "ranking_nce",
+        "judge_model": "roberta-base",
+        "toxicity_threshold": 0.5,
+        "seed": 42
+      },
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/ablation/metrics.json",
+      "paper_tables": [],
+      "paper_figures": [
+        "Figure3"
+      ],
+      "sweep_params": {
+        "beam_width": [
+          1,
+          3,
+          5
+        ],
+        "num_iterations": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "is_ablation": true,
+      "is_default_run": false
+    },
+    "cost_efficiency": {
+      "experiment_id": "cost_efficiency",
+      "protocol_group": "cost_efficiency",
+      "description": "Table 4: Compare performance and cost for base_model, Azure-SFT, and BBox-Adapter on StrategyQA and GSM8K. Reports training_cost($), inference_cost($) per 1000 questions. Expected: BBox-Adapter achieves 31.30x training-cost reduction, 1.84x inference-cost reduction vs Azure-SFT.",
+      "datasets": [
+        "strategyqa",
+        "gsm8k"
+      ],
+      "methods": [
+        "base_model",
+        "azure_sft",
+        "bbox_adapter_single_step",
+        "bbox_adapter_full_step"
+      ],
+      "measurements": [
+        "accuracy",
+        "training_cost",
+        "inference_cost",
+        "api_cost"
+      ],
+      "feedback_mode": "groundtruth",
+      "hyperparams": null,
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/cost_analysis/metrics.json",
+      "paper_tables": [
+        "Table4"
+      ],
+      "paper_figures": [],
+      "sweep_params": {},
+      "is_ablation": false,
+      "is_default_run": true
+    },
+    "vram_efficiency": {
+      "experiment_id": "vram_efficiency",
+      "protocol_group": "vram_efficiency",
+      "description": "Table 6: Accuracy and GPU memory usage adapting Mixtral-8x7B to StrategyQA. VRAM(GB) for base_model, sft_lora, bbox_adapter. BBox-Adapter uses BERT-0.1B backend with Mixtral-8x7B in fp16.",
+      "datasets": [
+        "strategyqa"
+      ],
+      "methods": [
+        "base_model",
+        "sft_lora",
+        "bbox_adapter_0.1B"
+      ],
+      "measurements": [
+        "accuracy",
+        "vram_gb"
+      ],
+      "feedback_mode": "groundtruth",
+      "hyperparams": null,
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/cost_analysis/metrics.json",
+      "paper_tables": [
+        "Table6"
+      ],
+      "paper_figures": [],
+      "sweep_params": {},
+      "is_ablation": false,
+      "is_default_run": false
+    },
+    "plug_and_play_davinci": {
+      "experiment_id": "plug_and_play_davinci",
+      "protocol_group": "plug_and_play",
+      "description": "Table 3: Plug-and-play transfer of BBox-Adapter (tuned on gpt-3.5-turbo) to davinci-002 across GSM8K, StrategyQA, TruthfulQA, ScienceQA. Tests cross-model generalization of the learned energy function.",
+      "datasets": [
+        "gsm8k",
+        "strategyqa",
+        "truthfulqa",
+        "scienceqa"
+      ],
+      "methods": [
+        "bbox_adapter_transfer"
+      ],
+      "measurements": [
+        "accuracy"
+      ],
+      "feedback_mode": "groundtruth",
+      "hyperparams": null,
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+      "paper_tables": [
+        "Table3"
+      ],
+      "paper_figures": [],
+      "sweep_params": {},
+      "is_ablation": false,
+      "is_default_run": false
+    },
+    "plug_and_play_mixtral": {
+      "experiment_id": "plug_and_play_mixtral",
+      "protocol_group": "plug_and_play",
+      "description": "Table 3: Plug-and-play transfer of BBox-Adapter (tuned on gpt-3.5-turbo) to Mixtral-8x7B across GSM8K, StrategyQA, TruthfulQA, ScienceQA.",
+      "datasets": [
+        "gsm8k",
+        "strategyqa",
+        "truthfulqa",
+        "scienceqa"
+      ],
+      "methods": [
+        "bbox_adapter_transfer"
+      ],
+      "measurements": [
+        "accuracy"
+      ],
+      "feedback_mode": "groundtruth",
+      "hyperparams": null,
+      "artifact_path": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+      "paper_tables": [
+        "Table3"
+      ],
+      "paper_figures": [],
+      "sweep_params": {},
+      "is_ablation": false,
+      "is_default_run": false
+    }
+  },
+  "sweep_registry": {
+    "temperature": [
+      0.7
+    ],
+    "adapter_size_b": [
+      0.1,
+      0.3
+    ],
+    "beam_width": [
+      1,
+      3,
+      5
+    ],
+    "num_iterations": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "batch_size": [
+      64,
+      128
+    ],
+    "learning_rate": [
+      1e-05,
+      2e-05,
+      5e-05
+    ],
+    "feedback_modes": [
+      "groundtruth",
+      "ai_feedback",
+      "combined"
+    ],
+    "lora_rank": [
+      128,
+      384
+    ],
+    "lora_alpha": [
+      256,
+      768
+    ],
+    "sft_epochs": [
+      3,
+      5,
+      10
+    ],
+    "judge_model": "roberta-base",
+    "num_negatives": [
+      4,
+      7,
+      9
+    ]
+  },
+  "measurement_schemas": {
+    "accuracy": {
+      "type": "float",
+      "range": [
+        0.0,
+        100.0
+      ],
+      "unit": "percent",
+      "description": "Exact-match accuracy (%)",
+      "higher_is_better": true
+    },
+    "training_cost": {
+      "type": "float",
+      "range": [
+        0.0,
+        null
+      ],
+      "unit": "USD per 1000 questions",
+      "description": "Total training cost in USD per 1000 questions",
+      "higher_is_better": false
+    },
+    "inference_cost": {
+      "type": "float",
+      "range": [
+        0.0,
+        null
+      ],
+      "unit": "USD per 1000 questions",
+      "description": "Total inference cost in USD per 1000 questions",
+      "higher_is_better": false
+    },
+    "api_cost": {
+      "type": "float",
+      "range": [
+        0.0,
+        null
+      ],
+      "unit": "USD",
+      "description": "API call cost (OpenAI / Azure)",
+      "higher_is_better": false
+    },
+    "vram_gb": {
+      "type": "float",
+      "range": [
+        0.0,
+        null
+      ],
+      "unit": "GB",
+      "description": "Peak GPU memory (VRAM) in GB",
+      "higher_is_better": false
+    },
+    "hate_speech_rate": {
+      "type": "float",
+      "range": [
+        0.0,
+        100.0
+      ],
+      "unit": "percent",
+      "description": "Fraction of outputs classified as hate speech (%)",
+      "higher_is_better": false
+    },
+    "toxicity_probability": {
+      "type": "float",
+      "range": [
+        0.0,
+        1.0
+      ],
+      "unit": "probability",
+      "description": "Mean toxicity probability assigned by roberta-base judge",
+      "higher_is_better": false
+    },
+    "nce_loss": {
+      "type": "float",
+      "range": [
+        0.0,
+        null
+      ],
+      "unit": "nats",
+      "description": "Ranking NCE loss value",
+      "higher_is_better": false
+    },
+    "mlm_loss": {
+      "type": "float",
+      "range": [
+        0.0,
+        null
+      ],
+      "unit": "nats",
+      "description": "Masked Language Model loss",
+      "higher_is_better": false
+    }
+  },
+  "method_comparison_table1": [
+    {
+      "method": "Full Fine-Tuning (white-box)",
+      "model_params_access": true,
+      "high_dim_repr": true,
+      "token_probs": true,
+      "retrieval_corpus": false,
+      "smaller_adapter": false,
+      "access_type": "white-box"
+    },
+    {
+      "method": "LoRA (white-box)",
+      "model_params_access": true,
+      "high_dim_repr": true,
+      "token_probs": true,
+      "retrieval_corpus": false,
+      "smaller_adapter": true,
+      "access_type": "white-box"
+    },
+    {
+      "method": "Prefix Tuning (white-box)",
+      "model_params_access": true,
+      "high_dim_repr": true,
+      "token_probs": true,
+      "retrieval_corpus": false,
+      "smaller_adapter": false,
+      "access_type": "white-box"
+    },
+    {
+      "method": "RLHF (grey-box)",
+      "model_params_access": false,
+      "high_dim_repr": false,
+      "token_probs": true,
+      "retrieval_corpus": false,
+      "smaller_adapter": false,
+      "access_type": "grey-box"
+    },
+    {
+      "method": "RAG (black-box)",
+      "model_params_access": false,
+      "high_dim_repr": false,
+      "token_probs": false,
+      "retrieval_corpus": true,
+      "smaller_adapter": false,
+      "access_type": "black-box"
+    },
+    {
+      "method": "In-Context Learning (black-box)",
+      "model_params_access": false,
+      "high_dim_repr": false,
+      "token_probs": false,
+      "retrieval_corpus": false,
+      "smaller_adapter": false,
+      "access_type": "black-box"
+    },
+    {
+      "method": "Azure SFT (black-box)",
+      "model_params_access": false,
+      "high_dim_repr": false,
+      "token_probs": false,
+      "retrieval_corpus": false,
+      "smaller_adapter": false,
+      "access_type": "black-box"
+    },
+    {
+      "method": "BBox-Adapter (ours, black-box)",
+      "model_params_access": false,
+      "high_dim_repr": false,
+      "token_probs": false,
+      "retrieval_corpus": false,
+      "smaller_adapter": true,
+      "access_type": "black-box"
+    }
+  ],
+  "sft_lora_hparams_table8": {
+    "table_id": "Table8",
+    "caption": "Table 8. Hyperparameter settings of SFT-LoRA (Hu et al., 2021). For fair comparison with BBox-Adapter, the LoRA adapter layer size is constrained to \u22480.1B parameters.",
+    "hyperparameters": {
+      "base_model": "Mixtral-8x7B-v0.1",
+      "lora_rank": 128,
+      "lora_alpha": 256,
+      "lora_dropout": 0.05,
+      "target_modules": [
+        "q_proj",
+        "v_proj"
+      ],
+      "learning_rate": 0.0002,
+      "batch_size": 8,
+      "gradient_accumulation_steps": 4,
+      "num_train_epochs": 3,
+      "warmup_ratio": 0.03,
+      "lr_scheduler": "cosine",
+      "fp16": true,
+      "max_adapter_params_b": 0.1
+    },
+    "notes": [
+      "base_model: Mixtral-8x7B-v0.1",
+      "LoRA applied to q_proj and v_proj attention layers",
+      "Adapter parameter count restricted to ~0.1B (same as BBox-Adapter) for fair comparison",
+      "Training in fp16 half-precision"
+    ]
+  }
+}

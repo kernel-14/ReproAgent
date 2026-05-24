@@ -1,0 +1,10 @@
+# Core lightweight dependencies for PINN loss-landscape repository smoke/config/data/reporting paths.
+# Heavy training/analysis dependencies are intentionally declared as optional extras in pyproject.toml
+# ([train], [analysis], [report], [dev], [all]) instead of being required here.
+# reference_grounding: paper:unit_003 paper.md
+# reference_grounding: paper:unit_008 paper.md
+# reference_grounding: paper:paper_method_core paper.md
+
+numpy>=1.23
+PyYAML>=6.0
+typing-extensions>=4.8

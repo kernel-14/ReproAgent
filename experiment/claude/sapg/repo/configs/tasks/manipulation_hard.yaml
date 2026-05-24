@@ -1,0 +1,348 @@
+# configs/tasks/manipulation_hard.yaml
+# Hard Manipulation Tasks Configuration for SAPG Reproduction
+# reference_grounding: wp_008 configs/tasks/manipulation_hard.yaml
+#
+# Paper evidence contract: Complete method/baseline selector set includes
+# ours, sapg, ppo, pbt, pql, ddpg
+#
+# This configuration defines hard difficulty manipulation tasks from the paper:
+# - Shadow Hand tasks (Over, CatchUnderarm, CatchAbreast)
+# - Allegro Hand tasks (Reorientation, AllegroKuka, harder_AllegroKuka)
+# - Additional manipulation tasks (Throw, Regrasping, Reorientation)
+#
+# Binding addendum clarification: For figure 8, the neural network was a two layer
+# of the same size (the size is shown in the x-axis of the plot). The activation
+# function used was ReLU, trained with Adam optimizer using default hyperparameters
+# from pytorch.
+
+# Task registry - paper-derived environment/task entries
+task_registry:
+  # Shadow Hand manipulation tasks (hard difficulty)
+  ShadowHandOver:
+    task_id: ShadowHandOver
+    aliases: ["Shadow Hand", "ShadowHand", "HandOver"]
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1000
+    num_envs: 24576
+    observation_dim: 211
+    action_dim: 24
+    success_threshold: 0.8
+    metric_type: success_rate
+    description: "Shadow Hand object manipulation - pass object between hands"
+    
+  ShadowHandCatchUnderarm:
+    task_id: ShadowHandCatchUnderarm
+    aliases: ["CatchUnderarm", "Underarm"]
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1000
+    num_envs: 24576
+    observation_dim: 211
+    action_dim: 24
+    success_threshold: 0.8
+    metric_type: success_rate
+    description: "Shadow Hand catch object thrown underarm"
+    
+  ShadowHandCatchAbreast:
+    task_id: ShadowHandCatchAbreast
+    aliases: ["CatchAbreast", "Abreast"]
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1000
+    num_envs: 24576
+    observation_dim: 211
+    action_dim: 24
+    success_threshold: 0.8
+    metric_type: success_rate
+    description: "Shadow Hand catch object thrown abreast"
+  
+  # Allegro Hand manipulation tasks
+  AllegroKuka:
+    task_id: AllegroKuka
+    aliases: ["Allegro Kuka", "AllegroKukaReorientation"]
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1000
+    num_envs: 24576
+    observation_dim: 128
+    action_dim: 23
+    success_threshold: 0.7
+    metric_type: success_rate
+    description: "16-DoF Allegro Hand mounted on a 7-DoF Kuka arm for manipulation"
+    
+  harder_AllegroKuka:
+    task_id: harder_AllegroKuka
+    aliases: ["harder AllegroKuka", "HarderAllegroKuka"]
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1000
+    num_envs: 24576
+    observation_dim: 128
+    action_dim: 23
+    success_threshold: 0.6
+    metric_type: success_rate
+    description: "Harder 16-DoF Allegro Hand plus 7-DoF Kuka arm manipulation"
+    
+  AllegroHandReOrientation:
+    task_id: AllegroHandReOrientation
+    aliases: ["Allegro Kuka Reorientation", "AllegroReorientation"]
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1000
+    num_envs: 24576
+    observation_dim: 128
+    action_dim: 16
+    success_threshold: 0.7
+    metric_type: success_rate
+    description: "Allegro Hand object reorientation"
+  
+  # Additional manipulation tasks
+  Throw:
+    task_id: Throw
+    aliases: ["ThrowTask", "AllegroKukaThrow"]
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 500
+    num_envs: 24576
+    observation_dim: 95
+    action_dim: 23
+    success_threshold: 0.75
+    metric_type: success_rate
+    description: "AllegroKuka Throw: 16-DoF Allegro hand mounted on 7-DoF Kuka arm throws an object"
+    
+  Regrasping:
+    task_id: Regrasping
+    aliases: ["Regrasp", "AllegroKukaRegrasping"]
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1000
+    num_envs: 24576
+    observation_dim: 95
+    action_dim: 23
+    success_threshold: 0.7
+    metric_type: success_rate
+    description: "AllegroKuka Regrasping: 16-DoF Allegro hand mounted on 7-DoF Kuka arm regrasps a table object"
+    
+  Reorientation:
+    task_id: Reorientation
+    aliases: ["ReorientationTask", "AllegroKukaReorientation"]
+    difficulty: hard
+    environment_type: isaacgym
+    max_episode_length: 1000
+    num_envs: 24576
+    observation_dim: 95
+    action_dim: 23
+    success_threshold: 0.7
+    metric_type: success_rate
+    description: "AllegroKuka Reorientation: 16-DoF Allegro hand mounted on 7-DoF Kuka arm orients object to a 7D pose"
+
+# Method/baseline selector registry - paper evidence contract
+method_registry:
+  ours:
+    method_id: ours
+    aliases: ["Ours", "OURS", "sapg"]
+    algorithm: sapg
+    num_policies: 6
+    aggregation_enabled: true
+    description: "SAPG - our proposed method"
+    
+  sapg:
+    method_id: sapg
+    aliases: ["SAPG"]
+    algorithm: sapg
+    num_policies: 6
+    aggregation_enabled: true
+    description: "Split and Aggregate Policy Gradients"
+    
+  ppo:
+    method_id: ppo
+    aliases: ["PPO", "baseline"]
+    algorithm: ppo
+    num_policies: 1
+    aggregation_enabled: false
+    description: "Proximal Policy Optimization baseline"
+    
+  pbt:
+    method_id: pbt
+    aliases: ["PBT"]
+    algorithm: pbt
+    num_policies: 6
+    aggregation_enabled: false
+    description: "Population Based Training baseline"
+    
+  pql:
+    method_id: pql
+    aliases: ["PQL"]
+    algorithm: pql
+    num_policies: 6
+    aggregation_enabled: false
+    description: "Parallel Q-Learning baseline"
+    
+  ddpg:
+    method_id: ddpg
+    aliases: ["DDPG"]
+    algorithm: ddpg
+    num_policies: 1
+    aggregation_enabled: false
+    description: "Deep Deterministic Policy Gradient baseline"
+    
+  COEF_0:
+    method_id: COEF_0
+    aliases: ["COEF=0"]
+    algorithm: sapg
+    num_policies: 6
+    aggregation_enabled: false
+    aggregation_coefficient: 0.0
+    description: "SAPG with aggregation coefficient = 0 (ablation)"
+
+# Default environment configuration for hard manipulation tasks
+environment:
+  difficulty: hard
+  num_envs: 24576  # N total parallel environments
+  environment_type: isaacgym
+  max_episode_length: 1000
+  reset_on_success: false
+  curriculum_enabled: false
+  reward_scaling: 1.0
+  observation_normalization: true
+  action_noise: 0.0
+
+# Training configuration
+training:
+  # Total timesteps
+  total_timesteps: 100_000_000  # 100M as per paper
+  
+  # Rollout configuration
+  rollout_steps: 16  # Steps per rollout
+  num_rollouts: 1000  # Number of rollouts per update
+  
+  # Optimization
+  learning_rate: 3.0e-4
+  optimizer: adam  # Adam with default PyTorch hyperparameters (addendum)
+  adam_eps: 1.0e-8
+  adam_betas: [0.9, 0.999]
+  max_grad_norm: 0.5
+  
+  # PPO/SAPG parameters
+  clip_range: 0.2
+  value_clip_range: 0.2
+  entropy_coefficient: 0.0  # 0.005 only for Reorientation
+  value_loss_coefficient: 0.5
+  gae_lambda: 0.95
+  gamma: 0.99
+  
+  # SAPG-specific
+  aggregation_coefficient: 1.0  # lambda=1 leader off-policy update
+  importance_sampling_clip: 1.0
+  leader_update_frequency: 1
+  follower_update_frequency: 1
+  
+  # Batch size sweep configuration (paper evidence contract)
+  batch_size_options: [256, 512, 1024, 2048, 4096, 8192]
+  default_batch_size: 4096
+  minibatch_size: 512
+  num_epochs: 10
+
+# Network architecture configuration
+# Binding addendum: For figure 8, two-layer network of same size, ReLU activation
+network:
+  # Architecture type
+  architecture: shared_backbone  # Options: shared_backbone, independent
+  activation: relu  # ReLU activation (addendum)
+  
+  # Figure 8 experiment - network size sweep
+  hidden_size_options: [8, 16, 32, 64]  # x-axis values for Figure 8
+  default_hidden_size: 256
+  num_layers: 2  # Two layers of same size (addendum)
+  
+  # Shared backbone configuration (SAPG)
+  shared_backbone:
+    input_dim: null  # Set by task
+    hidden_sizes: [256, 256]  # Two layers, same size
+    activation: relu
+    layer_norm: false
+    dropout: 0.0
+  
+  # Policy head configuration
+  policy_head:
+    hidden_sizes: [256, 256]
+    activation: relu
+    output_activation: tanh
+    log_std_init: 0.0
+    
+  # Value head configuration
+  value_head:
+    hidden_sizes: [256, 256]
+    activation: relu
+    output_activation: null
+
+# Evaluation configuration
+evaluation:
+  eval_frequency: 10  # Evaluate every N updates
+  num_eval_episodes: 100
+  deterministic: true
+  render: false
+  save_video: false
+  
+  # Metrics to compute
+  metrics:
+    - success_rate
+    - episode_reward
+    - episode_length
+    - consecutive_successes
+
+# Logging and checkpointing
+logging:
+  log_frequency: 1  # Log every update
+  tensorboard: true
+  wandb: false
+  console: true
+  
+  # Checkpoint configuration
+  checkpoint_frequency: 100  # Save every N updates
+  keep_checkpoints: 5
+  save_best: true
+  best_metric: success_rate
+
+# Experimental setup configuration
+experimental_setup:
+  # Monte Carlo evaluation
+  monte_carlo_samples: 100
+  monte_carlo_enabled: false
+  
+  # Across-task evaluation
+  cross_task_evaluation: false
+  cross_task_tasks: []
+  
+  # Seed configuration
+  seed: 42
+  deterministic_mode: false
+  
+  # Compute configuration
+  device: cuda
+  num_workers: 8
+  pin_memory: true
+
+# Artifact paths
+artifacts:
+  results_dir: results
+  checkpoints_dir: results/checkpoints
+  logs_dir: results/logs
+  figures_dir: results/figures
+  tables_dir: results/tables
+  metrics_dir: results/metrics
+  
+  # Declared artifact paths
+  experiment_registry: results/experiment_registry.json
+  metrics_file: results/metrics.json
+  artifact_manifest: results/artifact_manifest.json
+  readiness_file: results/readiness.json
+  evaluation_result: results/evaluation_result.json
+  
+  # Paper-specific artifacts
+  table_1: results/tables/table_1.csv
+  figure_2: results/figures/fig_2.png
+  figure_5: results/figures/figure_5.png
+  figure_7: results/figures/figure_7.png
+  figure_8: results/figures/figure_8.png

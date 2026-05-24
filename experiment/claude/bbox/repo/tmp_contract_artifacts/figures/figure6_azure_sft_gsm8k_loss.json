@@ -1,0 +1,10 @@
+{
+  "figure_id": "figure6_azure_sft_gsm8k_loss",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.945234Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Figure 6: Loss curves of Azure-SFT on GSM8K datasets.",
+    "dataset": "gsm8k"
+  }
+}

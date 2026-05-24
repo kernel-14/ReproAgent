@@ -1,0 +1,747 @@
+# Default configuration for Robust CLIP reproduction
+# Paper: "Robust CLIP: Unsupervised Adversarial Fine-Tuning of Vision Embeddings for Robust Large Vision-Language Models"
+
+# ============================================================================
+# Execution Mode
+# ============================================================================
+mode: runtime_smoke  # train, eval, train_eval, runtime_smoke, docker_validate
+dry_run: true  # Set to false for full training/evaluation
+
+# ============================================================================
+# Method Registry (Paper Evidence Contract)
+# ============================================================================
+methods:
+  # Primary methods from paper
+  fare:
+    name: "Feature-Alignment Robust Embedding"
+    type: "adversarial_finetuning"
+    description: "FARE adversarial fine-tuning (ours)"
+    enabled: true
+    config:
+      loss_type: "fare"
+      alignment_target: "class_token"  # class_token only (from B.1)
+      distance_metric: "l2"  # ℓ₂ distance metric
+      lambda_preserve: 1.0  # Embedding preservation weight (from Eq. 3)
+      lambda_sweep: [0.1, 0.5, 1.0, 2.0, 5.0]
+      attack_steps: 10
+      step_size: 1/255
+      
+  tecoa:
+    name: "Text-guided Contrastive Adversarial"
+    type: "adversarial_finetuning"
+    description: "TeCoA baseline"
+    enabled: true
+    config:
+      loss_type: "tecoa"
+      alignment_target: "text_guided"
+      attack_steps: 10
+      step_size: 1/255
+      
+  clip:
+    name: "Standard CLIP"
+    type: "baseline"
+    description: "Clean CLIP baseline"
+    enabled: true
+    config:
+      loss_type: "clip"
+      pretrained: true
+      
+  ours:
+    name: "FARE (alias)"
+    type: "adversarial_finetuning"
+    description: "Alias for FARE method"
+    enabled: true
+    alias_of: "fare"
+    
+  random:
+    name: "Random perturbation"
+    type: "baseline"
+    description: "Random noise baseline"
+    enabled: true
+    config:
+      perturbation: "random"
+      
+  robust_clip:
+    name: "Robust CLIP variant"
+    type: "baseline"
+    description: "Robust CLIP baseline"
+    enabled: true
+    
+  vit:
+    name: "Vision Transformer"
+    type: "baseline"
+    description: "ViT baseline"
+    enabled: true
+    
+  fine_tuning:
+    name: "Standard fine-tuning"
+    type: "baseline"
+    description: "Non-adversarial fine-tuning"
+    enabled: true
+    
+  baseline:
+    name: "Unperturbed baseline"
+    type: "baseline"
+    description: "No perturbation"
+    enabled: true
+    
+  adapter:
+    name: "Adapter-based fine-tuning"
+    type: "baseline"
+    description: "Parameter-efficient adaptation"
+    enabled: true
+    
+  # LVLM integration methods
+  llava:
+    name: "LLaVA"
+    type: "lvlm"
+    description: "LLaVA with robust vision encoder"
+    enabled: true
+    config:
+      model_version: "llava-1.5-7b"
+      vision_encoder: "clip"  # Can be swapped with fare/tecoa
+      
+  openflamingo:
+    name: "OpenFlamingo"
+    type: "lvlm"
+    description: "OpenFlamingo 9B with CLIP ViT-L/14 vision encoder and MPT-7B language model"
+    enabled: true
+    config:
+      model_name: "openflamingo/OpenFlamingo-9B-vitl-mpt7b"
+      vision_encoder: "ViT-L/14"
+      language_model: "mosaicml/mpt-7b"
+      dependency: "open_flamingo.create_model_and_transforms"
+    
+  # Attack methods
+  pgd:
+    name: "PGD attack"
+    type: "attack"
+    description: "Projected Gradient Descent"
+    enabled: true
+    config:
+      eps_values: [2/255, 4/255, 8/255, 16/255]
+      steps: 10
+      step_size: 1/255
+      momentum: 0.9
+      
+  apgd:
+    name: "AutoPGD attack"
+    type: "attack"
+    description: "Auto-PGD"
+    enabled: true
+    config:
+      iterations: 100
+      initial_step_size: epsilon
+      precisions: ["float16", "float32"]
+    
+  autoattack:
+    name: "AutoAttack"
+    type: "attack"
+    description: "AutoAttack ensemble"
+    enabled: true
+
+# ============================================================================
+# Environment/Task Registry (Paper Evidence Contract)
+# ============================================================================
+environments:
+  clip:
+    env_id: "clip"
+    name: "CLIP Environment"
+    aliases: ["standard_clip", "openai_clip"]
+    task_type: "classification"
+    model_type: "clip"
+    description: "Standard CLIP evaluation environment"
+    setup_metadata:
+      architecture: "ViT-L/14"
+      resolution: 224
+      pretrained: true
+      
+  tecoa:
+    env_id: "tecoa"
+    name: "TeCoA Environment"
+    aliases: ["tecoa_clip"]
+    task_type: "adversarial_classification"
+    model_type: "tecoa"
+    description: "TeCoA adversarial training environment"
+    
+  fare:
+    env_id: "fare"
+    name: "FARE Environment"
+    aliases: ["fare_clip", "robust_clip"]
+    task_type: "adversarial_classification"
+    model_type: "fare"
+    description: "FARE adversarial training environment"
+    
+  clean_clip:
+    env_id: "clean_clip"
+    name: "Clean CLIP"
+    aliases: ["unperturbed_clip"]
+    task_type: "classification"
+    model_type: "clip"
+    description: "Clean evaluation without adversarial perturbations"
+    
+  llava:
+    env_id: "llava"
+    name: "LLaVA Environment"
+    aliases: ["llava_1", "llava_1.5"]
+    task_type: "vqa"
+    model_type: "llava"
+    description: "LLaVA large vision-language model"
+    setup_metadata:
+      model_version: "llava-1.5-7b"
+      vision_encoder: "clip_vit_l_14"
+      language_model: "vicuna-7b"
+      
+  pope:
+    env_id: "pope"
+    name: "POPE Benchmark"
+    aliases: ["pope_eval"]
+    task_type: "hallucination"
+    model_type: "lvlm"
+    description: "Polling-based Object Probing Evaluation"
+    
+  sqa_i:
+    env_id: "sqa_i"
+    name: "SQA-I Benchmark"
+    aliases: ["scienceqa_image"]
+    task_type: "vqa"
+    model_type: "lvlm"
+    description: "ScienceQA Image subset"
+    
+  imagenet:
+    env_id: "imagenet"
+    name: "ImageNet"
+    aliases: ["imagenet_1k", "ilsvrc2012"]
+    task_type: "classification"
+    description: "ImageNet-1K classification"
+    
+  coco:
+    env_id: "coco"
+    name: "COCO"
+    aliases: ["mscoco", "coco_2014", "coco_2017"]
+    task_type: "retrieval"
+    description: "COCO image-text retrieval"
+    
+  flickr30k:
+    env_id: "flickr30k"
+    name: "Flickr30k"
+    aliases: ["flickr"]
+    task_type: "retrieval"
+    description: "Flickr30k image-text retrieval"
+    
+  vqa:
+    env_id: "vqa"
+    name: "VQA"
+    aliases: ["vqav2"]
+    task_type: "vqa"
+    description: "Visual Question Answering"
+    
+  quantitative_robustness:
+    env_id: "quantitative_robustness"
+    name: "Quantitative Robustness Evaluation"
+    aliases: ["robustness_eval"]
+    task_type: "robustness"
+    description: "Quantitative adversarial robustness evaluation"
+
+# ============================================================================
+# Dataset Registry (Paper Evidence Contract)
+# ============================================================================
+datasets:
+  # Primary datasets
+  imagenet:
+    dataset_id: "imagenet"
+    name: "ImageNet-1K"
+    aliases: ["imagenet_1k", "ilsvrc2012"]
+    num_classes: 1000
+    resolution: 224
+    setup_metadata:
+      train_size: 1281167
+      val_size: 50000
+      download: true
+      trust_remote_code: true
+    data_root: "data/imagenet"
+    
+  coco:
+    dataset_id: "coco"
+    name: "MSCOCO"
+    aliases: ["mscoco", "coco_2014", "coco_2017"]
+    task_type: "retrieval"
+    setup_metadata:
+      train_size: 82783
+      val_size: 40504
+    data_root: "data/coco"
+    
+  flickr30k:
+    dataset_id: "flickr30k"
+    name: "Flickr30k"
+    aliases: ["flickr"]
+    task_type: "retrieval"
+    setup_metadata:
+      size: 31783
+    data_root: "data/flickr30k"
+    
+  vqav2:
+    dataset_id: "vqav2"
+    name: "VQAv2"
+    aliases: ["vqa", "vqa_v2"]
+    task_type: "vqa"
+    data_root: "data/vqav2"
+    
+  textvqa:
+    dataset_id: "textvqa"
+    name: "TextVQA"
+    aliases: []
+    task_type: "vqa"
+    data_root: "data/textvqa"
+    
+  pope:
+    dataset_id: "pope"
+    name: "POPE"
+    aliases: ["pope_eval"]
+    task_type: "hallucination"
+    data_root: "data/pope"
+    
+  sqa_i:
+    dataset_id: "sqa_i"
+    name: "ScienceQA-Image"
+    aliases: ["scienceqa_image"]
+    task_type: "vqa"
+    data_root: "data/sqa_i"
+    
+  # Robustness datasets
+  imagenet_r:
+    dataset_id: "imagenet_r"
+    name: "ImageNet-R"
+    aliases: ["imagenet_rendition"]
+    num_classes: 200
+    data_root: "data/imagenet_r"
+    
+  imagenet_sketch:
+    dataset_id: "imagenet_sketch"
+    name: "ImageNet-Sketch"
+    aliases: ["imagenet_s"]
+    num_classes: 1000
+    data_root: "data/imagenet_sketch"
+    
+  # Fine-grained classification datasets
+  caltech101:
+    dataset_id: "caltech101"
+    name: "Caltech101"
+    aliases: ["caltech"]
+    num_classes: 101
+    data_root: "data/caltech101"
+    
+  stanford_cars:
+    dataset_id: "stanford_cars"
+    name: "Stanford Cars"
+    aliases: ["cars"]
+    num_classes: 196
+    data_root: "data/stanford_cars"
+    
+  fgvc_aircraft:
+    dataset_id: "fgvc_aircraft"
+    name: "FGVC Aircraft"
+    aliases: ["aircraft"]
+    num_classes: 100
+    data_root: "data/fgvc_aircraft"
+    
+  flowers:
+    dataset_id: "flowers"
+    name: "Oxford Flowers"
+    aliases: ["flowers102"]
+    num_classes: 102
+    data_root: "data/flowers"
+    
+  pcam:
+    dataset_id: "pcam"
+    name: "PatchCamelyon"
+    aliases: ["patch_camelyon"]
+    num_classes: 2
+    data_root: "data/pcam"
+    
+  oxford_pets:
+    dataset_id: "oxford_pets"
+    name: "Oxford-IIIT Pets"
+    aliases: ["pets"]
+    num_classes: 37
+    data_root: "data/oxford_pets"
+    
+  # CIFAR datasets
+  cifar:
+    dataset_id: "cifar10"
+    name: "CIFAR-10"
+    aliases: ["cifar"]
+    num_classes: 10
+    data_root: "data/cifar10"
+    
+  cifar100:
+    dataset_id: "cifar100"
+    name: "CIFAR-100"
+    aliases: []
+    num_classes: 100
+    data_root: "data/cifar100"
+    
+  # Other datasets
+  stl10:
+    dataset_id: "stl10"
+    name: "STL-10"
+    aliases: []
+    num_classes: 10
+    data_root: "data/stl10"
+    
+  laion:
+    dataset_id: "laion"
+    name: "LAION"
+    aliases: ["laion400m", "laion2b"]
+    task_type: "pretraining"
+    data_root: "data/laion"
+    
+  clip_benchmark:
+    dataset_id: "clip_benchmark"
+    name: "CLIP Benchmark Suite"
+    aliases: ["elevater"]
+    data_root: "data/clip_benchmark"
+
+# ============================================================================
+# Parameter Sweeps (Paper Evidence Contract)
+# ============================================================================
+parameter_sweeps:
+  epsilon:
+    description: "Adversarial perturbation budget (from paper)"
+    values: [2/255, 4/255, 8/255, 16/255]
+    default: 4/255
+    paper_values: [2/255, 4/255]  # Primary values from paper
+    
+  lambda_preserve:
+    description: "Embedding preservation weight (from Eq. 3)"
+    values: [0.1, 0.5, 1.0, 2.0, 5.0]
+    default: 1.0
+    
+  alignment_target:
+    description: "Class-token only alignment (from Appendix B.1)"
+    values: ["class_token", "all_tokens"]
+    default: "class_token"
+    
+  distance_metric:
+    description: "Distance metric for alignment"
+    values: ["l2", "cosine"]
+    default: "l2"  # ℓ₂ distance metric
+    
+  attack_steps:
+    description: "Number of adversarial attack steps"
+    values: [1, 5, 10, 20]
+    default: 10
+    
+  step_size:
+    description: "Attack step size"
+    values: [0.001, 0.005, 0.01, 0.02]
+    default: 0.01
+
+# ============================================================================
+# Training Configuration
+# ============================================================================
+training:
+  # General training settings
+  batch_size: 128
+  effective_batch_size: 128
+  num_epochs: 2
+  learning_rate: 0.00001
+  weight_decay: 0.0001
+  warmup_epochs: 1
+  optimizer: "adamw"
+  scheduler: "cosine"
+  
+  # Adversarial training settings
+  adversarial:
+    enabled: true
+    epsilon: 4/255
+    attack_type: "pgd"
+    attack_steps: 10
+    step_size: 0.01
+    random_start: true
+    
+  # FARE-specific settings
+  fare:
+    lambda_preserve: 1.0
+    alignment_target: "class_token"
+    distance_metric: "l2"
+    preserve_embeddings: true
+    
+  # TeCoA-specific settings
+  tecoa:
+    text_guidance: true
+    contrastive_weight: 1.0
+    
+  # Hardware settings
+  device: "cuda"
+  num_workers: 4
+  pin_memory: true
+  mixed_precision: true
+  
+  # Checkpoint settings
+  save_interval: 1
+  checkpoint_dir: "checkpoints"
+  resume_from: null
+
+# ============================================================================
+# Evaluation Configuration
+# ============================================================================
+evaluation:
+  # General evaluation settings
+  batch_size: 128
+  num_workers: 4
+  
+  # Clean evaluation
+  clean:
+    enabled: true
+    datasets: ["imagenet", "cifar10", "cifar100"]
+    
+  # Adversarial evaluation
+  adversarial:
+    enabled: true
+    epsilon_values: [2/255, 4/255, 8/255, 16/255]
+    attack_types: ["pgd", "apgd", "autoattack"]
+    datasets: ["imagenet", "cifar10", "cifar100"]
+    
+  # Zero-shot classification
+  zero_shot:
+    enabled: true
+    datasets: [
+      "imagenet", "cifar10", "cifar100",
+      "caltech101", "stanford_cars", "fgvc_aircraft",
+      "flowers", "pcam", "oxford_pets",
+      "imagenet_r", "imagenet_sketch", "stl10"
+    ]
+    
+  # LVLM evaluation
+  lvlm:
+    enabled: true
+    models: ["llava"]
+    benchmarks: ["pope", "sqa_i", "vqav2", "textvqa"]
+    
+  # Retrieval evaluation
+  retrieval:
+    enabled: true
+    datasets: ["coco", "flickr30k"]
+    metrics: ["recall@1", "recall@5", "recall@10"]
+
+# ============================================================================
+# Model Configuration
+# ============================================================================
+model:
+  # CLIP model settings
+  architecture: "ViT-L/14"
+  pretrained: "openai"
+  resolution: 224
+  
+  # Vision encoder settings
+  vision_encoder:
+    freeze_backbone: false
+    freeze_bn: false
+    drop_path_rate: 0.0
+    
+  # Text encoder settings
+  text_encoder:
+    freeze: true  # No language model retraining required
+    
+  # LVLM settings
+  lvlm:
+    model_name: "llava-1.5-7b"
+    vision_encoder: "clip_vit_l_14"
+    language_model: "vicuna-7b"
+    freeze_language_model: true  # No language model retraining
+
+# ============================================================================
+# Data Configuration
+# ============================================================================
+data:
+  # Data root directories
+  root: "data"
+  cache_dir: "data/cache"
+  
+  # ImageNet settings
+  imagenet:
+    train_root: "data/imagenet/train"
+    val_root: "data/imagenet/val"
+    download: true
+    trust_remote_code: true
+    
+  # Preprocessing settings
+  preprocessing:
+    mean: [0.48145466, 0.4578275, 0.40821073]
+    std: [0.26862954, 0.26130258, 0.27577711]
+    resize: 224
+    crop_size: 224
+    interpolation: "bicubic"
+    
+  # Augmentation settings
+  augmentation:
+    random_flip: true
+    random_crop: true
+    color_jitter: false
+    auto_augment: false
+
+# ============================================================================
+# Artifact Configuration
+# ============================================================================
+artifacts:
+  # Output directories
+  output_dir: "outputs"
+  checkpoint_dir: "checkpoints"
+  results_dir: "results"
+  figures_dir: "figures"
+  
+  # Checkpoint settings
+  checkpoints:
+    save_best: true
+    save_last: true
+    save_interval: 1
+    paths:
+      - "checkpoints/fare_clip.pth"
+      - "checkpoints/fare_clip_final.pth"
+      - "checkpoints/tecoa_clip.pth"
+      - "checkpoints/clip_baseline.pth"
+      
+  # Result artifacts
+  results:
+    paths:
+      - "results/metrics.json"
+      - "results/robustness_table.csv"
+      - "results/evaluation_result.json"
+      - "results/readiness.json"
+      
+  # Figure artifacts
+  figures:
+    paths:
+      - "figures/figure1_radar.png"
+      - "figures/figure1_radar.pdf"
+      - "figures/robustness_comparison.png"
+      - "figures/epsilon_sweep.png"
+
+# ============================================================================
+# Scope Constraints (Paper Evidence Contract)
+# ============================================================================
+scope:
+  # In-scope
+  included:
+    - "FARE adversarial fine-tuning"
+    - "TeCoA baseline"
+    - "Vision encoder training"
+    - "Zero-shot classification"
+    - "Adversarial robustness evaluation"
+    - "LVLM integration evaluation"
+    - "POPE hallucination evaluation"
+    
+  # Out-of-scope (no language model retraining required)
+  excluded:
+    - "Language model retraining"
+    - "Language model fine-tuning"
+    - "Full LVLM training from scratch"
+    - "Large-scale pretraining"
+    - "Multi-modal pretraining"
+    
+  # Bounded sweeps
+  bounded_sweeps:
+    - "Epsilon values: [2/255, 4/255] for main results"
+    - "Lambda values: subset of [0.1, 0.5, 1.0, 2.0, 5.0]"
+    - "Datasets: focused on ImageNet, CIFAR, fine-grained classification"
+
+# ============================================================================
+# Experiment Protocol
+# ============================================================================
+experiments:
+  # Table 4: Clean and adversarial accuracy comparison
+  table4:
+    name: "Table 4: Robustness Comparison"
+    enabled: true
+    methods: ["clip", "tecoa", "fare"]
+    datasets: ["imagenet", "cifar10", "cifar100"]
+    epsilon_values: [2/255, 4/255]
+    metrics: ["clean_accuracy", "robust_accuracy_eps2", "robust_accuracy_eps4"]
+    
+  # LVLM robustness evaluation
+  lvlm_robustness:
+    name: "LVLM Robustness Evaluation"
+    enabled: true
+    methods: ["llava"]
+    vision_encoders: ["clip", "tecoa", "fare"]
+    benchmarks: ["vqav2", "textvqa"]
+    
+  # POPE hallucination evaluation
+  pope_eval:
+    name: "POPE Hallucination Evaluation"
+    enabled: true
+    methods: ["llava"]
+    vision_encoders: ["clip", "tecoa", "fare"]
+    benchmarks: ["pope"]
+    
+  # Chain of Thought evaluation
+  cot_eval:
+    name: "Chain of Thought Evaluation"
+    enabled: true
+    methods: ["llava"]
+    benchmarks: ["sqa_i"]
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+logging:
+  level: "INFO"
+  console: true
+  file: true
+  log_dir: "logs"
+  tensorboard: true
+  wandb: false
+  
+# ============================================================================
+# Reproducibility
+# ============================================================================
+reproducibility:
+  seed: 42
+  deterministic: true
+  benchmark: false
+# ============================================================================
+# Paper Fine-Tuning Hyperparameters
+# ============================================================================
+training_protocol:
+  dataset: "ImageNet"
+  num_epochs: 2
+  optimizer: "AdamW"
+  optimizer_betas: [0.9, 0.95]
+  peak_learning_rate: 1.0e-5
+  lr_schedule: "linear warmup for 7% of total steps followed by cosine decay"
+  warmup_fraction: 0.07
+  weight_decay: 1.0e-4
+  freeze_text_encoder: true
+  trainable_module: "visual encoder"
+  adversarial_training:
+    epsilons: [2/255, 4/255]
+    step_size: 1/255
+    pgd_momentum: 0.9
+  adversarial_evaluation:
+    samples_per_dataset: 500
+
+caption_vqa_attack_protocol:
+  cider_metric: "pycocoevalcap.cider.Cider if installed; local TF-IDF fallback otherwise"
+  vqa_accuracy_metric: "VQA exact/soft answer accuracy over all samples with five most frequent answers"
+  adversarial_eval_samples_per_dataset: 500
+  half_precision_apgd_iterations: 100
+  apgd_initial_step_size: epsilon
+  caption_ground_truths_per_image: 5
+  vqa_ground_truth_policy: "five most frequent answers among ten annotations"
+  targeted_strings: ["maybe", "Word"]
+  high_precision_thresholds:
+    coco_score_at_least: 10
+    flickr30k_score_at_least: 2
+    initialization: "best half-precision perturbation for each sample"
+  targeted_caption_sources:
+    captions_1_to_5: "25 random COCO images per target caption, seeded provenance manifest"
+    caption_6: "25 handpicked permissive stock images with source/license fields"
+  pope_protocol: "random/popular/adversarial yes-no hallucination splits with accuracy, precision, recall, F1"
+  sqa_i_protocol: "ScienceQA image subset with chain-of-thought prompt and final-answer accuracy"
+  transfer_table2_protocol: "evaluate OF and LLaVA with five encoders on COCO/Flickr30k adversarial captions and VQAv2/TextVQA"
+  jailbreak_protocol:
+    image: "clean.jpeg"
+    iterations: 5000
+    alpha: 1/255
+    targeted: true

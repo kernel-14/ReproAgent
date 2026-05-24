@@ -1,0 +1,8 @@
+{
+  "mean_cosine_similarity": 0.0,
+  "mean_norm_difference": 0.0,
+  "post_model": "gpt2",
+  "pre_model": "gpt2",
+  "rows": [],
+  "status": "fallback_fixture"
+}

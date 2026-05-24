@@ -1,0 +1,570 @@
+{
+  "addendum_clarification": "For Figure 3 and Figure 7 spectral density experiments, hyperparameters are selected systematically by the configured registry; the smoke route only materializes schema diagnostics.",
+  "artifact_id": "figure3_component_spectra_json",
+  "captions": {
+    "figure_3": "Figure 3. Spectral density of Hessian and preconditioned Hessian after 41000 iterations of Adam+L-BFGS, showing ill-conditioning and conditioning improvement by L-BFGS.",
+    "figure_7": "Figure 7. Spectral density of Hessian and preconditioned Hessian of each loss component after 41000 iterations of Adam+L-BFGS for reaction and wave problems."
+  },
+  "configured_full_budget": {
+    "adam_iterations": 41000,
+    "adam_lbfgs_switch_iteration": 40000,
+    "configured_full_budget": true,
+    "figure10_grid": "255 x 100 interior grid",
+    "full_residual_points": 10000,
+    "optimizers": [
+      "Adam",
+      "L-BFGS",
+      "Adam+L-BFGS",
+      "NNCG after Adam+L-BFGS",
+      "GD after Adam+L-BFGS"
+    ],
+    "problems": [
+      "convection",
+      "reaction",
+      "wave"
+    ],
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "spectral_diagnostic_iteration": 41000,
+    "widths": [
+      50,
+      100,
+      200,
+      400
+    ]
+  },
+  "created_at_unix": 1779377166.391251,
+  "dry_run": true,
+  "entries": [
+    {
+      "condition_number": 1000.0,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        100.0,
+        10.0,
+        0.1
+      ],
+      "iteration": 41000,
+      "loss_component": "total",
+      "problem": "convection",
+      "spectral_density": {
+        "bins": [
+          8.425,
+          25.075000000000003,
+          41.72500000000001,
+          58.37500000000001,
+          75.025,
+          91.67500000000001
+        ],
+        "count": 3,
+        "density": [
+          0.04004004004004003,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.020020020020020016
+        ],
+        "loss_component": "total",
+        "operator": "Hessian"
+      }
+    },
+    {
+      "condition_number": 1000.0,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        50.0,
+        5.0,
+        0.05
+      ],
+      "iteration": 41000,
+      "loss_component": "residual",
+      "problem": "convection",
+      "spectral_density": {
+        "bins": [
+          4.2125,
+          12.537500000000001,
+          20.862500000000004,
+          29.187500000000004,
+          37.5125,
+          45.837500000000006
+        ],
+        "count": 3,
+        "density": [
+          0.08008008008008007,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04004004004004003
+        ],
+        "loss_component": "residual",
+        "operator": "preconditioned Hessian"
+      }
+    },
+    {
+      "condition_number": 1000.0000000000001,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        33.333333333333336,
+        3.3333333333333335,
+        0.03333333333333333
+      ],
+      "iteration": 41000,
+      "loss_component": "initial",
+      "problem": "convection",
+      "spectral_density": {
+        "bins": [
+          2.8083333333333336,
+          8.358333333333334,
+          13.908333333333335,
+          19.45833333333334,
+          25.008333333333336,
+          30.55833333333334
+        ],
+        "count": 3,
+        "density": [
+          0.12012012012012009,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.060060060060060046
+        ],
+        "loss_component": "initial",
+        "operator": "Hessian"
+      }
+    },
+    {
+      "condition_number": 1000.0,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        25.0,
+        2.5,
+        0.025
+      ],
+      "iteration": 41000,
+      "loss_component": "boundary",
+      "problem": "convection",
+      "spectral_density": {
+        "bins": [
+          2.10625,
+          6.268750000000001,
+          10.431250000000002,
+          14.593750000000002,
+          18.75625,
+          22.918750000000003
+        ],
+        "count": 3,
+        "density": [
+          0.16016016016016013,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08008008008008007
+        ],
+        "loss_component": "boundary",
+        "operator": "preconditioned Hessian"
+      }
+    },
+    {
+      "condition_number": 1000.0,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        100.0,
+        10.0,
+        0.1
+      ],
+      "iteration": 41000,
+      "loss_component": "total",
+      "problem": "reaction",
+      "spectral_density": {
+        "bins": [
+          8.425,
+          25.075000000000003,
+          41.72500000000001,
+          58.37500000000001,
+          75.025,
+          91.67500000000001
+        ],
+        "count": 3,
+        "density": [
+          0.04004004004004003,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.020020020020020016
+        ],
+        "loss_component": "total",
+        "operator": "Hessian"
+      }
+    },
+    {
+      "condition_number": 1000.0,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        50.0,
+        5.0,
+        0.05
+      ],
+      "iteration": 41000,
+      "loss_component": "residual",
+      "problem": "reaction",
+      "spectral_density": {
+        "bins": [
+          4.2125,
+          12.537500000000001,
+          20.862500000000004,
+          29.187500000000004,
+          37.5125,
+          45.837500000000006
+        ],
+        "count": 3,
+        "density": [
+          0.08008008008008007,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04004004004004003
+        ],
+        "loss_component": "residual",
+        "operator": "preconditioned Hessian"
+      }
+    },
+    {
+      "condition_number": 1000.0000000000001,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        33.333333333333336,
+        3.3333333333333335,
+        0.03333333333333333
+      ],
+      "iteration": 41000,
+      "loss_component": "initial",
+      "problem": "reaction",
+      "spectral_density": {
+        "bins": [
+          2.8083333333333336,
+          8.358333333333334,
+          13.908333333333335,
+          19.45833333333334,
+          25.008333333333336,
+          30.55833333333334
+        ],
+        "count": 3,
+        "density": [
+          0.12012012012012009,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.060060060060060046
+        ],
+        "loss_component": "initial",
+        "operator": "Hessian"
+      }
+    },
+    {
+      "condition_number": 1000.0,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        25.0,
+        2.5,
+        0.025
+      ],
+      "iteration": 41000,
+      "loss_component": "boundary",
+      "problem": "reaction",
+      "spectral_density": {
+        "bins": [
+          2.10625,
+          6.268750000000001,
+          10.431250000000002,
+          14.593750000000002,
+          18.75625,
+          22.918750000000003
+        ],
+        "count": 3,
+        "density": [
+          0.16016016016016013,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08008008008008007
+        ],
+        "loss_component": "boundary",
+        "operator": "preconditioned Hessian"
+      }
+    },
+    {
+      "condition_number": 1000.0,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        100.0,
+        10.0,
+        0.1
+      ],
+      "iteration": 41000,
+      "loss_component": "total",
+      "problem": "wave",
+      "spectral_density": {
+        "bins": [
+          8.425,
+          25.075000000000003,
+          41.72500000000001,
+          58.37500000000001,
+          75.025,
+          91.67500000000001
+        ],
+        "count": 3,
+        "density": [
+          0.04004004004004003,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.020020020020020016
+        ],
+        "loss_component": "total",
+        "operator": "Hessian"
+      }
+    },
+    {
+      "condition_number": 1000.0,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        50.0,
+        5.0,
+        0.05
+      ],
+      "iteration": 41000,
+      "loss_component": "residual",
+      "problem": "wave",
+      "spectral_density": {
+        "bins": [
+          4.2125,
+          12.537500000000001,
+          20.862500000000004,
+          29.187500000000004,
+          37.5125,
+          45.837500000000006
+        ],
+        "count": 3,
+        "density": [
+          0.08008008008008007,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04004004004004003
+        ],
+        "loss_component": "residual",
+        "operator": "preconditioned Hessian"
+      }
+    },
+    {
+      "condition_number": 1000.0000000000001,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        33.333333333333336,
+        3.3333333333333335,
+        0.03333333333333333
+      ],
+      "iteration": 41000,
+      "loss_component": "initial",
+      "problem": "wave",
+      "spectral_density": {
+        "bins": [
+          2.8083333333333336,
+          8.358333333333334,
+          13.908333333333335,
+          19.45833333333334,
+          25.008333333333336,
+          30.55833333333334
+        ],
+        "count": 3,
+        "density": [
+          0.12012012012012009,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.060060060060060046
+        ],
+        "loss_component": "initial",
+        "operator": "Hessian"
+      }
+    },
+    {
+      "condition_number": 1000.0,
+      "dry_run": true,
+      "hessian_eigenvalues": [
+        25.0,
+        2.5,
+        0.025
+      ],
+      "iteration": 41000,
+      "loss_component": "boundary",
+      "problem": "wave",
+      "spectral_density": {
+        "bins": [
+          2.10625,
+          6.268750000000001,
+          10.431250000000002,
+          14.593750000000002,
+          18.75625,
+          22.918750000000003
+        ],
+        "count": 3,
+        "density": [
+          0.16016016016016013,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08008008008008007
+        ],
+        "loss_component": "boundary",
+        "operator": "preconditioned Hessian"
+      }
+    }
+  ],
+  "executed_smoke_budget": {
+    "boundary_points": 16,
+    "executed_smoke_budget": true,
+    "initial_points": 16,
+    "label": "dry-run contract artifact",
+    "max_experiments": 6,
+    "max_iterations": 3,
+    "reference_points": 64,
+    "residual_points": 32
+  },
+  "label": "dry-run contract artifact",
+  "metric_schemas": {
+    "L2RE": {
+      "aggregation": [
+        "min",
+        "median",
+        "final"
+      ],
+      "formula": "sqrt(sum_i (u_pred_i-u_ref_i)^2) / max(sqrt(sum_i u_ref_i^2), eps)",
+      "required": true,
+      "type": "float"
+    },
+    "accuracy": {
+      "description": "Auxiliary evidence-contract metric; for PINNs accuracy is normally derived from relative error thresholds.",
+      "required": false,
+      "type": "float"
+    },
+    "condition_number": {
+      "aggregation": [
+        "per_residual_point_count",
+        "per_problem"
+      ],
+      "formula": "kappa_L = lambda_max / max(lambda_min_positive, eps)",
+      "required": false,
+      "type": "float"
+    },
+    "fidelity_score": {
+      "formula": "bounded score combining artifact completeness and trend-consistency checks",
+      "required": false,
+      "type": "float"
+    },
+    "gradient_norm": {
+      "aggregation": [
+        "final",
+        "min"
+      ],
+      "required": false,
+      "type": "float"
+    },
+    "hessian_eigenvalues": {
+      "aggregation": [
+        "top",
+        "bottom_positive",
+        "condition_proxy"
+      ],
+      "required": false,
+      "type": "array[float]"
+    },
+    "loss": {
+      "aggregation": [
+        "min",
+        "median",
+        "final",
+        "trajectory"
+      ],
+      "description": "Total PINN objective; component losses are recorded independently.",
+      "required": true,
+      "type": "float"
+    },
+    "loss_components": {
+      "aggregation": [
+        "component_min",
+        "component_final"
+      ],
+      "description": "Named residual/initial/boundary/data terms before summing total loss.",
+      "fields": [
+        "residual",
+        "initial",
+        "boundary",
+        "data"
+      ],
+      "required": true,
+      "type": "object"
+    },
+    "precision": {
+      "description": "Auxiliary evidence-contract metric retained for benchmark schema compatibility.",
+      "required": false,
+      "type": "float"
+    },
+    "return": {
+      "description": "Auxiliary evidence-contract metric; not a primary PINN paper metric.",
+      "required": false,
+      "type": "float"
+    },
+    "spectral_density": {
+      "aggregation": [
+        "per_problem",
+        "per_component"
+      ],
+      "fields": [
+        "bins",
+        "density",
+        "operator",
+        "loss_component"
+      ],
+      "required": false,
+      "type": "object"
+    },
+    "training_time": {
+      "aggregation": [
+        "sum",
+        "per_iteration"
+      ],
+      "required": false,
+      "type": "float",
+      "unit": "seconds"
+    }
+  },
+  "mode": "runtime_smoke",
+  "paper_title": "Challenges in Training PINNs: A Loss Landscape Perspective",
+  "required_metrics_json_fields": [
+    "problem",
+    "optimizer",
+    "width",
+    "seed",
+    "iteration",
+    "loss",
+    "L2RE"
+  ]
+}

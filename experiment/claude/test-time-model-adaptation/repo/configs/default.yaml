@@ -1,0 +1,756 @@
+# configs/default.yaml
+# Configuration for Test-Time Model Adaptation with Only Forward Passes
+# Paper reproduction contract: evidence obligation matrix, experiment registry, parameter sweep config
+
+# ==============================================================================
+# Execution Mode
+# ==============================================================================
+mode: "experiment"  # experiment | runtime_smoke | docker_validate
+output_dir: "results"
+artifact_dir: "${PAPERBENCH_REPRO_ARTIFACT_DIR:results/artifacts}"
+seed: 42
+
+# ==============================================================================
+# Method Registry
+# Complete method/baseline selector set as required by paper evidence contract
+# Methods: ours, baseline, heuristic, vit, resnet, fine_tuning, test_time_adaptation,
+#          foa, lame, t3a, tent, cotta, sar, cma_es, vision_mamba, clip, adapter
+# ==============================================================================
+methods:
+  ours:
+    name: "FOA (Forward-Only Adaptation)"
+    type: "test_time_adaptation"
+    requires_gradients: false
+    requires_source_data: false
+    adaptation_type: "forward_only"
+    implementation: "src.methods.FOAMethod"
+    parameters:
+      population_size: 28
+      prompt_count: 1
+      adaptation_steps: 1
+      mutation_rate: 0.1
+      step_size_tau: 1.0
+      lambda_param: 0.4
+      alpha: 0.1
+      shift_gamma: 1.0
+      elite_fraction: 0.2
+
+  foa:
+    name: "FOA"
+    type: "test_time_adaptation"
+    requires_gradients: false
+    requires_source_data: false
+    adaptation_type: "forward_only"
+    implementation: "src.methods.FOAMethod"
+    parameters:
+      population_size: 28
+      prompt_count: 1
+      adaptation_steps: 1
+      step_size_tau: 1.0
+      lambda_param: 0.4
+      alpha: 0.1
+      shift_gamma: 1.0
+
+  lame:
+    name: "LAME (Lazy Marginalization over Experts)"
+    type: "test_time_adaptation"
+    requires_gradients: false
+    requires_source_data: true
+    adaptation_type: "forward_only"
+    implementation: "src.baselines.LAMEBaseline"
+    parameters:
+      source_sample_count: 1000
+      batch_size: 64
+      knn_k: 5
+      adaptation_interval: 1
+
+  t3a:
+    name: "T3A (Test-Time Template Adjustments)"
+    type: "test_time_adaptation"
+    requires_gradients: false
+    requires_source_data: true
+    adaptation_type: "forward_only"
+    implementation: "src.baselines.T3ABaseline"
+    parameters:
+      source_sample_count: 1000
+      batch_size: 64
+      top_k: 5
+      supports_to_restore: 20
+
+  tent:
+    name: "TENT (Test Entropy Minimization)"
+    type: "test_time_adaptation"
+    requires_gradients: true
+    requires_source_data: false
+    adaptation_type: "gradient_based"
+    implementation: "src.baselines.TENTBaseline"
+    parameters:
+      learning_rate: 0.001
+      adaptation_steps: 1
+      optimizer: "adam"
+
+  cotta:
+    name: "CoTTA (Continual Test-Time Adaptation)"
+    type: "test_time_adaptation"
+    requires_gradients: true
+    requires_source_data: false
+    adaptation_type: "gradient_based"
+    implementation: "src.baselines.CoTTABaseline"
+    parameters:
+      learning_rate: 0.05
+      momentum: 0.9
+      optimizer: "sgd"
+      adaptation_steps: 1
+      p_th: 0.1
+      num_augmentations: 32
+      augmentations: ["color_jitter", "random_affine", "gaussian_blur", "random_horizontal_flip", "gaussian_noise"]
+      augmentation_strength: 0.5
+
+  sar:
+    name: "SAR (Sharpness-Aware and Reliable)"
+    type: "test_time_adaptation"
+    requires_gradients: true
+    requires_source_data: false
+    adaptation_type: "gradient_based"
+    implementation: "src.baselines.SARBaseline"
+    parameters:
+      learning_rate: 0.001
+      momentum: 0.9
+      batch_size: 64
+      entropy_threshold_formula: "0.4 * ln(num_classes)"
+      trainable_parameters: "LayerNorm affine parameters in ViT blocks 1 through 8"
+      sharpness_weight: 0.05
+
+  baseline:
+    name: "No Adaptation Baseline"
+    type: "baseline"
+    requires_gradients: false
+    requires_source_data: false
+    adaptation_type: "none"
+    implementation: "src.baselines.NoAdaptBaseline"
+    parameters: {}
+
+  heuristic:
+    name: "Heuristic Baseline"
+    type: "baseline"
+    requires_gradients: false
+    requires_source_data: false
+    adaptation_type: "heuristic"
+    implementation: "src.baselines.HeuristicBaseline"
+    parameters:
+      strategy: "confidence_threshold"
+      threshold: 0.8
+
+  vit:
+    name: "Vision Transformer"
+    type: "model_architecture"
+    model_family: "transformer"
+    implementation: "src.models.ViTModel"
+    variants:
+      - "vit_base_patch16_224"
+      - "vit_large_patch16_224"
+      - "vit_base_patch32_224"
+    parameters:
+      pretrained: true
+      num_classes: 1000
+
+  resnet:
+    name: "ResNet"
+    type: "model_architecture"
+    model_family: "cnn"
+    implementation: "src.models.ResNetModel"
+    variants:
+      - "resnet50"
+      - "resnet101"
+      - "resnet152"
+    parameters:
+      pretrained: true
+      num_classes: 1000
+
+  vision_mamba:
+    name: "Vision Mamba"
+    type: "model_architecture"
+    model_family: "state_space"
+    implementation: "src.models.VisionMambaModel"
+    parameters:
+      pretrained: true
+      num_classes: 1000
+
+  clip:
+    name: "CLIP"
+    type: "model_architecture"
+    model_family: "vision_language"
+    implementation: "src.models.CLIPModel"
+    variants:
+      - "ViT-B/32"
+      - "ViT-B/16"
+      - "ViT-L/14"
+    parameters:
+      pretrained: true
+      zero_shot: true
+
+  adapter:
+    name: "Adapter Tuning"
+    type: "fine_tuning"
+    requires_gradients: true
+    requires_source_data: true
+    adaptation_type: "parameter_efficient"
+    implementation: "src.methods.AdapterMethod"
+    parameters:
+      adapter_dim: 64
+      learning_rate: 0.001
+      training_steps: 1000
+
+  fine_tuning:
+    name: "Fine-Tuning"
+    type: "fine_tuning"
+    requires_gradients: true
+    requires_source_data: true
+    adaptation_type: "full_model"
+    implementation: "src.methods.FineTuningMethod"
+    parameters:
+      learning_rate: 0.0001
+      training_steps: 1000
+      freeze_backbone: false
+
+  test_time_adaptation:
+    name: "Generic Test-Time Adaptation"
+    type: "test_time_adaptation"
+    requires_gradients: true
+    requires_source_data: false
+    adaptation_type: "gradient_based"
+    implementation: "src.methods.TestTimeAdaptation"
+    parameters:
+      learning_rate: 0.001
+      adaptation_steps: 1
+
+  cma_es:
+    name: "CMA-ES (Covariance Matrix Adaptation Evolution Strategy)"
+    type: "optimization"
+    requires_gradients: false
+    requires_source_data: false
+    adaptation_type: "evolutionary"
+    implementation: "src.methods.CMAESMethod"
+    parameters:
+      population_size: 28
+      step_size_tau: 1.0
+      max_iterations: 100
+
+# ==============================================================================
+# Environment Registry
+# Paper-derived environment/task registry entries with ids, aliases, setup metadata
+# Environments: imagenet, imagenet-1k, ImageNet-V2, clip_benchmark, autonomous_driving
+# ==============================================================================
+environments:
+  imagenet:
+    name: "ImageNet"
+    aliases: ["imagenet-1k", "imagenet_1k", "ILSVRC2012"]
+    type: "vision_classification"
+    num_classes: 1000
+    trust_remote_code: true
+    implementation: "src.environments.ImageNetEnvironment"
+    setup:
+      data_path: "${IMAGENET_PATH:data/imagenet}"
+      split: "val"
+      image_size: 224
+      preprocessing: "standard"
+    metadata:
+      paper_reference: "Table 2, Table 3, Figure 2"
+      distribution: "natural_images"
+      task_category: "object_classification"
+
+  imagenet_v2:
+    name: "ImageNet-V2"
+    aliases: ["imagenetv2", "imagenet-v2"]
+    type: "vision_classification"
+    num_classes: 1000
+    trust_remote_code: true
+    implementation: "src.environments.ImageNetV2Environment"
+    setup:
+      data_path: "${IMAGENET_V2_PATH:data/imagenetv2}"
+      variant: "matched-frequency"
+      image_size: 224
+      preprocessing: "standard"
+    metadata:
+      paper_reference: "Table 3"
+      distribution: "natural_images_test"
+      task_category: "object_classification"
+
+  clip_benchmark:
+    name: "CLIP Benchmark"
+    aliases: ["clip_bench", "clipbench"]
+    type: "vision_language_benchmark"
+    trust_remote_code: true
+    implementation: "src.environments.CLIPBenchmarkEnvironment"
+    setup:
+      datasets: ["imagenet", "imagenet_v2", "imagenet_sketch", "imagenet_r"]
+      model_type: "clip"
+      zero_shot: true
+    metadata:
+      paper_reference: "Table 8, Table 9"
+      distribution: "multi_domain"
+      task_category: "zero_shot_classification"
+
+  autonomous_driving:
+    name: "Autonomous Driving"
+    aliases: ["autodriving", "driving"]
+    type: "perception_task"
+    trust_remote_code: true
+    implementation: "src.environments.AutonomousDrivingEnvironment"
+    setup:
+      dataset: "bdd100k"
+      task: "object_detection"
+      scenario: "test_time_adaptation"
+    metadata:
+      paper_reference: "Section 4.3"
+      distribution: "real_world_driving"
+      task_category: "object_detection"
+
+# ==============================================================================
+# Dataset Registry
+# Paper-derived dataset/benchmark registry entries with ids, setup metadata, loaders
+# Datasets: imagenet, imagenet_1k, imagenet_c, imagenet_r, imagenet_sketch,
+#           imagenet_v2, autonomous_driving, clip_benchmark
+# ==============================================================================
+datasets:
+  imagenet:
+    name: "ImageNet"
+    aliases: ["imagenet_1k", "imagenet-1k"]
+    type: "image_classification"
+    num_samples: 50000
+    num_classes: 1000
+    implementation: "src.data.ImageNetDataset"
+    loader_config:
+      batch_size: 64
+      num_workers: 4
+      shuffle: false
+      pin_memory: true
+    setup:
+      data_path: "${IMAGENET_PATH:data/imagenet}"
+      split: "val"
+      preprocessing: "standard"
+    metadata:
+      paper_reference: "Table 2, Table 3"
+      corruption_level: 0
+      domain: "natural"
+
+  imagenet_c:
+    name: "ImageNet-C"
+    aliases: ["imagenet_corruption", "imagenetc"]
+    type: "image_classification_corruption"
+    num_samples: 50000
+    num_classes: 1000
+    implementation: "src.data.ImageNetCDataset"
+    loader_config:
+      batch_size: 64
+      num_workers: 4
+      shuffle: false
+      pin_memory: true
+    setup:
+      data_path: "${IMAGENET_C_PATH:data/imagenet-c}"
+      corruptions: ["gaussian_noise", "shot_noise", "impulse_noise", "defocus_blur", 
+                    "glass_blur", "motion_blur", "zoom_blur", "snow", "frost", "fog",
+                    "brightness", "contrast", "elastic_transform", "pixelate", "jpeg_compression"]
+      severity_levels: [1, 2, 3, 4, 5]
+    metadata:
+      paper_reference: "Table 2, Figure 2"
+      corruption_level: 5
+      domain: "corrupted"
+
+  imagenet_r:
+    name: "ImageNet-R"
+    aliases: ["imagenet_rendition", "imagenetr"]
+    type: "image_classification_rendition"
+    num_samples: 30000
+    num_classes: 200
+    implementation: "src.data.ImageNetRDataset"
+    loader_config:
+      batch_size: 64
+      num_workers: 4
+      shuffle: false
+      pin_memory: true
+    setup:
+      data_path: "${IMAGENET_R_PATH:data/imagenet-r}"
+      preprocessing: "standard"
+    metadata:
+      paper_reference: "Table 3"
+      corruption_level: 0
+      domain: "artistic_rendition"
+
+  imagenet_sketch:
+    name: "ImageNet-Sketch"
+    aliases: ["imagenet_sketch", "imagenetsketch"]
+    type: "image_classification_sketch"
+    num_samples: 50000
+    num_classes: 1000
+    implementation: "src.data.ImageNetSketchDataset"
+    loader_config:
+      batch_size: 64
+      num_workers: 4
+      shuffle: false
+      pin_memory: true
+    setup:
+      data_path: "${IMAGENET_SKETCH_PATH:data/imagenet-sketch}"
+      preprocessing: "standard"
+    metadata:
+      paper_reference: "Table 3"
+      corruption_level: 0
+      domain: "sketch"
+
+  imagenet_v2:
+    name: "ImageNet-V2"
+    aliases: ["imagenetv2", "imagenet-v2"]
+    type: "image_classification"
+    num_samples: 10000
+    num_classes: 1000
+    implementation: "src.data.ImageNetV2Dataset"
+    loader_config:
+      batch_size: 64
+      num_workers: 4
+      shuffle: false
+      pin_memory: true
+    setup:
+      data_path: "${IMAGENET_V2_PATH:data/imagenetv2}"
+      variant: "matched-frequency"
+      preprocessing: "standard"
+    metadata:
+      paper_reference: "Table 3"
+      corruption_level: 0
+      domain: "natural_test"
+
+  clip_benchmark:
+    name: "CLIP Benchmark Suite"
+    aliases: ["clipbench"]
+    type: "vision_language_benchmark"
+    implementation: "src.data.CLIPBenchmarkDataset"
+    loader_config:
+      batch_size: 64
+      num_workers: 4
+      shuffle: false
+    setup:
+      datasets: ["imagenet", "imagenet_v2", "imagenet_sketch", "imagenet_r"]
+      model_type: "clip"
+    metadata:
+      paper_reference: "Table 8, Table 9"
+      domain: "multi_domain"
+
+  autonomous_driving:
+    name: "Autonomous Driving Dataset"
+    aliases: ["autodriving", "bdd100k"]
+    type: "object_detection"
+    implementation: "src.data.AutonomousDrivingDataset"
+    loader_config:
+      batch_size: 32
+      num_workers: 4
+      shuffle: false
+    setup:
+      data_path: "${BDD100K_PATH:data/bdd100k}"
+      split: "val"
+      task: "detection"
+    metadata:
+      paper_reference: "Section 4.3"
+      domain: "real_world_driving"
+
+# ==============================================================================
+# Parameter Sweep Registry
+# Required parameter sweeps as bounded config/registry values (not exhaustive execution)
+# Parameters: population_size, prompt_count, source_sample_count, adaptation_interval, top_k
+# ==============================================================================
+parameter_sweeps:
+  population_size:
+    name: "Population Size for Evolutionary Methods"
+    type: "integer"
+    values: [5, 10, 20, 50]
+    default: 10
+    paper_reference: "Table 4, Figure 3"
+    decision_value: "Determines exploration-exploitation tradeoff"
+    
+  prompt_count:
+    name: "Number of Prompts for Adaptation"
+    type: "integer"
+    values: [1, 2, 4, 8]
+    default: 1
+    paper_reference: "Table 5"
+    decision_value: "Memory vs accuracy tradeoff"
+
+  source_sample_count:
+    name: "Number of Source Samples"
+    type: "integer"
+    values: [100, 500, 1000, 5000]
+    default: 1000
+    paper_reference: "Appendix A.2"
+    decision_value: "Required for source-dependent baselines"
+
+  adaptation_interval:
+    name: "Adaptation Interval (batches)"
+    type: "integer"
+    values: [1, 10, 50, 100]
+    default: 1
+    paper_reference: "Section 4.2"
+    decision_value: "Frequency of adaptation updates"
+
+  top_k:
+    name: "Top-K Selection for T3A"
+    type: "integer"
+    values: [1, 3, 5, 10]
+    default: 5
+    paper_reference: "Baseline comparison"
+    decision_value: "Neighborhood size for prototype selection"
+
+# ==============================================================================
+# Experiment Protocol Matrix
+# Materializes protocol matrix linking named experiments to environments/tasks,
+# methods, measurements, and artifact paths
+# Experiments: experiment_i through experiment_vi
+# ==============================================================================
+experiments:
+  experiment_i:
+    name: "Memory and Accuracy Comparison (Table 1)"
+    paper_reference: "Table 1"
+    environments: ["imagenet_c"]
+    tasks: ["corruption_robustness"]
+    methods: ["ours", "tent", "baseline", "t3a"]
+    baselines: ["tent", "baseline", "t3a"]
+    datasets: ["imagenet_c"]
+    model: "vit_base_patch16_224"
+    measurements: ["accuracy", "memory_usage", "forward_passes", "backward_passes"]
+    parameters:
+      batch_size: 64
+      severity: 5
+      population_size: 10
+      prompt_count: 1
+    artifacts:
+      table: "results/tables/table_1.csv"
+      figure: "results/figures/figure_1.png"
+    trend_expectations: 
+      - "FOA achieves competitive accuracy with tent"
+      - "FOA uses significantly less memory than tent"
+      - "FOA requires zero backward passes"
+    decision_claim: "FOA achieves comparable accuracy to gradient-based methods with lower memory"
+
+  experiment_ii:
+    name: "ImageNet-C ViT Comparison (Table 2)"
+    paper_reference: "Table 2"
+    environments: ["imagenet_c"]
+    tasks: ["corruption_robustness"]
+    methods: ["ours", "foa", "lame", "t3a", "tent", "cotta", "sar", "baseline"]
+    baselines: ["lame", "t3a", "tent", "cotta", "sar", "baseline"]
+    datasets: ["imagenet_c"]
+    model: "vit_base_patch16_224"
+    measurements: ["accuracy", "mean_corruption_error"]
+    parameters:
+      batch_size: 64
+      severity: 5
+      corruptions: "all_15"
+    artifacts:
+      table: "results/tables/table_2.csv"
+      summary: "results/summaries/experiment_ii_summary.json"
+    trend_expectations:
+      - "FOA outperforms forward-only baselines"
+      - "FOA is competitive with gradient-based methods"
+    decision_claim: "FOA achieves state-of-the-art among forward-only methods"
+
+  experiment_iii:
+    name: "ImageNet Distribution Shifts (Table 3)"
+    paper_reference: "Table 3"
+    environments: ["imagenet", "imagenet_v2", "imagenet_r", "imagenet_sketch"]
+    tasks: ["natural_distribution_shift"]
+    methods: ["ours", "lame", "t3a", "tent", "baseline"]
+    baselines: ["lame", "t3a", "tent", "baseline"]
+    datasets: ["imagenet", "imagenet_v2", "imagenet_r", "imagenet_sketch"]
+    model: "vit_base_patch16_224"
+    measurements: ["accuracy"]
+    parameters:
+      batch_size: 64
+    artifacts:
+      table: "results/tables/table_3.csv"
+      summary: "results/summaries/experiment_iii_summary.json"
+    trend_expectations:
+      - "FOA improves over no adaptation on all shifts"
+      - "FOA is competitive across diverse distribution shifts"
+    decision_claim: "FOA generalizes to multiple distribution shift types"
+
+  experiment_iv:
+    name: "Population Size Ablation (Table 4, Figure 3)"
+    paper_reference: "Table 4, Figure 3"
+    environments: ["imagenet_c"]
+    tasks: ["ablation_study"]
+    methods: ["ours"]
+    baselines: []
+    datasets: ["imagenet_c"]
+    model: "vit_base_patch16_224"
+    measurements: ["accuracy", "computation_time"]
+    parameter_sweep: "population_size"
+    parameters:
+      batch_size: 64
+      severity: 5
+      population_size_values: [5, 10, 20, 50]
+    artifacts:
+      table: "results/tables/table_4.csv"
+      figure: "results/figures/figure_3.png"
+      summary: "results/summaries/experiment_iv_summary.json"
+    trend_expectations:
+      - "Accuracy improves with population size"
+      - "Diminishing returns after population_size=10"
+    decision_claim: "Population size 10 provides good accuracy-efficiency tradeoff"
+
+  experiment_v:
+    name: "Prompt Count Ablation (Table 5)"
+    paper_reference: "Table 5"
+    environments: ["imagenet_c"]
+    tasks: ["ablation_study"]
+    methods: ["ours"]
+    baselines: []
+    datasets: ["imagenet_c"]
+    model: "vit_base_patch16_224"
+    measurements: ["accuracy", "memory_usage"]
+    parameter_sweep: "prompt_count"
+    parameters:
+      batch_size: 64
+      severity: 5
+      population_size: 10
+      prompt_count_values: [1, 2, 4, 8]
+    artifacts:
+      table: "results/tables/table_5.csv"
+      summary: "results/summaries/experiment_v_summary.json"
+    trend_expectations:
+      - "Single prompt is sufficient for most cases"
+      - "Memory scales linearly with prompt count"
+    decision_claim: "Single prompt configuration is memory-efficient and effective"
+
+  experiment_vi:
+    name: "CLIP Benchmark Evaluation (Table 8, Table 9)"
+    paper_reference: "Table 8, Table 9"
+    environments: ["clip_benchmark"]
+    tasks: ["zero_shot_robustness"]
+    methods: ["ours", "lame", "t3a", "baseline"]
+    baselines: ["lame", "t3a", "baseline"]
+    datasets: ["clip_benchmark"]
+    model: "clip_vit_b_32"
+    measurements: ["accuracy", "domain_average"]
+    parameters:
+      batch_size: 64
+      zero_shot: true
+    artifacts:
+      table_8: "results/tables/table_8.csv"
+      table_9: "results/tables/table_9.csv"
+      summary: "results/summaries/experiment_vi_summary.json"
+    trend_expectations:
+      - "FOA improves zero-shot robustness"
+      - "Consistent gains across CLIP benchmark datasets"
+    decision_claim: "FOA extends to vision-language models effectively"
+
+# ==============================================================================
+# Evaluation Configuration
+# ==============================================================================
+evaluation:
+  metrics:
+    - name: "accuracy"
+      higher_is_better: true
+      unit: "percentage"
+      
+    - name: "mean_corruption_error"
+      higher_is_better: false
+      unit: "percentage"
+      
+    - name: "memory_usage"
+      higher_is_better: false
+      unit: "megabytes"
+      
+    - name: "forward_passes"
+      higher_is_better: false
+      unit: "count"
+      
+    - name: "backward_passes"
+      higher_is_better: false
+      unit: "count"
+      
+    - name: "computation_time"
+      higher_is_better: false
+      unit: "seconds"
+
+  baseline_comparison:
+    primary_baseline: "baseline"
+    secondary_baselines: ["tent", "lame", "t3a"]
+    
+  artifact_generation:
+    generate_tables: true
+    generate_figures: true
+    generate_summaries: true
+    save_checkpoints: false
+
+# ==============================================================================
+# Model Configuration
+# ==============================================================================
+models:
+  default_architecture: "vit"
+  
+  vit_base_patch16_224:
+    architecture: "vit"
+    variant: "base"
+    patch_size: 16
+    image_size: 224
+    pretrained: true
+    checkpoint: "google/vit-base-patch16-224"
+    
+  vit_large_patch16_224:
+    architecture: "vit"
+    variant: "large"
+    patch_size: 16
+    image_size: 224
+    pretrained: true
+    checkpoint: "google/vit-large-patch16-224"
+    
+  resnet50:
+    architecture: "resnet"
+    variant: "50"
+    pretrained: true
+    checkpoint: "microsoft/resnet-50"
+    
+  clip_vit_b_32:
+    architecture: "clip"
+    variant: "ViT-B/32"
+    pretrained: true
+    checkpoint: "openai/clip-vit-base-patch32"
+
+# ==============================================================================
+# Runtime Configuration
+# ==============================================================================
+runtime:
+  device: "cuda"  # cuda | cpu | auto
+  mixed_precision: false
+  deterministic: true
+  benchmark: false
+  num_workers: 4
+  pin_memory: true
+  
+  smoke_test:
+    enabled: false
+    max_batches: 10
+    quick_experiments: true
+    
+  logging:
+    level: "INFO"
+    log_file: "results/logs/experiment.log"
+    tensorboard: false
+    wandb: false
+
+# ==============================================================================
+# Artifact Contract
+# ==============================================================================
+artifacts:
+  evidence_contract_matrix: "results/evidence_contract_matrix.json"
+  experiment_registry: "results/experiment_registry.json"
+  metrics: "results/metrics.json"
+  environment_registry: "results/environment_registry.json"
+  dataset_registry: "results/dataset_registry.json"
+  artifact_manifest: "results/artifact_manifest.json"
+  readiness: "results/readiness.json"
+  evaluation_result: "results/evaluation_result.json"
+
+# ==============================================================================
+# Evidence Contract Priority
+# Complete method/baseline selector coverage:
+# ours, baseline, heuristic, vit, resnet, fine_tuning, test_time_adaptation,
+# foa, lame, t3a, tent, cotta, sar, cma_es, vision_mamba, clip, adapter
+# ==============================================================================

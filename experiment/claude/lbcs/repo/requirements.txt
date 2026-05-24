@@ -1,0 +1,34 @@
+# requirements.txt
+# Refined Coreset Selection: Towards Minimal Coreset Size under Model Performance Constraints
+#
+# reference_grounding: paperbench_ref_003 train.py
+# reference_grounding: paperbench_ref_005 bilevel_coreset.py
+#
+# Dependency structure: lightweight core dependencies first, then optional heavy
+# simulator/training dependencies to support lazy imports and smoke validation
+# in minimal environments.
+
+# ============================================================================
+# Core lightweight dependencies
+# ============================================================================
+numpy>=1.21.0
+pyyaml>=5.4.1
+scipy>=1.7.0
+
+# ============================================================================
+# Deep learning and training dependencies (heavy, optional for import smoke)
+# ============================================================================
+torch>=1.10.0
+torchvision>=0.11.0
+
+# ============================================================================
+# Visualization and reporting dependencies
+# ============================================================================
+matplotlib>=3.3.0
+pillow>=8.0.0
+
+# ============================================================================
+# Optional development dependencies
+# ============================================================================
+# pytest>=6.2.0
+# black>=21.0

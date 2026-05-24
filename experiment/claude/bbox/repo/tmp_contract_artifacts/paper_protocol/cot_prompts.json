@@ -1,0 +1,5 @@
+{
+  "gsm8k_four_shot_cot_hub": "Q: There are 15 trees. Grove workers plant 21 more trees. How many trees are there?\nA: There are 15 + 21 = 36 trees. #### 36\n\nQ: If there are 3 cars in the parking lot and 2 more arrive, how many cars are there?\nA: There are 3 + 2 = 5 cars. #### 5\n\nQ: Leah had 32 chocolates and her sister had 42. If they ate 35, how many remain?\nA: They had 32 + 42 = 74 chocolates and ate 35, so 74 - 35 = 39. #### 39\n\nQ: Jason had 20 lollipops and gave Denny some. Jason now has 12. How many did he give?\nA: Jason gave away 20 - 12 = 8 lollipops. #### 8\n\nQ: {question}\nA:",
+  "scienceqa_one_shot": "Q: Which property tells whether a material lets light pass through it?\nChoices: (A) hardness (B) transparency (C) magnetism (D) weight\nA: The property is transparency, so the answer is B.\n\nQ: {question}\nChoices: {choices}\nA:",
+  "strategyqa_two_shot": "Q: Did Aristotle use a laptop?\nA: Aristotle lived long before laptops were invented, so the answer is no.\n\nQ: Could a human swim across the English Channel?\nA: Humans have swum across the English Channel, so the answer is yes.\n\nQ: {question}\nA:"
+}

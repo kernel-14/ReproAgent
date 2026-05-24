@@ -1,0 +1,1587 @@
+schema_version: "1.0"
+config_id: "unit_for_or_trainable"
+paper: "Sample-specific Masks for Visual Reprogramming-based Prompting"
+work_package_id: "wp_main_comparison"
+reference_grounding: "chunk_014_02 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+reference_grounding_secondary: "chunk_016_01 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+reference_grounding_tertiary: "chunk_017_02 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+reference_grounding_quaternary: "chunk_002_01 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+reference_grounding_marker: "reference_grounding: chunk_014_02 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+
+mode_default: "runtime_smoke"
+
+canonical_route:
+  entrypoint: "run_smm_vrp.py"
+  main_callable: "main.main"
+  command: "python run_smm_vrp.py --mode runtime_smoke --config configs/unit_for_or_trainable.yaml"
+  full_command: "python run_smm_vrp.py --mode full_run --config configs/unit_for_or_trainable.yaml"
+  stages:
+    - setup_config
+    - resolve_runtime_mode
+    - write_config_resolved_artifact
+    - write_dataset_registry_artifact
+    - write_environment_registry_artifact
+    - write_experiment_registry_artifact
+    - build_data
+    - load_data
+    - prepare_data
+    - build_backbone
+    - build_reprogramming
+    - load_reprogramming
+    - train_or_adapt_algorithm_1
+    - evaluate_predictions
+    - compute_accuracy
+    - aggregate_accuracy
+    - compute_f1
+    - aggregate_f1
+    - write_run_smm_vrp_artifact
+    - write_table_or_figure_artifacts
+    - write_artifact_manifest
+    - write_dry_run_manifest_artifact
+    - write_readiness_artifacts
+  smoke_artifacts:
+    readiness: "readiness.json"
+    evaluation_result: "evaluation_result.json"
+  expected_outputs:
+    - "results/metrics.json"
+    - "results/tables/table1_resnet_main.csv"
+    - "results/tables/table2_vit_main.csv"
+    - "results/tables/table3_ablation.csv"
+    - "results/dataset_registry.json"
+    - "results/environment_registry.json"
+    - "results/experiment_registry.json"
+    - "results/artifact_manifest.json"
+    - "results/config_resolved.json"
+    - "results/tables/table_13.csv"
+    - "results/tables/table_14.csv"
+    - "results/figures/figure_13.png"
+    - "results/figures/figure_14.png"
+    - "results/figures/figure_15.png"
+    - "results/figures/figure_16.png"
+    - "results/figures/figure_17.png"
+    - "results/figures/figure_18.png"
+    - "results/figures/figure_19.png"
+    - "results/figures/figure_20.png"
+    - "results/figures/figure_21.png"
+    - "results/figures/figure_22.png"
+    - "results/figures/figure_23.png"
+
+scope_constraints:
+  - "仅实现论文复现所需的最小可运行闭环。"
+  - "仅覆盖论文中的输入视觉重编程主路径，f_out 作为非参数映射单独处理。"
+  - "只实现论文中实际比较过的固定掩码族，不扩展到未出现的额外基线。"
+  - "仅实现论文所列四个消融分支，不额外添加近似变体。"
+  - "仅实现论文理解性分析所需的诊断输出，不做超出论文范围的额外理论扩展。"
+
+runtime:
+  output_root_env: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  default_output_root: "results"
+  default_experiment_id: "smm_smoke"
+  default_metric: "accuracy"
+  default_output_mapping: "Rlm_random_label_mapping"
+  default_dataset_split: "paper_split_shared_across_main_comparisons"
+  default_seed_protocol: "three_seed_protocol"
+  default_seeds: [0, 1, 2]
+  default_optimizer: "adamw"
+  default_learning_rate: 0.0003
+  default_weight_decay: 0.01
+  default_batch_size: 4
+  default_epochs: 1
+  default_mask_variant: "ours_multi_channel"
+  default_interpolation_level: 1
+  default_patch_size: 2
+  default_patch_size_sweep: [4, 2, 1]
+  default_p_sweep: [0, 1]
+  default_alpha_sweep: [0.0, 0.1, 0.5, 1.0]
+  default_gamma_sweep: [0.0, 0.5, 1.0]
+  default_similarity_guidance_scale_sweep: [9, 7, 10]
+  default_max_train_batches: 1
+  default_max_eval_batches: 1
+  default_max_samples_per_dataset: 8
+  default_image_size:
+    height: 224
+    width: 224
+  target_mask_grid:
+    l1: [112, 112]
+    l2: [56, 56]
+    l3: [28, 28]
+  patchwise_interpolation:
+    omit_when_l_zero: true
+    upsample_to_input_size: true
+    per_channel: true
+  fixed_hyperparameters:
+    three_seed_protocol:
+      seed_values: [0, 1, 2]
+      aggregation: "mean_std_across_seeds"
+      rationale: "paper-visible fixed anchor"
+  trend_obligations:
+    endpoint_low:
+      parameter: "p"
+      boundary_values: [0, 1]
+      expected_ordering: "boundary cases should remain lowest/minimum/worst"
+    positive_parameter_improves:
+      parameter: "p"
+      positive_values: [0.1, 0.5, 1.0]
+      expected_direction: "nonzero/positive values should preserve the reported improvement trend"
+
+  run_modes:
+    runtime_smoke:
+      description: "Bounded measured route exercising data/model/method/train/eval/artifact wiring without downloads or long training."
+      seeds: [0]
+      datasets: ["unit-001"]
+      backbones: ["resnet18_imagenet1k"]
+      methods: ["Ours"]
+      mask_variants: ["ours_multi_channel"]
+      epochs: 1
+      batch_size: 4
+      max_train_batches: 1
+      max_eval_batches: 1
+      max_samples_per_dataset: 8
+      write_readiness: true
+      write_evaluation_result: true
+      write_auxiliary_manifests: true
+      paper_visible_outputs: false
+    full_run:
+      description: "Full measured route over the paper protocol matrix with lazy loading of datasets/backbones."
+      seeds: [0, 1, 2]
+      datasets: ["cifar", "imagenet", "svhn", "imagenet_1k", "stanford_cars", "dtd", "eurosat", "flowers", "oxford_pets"]
+      backbones: ["resnet18_imagenet1k", "resnet50_imagenet1k", "vit_b32_imagenet1k"]
+      methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+      mask_variants: ["pad", "narrow", "medium", "full", "ours_multi_channel", "only_delta", "only_f_mask", "single_channel_mask"]
+      epochs: 90
+      batch_size: 64
+      max_train_batches: null
+      max_eval_batches: null
+      max_samples_per_dataset: null
+      write_readiness: true
+      write_evaluation_result: true
+      write_auxiliary_manifests: true
+      paper_visible_outputs: true
+
+callable_bindings:
+  compute_accuracy: "sample_specific_masks.evaluate:compute_accuracy"
+  aggregate_accuracy: "sample_specific_masks.evaluate:aggregate_accuracy"
+  compute_f1: "sample_specific_masks.evaluate:compute_f1"
+  aggregate_f1: "sample_specific_masks.evaluate:aggregate_f1"
+  compute_loss: "sample_specific_masks.evaluate:compute_loss"
+  aggregate_loss: "sample_specific_masks.evaluate:aggregate_loss"
+  evaluate_predictions: "sample_specific_masks.evaluate:evaluate_predictions"
+  run_protocolsincodeconfigrathe_experiment: "run_smm_vrp:run_protocolsincodeconfigrathe_experiment"
+  write_run_smm_vrp_artifact: "run_smm_vrp:write_run_smm_vrp_artifact"
+  write_artifact_manifest: "run_smm_vrp:write_artifact_manifest"
+  build_data: "sample_specific_masks.data:build_data"
+  load_data: "sample_specific_masks.data:load_data"
+  prepare_data: "sample_specific_masks.data:prepare_data"
+  build_reprogramming: "sample_specific_masks.reprogramming:build_reprogramming"
+  load_reprogramming: "sample_specific_masks.reprogramming:load_reprogramming"
+  make_environment: "sample_specific_masks.data:make_environment"
+  environment_ready_check: "sample_specific_masks.data:check_environment_ready"
+  load_classifier: "sample_specific_masks.reprogramming:load_classifier"
+  finetune_classifier: "sample_specific_masks.reprogramming:finetune_classifier"
+
+environment_registry:
+  - id: "cifar"
+    aliases: ["CIFAR10", "CIFAR10 target task"]
+    category: "dataset_task"
+    dataset_ids: ["cifar10"]
+    setup:
+      split_policy: "paper_split_shared_across_main_comparisons"
+      availability_check: "sample_specific_masks.data:check_cifar_available"
+      readiness_fixture: "sample_specific_masks.data:build_cifar_smoke_fixture"
+    runnable_config_hooks:
+      - "sample_specific_masks.data:make_environment"
+      - "sample_specific_masks.data:load_data"
+      - "sample_specific_masks.data:prepare_data"
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metrics: ["accuracy", "loss"]
+
+  - id: "imagenet"
+    aliases: ["ImageNet-1K pretrained source", "ImageNet-1K source"]
+    category: "source_dataset"
+    dataset_ids: ["imagenet_1k"]
+    setup:
+      split_policy: "pretrained_source_only"
+      availability_check: "sample_specific_masks.data:check_imagenet_source_available"
+      readiness_fixture: "sample_specific_masks.data:build_imagenet_source_smoke_fixture"
+    runnable_config_hooks:
+      - "sample_specific_masks.data:make_environment"
+      - "sample_specific_masks.data:load_data"
+      - "sample_specific_masks.data:prepare_data"
+    methods: ["resnet", "vit", "lora", "ours"]
+    metrics: ["accuracy", "loss"]
+
+  - id: "svhn"
+    aliases: ["SVHN target task"]
+    category: "dataset_task"
+    dataset_ids: ["svhn"]
+    setup:
+      split_policy: "paper_split_shared_across_main_comparisons"
+      availability_check: "sample_specific_masks.data:check_svhn_available"
+      readiness_fixture: "sample_specific_masks.data:build_svhn_smoke_fixture"
+    runnable_config_hooks:
+      - "sample_specific_masks.data:make_environment"
+      - "sample_specific_masks.data:load_data"
+      - "sample_specific_masks.data:prepare_data"
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metrics: ["accuracy", "loss"]
+
+  - id: "unit-001"
+    aliases: ["runtime_smoke_unit", "smoke_fixture"]
+    category: "smoke_fixture"
+    dataset_ids: ["unit-001"]
+    setup:
+      split_policy: "smoke_only"
+      availability_check: "sample_specific_masks.data:check_unit_smoke_available"
+      readiness_fixture: "sample_specific_masks.data:build_unit_smoke_fixture"
+    runnable_config_hooks:
+      - "sample_specific_masks.data:make_environment"
+      - "sample_specific_masks.data:load_data"
+      - "sample_specific_masks.data:prepare_data"
+    methods: ["Ours"]
+    metrics: ["accuracy", "loss"]
+
+  - id: "resnet18_imagenet1k"
+    aliases: ["ResNet-18 ImageNet-1K", "resnet18_imagenet1k"]
+    category: "backbone_environment"
+    backbone_ids: ["resnet18_imagenet1k"]
+    setup:
+      availability_check: "sample_specific_masks.reprogramming:check_resnet18_imagenet1k_available"
+      readiness_fixture: "sample_specific_masks.reprogramming:build_resnet18_smoke_fixture"
+    runnable_config_hooks:
+      - "sample_specific_masks.reprogramming:build_reprogramming"
+      - "sample_specific_masks.reprogramming:load_reprogramming"
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours", "ONLY δ", "ONLY f_mask", "SINGLE-CHANNEL f_mask^s"]
+    metrics: ["accuracy", "loss"]
+
+  - id: "resnet50_imagenet1k"
+    aliases: ["ResNet-50 ImageNet-1K", "resnet50_imagenet1k"]
+    category: "backbone_environment"
+    backbone_ids: ["resnet50_imagenet1k"]
+    setup:
+      availability_check: "sample_specific_masks.reprogramming:check_resnet50_imagenet1k_available"
+      readiness_fixture: "sample_specific_masks.reprogramming:build_resnet50_smoke_fixture"
+    runnable_config_hooks:
+      - "sample_specific_masks.reprogramming:build_reprogramming"
+      - "sample_specific_masks.reprogramming:load_reprogramming"
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metrics: ["accuracy", "loss"]
+
+  - id: "vitb32_imagenet1k"
+    aliases: ["ViT-B/32 ImageNet-1K", "vit_b32_imagenet1k"]
+    category: "backbone_environment"
+    backbone_ids: ["vit_b32_imagenet1k"]
+    setup:
+      availability_check: "sample_specific_masks.reprogramming:check_vitb32_imagenet1k_available"
+      readiness_fixture: "sample_specific_masks.reprogramming:build_vitb32_smoke_fixture"
+    runnable_config_hooks:
+      - "sample_specific_masks.reprogramming:build_reprogramming"
+      - "sample_specific_masks.reprogramming:load_reprogramming"
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metrics: ["accuracy", "loss"]
+
+dataset_registry:
+  - id: "cifar10"
+    aliases: ["cifar", "CIFAR10"]
+    task_id: "cifar"
+    split_policy: "paper_split_shared_across_main_comparisons"
+    classes: 10
+    availability_check: "sample_specific_masks.data:check_cifar10_available"
+    lazy_download: true
+    smoke_fixture: "sample_specific_masks.data:build_cifar10_smoke_fixture"
+  - id: "cifar100"
+    aliases: ["CIFAR100"]
+    task_id: "cifar"
+    split_policy: "paper_split_shared_across_main_comparisons"
+    classes: 100
+    availability_check: "sample_specific_masks.data:check_cifar100_available"
+    lazy_download: true
+    smoke_fixture: "sample_specific_masks.data:build_cifar100_smoke_fixture"
+  - id: "svhn"
+    aliases: ["SVHN"]
+    task_id: "svhn"
+    split_policy: "paper_split_shared_across_main_comparisons"
+    classes: 10
+    availability_check: "sample_specific_masks.data:check_svhn_available"
+    lazy_download: true
+    smoke_fixture: "sample_specific_masks.data:build_svhn_smoke_fixture"
+  - id: "gtsrb"
+    aliases: ["GTSRB"]
+    task_id: "image_classification"
+    split_policy: "paper_split_shared_across_main_comparisons"
+    classes: 43
+    availability_check: "sample_specific_masks.data:check_gtsrb_available"
+    lazy_download: true
+    smoke_fixture: "sample_specific_masks.data:build_gtsrb_smoke_fixture"
+  - id: "flowers102"
+    aliases: ["Flowers102", "flowers"]
+    task_id: "image_classification"
+    split_policy: "paper_split_shared_across_main_comparisons"
+    classes: 102
+    availability_check: "sample_specific_masks.data:check_flowers102_available"
+    lazy_download: true
+    smoke_fixture: "sample_specific_masks.data:build_flowers102_smoke_fixture"
+  - id: "dtd"
+    aliases: ["DTD"]
+    task_id: "image_classification"
+    split_policy: "paper_split_shared_across_main_comparisons"
+    classes: 47
+    availability_check: "sample_specific_masks.data:check_dtd_available"
+    lazy_download: true
+    smoke_fixture: "sample_specific_masks.data:build_dtd_smoke_fixture"
+  - id: "ucf101"
+    aliases: ["UCF101"]
+    task_id: "image_classification"
+    split_policy: "paper_split_shared_across_main_comparisons"
+    classes: 101
+    availability_check: "sample_specific_masks.data:check_ucf101_available"
+    lazy_download: true
+    smoke_fixture: "sample_specific_masks.data:build_ucf101_smoke_fixture"
+  - id: "eurosat"
+    aliases: ["EuroSAT"]
+    task_id: "image_classification"
+    split_policy: "paper_split_shared_across_main_comparisons"
+    classes: 10
+    availability_check: "sample_specific_masks.data:check_eurosat_available"
+    lazy_download: true
+    smoke_fixture: "sample_specific_masks.data:build_eurosat_smoke_fixture"
+  - id: "imagenet_1k"
+    aliases: ["ImageNet-1K", "imagenet"]
+    task_id: "source_pretraining"
+    split_policy: "source_only"
+    classes: 1000
+    availability_check: "sample_specific_masks.data:check_imagenet1k_available"
+    lazy_download: true
+    smoke_fixture: "sample_specific_masks.data:build_imagenet1k_smoke_fixture"
+  - id: "stanford_cars"
+    aliases: ["StanfordCars"]
+    task_id: "image_classification"
+    split_policy: "paper_appendix_split"
+    classes: 196
+    availability_check: "sample_specific_masks.data:check_stanford_cars_available"
+    lazy_download: true
+    smoke_fixture: "sample_specific_masks.data:build_stanford_cars_smoke_fixture"
+  - id: "oxford_pets"
+    aliases: ["OxfordPets", "Oxford Pets"]
+    task_id: "image_classification"
+    split_policy: "paper_split_shared_across_main_comparisons"
+    classes: 37
+    availability_check: "sample_specific_masks.data:check_oxford_pets_available"
+    lazy_download: true
+    smoke_fixture: "sample_specific_masks.data:build_oxford_pets_smoke_fixture"
+
+backbone_registry:
+  - id: "resnet18_imagenet1k"
+    aliases: ["ResNet-18", "resnet18", "resnet18_imagenet1k"]
+    family: "resnet"
+    pretrained_source: "imagenet_1k"
+    availability_check: "sample_specific_masks.reprogramming:check_resnet18_imagenet1k_available"
+    lazy_load: true
+    freeze_backbone: true
+    smoke_fixture: "sample_specific_masks.reprogramming:build_resnet18_smoke_fixture"
+  - id: "resnet50_imagenet1k"
+    aliases: ["ResNet-50", "resnet50", "resnet50_imagenet1k"]
+    family: "resnet"
+    pretrained_source: "imagenet_1k"
+    availability_check: "sample_specific_masks.reprogramming:check_resnet50_imagenet1k_available"
+    lazy_load: true
+    freeze_backbone: true
+    smoke_fixture: "sample_specific_masks.reprogramming:build_resnet50_smoke_fixture"
+  - id: "vit_b32_imagenet1k"
+    aliases: ["ViT-B/32", "vit_b32", "vit_b32_imagenet1k"]
+    family: "vit"
+    pretrained_source: "imagenet_1k"
+    availability_check: "sample_specific_masks.reprogramming:check_vitb32_imagenet1k_available"
+    lazy_load: true
+    freeze_backbone: true
+    smoke_fixture: "sample_specific_masks.reprogramming:build_vitb32_smoke_fixture"
+
+method_registry:
+  - id: "PAD"
+    aliases: ["Pad", "pad", "padding-based reprogramming"]
+    family: "baseline"
+    variant: "pad"
+    forward_path: "sample_specific_masks.reprogramming:build_pad_reprogramming"
+    train_step: "sample_specific_masks.train:train_pad"
+    evaluation_step: "sample_specific_masks.evaluate:evaluate_pad"
+    mask_layout:
+      pattern: "center_pad"
+      mask_mode: "shared_fixed"
+      channel_mode: "single"
+    applicable_backbones: ["resnet18_imagenet1k", "resnet50_imagenet1k", "vit_b32_imagenet1k"]
+    applicable_datasets: ["cifar10", "cifar100", "svhn", "gtsrb", "flowers102", "dtd", "ucf101", "eurosat", "oxford_pets"]
+  - id: "Narrow"
+    aliases: ["narrow", "NARrow"]
+    family: "baseline"
+    variant: "narrow"
+    forward_path: "sample_specific_masks.reprogramming:build_narrow_reprogramming"
+    train_step: "sample_specific_masks.train:train_narrow"
+    evaluation_step: "sample_specific_masks.evaluate:evaluate_narrow"
+    mask_layout:
+      pattern: "narrow_band"
+      mask_mode: "shared_fixed"
+      channel_mode: "single"
+    applicable_backbones: ["resnet18_imagenet1k", "resnet50_imagenet1k", "vit_b32_imagenet1k"]
+    applicable_datasets: ["cifar10", "cifar100", "svhn", "gtsrb", "flowers102", "dtd", "ucf101", "eurosat", "oxford_pets"]
+  - id: "Medium"
+    aliases: ["medium", "Medium"]
+    family: "baseline"
+    variant: "medium"
+    forward_path: "sample_specific_masks.reprogramming:build_medium_reprogramming"
+    train_step: "sample_specific_masks.train:train_medium"
+    evaluation_step: "sample_specific_masks.evaluate:evaluate_medium"
+    mask_layout:
+      pattern: "medium_band"
+      mask_mode: "shared_fixed"
+      channel_mode: "single"
+    applicable_backbones: ["resnet18_imagenet1k", "resnet50_imagenet1k", "vit_b32_imagenet1k"]
+    applicable_datasets: ["cifar10", "cifar100", "svhn", "gtsrb", "flowers102", "dtd", "ucf101", "eurosat", "oxford_pets"]
+  - id: "Full"
+    aliases: ["full", "Full"]
+    family: "baseline"
+    variant: "full"
+    forward_path: "sample_specific_masks.reprogramming:build_full_reprogramming"
+    train_step: "sample_specific_masks.train:train_full"
+    evaluation_step: "sample_specific_masks.evaluate:evaluate_full"
+    mask_layout:
+      pattern: "full_band"
+      mask_mode: "shared_fixed"
+      channel_mode: "single"
+    applicable_backbones: ["resnet18_imagenet1k", "resnet50_imagenet1k", "vit_b32_imagenet1k"]
+    applicable_datasets: ["cifar10", "cifar100", "svhn", "gtsrb", "flowers102", "dtd", "ucf101", "eurosat", "oxford_pets"]
+  - id: "Ours"
+    aliases: ["ours", "SMM", "SMM/Ours"]
+    family: "proposed"
+    variant: "ours_multi_channel"
+    forward_path: "sample_specific_masks.reprogramming:build_ours_reprogramming"
+    train_step: "sample_specific_masks.train:train_ours"
+    evaluation_step: "sample_specific_masks.evaluate:evaluate_ours"
+    mask_layout:
+      pattern: "sample_specific_multi_channel"
+      mask_mode: "sample_specific"
+      channel_mode: "multi"
+      interpolation_level: 1
+      patch_size: 2
+      p_sweep: [0, 1]
+    applicable_backbones: ["resnet18_imagenet1k", "resnet50_imagenet1k", "vit_b32_imagenet1k"]
+    applicable_datasets: ["cifar10", "cifar100", "svhn", "gtsrb", "flowers102", "dtd", "ucf101", "eurosat", "oxford_pets"]
+  - id: "ONLY_Delta"
+    aliases: ["ONLY δ", "only_delta"]
+    family: "ablation"
+    variant: "only_delta"
+    forward_path: "sample_specific_masks.reprogramming:build_only_delta_reprogramming"
+    train_step: "sample_specific_masks.train:train_only_delta"
+    evaluation_step: "sample_specific_masks.evaluate:evaluate_only_delta"
+    mask_layout:
+      pattern: "delta_only"
+      mask_mode: "shared_trainable_only"
+      channel_mode: "single"
+      use_mask_generator: false
+  - id: "ONLY_FMask"
+    aliases: ["ONLY f_mask", "only_f_mask"]
+    family: "ablation"
+    variant: "only_f_mask"
+    forward_path: "sample_specific_masks.reprogramming:build_only_f_mask_reprogramming"
+    train_step: "sample_specific_masks.train:train_only_f_mask"
+    evaluation_step: "sample_specific_masks.evaluate:evaluate_only_f_mask"
+    mask_layout:
+      pattern: "mask_generator_only"
+      mask_mode: "sample_specific_only"
+      channel_mode: "multi"
+      use_delta: false
+  - id: "Single_Channel_f_mask_s"
+    aliases: ["SINGLE-CHANNEL f_mask^s", "single_channel_mask", "f_mask_s"]
+    family: "ablation"
+    variant: "single_channel_mask"
+    forward_path: "sample_specific_masks.reprogramming:build_single_channel_mask_reprogramming"
+    train_step: "sample_specific_masks.train:train_single_channel_mask"
+    evaluation_step: "sample_specific_masks.evaluate:evaluate_single_channel_mask"
+    mask_layout:
+      pattern: "single_channel_sample_specific"
+      mask_mode: "sample_specific"
+      channel_mode: "single"
+
+metric_registry:
+  - id: "accuracy"
+    aliases: ["mean_std_accuracy", "metric_accuracy"]
+    compute: "sample_specific_masks.evaluate:compute_accuracy"
+    aggregate: "sample_specific_masks.evaluate:aggregate_accuracy"
+    display_name: "mean accuracy % ± std %"
+    units: "percent"
+  - id: "loss"
+    aliases: ["metric_loss"]
+    compute: "sample_specific_masks.evaluate:compute_loss"
+    aggregate: "sample_specific_masks.evaluate:aggregate_loss"
+    display_name: "mean loss"
+    units: "scalar"
+  - id: "f1"
+    aliases: ["metric_f1"]
+    compute: "sample_specific_masks.evaluate:compute_f1"
+    aggregate: "sample_specific_masks.evaluate:aggregate_f1"
+    display_name: "mean F1"
+    units: "scalar"
+  - id: "fidelity_score"
+    aliases: ["metric_fidelity_score"]
+    compute: "src.evaluations_target:compute_fidelity_score"
+    aggregate: "src.evaluations_target:aggregate_fidelity_score"
+    display_name: "fidelity score"
+    units: "scalar"
+
+parameter_sweeps:
+  seeds:
+    id: "seed_list"
+    values: [0, 1, 2]
+    fixed_anchor: "three_seed_protocol"
+    aggregate: "mean_std_across_seeds"
+  datasets:
+    id: "dataset"
+    values:
+      - "cifar10"
+      - "cifar100"
+      - "svhn"
+      - "gtsrb"
+      - "flowers102"
+      - "dtd"
+      - "ucf101"
+      - "eurosat"
+      - "oxford_pets"
+  backbones:
+    id: "backbone"
+    values:
+      - "resnet18_imagenet1k"
+      - "resnet50_imagenet1k"
+      - "vit_b32_imagenet1k"
+  methods:
+    id: "method"
+    values: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+  mask_variants:
+    id: "mask_variant"
+    values: ["pad", "narrow", "medium", "full", "ours_multi_channel", "only_delta", "only_f_mask", "single_channel_mask"]
+  interpolation_level_l:
+    id: "interpolation_level_l"
+    values: [0, 1, 2, 3]
+    l_zero_policy: "omit_patchwise_interpolation"
+  p:
+    id: "p"
+    values: [0, 1]
+    boundary_policy: "endpoint_low"
+  patch_size:
+    id: "patch_size"
+    values: [4, 2, 1]
+    paper_anchor: "patch_size[4,2,1]"
+  alpha:
+    id: "alpha"
+    values: [0.0, 0.1, 0.5, 1.0]
+  gamma:
+    id: "gamma"
+    values: [0.0, 0.5, 1.0]
+  similarity_guidance_scale:
+    id: "similarity_guidance_scale"
+    values: [9, 7, 10]
+
+experiment_registry:
+  - experiment_id: "table1_resnet"
+    paper_visible_name: "Table 1 main ResNet comparison"
+    target_artifact: "results/tables/table_1.csv"
+    legacy_artifacts:
+      - "results/tables/table1_resnet_main.csv"
+      - "results/tables/table1_resnet_main.json"
+    dataset_split: "paper_split_shared_across_main_comparisons"
+    datasets:
+      - "cifar10"
+      - "cifar100"
+      - "svhn"
+      - "gtsrb"
+      - "flowers102"
+      - "dtd"
+      - "ucf101"
+      - "eurosat"
+      - "oxford_pets"
+    backbones: ["resnet18_imagenet1k", "resnet50_imagenet1k"]
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metric: "accuracy"
+    metric_aggregate: "mean_std_accuracy"
+    output_mapping: "Rlm_random_label_mapping"
+    artifact_writer: "sample_specific_masks.artifacts:write_table_1_artifact"
+    route:
+      setup: "sample_specific_masks.data:make_environment"
+      training_or_adaptation: "sample_specific_masks.train:train_main_comparison"
+      evaluation: "sample_specific_masks.evaluate:evaluate_main_comparison"
+      aggregation: "sample_specific_masks.evaluate:aggregate_accuracy"
+    row_policy:
+      row_semantics: "dataset x backbone x method"
+      seeds: "three_seed_protocol"
+      all_rows_share:
+        - "dataset split"
+        - "output mapping"
+        - "metric aggregation"
+        - "artifact writer"
+    provenance:
+      reference_grounding: "chunk_014_02 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+
+  - experiment_id: "table2_vit"
+    paper_visible_name: "Table 2 ViT-B/32 comparison"
+    target_artifact: "results/tables/table_2.csv"
+    legacy_artifacts:
+      - "results/tables/table2_vit_main.csv"
+      - "results/tables/table2_vit_main.json"
+    dataset_split: "paper_split_shared_across_main_comparisons"
+    datasets:
+      - "cifar10"
+      - "cifar100"
+      - "svhn"
+      - "gtsrb"
+      - "flowers102"
+      - "dtd"
+      - "ucf101"
+      - "eurosat"
+      - "oxford_pets"
+    backbones: ["vit_b32_imagenet1k"]
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metric: "accuracy"
+    metric_aggregate: "mean_std_accuracy"
+    output_mapping: "Rlm_random_label_mapping"
+    artifact_writer: "sample_specific_masks.artifacts:write_table_2_artifact"
+    route:
+      setup: "sample_specific_masks.data:make_environment"
+      training_or_adaptation: "sample_specific_masks.train:train_vit_comparison"
+      evaluation: "sample_specific_masks.evaluate:evaluate_vit_comparison"
+      aggregation: "sample_specific_masks.evaluate:aggregate_accuracy"
+    row_policy:
+      row_semantics: "dataset x method"
+      seeds: "three_seed_protocol"
+      all_rows_share:
+        - "dataset split"
+        - "output mapping"
+        - "metric aggregation"
+        - "artifact writer"
+    provenance:
+      reference_grounding: "chunk_016_01 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+
+  - experiment_id: "table3_ablation"
+    paper_visible_name: "Table 3 Ablation Studies"
+    target_artifact: "results/tables/table_3.csv"
+    legacy_artifacts:
+      - "results/tables/table3_ablation.csv"
+      - "results/tables/table3_ablation.json"
+    dataset_split: "paper_split_shared_across_main_comparisons"
+    datasets:
+      - "cifar10"
+      - "cifar100"
+      - "svhn"
+      - "gtsrb"
+      - "flowers102"
+      - "dtd"
+      - "ucf101"
+      - "eurosat"
+    backbones: ["resnet18_imagenet1k"]
+    methods: ["ONLY_Delta", "ONLY_FMask", "Single_Channel_f_mask_s", "Ours"]
+    metric: "accuracy"
+    metric_aggregate: "mean_std_accuracy"
+    output_mapping: "Rlm_random_label_mapping"
+    artifact_writer: "sample_specific_masks.artifacts:write_table_3_ablation_artifact"
+    route:
+      setup: "sample_specific_masks.data:make_environment"
+      training_or_adaptation: "sample_specific_masks.train:train_ablation_variants"
+      evaluation: "sample_specific_masks.evaluate:evaluate_ablation_variants"
+      aggregation: "sample_specific_masks.evaluate:aggregate_accuracy"
+    variant_policy:
+      only_delta:
+        use_delta: true
+        use_mask_generator: false
+        channel_mode: "single"
+      only_f_mask:
+        use_delta: false
+        use_mask_generator: true
+        channel_mode: "multi"
+      single_channel_f_mask_s:
+        use_delta: true
+        use_mask_generator: true
+        channel_mode: "single"
+      ours:
+        use_delta: true
+        use_mask_generator: true
+        channel_mode: "multi"
+    provenance:
+      reference_grounding: "chunk_017_02 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+
+  - experiment_id: "appendix_table13"
+    paper_visible_name: "Table 13 appendix table"
+    target_artifact: "results/tables/table_13.csv"
+    legacy_artifacts: []
+    dataset_split: "paper_split_shared_across_main_comparisons"
+    datasets:
+      - "cifar10"
+      - "cifar100"
+      - "svhn"
+      - "gtsrb"
+      - "flowers102"
+      - "dtd"
+      - "ucf101"
+      - "eurosat"
+      - "oxford_pets"
+    backbones:
+      - "resnet18_imagenet1k"
+      - "resnet50_imagenet1k"
+      - "vit_b32_imagenet1k"
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metric: "accuracy"
+    metric_aggregate: "mean_std_accuracy"
+    output_mapping: "Rlm_random_label_mapping"
+    artifact_writer: "sample_specific_masks.artifacts:write_table_13_artifact"
+    route:
+      setup: "sample_specific_masks.data:make_environment"
+      training_or_adaptation: "sample_specific_masks.train:train_appendix_table_13"
+      evaluation: "sample_specific_masks.evaluate:evaluate_appendix_table_13"
+      aggregation: "sample_specific_masks.evaluate:aggregate_accuracy"
+    provenance:
+      reference_grounding: "chunk_016_01 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+
+  - experiment_id: "appendix_table14"
+    paper_visible_name: "Table 14 appendix table"
+    target_artifact: "results/tables/table_14.csv"
+    legacy_artifacts: []
+    dataset_split: "paper_split_shared_across_main_comparisons"
+    datasets:
+      - "cifar10"
+      - "cifar100"
+      - "svhn"
+      - "gtsrb"
+      - "flowers102"
+      - "dtd"
+      - "ucf101"
+      - "eurosat"
+      - "oxford_pets"
+    backbones:
+      - "resnet18_imagenet1k"
+      - "resnet50_imagenet1k"
+      - "vit_b32_imagenet1k"
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metric: "accuracy"
+    metric_aggregate: "mean_std_accuracy"
+    output_mapping: "Rlm_random_label_mapping"
+    artifact_writer: "sample_specific_masks.artifacts:write_table_14_artifact"
+    route:
+      setup: "sample_specific_masks.data:make_environment"
+      training_or_adaptation: "sample_specific_masks.train:train_appendix_table_14"
+      evaluation: "sample_specific_masks.evaluate:evaluate_appendix_table_14"
+      aggregation: "sample_specific_masks.evaluate:aggregate_accuracy"
+    provenance:
+      reference_grounding: "chunk_016_01 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+
+  - experiment_id: "smm_smoke"
+    paper_visible_name: "Algorithm 1 SMM learning strategy"
+    target_artifact: "results/smoke/metrics.json"
+    legacy_artifacts:
+      - "results/metrics.json"
+      - "results/dry_run_manifest.json"
+    dataset_split: "smoke_only"
+    datasets: ["unit-001"]
+    backbones: ["resnet18_imagenet1k"]
+    methods: ["Ours"]
+    metric: "accuracy"
+    metric_aggregate: "mean_std_accuracy"
+    output_mapping: "Rlm_random_label_mapping"
+    artifact_writer: "sample_specific_masks.artifacts:write_smoke_artifacts"
+    route:
+      setup: "sample_specific_masks.data:make_environment"
+      training_or_adaptation: "sample_specific_masks.train:train_ours"
+      evaluation: "sample_specific_masks.evaluate:evaluate_ours"
+      aggregation: "sample_specific_masks.evaluate:aggregate_accuracy"
+    algorithm:
+      name: "Algorithm 1"
+      learning_strategy: "joint_delta_and_phi_update"
+      shared_delta_initialization: "zero_matrix_{0}^{d_P}"
+      update_targets: ["delta", "phi"]
+      patchwise_interpolation: "floor(H/2^l) x floor(W/2^l) -> H x W"
+      l_zero_policy: "omit"
+    provenance:
+      reference_grounding: "chunk_009 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+
+  - experiment_id: "mask_visualization_diagnostics"
+    paper_visible_name: "mask visualization diagnostics"
+    target_artifact: "results/figures/figure_13.png"
+    legacy_artifacts:
+      - "results/figures/figure_14.png"
+      - "results/figures/figure_15.png"
+      - "results/figures/figure_16.png"
+      - "results/figures/figure_17.png"
+      - "results/figures/figure_18.png"
+      - "results/figures/figure_19.png"
+      - "results/figures/figure_20.png"
+      - "results/figures/figure_21.png"
+      - "results/figures/figure_22.png"
+      - "results/figures/figure_23.png"
+    dataset_split: "paper_split_shared_across_main_comparisons"
+    datasets: ["flowers102", "svhn", "eurosat", "oxford_pets"]
+    backbones: ["resnet18_imagenet1k", "vit_b32_imagenet1k"]
+    methods: ["Ours", "ONLY_Delta", "ONLY_FMask", "Single_Channel_f_mask_s"]
+    metric: "accuracy"
+    metric_aggregate: "diagnostic_index"
+    output_mapping: "Rlm_random_label_mapping"
+    artifact_writer: "sample_specific_masks.artifacts:write_diagnostic_figures"
+    route:
+      setup: "sample_specific_masks.data:make_environment"
+      training_or_adaptation: "sample_specific_masks.train:train_ablation_variants"
+      evaluation: "sample_specific_masks.evaluate:evaluate_ablation_variants"
+      aggregation: "sample_specific_masks.evaluate:aggregate_accuracy"
+    provenance:
+      reference_grounding: "chunk_016_01 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md"
+
+figure_protocol_registry:
+  - figure_id: "figure_13"
+    paper_visible_name: "Figure 13"
+    artifact_path: "results/figures/figure_13.png"
+    artifact_writer: "sample_specific_masks.artifacts:write_figure_13_artifact"
+    inputs:
+      - "results/metrics.json"
+      - "results/tables/table_13.csv"
+    provenance:
+      source_experiment_id: "appendix_table13"
+  - figure_id: "figure_14"
+    paper_visible_name: "Figure 14"
+    artifact_path: "results/figures/figure_14.png"
+    artifact_writer: "sample_specific_masks.artifacts:write_figure_14_artifact"
+    inputs:
+      - "results/metrics.json"
+      - "results/tables/table_14.csv"
+    provenance:
+      source_experiment_id: "appendix_table14"
+  - figure_id: "figure_15"
+    paper_visible_name: "Figure 15"
+    artifact_path: "results/figures/figure_15.png"
+    artifact_writer: "sample_specific_masks.artifacts:write_figure_15_artifact"
+    inputs:
+      - "results/metrics.json"
+      - "results/tables/table_13.csv"
+    provenance:
+      source_experiment_id: "mask_visualization_diagnostics"
+  - figure_id: "figure_16"
+    paper_visible_name: "Figure 16"
+    artifact_path: "results/figures/figure_16.png"
+    artifact_writer: "sample_specific_masks.artifacts:write_figure_16_artifact"
+    inputs:
+      - "results/metrics.json"
+      - "results/tables/table_14.csv"
+    provenance:
+      source_experiment_id: "mask_visualization_diagnostics"
+  - figure_id: "figure_17"
+    paper_visible_name: "Figure 17"
+    artifact_path: "results/figures/figure_17.png"
+    artifact_writer: "sample_specific_masks.artifacts:write_figure_17_artifact"
+    inputs:
+      - "results/metrics.json"
+      - "results/tables/table3_ablation.csv"
+    provenance:
+      source_experiment_id: "table3_ablation"
+  - figure_id: "figure_18"
+    paper_visible_name: "Figure 18"
+    artifact_path: "results/figures/figure_18.png"
+    artifact_writer: "sample_specific_masks.artifacts:write_figure_18_artifact"
+    inputs:
+      - "results/metrics.json"
+      - "results/tables/table1_resnet_main.csv"
+    provenance:
+      source_experiment_id: "table1_resnet"
+  - figure_id: "figure_19"
+    paper_visible_name: "Figure 19"
+    artifact_path: "results/figures/figure_19.png"
+    artifact_writer: "sample_specific_masks.artifacts:write_figure_19_artifact"
+    inputs:
+      - "results/metrics.json"
+      - "results/tables/table2_vit_main.csv"
+    provenance:
+      source_experiment_id: "table2_vit"
+  - figure_id: "figure_20"
+    paper_visible_name: "Figure 20"
+    artifact_path: "results/figures/figure_20.png"
+    artifact_writer: "sample_specific_masks.artifacts:write_figure_20_artifact"
+    inputs:
+      - "results/metrics.json"
+      - "results/tables/table_13.csv"
+    provenance:
+      source_experiment_id: "appendix_table13"
+  - figure_id: "figure_21"
+    paper_visible_name: "Figure 21"
+    artifact_path: "results/figures/figure_21.png"
+    artifact_writer: "sample_specific_masks.artifacts:write_figure_21_artifact"
+    inputs:
+      - "results/metrics.json"
+      - "results/tables/table_14.csv"
+    provenance:
+      source_experiment_id: "appendix_table14"
+  - figure_id: "figure_22"
+    paper_visible_name: "Figure 22"
+    artifact_path: "results/figures/figure_22.png"
+    artifact_writer: "sample_specific_masks.artifacts:write_figure_22_artifact"
+    inputs:
+      - "results/metrics.json"
+      - "results/smoke/metrics.json"
+    provenance:
+      source_experiment_id: "smm_smoke"
+  - figure_id: "figure_23"
+    paper_visible_name: "Figure 23"
+    artifact_path: "results/figures/figure_23.png"
+    artifact_writer: "sample_specific_masks.artifacts:write_figure_23_artifact"
+    inputs:
+      - "results/metrics.json"
+      - "results/smoke/metrics.json"
+    provenance:
+      source_experiment_id: "mask_visualization_diagnostics"
+
+artifact_registry:
+  - artifact_id: "results/metrics.json"
+    kind: "metrics"
+    writer: "sample_specific_masks.artifacts:write_metrics_artifact"
+  - artifact_id: "results/dataset_registry.json"
+    kind: "registry"
+    writer: "sample_specific_masks.artifacts:write_dataset_registry_artifact"
+  - artifact_id: "results/environment_registry.json"
+    kind: "registry"
+    writer: "sample_specific_masks.artifacts:write_environment_registry_artifact"
+  - artifact_id: "results/experiment_registry.json"
+    kind: "registry"
+    writer: "sample_specific_masks.artifacts:write_experiment_registry_artifact"
+  - artifact_id: "results/artifact_manifest.json"
+    kind: "manifest"
+    writer: "run_smm_vrp:write_artifact_manifest"
+  - artifact_id: "results/config_resolved.json"
+    kind: "resolved_config"
+    writer: "sample_specific_masks.artifacts:write_config_resolved_artifact"
+  - artifact_id: "results/dry_run_manifest.json"
+    kind: "readiness"
+    writer: "sample_specific_masks.artifacts:write_dry_run_manifest_artifact"
+  - artifact_id: "results/table_index.json"
+    kind: "index"
+    writer: "sample_specific_masks.artifacts:write_table_index_artifact"
+  - artifact_id: "results/figure_index.json"
+    kind: "index"
+    writer: "sample_specific_masks.artifacts:write_figure_index_artifact"
+  - artifact_id: "readiness.json"
+    kind: "readiness"
+    writer: "sample_specific_masks.artifacts:write_readiness_artifact"
+  - artifact_id: "evaluation_result.json"
+    kind: "evaluation_result"
+    writer: "sample_specific_masks.artifacts:write_evaluation_result_artifact"
+
+data_pipeline:
+  make_environment: "sample_specific_masks.data:make_environment"
+  load_data: "sample_specific_masks.data:load_data"
+  prepare_data: "sample_specific_masks.data:prepare_data"
+  build_data: "sample_specific_masks.data:build_data"
+  load_classifier: "sample_specific_masks.reprogramming:load_classifier"
+  finetune_classifier: "sample_specific_masks.reprogramming:finetune_classifier"
+  availability_checks:
+    cifar: "sample_specific_masks.data:check_cifar_available"
+    imagenet: "sample_specific_masks.data:check_imagenet_source_available"
+    svhn: "sample_specific_masks.data:check_svhn_available"
+    gtsrb: "sample_specific_masks.data:check_gtsrb_available"
+    flowers102: "sample_specific_masks.data:check_flowers102_available"
+    dtd: "sample_specific_masks.data:check_dtd_available"
+    ucf101: "sample_specific_masks.data:check_ucf101_available"
+    eurosat: "sample_specific_masks.data:check_eurosat_available"
+    oxford_pets: "sample_specific_masks.data:check_oxford_pets_available"
+
+training_loop:
+  algorithm_1:
+    name: "SMM learning strategy"
+    shared_delta_initialization: "zero_matrix_{0}^{d_P}"
+    update_targets: ["delta", "phi"]
+    freeze_backbone: true
+    backbone_updates_allowed: false
+    optimizer_parameter_groups:
+      - name: "delta"
+        target: "shared_delta"
+      - name: "phi"
+        target: "mask_generator_phi"
+    train_steps:
+      ours: "sample_specific_masks.train:train_ours"
+      only_delta: "sample_specific_masks.train:train_only_delta"
+      only_f_mask: "sample_specific_masks.train:train_only_f_mask"
+      single_channel_mask: "sample_specific_masks.train:train_single_channel_mask"
+      pad: "sample_specific_masks.train:train_pad"
+      narrow: "sample_specific_masks.train:train_narrow"
+      medium: "sample_specific_masks.train:train_medium"
+      full: "sample_specific_masks.train:train_full"
+  learning_rates:
+    default: 0.0003
+    schedule: "constant_for_smoke_then_cosine_for_full"
+  batch_sizes:
+    default: 4
+    smoke: 4
+    full: 64
+  epochs:
+    smoke: 1
+    full: 90
+  checkpointing:
+    enabled: true
+    best_metric: "accuracy"
+    save_last: true
+    save_best: true
+
+evaluation:
+  evaluate_predictions: "sample_specific_masks.evaluate:evaluate_predictions"
+  compute_accuracy: "sample_specific_masks.evaluate:compute_accuracy"
+  aggregate_accuracy: "sample_specific_masks.evaluate:aggregate_accuracy"
+  compute_f1: "sample_specific_masks.evaluate:compute_f1"
+  aggregate_f1: "sample_specific_masks.evaluate:aggregate_f1"
+  compute_loss: "sample_specific_masks.evaluate:compute_loss"
+  aggregate_loss: "sample_specific_masks.evaluate:aggregate_loss"
+  metric_aggregation:
+    accuracy: "mean_std_across_seeds"
+    loss: "mean_across_seeds"
+    f1: "mean_across_seeds"
+  paper_visible_reporting:
+    uses_mean_std_accuracy: true
+    mean_accuracy_percent_field: "mean_accuracy_percent"
+    std_accuracy_percent_field: "std_accuracy_percent"
+
+baseline_or_ablation:
+  method_selector_set_required: ["ours", "vit", "resnet", "lora"]
+  baseline_variants_required: ["PAD", "Narrow", "Medium", "Full"]
+  ablation_variants_required: ["ONLY δ", "ONLY f_mask", "SINGLE-CHANNEL f_mask^s", "OURS"]
+  variant_policy:
+    only_delta:
+      description: "only shared noise pattern delta contributes"
+      use_delta: true
+      use_mask_generator: false
+      channel_mode: "single"
+    only_f_mask:
+      description: "only mask generator contributes, shared delta disabled"
+      use_delta: false
+      use_mask_generator: true
+      channel_mode: "multi"
+    single_channel_mask:
+      description: "single-channel sample-specific mask variant"
+      use_delta: true
+      use_mask_generator: true
+      channel_mode: "single"
+    ours:
+      description: "sample-specific multi-channel masks with shared delta"
+      use_delta: true
+      use_mask_generator: true
+      channel_mode: "multi"
+
+reporting_validation:
+  coverage_auditor:
+    required_datasets:
+      - "cifar"
+      - "imagenet"
+      - "svhn"
+      - "imagenet_1k"
+      - "stanford_cars"
+      - "dtd"
+      - "eurosat"
+      - "flowers"
+      - "oxford_pets"
+    required_environments:
+      - "cifar"
+      - "imagenet"
+      - "svhn"
+    required_methods:
+      - "ours"
+      - "vit"
+      - "resnet"
+      - "lora"
+      - "PAD"
+      - "Narrow"
+      - "Medium"
+      - "Full"
+      - "ONLY δ"
+      - "ONLY f_mask"
+      - "SINGLE-CHANNEL f_mask^s"
+    required_metrics:
+      - "accuracy"
+      - "loss"
+      - "f1"
+    required_artifacts:
+      - "Figure 1"
+      - "Figure 2"
+      - "Figure 3"
+      - "Figure 4"
+      - "Figure 5"
+      - "Figure 6"
+      - "Figure 7"
+      - "Figure 8"
+      - "Figure 9"
+      - "Figure 10"
+      - "Figure 11"
+      - "Figure 12"
+      - "Table 1"
+      - "Table 2"
+      - "Table 3"
+      - "Table 4"
+      - "Table 5"
+      - "Table 6"
+      - "Table 7"
+      - "Table 8"
+      - "Table 9"
+      - "Table 10"
+      - "Table 11"
+      - "Table 12"
+      - "Table 13"
+      - "Table 14"
+      - "Figure 13"
+      - "Figure 14"
+      - "Figure 15"
+      - "Figure 16"
+      - "Figure 17"
+      - "Figure 18"
+      - "Figure 19"
+      - "Figure 20"
+      - "Figure 21"
+      - "Figure 22"
+      - "Figure 23"
+  smoke_vs_full_labeling:
+    smoke_tag: "smoke/dry-run"
+    full_tag: "full-measured-route"
+    forbid_fabricated_scores: true
+    require_provenance: true
+    require_expected_trend_fields: true
+
+artifact_paths:
+  metrics:
+    - "results/metrics.json"
+  registries:
+    - "results/dataset_registry.json"
+    - "results/environment_registry.json"
+    - "results/experiment_registry.json"
+  manifests:
+    - "results/artifact_manifest.json"
+    - "results/config_resolved.json"
+    - "results/dry_run_manifest.json"
+  tables:
+    - "results/tables/table_1.csv"
+    - "results/tables/table_2.csv"
+    - "results/tables/table_3.csv"
+    - "results/tables/table_13.csv"
+    - "results/tables/table_14.csv"
+    - "results/tables/table1_resnet_main.csv"
+    - "results/tables/table2_vit_main.csv"
+    - "results/tables/table3_ablation.csv"
+  figures:
+    - "results/figures/figure_13.png"
+    - "results/figures/figure_14.png"
+    - "results/figures/figure_15.png"
+    - "results/figures/figure_16.png"
+    - "results/figures/figure_17.png"
+    - "results/figures/figure_18.png"
+    - "results/figures/figure_19.png"
+    - "results/figures/figure_20.png"
+    - "results/figures/figure_21.png"
+    - "results/figures/figure_22.png"
+    - "results/figures/figure_23.png"
+  smoke:
+    - "readiness.json"
+    - "evaluation_result.json"
+
+paper_claim_matrix:
+  environments:
+    - name: "cifar"
+      alias: "CIFAR10"
+    - name: "imagenet"
+      alias: "ImageNet-1K pretrained source"
+    - name: "svhn"
+      alias: "SVHN"
+  datasets:
+    - name: "cifar10"
+    - name: "cifar100"
+    - name: "svhn"
+    - name: "imagenet_1k"
+    - name: "stanford_cars"
+    - name: "dtd"
+    - name: "eurosat"
+    - name: "flowers"
+    - name: "oxford_pets"
+  methods:
+    - name: "ours"
+    - name: "vit"
+    - name: "resnet"
+    - name: "lora"
+  metrics:
+    - name: "accuracy"
+    - name: "loss"
+  artifacts:
+    - name: "Figure 1"
+    - name: "Figure 2"
+    - name: "Figure 3"
+    - name: "Figure 4"
+    - name: "Figure 5"
+    - name: "Figure 6"
+    - name: "Figure 7"
+    - name: "Figure 8"
+    - name: "Figure 9"
+    - name: "Figure 10"
+    - name: "Figure 11"
+    - name: "Figure 12"
+    - name: "Table 1"
+    - name: "Table 2"
+    - name: "Table 3"
+    - name: "Table 4"
+    - name: "Table 5"
+    - name: "Table 6"
+    - name: "Table 7"
+    - name: "Table 8"
+    - name: "Table 9"
+    - name: "Table 10"
+    - name: "Table 11"
+    - name: "Table 12"
+    - name: "Table 13"
+    - name: "Table 14"
+    - name: "Figure 13"
+    - name: "Figure 14"
+    - name: "Figure 15"
+    - name: "Figure 16"
+    - name: "Figure 17"
+    - name: "Figure 18"
+    - name: "Figure 19"
+    - name: "Figure 20"
+    - name: "Figure 21"
+    - name: "Figure 22"
+    - name: "Figure 23"
+
+obligation_matrix:
+  - row_id: "table1_resnet"
+    experiment_id: "table1_resnet"
+    environment: "imagenet"
+    dataset_group: "vision_target_tasks"
+    datasets: ["cifar10", "cifar100", "svhn", "gtsrb", "flowers102", "dtd", "ucf101", "eurosat", "oxford_pets"]
+    backbones: ["resnet18_imagenet1k", "resnet50_imagenet1k"]
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metrics: ["accuracy"]
+    aggregation: "mean_std_accuracy"
+    artifact: "results/tables/table_1.csv"
+    writer: "sample_specific_masks.artifacts:write_table_1_artifact"
+    setup: "sample_specific_masks.data:make_environment"
+    train_or_adapt: "sample_specific_masks.train:train_main_comparison"
+    evaluate: "sample_specific_masks.evaluate:evaluate_main_comparison"
+    output_mapping: "Rlm_random_label_mapping"
+    shared_route_policy:
+      same_dataset_split: true
+      same_output_mapping: true
+      same_metric_aggregation: true
+      same_artifact_writer: true
+    reference_grounding: "chunk_014_02"
+  - row_id: "table2_vit"
+    experiment_id: "table2_vit"
+    environment: "imagenet"
+    dataset_group: "vision_target_tasks"
+    datasets: ["cifar10", "cifar100", "svhn", "gtsrb", "flowers102", "dtd", "ucf101", "eurosat", "oxford_pets"]
+    backbones: ["vit_b32_imagenet1k"]
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metrics: ["accuracy"]
+    aggregation: "mean_std_accuracy"
+    artifact: "results/tables/table_2.csv"
+    writer: "sample_specific_masks.artifacts:write_table_2_artifact"
+    setup: "sample_specific_masks.data:make_environment"
+    train_or_adapt: "sample_specific_masks.train:train_vit_comparison"
+    evaluate: "sample_specific_masks.evaluate:evaluate_vit_comparison"
+    output_mapping: "Rlm_random_label_mapping"
+    shared_route_policy:
+      same_dataset_split: true
+      same_output_mapping: true
+      same_metric_aggregation: true
+      same_artifact_writer: true
+    reference_grounding: "chunk_016_01"
+  - row_id: "table3_ablation"
+    experiment_id: "table3_ablation"
+    environment: "resnet18_imagenet1k"
+    dataset_group: "ablation_tasks"
+    datasets: ["cifar10", "cifar100", "svhn", "gtsrb", "flowers102", "dtd", "ucf101", "eurosat"]
+    backbones: ["resnet18_imagenet1k"]
+    methods: ["ONLY δ", "ONLY f_mask", "SINGLE-CHANNEL f_mask^s", "Ours"]
+    metrics: ["accuracy"]
+    aggregation: "mean_std_accuracy"
+    artifact: "results/tables/table_3.csv"
+    writer: "sample_specific_masks.artifacts:write_table_3_ablation_artifact"
+    setup: "sample_specific_masks.data:make_environment"
+    train_or_adapt: "sample_specific_masks.train:train_ablation_variants"
+    evaluate: "sample_specific_masks.evaluate:evaluate_ablation_variants"
+    output_mapping: "Rlm_random_label_mapping"
+    variant_policy:
+      only_delta:
+        use_delta: true
+        use_mask_generator: false
+      only_f_mask:
+        use_delta: false
+        use_mask_generator: true
+      single_channel_mask:
+        use_delta: true
+        use_mask_generator: true
+        channel_mode: "single"
+      ours:
+        use_delta: true
+        use_mask_generator: true
+        channel_mode: "multi"
+    shared_route_policy:
+      same_dataset_split: true
+      same_output_mapping: true
+      same_metric_aggregation: true
+      same_artifact_writer: true
+    reference_grounding: "chunk_017_02"
+  - row_id: "appendix_table13"
+    experiment_id: "appendix_table13"
+    environment: "imagenet"
+    dataset_group: "appendix_tasks"
+    datasets: ["cifar10", "cifar100", "svhn", "gtsrb", "flowers102", "dtd", "ucf101", "eurosat", "oxford_pets"]
+    backbones: ["resnet18_imagenet1k", "resnet50_imagenet1k", "vit_b32_imagenet1k"]
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metrics: ["accuracy"]
+    aggregation: "mean_std_accuracy"
+    artifact: "results/tables/table_13.csv"
+    writer: "sample_specific_masks.artifacts:write_table_13_artifact"
+    setup: "sample_specific_masks.data:make_environment"
+    train_or_adapt: "sample_specific_masks.train:train_appendix_table_13"
+    evaluate: "sample_specific_masks.evaluate:evaluate_appendix_table_13"
+    output_mapping: "Rlm_random_label_mapping"
+    shared_route_policy:
+      same_dataset_split: true
+      same_output_mapping: true
+      same_metric_aggregation: true
+      same_artifact_writer: true
+    reference_grounding: "chunk_016_01"
+  - row_id: "appendix_table14"
+    experiment_id: "appendix_table14"
+    environment: "imagenet"
+    dataset_group: "appendix_tasks"
+    datasets: ["cifar10", "cifar100", "svhn", "gtsrb", "flowers102", "dtd", "ucf101", "eurosat", "oxford_pets"]
+    backbones: ["resnet18_imagenet1k", "resnet50_imagenet1k", "vit_b32_imagenet1k"]
+    methods: ["PAD", "Narrow", "Medium", "Full", "Ours"]
+    metrics: ["accuracy"]
+    aggregation: "mean_std_accuracy"
+    artifact: "results/tables/table_14.csv"
+    writer: "sample_specific_masks.artifacts:write_table_14_artifact"
+    setup: "sample_specific_masks.data:make_environment"
+    train_or_adapt: "sample_specific_masks.train:train_appendix_table_14"
+    evaluate: "sample_specific_masks.evaluate:evaluate_appendix_table_14"
+    output_mapping: "Rlm_random_label_mapping"
+    shared_route_policy:
+      same_dataset_split: true
+      same_output_mapping: true
+      same_metric_aggregation: true
+      same_artifact_writer: true
+    reference_grounding: "chunk_016_01"
+  - row_id: "smm_smoke"
+    experiment_id: "smm_smoke"
+    environment: "unit-001"
+    dataset_group: "smoke_fixture"
+    datasets: ["unit-001"]
+    backbones: ["resnet18_imagenet1k"]
+    methods: ["Ours"]
+    metrics: ["accuracy", "loss"]
+    aggregation: "mean_std_accuracy"
+    artifact: "results/smoke/metrics.json"
+    writer: "sample_specific_masks.artifacts:write_smoke_artifacts"
+    setup: "sample_specific_masks.data:make_environment"
+    train_or_adapt: "sample_specific_masks.train:train_ours"
+    evaluate: "sample_specific_masks.evaluate:evaluate_ours"
+    output_mapping: "Rlm_random_label_mapping"
+    smoke_only: true
+    reference_grounding: "chunk_009"
+  - row_id: "mask_visualization_diagnostics"
+    experiment_id: "mask_visualization_diagnostics"
+    environment: "imagenet"
+    dataset_group: "diagnostics"
+    datasets: ["flowers102", "svhn", "eurosat", "oxford_pets"]
+    backbones: ["resnet18_imagenet1k", "vit_b32_imagenet1k"]
+    methods: ["Ours", "ONLY δ", "ONLY f_mask", "SINGLE-CHANNEL f_mask^s"]
+    metrics: ["accuracy"]
+    aggregation: "diagnostic_index"
+    artifact: "results/figures/figure_13.png"
+    writer: "sample_specific_masks.artifacts:write_diagnostic_figures"
+    setup: "sample_specific_masks.data:make_environment"
+    train_or_adapt: "sample_specific_masks.train:train_ablation_variants"
+    evaluate: "sample_specific_masks.evaluate:evaluate_ablation_variants"
+    output_mapping: "Rlm_random_label_mapping"
+    reference_grounding: "chunk_016_01"
+
+table_protocol_registry:
+  - table_id: "table_1"
+    paper_visible_name: "Table 1"
+    experiment_id: "table1_resnet"
+    artifact_path: "results/tables/table_1.csv"
+    legacy_artifacts:
+      - "results/tables/table1_resnet_main.csv"
+      - "results/tables/table1_resnet_main.json"
+    row_semantics: "dataset x backbone x method"
+    column_semantics: "method comparison with PAD/Narrow/Medium/Full/Ours"
+    metric_aggregation: "mean_accuracy_percent_and_std_percent"
+    writer: "sample_specific_masks.artifacts:write_table_1_artifact"
+  - table_id: "table_2"
+    paper_visible_name: "Table 2"
+    experiment_id: "table2_vit"
+    artifact_path: "results/tables/table_2.csv"
+    legacy_artifacts:
+      - "results/tables/table2_vit_main.csv"
+      - "results/tables/table2_vit_main.json"
+    row_semantics: "dataset x method"
+    column_semantics: "ViT-B/32 comparison"
+    metric_aggregation: "mean_accuracy_percent_and_std_percent"
+    writer: "sample_specific_masks.artifacts:write_table_2_artifact"
+  - table_id: "table_3"
+    paper_visible_name: "Table 3"
+    experiment_id: "table3_ablation"
+    artifact_path: "results/tables/table_3.csv"
+    legacy_artifacts:
+      - "results/tables/table3_ablation.csv"
+      - "results/tables/table3_ablation.json"
+    row_semantics: "dataset x ablation variant"
+    column_semantics: "ONLY δ / ONLY f_mask / SINGLE-CHANNEL f_mask^s / OURS"
+    metric_aggregation: "mean_accuracy_percent_and_std_percent"
+    writer: "sample_specific_masks.artifacts:write_table_3_ablation_artifact"
+  - table_id: "table_13"
+    paper_visible_name: "Table 13"
+    experiment_id: "appendix_table13"
+    artifact_path: "results/tables/table_13.csv"
+    row_semantics: "appendix comparison matrix"
+    writer: "sample_specific_masks.artifacts:write_table_13_artifact"
+  - table_id: "table_14"
+    paper_visible_name: "Table 14"
+    experiment_id: "appendix_table14"
+    artifact_path: "results/tables/table_14.csv"
+    row_semantics: "appendix comparison matrix"
+    writer: "sample_specific_masks.artifacts:write_table_14_artifact"
+
+figure_protocol_registry:
+  - figure_id: "figure_13"
+    paper_visible_name: "Figure 13"
+    experiment_id: "appendix_table13"
+    artifact_path: "results/figures/figure_13.png"
+    writer: "sample_specific_masks.artifacts:write_figure_13_artifact"
+  - figure_id: "figure_14"
+    paper_visible_name: "Figure 14"
+    experiment_id: "appendix_table14"
+    artifact_path: "results/figures/figure_14.png"
+    writer: "sample_specific_masks.artifacts:write_figure_14_artifact"
+  - figure_id: "figure_15"
+    paper_visible_name: "Figure 15"
+    experiment_id: "mask_visualization_diagnostics"
+    artifact_path: "results/figures/figure_15.png"
+    writer: "sample_specific_masks.artifacts:write_figure_15_artifact"
+  - figure_id: "figure_16"
+    paper_visible_name: "Figure 16"
+    experiment_id: "mask_visualization_diagnostics"
+    artifact_path: "results/figures/figure_16.png"
+    writer: "sample_specific_masks.artifacts:write_figure_16_artifact"
+  - figure_id: "figure_17"
+    paper_visible_name: "Figure 17"
+    experiment_id: "mask_visualization_diagnostics"
+    artifact_path: "results/figures/figure_17.png"
+    writer: "sample_specific_masks.artifacts:write_figure_17_artifact"
+  - figure_id: "figure_18"
+    paper_visible_name: "Figure 18"
+    experiment_id: "table1_resnet"
+    artifact_path: "results/figures/figure_18.png"
+    writer: "sample_specific_masks.artifacts:write_figure_18_artifact"
+  - figure_id: "figure_19"
+    paper_visible_name: "Figure 19"
+    experiment_id: "table2_vit"
+    artifact_path: "results/figures/figure_19.png"
+    writer: "sample_specific_masks.artifacts:write_figure_19_artifact"
+  - figure_id: "figure_20"
+    paper_visible_name: "Figure 20"
+    experiment_id: "appendix_table13"
+    artifact_path: "results/figures/figure_20.png"
+    writer: "sample_specific_masks.artifacts:write_figure_20_artifact"
+  - figure_id: "figure_21"
+    paper_visible_name: "Figure 21"
+    experiment_id: "appendix_table14"
+    artifact_path: "results/figures/figure_21.png"
+    writer: "sample_specific_masks.artifacts:write_figure_21_artifact"
+  - figure_id: "figure_22"
+    paper_visible_name: "Figure 22"
+    experiment_id: "smm_smoke"
+    artifact_path: "results/figures/figure_22.png"
+    writer: "sample_specific_masks.artifacts:write_figure_22_artifact"
+  - figure_id: "figure_23"
+    paper_visible_name: "Figure 23"
+    experiment_id: "smm_smoke"
+    artifact_path: "results/figures/figure_23.png"
+    writer: "sample_specific_masks.artifacts:write_figure_23_artifact"
+
+artifact_manifest_spec:
+  manifest_path: "results/artifact_manifest.json"
+  manifest_writer: "run_smm_vrp:write_artifact_manifest"
+  includes:
+    - "Table 1"
+    - "Table 2"
+    - "Table 3"
+    - "Table 13"
+    - "Table 14"
+    - "Figure 13"
+    - "Figure 14"
+    - "Figure 15"
+    - "Figure 16"
+    - "Figure 17"
+    - "Figure 18"
+    - "Figure 19"
+    - "Figure 20"
+    - "Figure 21"
+    - "Figure 22"
+    - "Figure 23"
+    - "results/metrics.json"
+    - "results/dataset_registry.json"
+    - "results/environment_registry.json"
+    - "results/experiment_registry.json"
+    - "results/config_resolved.json"
+    - "results/dry_run_manifest.json"
+    - "readiness.json"
+    - "evaluation_result.json"
+  provenance_required: true
+  no_fabricated_scores: true
+
+write_routes:
+  write_config_resolved_artifact: "sample_specific_masks.artifacts:write_config_resolved_artifact"
+  write_dataset_registry_artifact: "sample_specific_masks.artifacts:write_dataset_registry_artifact"
+  write_environment_registry_artifact: "sample_specific_masks.artifacts:write_environment_registry_artifact"
+  write_experiment_registry_artifact: "sample_specific_masks.artifacts:write_experiment_registry_artifact"
+  write_metrics_artifact: "sample_specific_masks.artifacts:write_metrics_artifact"
+  write_dry_run_manifest_artifact: "sample_specific_masks.artifacts:write_dry_run_manifest_artifact"
+  write_readiness_artifact: "sample_specific_masks.artifacts:write_readiness_artifact"
+  write_evaluation_result_artifact: "sample_specific_masks.artifacts:write_evaluation_result_artifact"
+  write_table_1_artifact: "sample_specific_masks.artifacts:write_table_1_artifact"
+  write_table_2_artifact: "sample_specific_masks.artifacts:write_table_2_artifact"
+  write_table_3_ablation_artifact: "sample_specific_masks.artifacts:write_table_3_ablation_artifact"
+  write_table_13_artifact: "sample_specific_masks.artifacts:write_table_13_artifact"
+  write_table_14_artifact: "sample_specific_masks.artifacts:write_table_14_artifact"
+  write_diagnostic_figures: "sample_specific_masks.artifacts:write_diagnostic_figures"
+
+validation:
+  required_callable_names:
+    - "compute_accuracy"
+    - "aggregate_accuracy"
+    - "compute_f1"
+    - "aggregate_f1"
+    - "compute_loss"
+    - "aggregate_loss"
+    - "build_data"
+    - "load_data"
+    - "prepare_data"
+    - "build_reprogramming"
+    - "load_reprogramming"
+    - "run_protocolsincodeconfigrathe_experiment"
+    - "write_run_smm_vrp_artifact"
+    - "write_artifact_manifest"
+  required_selector_names:
+    - "ours"
+    - "vit"
+    - "resnet"
+    - "lora"
+    - "PAD"
+    - "Narrow"
+    - "Medium"
+    - "Full"
+    - "ONLY δ"
+    - "ONLY f_mask"
+    - "SINGLE-CHANNEL f_mask^s"
+  required_sweeps:
+    - "p"
+    - "patch_size"
+    - "alpha"
+    - "gamma"
+    - "similarity_guidance_scale"
+    - "seed"
+  required_trends:
+    - "endpoint_low"
+    - "positive_parameter_improves"
+  required_fixed_anchor:
+    - "three_seed_protocol"

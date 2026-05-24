@@ -1,0 +1,8 @@
+{
+  "computed_from_logged_api_usage": true,
+  "cost_per_1000_questions": 0.88,
+  "dataset": "truthfulqa",
+  "method": "bbox_adapter",
+  "phase": "evaluation",
+  "total_cost_usd": 0.088
+}

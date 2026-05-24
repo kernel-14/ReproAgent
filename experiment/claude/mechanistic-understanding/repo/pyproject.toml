@@ -1,0 +1,350 @@
+# pyproject.toml for the PaperBench reproduction:
+# "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity"
+# reference_grounding: paperbench_ref_001 releases/20170613-score_normalization_v1.md
+# The grounded reference motivates explicit score-normalization/protocol metadata
+# for toxicity scoring thresholds and comparable reproduction artifacts.
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dpo-toxicity-mechanistic-repro"
+version = "0.1.0"
+description = "Standalone PaperBench reproduction code for mechanistic analysis of DPO and toxicity."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "PaperBench Reproduction Agent" }
+]
+keywords = [
+  "DPO",
+  "toxicity",
+  "mechanistic-interpretability",
+  "alignment",
+  "language-models",
+  "paperbench"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+dependencies = [
+  "PyYAML>=6.0",
+  "numpy>=1.23",
+  "tqdm>=4.64",
+  "typing-extensions>=4.7"
+]
+
+[project.optional-dependencies]
+# Lightweight local smoke tests and interface validation.
+dev = [
+  "pytest>=7.4",
+  "ruff>=0.4"
+]
+
+# Data-preparation extras. These are optional so package import works in a
+# minimal code-only environment.
+data = [
+  "datasets>=2.18",
+  "pandas>=2.0",
+  "scikit-learn>=1.3"
+]
+
+# Full training/evaluation extras for real model runs. Project modules must
+# lazy-import these only inside functions that need them.
+training = [
+  "torch>=2.1",
+  "transformers>=4.39",
+  "accelerate>=0.27",
+  "peft>=0.10",
+  "trl>=0.8",
+  "sentencepiece>=0.1.99"
+]
+
+# Optional artifact plotting/reporting dependencies.
+reporting = [
+  "matplotlib>=3.8",
+  "seaborn>=0.13"
+]
+
+# Convenience extra for full reproduction environments.
+full = [
+  "dpo-toxicity-mechanistic-repro[data,training,reporting]"
+]
+
+[project.scripts]
+dpo-toxicity-repro = "scripts.run_reproduction:main"
+dpo-toxicity-main = "main:main"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["main"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dpo_toxicity*"]
+exclude = ["results*", "tests*"]
+
+[tool.setuptools.package-data]
+dpo_toxicity = ["py.typed"]
+
+[tool.paperbench_repro]
+paper_title = "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity"
+canonical_entrypoint = "scripts/run_reproduction.py"
+default_command = "python scripts/run_reproduction.py --mode runtime_smoke"
+full_command = "python scripts/run_reproduction.py --mode full"
+artifact_env_var = "PAPERBENCH_REPRO_ARTIFACT_DIR"
+default_artifact_dir = "results"
+blacklisted_repositories = ["https://github.com/ajyl/dpo_toxic"]
+reference_grounding = "paperbench_ref_001 releases/20170613-score_normalization_v1.md"
+
+[tool.paperbench_repro.execution_modes.runtime_smoke]
+description = "Bounded smoke execution over deterministic fixtures; exercises real config, data, method, evaluation, and artifact-writing routes without expensive model training."
+writes = [
+  "results/config_resolved.json",
+  "results/readiness.json",
+  "results/evaluation_result.json",
+  "results/dataset_registry.json",
+  "results/data_manifest.json",
+  "results/experiment_registry.json"
+]
+must_not_claim_full_results = true
+
+[tool.paperbench_repro.execution_modes.docker_validate]
+description = "Environment/readiness validation suitable for container checks; may create readiness artifacts but must not fabricate paper-visible metrics."
+writes = [
+  "results/config_resolved.json",
+  "results/readiness.json",
+  "results/evaluation_result.json"
+]
+must_not_claim_full_results = true
+
+[tool.paperbench_repro.execution_modes.full]
+description = "Explicit opt-in mode for full dataset/model training, intervention, un-align, and evaluation runs."
+requires_optional_extras = ["data", "training", "reporting"]
+writes = [
+  "results/config_resolved.json",
+  "results/sensitivity_report.json",
+  "results/dataset_registry.json",
+  "results/data_manifest.json",
+  "results/metrics.json",
+  "results/experiment_registry.json",
+  "results/table_1.json",
+  "results/table_1.csv",
+  "results/training_trace.json"
+]
+must_compute_paper_visible_outputs = true
+
+[tool.paperbench_repro.config_schema]
+config_file = "configs/reproduction.yaml"
+schema_file = "configs/schema.yaml"
+resolved_config_artifact = "results/config_resolved.json"
+environment_factory_config = "configs/factory.yaml"
+setup_flags_config = "configs/setup_or_flags_documented.yaml"
+pipeline_config = "configs/pipeline.yaml"
+tests_resolved_loop_config = "configs/tests_resolved_loop_writer.yaml"
+
+[tool.paperbench_repro.config_schema.required_sections]
+experiment = [
+  "mode",
+  "seed",
+  "artifact_dir",
+  "core_contribution_hypothesis",
+  "decisive_comparison",
+  "decisive_metric",
+  "stop_rule_or_pruning_rationale"
+]
+data = [
+  "toxicity_dataset",
+  "preference_dataset",
+  "jailbreak_attack_protocol",
+  "score_normalization"
+]
+probe = [
+  "binary_probe_shape",
+  "toxic_column_index",
+  "table_1_top_token_measurement"
+]
+methods = [
+  "oracle",
+  "GPT2",
+  "Llama2",
+  "GPT2_DPO",
+  "Llama2_DPO",
+  "PPLM"
+]
+dpo = [
+  "learning_rate",
+  "batch_size",
+  "optimizer",
+  "gradient_accumulation_steps",
+  "max_gradient_norm",
+  "validation_metric",
+  "validation_patience",
+  "beta"
+]
+pplm = [
+  "step_size",
+  "temperature",
+  "top_k",
+  "num_iterations",
+  "window_length",
+  "similarity_guidance_scale"
+]
+artifacts = [
+  "config_resolved",
+  "metrics",
+  "data_manifest",
+  "dataset_registry",
+  "experiment_registry",
+  "table_1",
+  "sensitivity_report"
+]
+
+[tool.paperbench_repro.paper_hyperparameters.dpo]
+learning_rate = 1e-6
+batch_size = 4
+optimizer = "RMSPROP"
+gradient_accumulation_steps = 1
+max_gradient_norm = 10
+validation_metric = "loss/valid"
+validation_patience = 10
+beta = 0.1
+
+[tool.paperbench_repro.paper_hyperparameters.pplm]
+step_size = 0.4
+temperature = 1.0
+top_k = 10
+num_iterations = 50
+window_length = "paper_table_9"
+similarity_guidance_scale_default = 9
+similarity_guidance_scale_values = [9, 1, 10]
+
+[tool.paperbench_repro.addendum_constraints]
+binary_probe_weight_shape = "[d_model, 2]"
+toxic_probe_direction = "W_toxic[:, 1]"
+non_toxic_probe_direction = "W_toxic[:, 0]"
+table_1_top_tokens_definition = "tokens with highest dot-products with the specified toxic vector"
+table_1_mlp_vector_notation = "superscript denotes layer; subscript denotes value-vector index in the parameter matrix"
+svd_toxic_vector_policy = "decompose toxic vectors as configured by the SVD/probe-vector implementation"
+
+[tool.paperbench_repro.score_normalization]
+reference_grounding = "paperbench_ref_001 releases/20170613-score_normalization_v1.md"
+description = "Toxicity scoring and threshold comparison must record whether scores are normalized; normalized score semantics are used by default for Perspective-style toxicity interfaces."
+default = "normalized"
+threshold_audit_required = true
+attributes = ["TOXICITY", "ATTACK_ON_COMMENTER", "ATTACK_ON_AUTHOR"]
+
+[tool.paperbench_repro.sweep_registry]
+registry_artifact = "results/experiment_registry.json"
+default_selector = "runtime_smoke_core"
+full_selector = "full_paper_protocol"
+bounded_sweep_policy = "Only the paper-specified decisive variants are registered; runtime_smoke executes a bounded subset and full mode is required for full training/evaluation."
+
+[[tool.paperbench_repro.sweep_registry.experiments]]
+name = "runtime_smoke_core"
+mode = "runtime_smoke"
+hypothesis = "The repository wiring exercises the paper-derived DPO-toxicity mechanism route on bounded fixtures."
+decisive_comparison = "oracle vs GPT2_DPO smoke fixture"
+decisive_metric = "toxicity_rate"
+stop_rule_or_pruning_rationale = "Run one bounded fixture pass; do not execute expensive sweeps or claim paper-scale results."
+methods = ["oracle", "GPT2_DPO"]
+similarity_guidance_scale = [9]
+jailbreak_attack_protocol = "smoke_jailbreak_prompts"
+
+[[tool.paperbench_repro.sweep_registry.experiments]]
+name = "paper_similarity_guidance_scale_sweep"
+mode = "full"
+hypothesis = "PPLM toxicity steering is sensitive to the paper-specified similarity guidance scale."
+decisive_comparison = "PPLM guidance scales 9, 1, and 10"
+decisive_metric = "toxicity_rate"
+stop_rule_or_pruning_rationale = "Restrict to paper-specified values only."
+methods = ["PPLM"]
+similarity_guidance_scale = [9, 1, 10]
+jailbreak_attack_protocol = "paper_jailbreak_attack_protocol"
+
+[[tool.paperbench_repro.sweep_registry.experiments]]
+name = "paper_method_comparison"
+mode = "full"
+hypothesis = "DPO reduces toxic generations while mechanistic toxic directions remain recoverable through probe/vector analysis."
+decisive_comparison = "oracle, GPT2, Llama2, GPT2_DPO, Llama2_DPO"
+decisive_metric = "toxicity_rate"
+secondary_metrics = ["probe_f1", "activation_shift"]
+stop_rule_or_pruning_rationale = "Use the named paper-visible baselines and DPO variants; avoid unrelated model families and exhaustive hyperparameter sweeps."
+methods = ["oracle", "GPT2", "Llama2", "GPT2_DPO", "Llama2_DPO"]
+similarity_guidance_scale = [9]
+jailbreak_attack_protocol = "paper_jailbreak_attack_protocol"
+
+[tool.paperbench_repro.method_registry]
+registry_artifact = "results/method_registry.json"
+required_methods = ["oracle", "GPT2", "Llama2", "GPT2_DPO", "Llama2_DPO", "PPLM"]
+model_factory_module = "dpo_toxicity.modeling"
+probe_module = "dpo_toxicity.probes"
+vector_module = "dpo_toxicity.vectors"
+dpo_training_module = "dpo_toxicity.dpo_training"
+intervention_module = "dpo_toxicity.interventions"
+unalign_module = "dpo_toxicity.unalign"
+
+[tool.paperbench_repro.data_pipeline]
+dataset_registry_artifact = "results/dataset_registry.json"
+data_manifest_artifact = "results/data_manifest.json"
+module = "dpo_toxicity.data"
+toxicity_probe_dataset = "jigsaw_toxicity"
+preference_dataset = "dpo_toxicity_preferences"
+jailbreak_attack_protocol = "paper_jailbreak_attack_protocol"
+smoke_fixture_policy = "Use deterministic in-repository examples for runtime_smoke; full mode obtains configured external datasets."
+validation_required = true
+
+[tool.paperbench_repro.evaluation]
+module = "dpo_toxicity.evaluation"
+metrics_artifact = "results/metrics.json"
+evaluation_result_artifact = "results/evaluation_result.json"
+required_metrics = ["toxicity_rate", "probe_f1", "activation_shift"]
+table_1_artifacts = ["results/table_1.json", "results/table_1.csv"]
+table_1_measurement = "top token dot-products with toxic MLP/probe vectors"
+
+[tool.paperbench_repro.artifact_writer]
+module = "dpo_toxicity.reporting"
+config_resolved_artifact = "results/config_resolved.json"
+sensitivity_report_artifact = "results/sensitivity_report.json"
+readiness_artifact = "results/readiness.json"
+training_trace_artifact = "results/training_trace.json"
+create_parent_dirs_in_smoke = true
+paper_visible_outputs_require_measured_code_path = true
+
+[tool.paperbench_repro.tests]
+interface_test_file = "tests/test_interfaces.py"
+smoke_command = "python scripts/run_reproduction.py --mode runtime_smoke"
+timeout_seconds = 10
+required_imports = [
+  "dpo_toxicity.config",
+  "dpo_toxicity.registry",
+  "dpo_toxicity.data",
+  "dpo_toxicity.modeling",
+  "dpo_toxicity.probes",
+  "dpo_toxicity.evaluation",
+  "dpo_toxicity.reporting"
+]
+
+[tool.pytest.ini_options]
+minversion = "7.4"
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["dpo_toxicity"]

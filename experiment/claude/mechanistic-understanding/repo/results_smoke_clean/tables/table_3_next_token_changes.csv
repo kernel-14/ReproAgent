@@ -1,0 +1,4 @@
+prompt_id,route,base_next_token,intervention_next_token,dpo_next_token,source
+bounded_prompt_0,top_k_next_token_change,target_token,neutral_token,neutral_token,bounded active route; full mode uses paper prompts
+bounded_prompt_1,top_k_next_token_change,target_token,neutral_token,neutral_token,bounded active route; full mode uses paper prompts
+bounded_prompt_2,top_k_next_token_change,target_token,neutral_token,neutral_token,bounded active route; full mode uses paper prompts

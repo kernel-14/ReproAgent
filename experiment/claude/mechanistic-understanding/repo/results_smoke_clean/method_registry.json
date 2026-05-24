@@ -1,0 +1,120 @@
+{
+  "created_at": "2026-05-21T19:35:07Z",
+  "methods": {
+    "dpo": {
+      "batch_size": 4,
+      "beta": 0.1,
+      "gradient_accumulation_steps": 1,
+      "learning_rate": 1e-06,
+      "max_gradient_norm": 10,
+      "optimizer": "RMSPROP",
+      "validation_metric": "loss/valid",
+      "validation_patience": 10
+    },
+    "pplm": {
+      "num_iterations": 50,
+      "similarity_guidance_scale": [
+        9,
+        1,
+        10
+      ],
+      "step_size": 0.4,
+      "temperature": 1.0,
+      "top_k": 10,
+      "window_length": 5
+    },
+    "toxic_probe": {
+      "addendum_binding": "cosine similarities and table-1 dot products use toxic column only",
+      "implementation": "binary matrix W_toxic with toxic direction W_toxic[:, 1]"
+    },
+    "unalign": {
+      "default_execution": "registered; full runs must opt in to expensive model updates",
+      "purpose": "paper comparison checking whether capabilities remain recoverable after alignment"
+    }
+  },
+  "model_registry": {
+    "attribute_classifier": {
+      "aliases": [
+        "linear attribute classification layer p(a | w)",
+        "toxicity probe classifier"
+      ],
+      "factory": "dpo_toxicity.probes:load_or_train_attribute_classifier",
+      "id": "toxicity_attribute_classifier",
+      "lazy_optional_dependencies": [
+        "torch",
+        "transformers",
+        "scikit-learn"
+      ],
+      "path": "${paths.models}/toxicity_attribute_classifier.json"
+    },
+    "base": {
+      "family": "decoder_lm",
+      "loader": "dpo_toxicity.modeling.load_language_model",
+      "smoke_backend": "lexical_fixture"
+    },
+    "default_base_model": "gpt2",
+    "dpo": {
+      "family": "decoder_lm_dpo",
+      "loader": "dpo_toxicity.dpo_training.train_dpo",
+      "smoke_backend": "preference_update_fixture"
+    },
+    "probe": {
+      "addendum_clarification": "W_toxic is a matrix with non-toxic and toxic columns; cosine similarity uses W_toxic[:, 1].",
+      "family": "binary_linear_probe",
+      "shape": "[d_model, 2]",
+      "toxic_column": 1
+    },
+    "registry": [
+      {
+        "aliases": [
+          "GPT2",
+          "GPT-2"
+        ],
+        "enabled_in_smoke": true,
+        "factory": "dpo_toxicity.modeling:load_policy_model",
+        "id": "gpt2",
+        "kind": "causal_lm",
+        "model_name_or_path": "gpt2"
+      },
+      {
+        "aliases": [
+          "GPT2_DPO",
+          "GPT-2-DPO"
+        ],
+        "enabled_in_smoke": true,
+        "factory": "dpo_toxicity.modeling:load_policy_model",
+        "id": "gpt2_dpo",
+        "kind": "causal_lm_dpo_aligned",
+        "model_name_or_path": "${paths.models}/gpt2_dpo",
+        "reference_model": "gpt2"
+      },
+      {
+        "aliases": [
+          "Llama2",
+          "Llama-2"
+        ],
+        "enabled_in_smoke": false,
+        "factory": "dpo_toxicity.modeling:load_policy_model",
+        "id": "llama2",
+        "kind": "causal_lm",
+        "model_name_or_path": "meta-llama/Llama-2-7b-hf",
+        "requires_external_permission": true,
+        "scope_status": "registry_only_by_default"
+      },
+      {
+        "aliases": [
+          "Llama2_DPO",
+          "Llama-2-DPO"
+        ],
+        "enabled_in_smoke": false,
+        "factory": "dpo_toxicity.modeling:load_policy_model",
+        "id": "llama2_dpo",
+        "kind": "causal_lm_dpo_aligned",
+        "model_name_or_path": "${paths.models}/llama2_dpo",
+        "reference_model": "llama2",
+        "requires_external_permission": true,
+        "scope_status": "registry_only_by_default"
+      }
+    ]
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "schema": "paperbench_repro.run_config.v1",
+  "paper_title": "All-in-one simulation-based inference",
+  "entrypoint": "run_experiments.py",
+  "callable": "run_experiments:run_experiment",
+  "mode": "runtime_smoke",
+  "method": "simformer",
+  "task": "two_moons",
+  "experiment": "benchmark_4_1",
+  "results_dir": "results",
+  "smoke_size": 16,
+  "num_samples": 16,
+  "max_steps": 2,
+  "simulation_budget": 16,
+  "sampler": "sde",
+  "mask_variant": "directed_graph",
+  "similarity_guidance_scale": 1.0,
+  "seed": 17,
+  "paper_scale_claim": false,
+  "blacklisted_repository_used": false,
+  "open_source_export": {
+    "safe_default_command": "python run_experiments.py --mode runtime_smoke --results-dir results",
+    "bounded_route_only": true,
+    "declared_outputs": [
+      "results/metrics.json",
+      "results/samples.npz",
+      "results/run_summary.json",
+      "results/experiment_registry.json",
+      "results/evidence_contract_matrix.json",
+      "results/artifact_manifest.json",
+      "results/readiness.json",
+      "results/evaluation_result.json"
+    ]
+  },
+  "core_semantics": {
+    "vesde": {
+      "sigma_min": 0.0001,
+      "sigma_max": 15.0,
+      "time_interval": [
+        0.00001,
+        1.0
+      ],
+      "drift": "f(x,t)=0",
+      "diffusion": "sigma(t)*sqrt(2*(log(sigma_max)-log(sigma_min)))",
+      "perturbation_kernel": "x_t=x_0+sigma(t)*epsilon",
+      "score_target": "-epsilon/sigma(t)"
+    },
+    "tokenizer": {
+      "joint_order": "theta variables followed by x variables",
+      "token_embedding_order": [
+        "identifier",
+        "value",
+        "metadata",
+        "condition_state"
+      ],
+      "shared_identifier_ids": true,
+      "repeated_scalar_value_embedding": true,
+      "metadata_fourier_features": true,
+      "diffusion_time_fourier_features": true
+    },
+    "condition_masks": {
+      "sampled_uniformly_from_families": [
+        "joint_all_false",
+        "posterior_theta_given_x",
+        "likelihood_x_given_theta",
+        "mask_probability_0.3",
+        "mask_probability_0.7"
+      ],
+      "default_bernoulli_probability": 0.7
+    },
+    "conditioning_graph": {
+      "base_mask": "directed M_E simulator dependency mask",
+      "dynamic_update": "Webb-style graph inversion derives condition-specific M_E from M_C",
+      "model_route": "SimformerScoreModel.forward uses the M_C-conditioned graph when attention_mask is omitted"
+    },
+    "simformer_defaults": {
+      "token_dim": 50,
+      "qkv_dim": 10,
+      "feedforward_hidden_dim": 150,
+      "num_heads": 4,
+      "batch_size": 1000,
+      "optimizer": "Adam"
+    }
+  }
+}

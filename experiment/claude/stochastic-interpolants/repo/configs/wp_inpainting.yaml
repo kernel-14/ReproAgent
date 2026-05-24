@@ -1,0 +1,748 @@
+schema_version: "1.0"
+config_id: "wp_inpainting"
+task_id: "task_023"
+work_package_id: "wp_inpainting"
+paper: "Stochastic Interpolants with Data-Dependent Couplings"
+
+reference_grounding:
+  - "paperbench_ref_004 configs/image_caption/scdnet/stage2/diffusion.yaml"
+  - "paperbench_ref_004 configs/image_caption/scdnet/stage2/3_rl_inf_train.sh"
+  - "paperbench_ref_004 xmodaler/datasets/README.md"
+  - "paperbench_ref_004 xmodaler/engine/defaults.py"
+
+hypothesis: "For ImageNet in-painting, conditioning the stochastic-interpolant base distribution rho_0(x_0 | x_1, xi, y) on the observed masked image, pre-specified binary mask xi, and optional class label y reduces transport cost and improves FID relative to an independent Gaussian coupling under the same Algorithm-1 training objective, ODE/SDE sampler, and Table 2 evaluation protocol."
+decision_value: "The decisive comparison is ours:data_dependent_inpainting_coupling versus independent_gaussian coupling on the same ImageNet-256x256 and ImageNet-512x512 in-painting task factories, mask generator, optional class-label adapter, gamma={0,1}, FID evaluator, Table 2 writer, and Figure 3 grid writer."
+stop_rule_or_pruning_rationale: "Run the paper-specified in-painting protocol with bounded defaults and the required gamma={0,1} comparison. Do not execute unbounded ImageNet-scale training, exhaustive mask sweeps, or unrelated ablations unless mode=full is explicitly selected."
+
+canonical_route:
+  entry_surface: "scripts/run_coupled_si.py"
+  example_invocation: "python scripts/run_coupled_si.py --config configs/wp_inpainting.yaml"
+  smoke_invocation: "python scripts/run_coupled_si.py --mode runtime_smoke --config configs/wp_inpainting.yaml"
+  full_invocation: "python scripts/run_coupled_si.py --mode full --config configs/wp_inpainting.yaml"
+  stage_sequence:
+    - setup_or_config
+    - inpainting_task_factory
+    - dataset_load_prepare_validate
+    - mask_generation
+    - conditional_model_input_adapter
+    - method_selection
+    - stochastic_interpolant_training
+    - ode_or_sde_sampling
+    - fid_evaluation
+    - table_2_writer
+    - figure_3_grid_writer
+    - registry_artifact_writing
+  calls_symbols:
+    - run_experiment
+    - load_dataset
+    - select_method
+    - compute_metrics
+    - run_training_loop
+    - compute_training_objective
+    - run_evaluation
+    - aggregate_metrics
+    - write_named_result_artifacts
+    - write_dataset_registry_artifact
+    - write_data_manifest_artifact
+    - write_environment_registry_artifact
+
+execution_policy:
+  default_mode: "runtime_smoke"
+  safe_default: true
+  full_mode_requires_explicit_flag: true
+  artifact_root_env: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  artifact_root_default: "results"
+  random_seed: 7
+  deterministic_mask_seed: 1701
+  smoke_limits:
+    max_train_batches: 2
+    max_eval_batches: 2
+    max_samples_per_resolution: 4
+    max_grid_rows_per_resolution: 2
+  full_limits:
+    max_train_batches: null
+    max_eval_batches: null
+    max_samples_per_resolution: null
+    max_grid_rows_per_resolution: 8
+  required_auxiliary_smoke_artifacts:
+    - "readiness.json"
+    - "evaluation_result.json"
+  paper_visible_artifacts_require_measured_route: true
+
+anchors:
+  batch_size_32: 32
+  mask_tiles_64: 64
+  mask_probability_0.3: 0.3
+  gamma_values:
+    - 0
+    - 1
+
+data_pipeline:
+  reference_grounding: "paperbench_ref_004 xmodaler/datasets/README.md"
+  loader_function: "load_dataset"
+  manifest_writer: "write_data_manifest_artifact"
+  registry_writer: "write_dataset_registry_artifact"
+  datasets:
+    imagenet:
+      dataset_id: "imagenet"
+      aliases:
+        - "ImageNet"
+        - "imagenet_1k"
+        - "imagenet-1k"
+      task_family: "conditional_image_generation"
+      source: "local_or_huggingface"
+      hf_name: "imagenet-1k"
+      trust_remote_code: true
+      splits:
+        train: "train"
+        validation: "validation"
+      image_key: "image"
+      label_key: "label"
+      class_labels_available: true
+      validation_checks:
+        - "image_tensor_rank_is_3"
+        - "image_shape_matches_resolution"
+        - "pixel_range_is_normalized_or_uint8"
+        - "label_is_optional_integer_class"
+      setup_metadata:
+        license_note: "ImageNet data must be obtained by the user according to ImageNet terms."
+        local_root_env: "IMAGENET_ROOT"
+        train_subdir: "train"
+        validation_subdir: "val"
+    imagenet_c:
+      dataset_id: "imagenet_c"
+      aliases:
+        - "ImageNet-C"
+        - "imagenet-c"
+      task_family: "robustness_reference_only"
+      source: "local_optional"
+      local_root_env: "IMAGENET_C_ROOT"
+      image_key: "image"
+      label_key: "label"
+      class_labels_available: true
+      validation_checks:
+        - "image_tensor_rank_is_3"
+        - "corruption_metadata_if_available"
+      setup_metadata:
+        usage: "Registered as a benchmark loader because the paper-derived environment inventory names imagenet_c; the in-painting Table 2 route uses ImageNet validation images unless this dataset is explicitly selected."
+  preprocessing:
+    normalize_range: [-1.0, 1.0]
+    channels: 3
+    resize_interpolation: "bicubic"
+    center_crop: true
+    preserve_original_for_fid: true
+  dataloader:
+    train_batch_size: 32
+    eval_batch_size: 32
+    num_workers: 4
+    pin_memory: true
+    drop_last_train: true
+    shuffle_train: true
+
+environments:
+  registry_writer: "write_environment_registry_artifact"
+  entries:
+    - environment_id: "conditional_image_generation"
+      aliases:
+        - "perform various downstream"
+        - "is determined"
+      availability_check: "dataset_and_task_config_resolve"
+      factory_hook: "inpainting_task_factory"
+      setup_metadata:
+        condition_channels_are_task_supplied: true
+    - environment_id: "inpainting_task"
+      aliases:
+        - "in-painting task"
+        - "ImageNet inpainting"
+      availability_check: "imagenet_loader_and_mask_generator_resolve"
+      factory_hook: "inpainting_task_factory"
+      setup_metadata:
+        requires_mask_condition: true
+        supports_class_labels: true
+    - environment_id: "image_super_resolution"
+      aliases:
+        - "low-resolution image"
+        - "low-resolution"
+        - "super-resolution on ImageNet"
+      availability_check: "super_resolution_config_resolve"
+      factory_hook: "super_resolution_task_factory"
+      setup_metadata:
+        registered_for_protocol_linkage: true
+        primary_config: "configs/setup_or.yaml"
+    - environment_id: "imagenet_256x256"
+      aliases:
+        - "ImageNet-256x256"
+        - "imagenet-256"
+      availability_check: "imagenet_loader_resizes_to_256"
+      factory_hook: "inpainting_imagenet_256"
+      setup_metadata:
+        resolution: 256
+        image_shape: [3, 256, 256]
+    - environment_id: "imagenet_512x512"
+      aliases:
+        - "ImageNet-512x512"
+        - "imagenet-512"
+      availability_check: "imagenet_loader_resizes_to_512"
+      factory_hook: "inpainting_imagenet_512"
+      setup_metadata:
+        resolution: 512
+        image_shape: [3, 512, 512]
+
+inpainting_task_registry:
+  factory_function: "run_experiment"
+  task_factory_symbol: "inpainting_task_factory"
+  tasks:
+    imagenet_inpainting_256:
+      task_id: "imagenet_inpainting_256"
+      section: "4.1 In-painting"
+      dataset_id: "imagenet"
+      environment_id: "imagenet_256x256"
+      aliases:
+        - "ImageNet-256x256 in-painting"
+        - "Figure 3 ImageNet-256x256"
+      image_shape: [3, 256, 256]
+      input_space: "x_1 in R^{C x W x H}"
+      condition_schema:
+        masked_image: "x_observed = xi * x_1"
+        mask: "xi in {0,1}^{C x W x H}"
+        class_label: "optional y"
+      model_receives:
+        - "I_t"
+        - "t"
+        - "x_observed"
+        - "xi"
+        - "class_label_when_available"
+      mask_generator_id: "random_tile_mask_64_probability_0.3"
+      enabled_in_default_protocol: true
+    imagenet_inpainting_512:
+      task_id: "imagenet_inpainting_512"
+      section: "4.1 In-painting"
+      dataset_id: "imagenet"
+      environment_id: "imagenet_512x512"
+      aliases:
+        - "ImageNet-512x512 in-painting"
+        - "Figure 3 ImageNet-512x512"
+      image_shape: [3, 512, 512]
+      input_space: "x_1 in R^{C x W x H}"
+      condition_schema:
+        masked_image: "x_observed = xi * x_1"
+        mask: "xi in {0,1}^{C x W x H}"
+        class_label: "optional y"
+      model_receives:
+        - "I_t"
+        - "t"
+        - "x_observed"
+        - "xi"
+        - "class_label_when_available"
+      mask_generator_id: "random_tile_mask_64_probability_0.3"
+      enabled_in_default_protocol: true
+
+mask_generators:
+  random_tile_mask_64_probability_0.3:
+    generator_function: "make_inpainting_mask"
+    reference_anchor: "mask_tiles_64 and mask_probability_0.3"
+    type: "bernoulli_tile_mask"
+    mask_tiles: 64
+    mask_probability: 0.3
+    broadcast_across_channels: true
+    output_values: [0, 1]
+    observed_value: 1
+    missing_value: 0
+    deterministic_seed_from:
+      - "execution_policy.deterministic_mask_seed"
+      - "sample_index"
+      - "resolution"
+    condition_application:
+      masked_image_formula: "x_observed = xi * x_1"
+      missing_region_formula: "(1 - xi) * x_1"
+      model_condition_formula: "condition = concat(x_observed, xi, class_embedding_optional)"
+  center_block_reference_mask:
+    generator_function: "make_inpainting_mask"
+    type: "center_block_mask"
+    enabled_for_full_mode: true
+    block_fraction: 0.5
+    broadcast_across_channels: true
+    output_values: [0, 1]
+
+conditional_model_input_adapter:
+  adapter_function: "build_conditioned_model_input"
+  class_labels:
+    enabled: true
+    optional: true
+    num_classes: 1000
+    embedding_strategy: "learned_or_one_hot_adapter"
+    missing_label_policy: "zero_condition_vector"
+  tensor_bindings:
+    interpolant_state: "I_t"
+    time: "t"
+    observed_image: "x_observed"
+    binary_mask: "xi"
+    target_image: "x_1"
+    noise_or_base_sample: "x_0"
+    class_label: "y"
+  concatenation_order:
+    - "I_t"
+    - "x_observed"
+    - "xi"
+  conditioning_is_used_by:
+    - "rho_0(x_0 | x_1, xi, y)"
+    - "velocity_or_score_model"
+    - "ode_sampler"
+    - "sde_sampler"
+
+stochastic_interpolant:
+  core_symbols:
+    coupling_api: "rho(x_0,x_1)"
+    source_distribution: "rho_0"
+    target_distribution: "rho_1"
+    interpolant: "I_t = alpha_t * x_0 + beta_t * x_1 + gamma * sqrt(t * (1 - t)) * z"
+    alpha_t: "1 - t"
+    beta_t: "t"
+    z_distribution: "z_i ~ N(0, I_d)"
+    time_distribution: "t_i ~ U([0,1])"
+  gamma_sweep:
+    values: [0, 1]
+    default: 1
+  samplers:
+    ode:
+      sampler_function: "ode_sampler"
+      named_route: "ODE sampler"
+      steps_default: 20
+      full_steps: 100
+    sde:
+      sampler_function: "sde_sampler"
+      named_route: "SDE sampler"
+      steps_default: 20
+      full_steps: 100
+      noise_schedule: "paper_interpolant_gamma"
+  training_objective:
+    objective_function: "compute_training_objective"
+    algorithm: "Algorithm 1 Training"
+    empirical_loss: "hat L_b"
+    minibatch_symbol: "n_b"
+    minibatch_size: 32
+    sampled_variables:
+      - "x_1 from ImageNet batch"
+      - "xi from pre-specified in-painting mask generator"
+      - "class label y when available"
+      - "x_0 from selected coupling rho_0"
+      - "zeta_i ~ N(0,I_d)"
+      - "t_i ~ U([0,1])"
+    diagnostics:
+      - "transport_cost_mean"
+      - "transport_cost_per_resolution"
+      - "training_objective_mean"
+      - "mask_observed_fraction"
+
+method_registry:
+  selector_function: "select_method"
+  required_selectors:
+    - "ours"
+    - "resnet"
+    - "ddpm"
+    - "diffusion_model"
+  methods:
+    ours:
+      method_id: "ours"
+      display_name: "data-dependent coupling for in-painting"
+      coupling_id: "data_dependent_inpainting"
+      model_adapter: "conditional_unet_or_resnet_backbone"
+      training_loop: "run_training_loop"
+      objective_function: "compute_training_objective"
+      sampler_choices: ["ode", "sde"]
+      table_2_coupling_label: "data-dependent"
+      conditions:
+        uses_mask: true
+        uses_masked_image: true
+        allows_class_labels: true
+      rho_0:
+        formula: "rho_0(x_0 | x_1, xi, y)"
+        sampler_function: "sample_data_dependent_inpainting_base"
+        construction: "known pixels constrained by xi*x_1; missing pixels sampled from conditional Gaussian/residual base conditioned on masked image and optional class label"
+    resnet:
+      method_id: "resnet"
+      display_name: "ResNet conditional baseline"
+      coupling_id: "independent_gaussian"
+      model_adapter: "resnet_conditional_adapter"
+      training_loop: "run_training_loop"
+      objective_function: "compute_training_objective"
+      sampler_choices: ["ode"]
+      table_2_coupling_label: "independent Gaussian"
+      conditions:
+        uses_mask: true
+        uses_masked_image: true
+        allows_class_labels: true
+      rho_0:
+        formula: "rho_0 is Gaussian with independent coupling to rho_1"
+        sampler_function: "sample_independent_gaussian_base"
+    ddpm:
+      method_id: "ddpm"
+      display_name: "DDPM in-painting baseline"
+      coupling_id: "independent_gaussian"
+      model_adapter: "ddpm_conditioned_adapter"
+      training_loop: "run_training_loop"
+      objective_function: "compute_training_objective"
+      sampler_choices: ["sde"]
+      table_2_coupling_label: "independent Gaussian"
+      conditions:
+        uses_mask: true
+        uses_masked_image: true
+        allows_class_labels: true
+      rho_0:
+        formula: "rho_0 is Gaussian with independent coupling to rho_1"
+        sampler_function: "sample_independent_gaussian_base"
+    diffusion_model:
+      method_id: "diffusion_model"
+      display_name: "Diffusion model baseline"
+      coupling_id: "independent_gaussian"
+      model_adapter: "diffusion_model_conditioned_adapter"
+      training_loop: "run_training_loop"
+      objective_function: "compute_training_objective"
+      sampler_choices: ["sde"]
+      table_2_coupling_label: "independent Gaussian"
+      conditions:
+        uses_mask: true
+        uses_masked_image: true
+        allows_class_labels: true
+      rho_0:
+        formula: "rho_0 is Gaussian with independent coupling to rho_1"
+        sampler_function: "sample_independent_gaussian_base"
+  coupling_selectors:
+    data_dependent_inpainting:
+      coupling_id: "data_dependent_inpainting"
+      aliases:
+        - "data-dependent couplings"
+        - "data-dependent coupling for in-painting"
+        - "ours"
+      sampler_function: "sample_data_dependent_inpainting_base"
+      transport_cost_function: "compute_transport_cost"
+      constraint: "observed pixels in x_0 are coupled to x_1 through xi and masked image condition"
+    independent_gaussian:
+      coupling_id: "independent_gaussian"
+      aliases:
+        - "rho_0 is a Gaussian with independent coupling to rho_1"
+        - "independent Gaussian coupling baseline"
+      sampler_function: "sample_independent_gaussian_base"
+      transport_cost_function: "compute_transport_cost"
+      constraint: "x_0 independent of x_1 except task condition supplied to model"
+
+training:
+  loop_function: "run_training_loop"
+  batch_size: 32
+  optimizer:
+    name: "adamw"
+    learning_rate: 0.0001
+    weight_decay: 0.0
+  eval_period: 1
+  checkpoint_period: 1
+  ema:
+    enabled: true
+    decay: 0.9999
+    reference_grounding: "paperbench_ref_004 xmodaler/engine/defaults.py"
+  bounded_default:
+    epochs: 1
+    max_batches: 2
+  full:
+    epochs: 100
+    max_batches: null
+  records:
+    - "training_objective"
+    - "transport_cost"
+    - "gamma"
+    - "coupling_id"
+    - "task_id"
+    - "resolution"
+
+evaluation:
+  evaluator_function: "run_evaluation"
+  metric_function: "compute_metrics"
+  aggregator_function: "aggregate_metrics"
+  fid:
+    evaluator_id: "fid_inpainting"
+    evaluator_function: "compute_fid"
+    feature_backend_priority:
+      - "torchvision_inception_v3"
+      - "clean_fid"
+      - "numpy_moments_fallback"
+    formula: "FID = ||mu_real - mu_fake||_2^2 + Tr(Sigma_real + Sigma_fake - 2*(Sigma_real*Sigma_fake)^{1/2})"
+    real_images: "x_1"
+    generated_images: "sampled_inpainted_image"
+    generated_image_composition: "xi * x_1 + (1 - xi) * model_sample"
+    group_by:
+      - "task_id"
+      - "resolution"
+      - "method_id"
+      - "coupling_id"
+      - "gamma"
+      - "sampler"
+    table_2_fields:
+      - "table_name"
+      - "task_name"
+      - "resolution"
+      - "method"
+      - "coupling"
+      - "gamma"
+      - "sampler"
+      - "fid"
+      - "num_eval_samples"
+      - "mask_probability"
+      - "mask_tiles"
+      - "class_labels_used"
+  additional_metrics:
+    - metric_id: "transport_cost"
+      metric_function: "compute_transport_cost"
+      aggregation: "mean"
+    - metric_id: "mask_observed_fraction"
+      metric_function: "compute_mask_observed_fraction"
+      aggregation: "mean"
+    - metric_id: "conditional_mse_missing_region"
+      metric_function: "compute_masked_region_mse"
+      aggregation: "mean"
+
+artifact_writers:
+  named_result_writer: "write_named_result_artifacts"
+  dataset_registry_writer: "write_dataset_registry_artifact"
+  data_manifest_writer: "write_data_manifest_artifact"
+  environment_registry_writer: "write_environment_registry_artifact"
+  table_2:
+    writer_function: "write_table_2_inpainting_fid"
+    table_name: "Table 2: FID for Inpainting Task"
+    output_csv: "results/table_2_inpainting_fid.csv"
+    output_json: "results/table_2_inpainting_fid.json"
+    required_fields:
+      - "table_name"
+      - "task_name"
+      - "resolution"
+      - "method"
+      - "coupling"
+      - "gamma"
+      - "sampler"
+      - "fid"
+      - "num_eval_samples"
+      - "mask_probability"
+      - "mask_tiles"
+      - "class_labels_used"
+  figure_3:
+    writer_function: "write_figure_3_inpainting_grid"
+    figure_name: "Figure 3: Image inpainting: ImageNet-256x256 and ImageNet-512x512"
+    output_dir: "results/examples"
+    output_files:
+      imagenet_inpainting_256: "results/examples/figure_3_imagenet_256_inpainting_grid.png"
+      imagenet_inpainting_512: "results/examples/figure_3_imagenet_512_inpainting_grid.png"
+    columns:
+      - "masked image"
+      - "in-filled model sample"
+      - "original image"
+    row_grouping:
+      - "resolution"
+      - "sample_index"
+    required_metadata:
+      - "task_id"
+      - "resolution"
+      - "method_id"
+      - "coupling_id"
+      - "mask_probability"
+      - "mask_tiles"
+      - "class_label"
+  registries:
+    dataset_registry: "results/dataset_registry.json"
+    data_manifest: "results/data_manifest.json"
+    environment_registry: "results/environment_registry.json"
+    scope_report: "results/scope_report.json"
+    experiment_registry: "results/experiment_registry.json"
+    artifact_manifest: "results/artifact_manifest.json"
+    method_registry: "results/method_registry.json"
+    ablation_registry: "results/ablation_registry.json"
+    config_resolved: "results/config_resolved.json"
+    metrics: "results/metrics.json"
+
+protocol_matrix:
+  reference_grounding: "paperbench_ref_004 configs/image_caption/scdnet/stage2/3_rl_inf_train.sh"
+  experiments:
+    - experiment_id: "section_4_1_inpainting_imagenet_256_ours"
+      name: "4.1 In-painting"
+      task_id: "imagenet_inpainting_256"
+      dataset_id: "imagenet"
+      environment_id: "imagenet_256x256"
+      method_selector: "ours"
+      coupling_id: "data_dependent_inpainting"
+      gamma_values: [0, 1]
+      samplers: ["ode", "sde"]
+      metric_functions: ["compute_fid", "compute_transport_cost", "compute_masked_region_mse"]
+      artifact_writer_functions:
+        - "write_table_2_inpainting_fid"
+        - "write_figure_3_inpainting_grid"
+        - "write_named_result_artifacts"
+    - experiment_id: "section_4_1_inpainting_imagenet_512_ours"
+      name: "4.1 In-painting"
+      task_id: "imagenet_inpainting_512"
+      dataset_id: "imagenet"
+      environment_id: "imagenet_512x512"
+      method_selector: "ours"
+      coupling_id: "data_dependent_inpainting"
+      gamma_values: [0, 1]
+      samplers: ["ode", "sde"]
+      metric_functions: ["compute_fid", "compute_transport_cost", "compute_masked_region_mse"]
+      artifact_writer_functions:
+        - "write_table_2_inpainting_fid"
+        - "write_figure_3_inpainting_grid"
+        - "write_named_result_artifacts"
+    - experiment_id: "table_2_independent_gaussian_baselines"
+      name: "Table 2: FID for Inpainting Task"
+      task_ids:
+        - "imagenet_inpainting_256"
+        - "imagenet_inpainting_512"
+      dataset_id: "imagenet"
+      method_selectors:
+        - "resnet"
+        - "ddpm"
+        - "diffusion_model"
+      coupling_id: "independent_gaussian"
+      gamma_values: [0, 1]
+      samplers: ["ode", "sde"]
+      metric_functions: ["compute_fid", "compute_transport_cost"]
+      artifact_writer_functions:
+        - "write_table_2_inpainting_fid"
+        - "write_named_result_artifacts"
+    - experiment_id: "figure_3_visualization_protocol"
+      name: "Figure 3: Image inpainting: ImageNet-256x256 and ImageNet-512x512"
+      task_ids:
+        - "imagenet_inpainting_256"
+        - "imagenet_inpainting_512"
+      dataset_id: "imagenet"
+      method_selector: "ours"
+      coupling_id: "data_dependent_inpainting"
+      gamma_values: [1]
+      samplers: ["ode"]
+      metric_functions:
+        - "compute_mask_observed_fraction"
+      artifact_writer_functions:
+        - "write_figure_3_inpainting_grid"
+    - experiment_id: "section_4_2_super_resolution_protocol_link"
+      name: "4.2 Super-resolution on Imagenet"
+      task_id: "imagenet_super_resolution"
+      dataset_id: "imagenet"
+      environment_id: "image_super_resolution"
+      config: "configs/setup_or.yaml"
+      method_selectors:
+        - "ours"
+        - "diffusion_model"
+      coupling_ids:
+        - "data_dependent_super_resolution"
+        - "independent_gaussian"
+      gamma_values: [0, 1]
+      metric_functions: ["compute_fid", "compute_transport_cost"]
+      artifact_writer_functions:
+        - "write_named_result_artifacts"
+    - experiment_id: "core_stochastic_interpolants_dry_run"
+      name: "core stochastic interpolants dry-run"
+      task_id: "core_coupling_check"
+      dataset_id: "imagenet"
+      method_selector: "ours"
+      coupling_id: "data_dependent_inpainting"
+      gamma_values: [0, 1]
+      samplers: ["ode", "sde"]
+      metric_functions: ["compute_training_objective", "compute_transport_cost"]
+      artifact_writer_functions:
+        - "write_named_result_artifacts"
+    - experiment_id: "inpainting_runtime_smoke"
+      name: "4.1 In-painting dry-run"
+      task_ids:
+        - "imagenet_inpainting_256"
+        - "imagenet_inpainting_512"
+      dataset_id: "imagenet"
+      method_selectors:
+        - "ours"
+        - "resnet"
+        - "ddpm"
+        - "diffusion_model"
+      coupling_ids:
+        - "data_dependent_inpainting"
+        - "independent_gaussian"
+      gamma_values: [0, 1]
+      samplers: ["ode", "sde"]
+      metric_functions: ["compute_fid", "compute_transport_cost", "compute_mask_observed_fraction"]
+      artifact_writer_functions:
+        - "write_named_result_artifacts"
+        - "write_dataset_registry_artifact"
+        - "write_data_manifest_artifact"
+        - "write_environment_registry_artifact"
+    - experiment_id: "table_2_fid_reporting_protocol"
+      name: "Table 2 FID reporting protocol"
+      task_ids:
+        - "imagenet_inpainting_256"
+        - "imagenet_inpainting_512"
+      method_selectors:
+        - "ours"
+        - "resnet"
+        - "ddpm"
+        - "diffusion_model"
+      coupling_ids:
+        - "data_dependent_inpainting"
+        - "independent_gaussian"
+      gamma_values: [0, 1]
+      metric_functions: ["compute_fid"]
+      artifact_writer_functions:
+        - "write_table_2_inpainting_fid"
+    - experiment_id: "super_resolution_runtime_smoke"
+      name: "4.2 Super-resolution on Imagenet dry-run"
+      config: "configs/setup_or.yaml"
+      task_id: "imagenet_super_resolution"
+      dataset_id: "imagenet"
+      method_selectors:
+        - "ours"
+        - "diffusion_model"
+      coupling_ids:
+        - "data_dependent_super_resolution"
+        - "independent_gaussian"
+      gamma_values: [0, 1]
+      metric_functions: ["compute_fid", "compute_transport_cost"]
+      artifact_writer_functions:
+        - "write_named_result_artifacts"
+
+ablation_registry:
+  bounded_parameter_sweeps:
+    gamma:
+      values: [0, 1]
+      rationale: "Paper evidence contract priority sweep; gamma=0 gives deterministic linear interpolant and gamma=1 enables stochastic interpolant noise."
+  fixed_hyperparameters:
+    batch_size_32: 32
+    mask_tiles_64: 64
+    mask_probability_0.3: 0.3
+  omitted_unbounded_sweeps:
+    - sweep: "mask_probability_grid_beyond_0.3"
+      rationale: "Not required for the decisive Table 2/Figure 3 protocol."
+    - sweep: "large_scale_architecture_search"
+      rationale: "Not part of the paper-specified in-painting comparison route."
+    - sweep: "all_sampler_step_counts"
+      rationale: "Use bounded default and full explicit step settings only."
+
+outputs:
+  expected_outputs:
+    - "results/dataset_registry.json"
+    - "results/metrics.json"
+    - "results/data_manifest.json"
+    - "results/method_registry.json"
+    - "results/ablation_registry.json"
+    - "results/config_resolved.json"
+    - "results/environment_registry.json"
+    - "results/experiment_registry.json"
+    - "results/artifact_manifest.json"
+  paper_visible_outputs:
+    - "results/table_2_inpainting_fid.csv"
+    - "results/table_2_inpainting_fid.json"
+    - "results/examples/figure_3_imagenet_256_inpainting_grid.png"
+    - "results/examples/figure_3_imagenet_512_inpainting_grid.png"
+  auxiliary_outputs:
+    - "results/readiness.json"
+    - "results/evaluation_result.json"
+
+implementation_surfaces:
+  in_painting_task_registry: "inpainting_task_registry"
+  fid_evaluator: "evaluation.fid"
+  data_pipeline: "data_pipeline"
+  config: "configs/wp_inpainting.yaml"
+  mask_generator: "mask_generators.random_tile_mask_64_probability_0.3"
+  conditional_model_input_adapter: "conditional_model_input_adapter"
+  table_2_writer: "artifact_writers.table_2"
+  figure_3_image_grid_writer: "artifact_writers.figure_3"

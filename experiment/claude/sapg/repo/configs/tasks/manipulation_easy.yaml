@@ -1,0 +1,358 @@
+# configs/tasks/manipulation_easy.yaml
+# Easy Manipulation Tasks Configuration for SAPG Reproduction
+# reference_grounding: wp_018 configs/tasks/manipulation_easy.yaml
+#
+# Paper evidence contract: Complete method/baseline selector set includes
+# ours, sapg, ppo, pbt, pql, ddpg
+#
+# This configuration defines easy difficulty manipulation tasks from the paper:
+# - Shadow Hand Reorientation (easier variant)
+# - Allegro Hand Reorientation (easier variant)
+# - Simplified manipulation tasks for initial training and ablation studies
+#
+# Binding addendum clarification: For figure 8, the neural network was a two layer
+# of the same size (the size is shown in the x-axis of the plot). The activation
+# function used was ReLU, trained with Adam optimizer using default hyperparameters
+# from pytorch.
+
+# Task registry - paper-derived environment/task entries (easy difficulty)
+task_registry:
+  # Shadow Hand manipulation tasks (easy difficulty)
+  ShadowHandReOrientation:
+    task_id: ShadowHandReOrientation
+    aliases: ["Shadow Hand", "ShadowHand", "Reorientation", "HandReorient"]
+    difficulty: easy
+    environment_type: isaacgym
+    max_episode_length: 800
+    num_envs: 24576
+    observation_dim: 211
+    action_dim: 24
+    success_threshold: 0.6
+    metric_type: success_rate
+    description: "Shadow Hand object reorientation - easier variant with relaxed constraints"
+    
+  # Allegro Hand manipulation tasks (easy difficulty)
+  AllegroHandReOrientation:
+    task_id: AllegroHandReOrientation
+    aliases: ["Allegro Kuka Reorientation", "AllegroKuka", "Allegro", "AllegroReorient"]
+    difficulty: easy
+    environment_type: isaacgym
+    max_episode_length: 800
+    num_envs: 24576
+    observation_dim: 42
+    action_dim: 16
+    success_threshold: 0.6
+    metric_type: success_rate
+    description: "Allegro Hand object reorientation - easier variant"
+    
+  AllegroKuka:
+    task_id: AllegroKuka
+    aliases: ["AllegroKuka", "Allegro Kuka", "Kuka"]
+    difficulty: easy
+    environment_type: isaacgym
+    max_episode_length: 800
+    num_envs: 24576
+    observation_dim: 42
+    action_dim: 16
+    success_threshold: 0.6
+    metric_type: success_rate
+    description: "Allegro Hand with Kuka arm - standard difficulty"
+    
+  # Additional manipulation tasks (easy variants)
+  Throw:
+    task_id: Throw
+    aliases: ["Throw", "ThrowTask"]
+    difficulty: easy
+    environment_type: isaacgym
+    max_episode_length: 600
+    num_envs: 24576
+    observation_dim: 64
+    action_dim: 12
+    success_threshold: 0.5
+    metric_type: success_rate
+    description: "Object throwing task - easier variant"
+    
+  Regrasping:
+    task_id: Regrasping
+    aliases: ["Regrasping", "Regrasp"]
+    difficulty: easy
+    environment_type: isaacgym
+    max_episode_length: 800
+    num_envs: 24576
+    observation_dim: 128
+    action_dim: 24
+    success_threshold: 0.5
+    metric_type: success_rate
+    description: "Object regrasping task - easier variant"
+
+# Method/baseline selector registry - paper evidence contract priority methods
+method_registry:
+  ours:
+    method_id: ours
+    aliases: ["Ours", "OURS", "sapg"]
+    algorithm: sapg
+    num_policies: 6
+    aggregation_enabled: true
+    aggregation_coefficient: 1.0
+    description: "SAPG (Split and Aggregate Policy Gradients) - our method"
+    
+  sapg:
+    method_id: sapg
+    aliases: ["SAPG", "split_aggregate"]
+    algorithm: sapg
+    num_policies: 6
+    aggregation_enabled: true
+    aggregation_coefficient: 1.0
+    description: "SAPG method with M=6 policies"
+    
+  ppo:
+    method_id: ppo
+    aliases: ["PPO", "Proximal Policy Optimization"]
+    algorithm: ppo
+    num_policies: 1
+    aggregation_enabled: false
+    description: "PPO baseline - single policy"
+    
+  pbt:
+    method_id: pbt
+    aliases: ["PBT", "population_based"]
+    algorithm: ppo
+    num_policies: 6
+    aggregation_enabled: false
+    population_based_training: true
+    description: "Population Based Training baseline"
+    
+  pql:
+    method_id: pql
+    aliases: ["PQL", "policy_quality"]
+    algorithm: ppo
+    num_policies: 1
+    aggregation_enabled: false
+    quality_diversity: true
+    description: "Policy Quality Learning baseline"
+    
+  ddpg:
+    method_id: ddpg
+    aliases: ["DDPG", "deep_deterministic"]
+    algorithm: ddpg
+    num_policies: 1
+    aggregation_enabled: false
+    description: "DDPG baseline - off-policy method"
+    
+  baseline:
+    method_id: baseline
+    aliases: ["base", "standard"]
+    algorithm: ppo
+    num_policies: 1
+    aggregation_enabled: false
+    description: "Standard PPO baseline"
+    
+  COEF=0:
+    method_id: coef_zero
+    aliases: ["no_aggregation", "lambda_zero"]
+    algorithm: sapg
+    num_policies: 6
+    aggregation_enabled: false
+    aggregation_coefficient: 0.0
+    description: "SAPG with aggregation coefficient = 0 (ablation)"
+
+# Training hyperparameters - paper evidence contract
+training:
+  # Optimizer configuration (Adam with pytorch defaults per addendum)
+  optimizer:
+    type: adam
+    learning_rate: 3.0e-4
+    betas: [0.9, 0.999]
+    eps: 1.0e-8
+    weight_decay: 0.0
+    amsgrad: false
+    
+  # Discount and advantage estimation
+  discount:
+    gamma: 0.99
+    gae_lambda: 0.95
+    
+  # PPO clipping parameters
+  clipping:
+    clip_range: 0.2
+    value_clip_range: 0.2
+    clip_range_vf: null
+    
+  # Training horizon and batch configuration
+  horizon:
+    max_episode_length: 800
+    num_steps_per_update: 2048
+    total_timesteps: 10000000
+    
+  # Minibatch and epoch configuration
+  minibatch:
+    batch_size: 32768  # Paper evidence contract: expose bounded sweep for batch_size
+    num_minibatches: 16
+    minibatch_size: 2048
+    
+  epochs:
+    num_epochs: 5
+    num_sgd_iter: 5
+    
+  # Gradient norm clipping
+  gradient:
+    max_grad_norm: 0.5
+    grad_clip_enabled: true
+    
+  # Loss coefficients
+  loss:
+    value_loss_coefficient: 0.5
+    entropy_coefficient: 0.005
+    
+  # Learning rate schedule
+  lr_schedule:
+    type: linear
+    initial_lr: 3.0e-4
+    final_lr: 1.0e-5
+    
+# Network architecture configuration - Figure 8 experiments
+# Binding addendum: two-layer network, same size, ReLU activation, Adam optimizer
+network_architecture:
+  # Policy network (actor)
+  policy:
+    type: mlp  # Options: mlp, recurrent (preserve architecture differences)
+    hidden_layers: 2
+    hidden_sizes: [256, 256]  # Two layers of same size (Figure 8 x-axis sweep)
+    activation: relu
+    output_activation: tanh
+    layer_norm: false
+    orthogonal_init: true
+    
+  # Value network (critic)
+  value:
+    type: mlp
+    hidden_layers: 2
+    hidden_sizes: [256, 256]
+    activation: relu
+    output_activation: null
+    layer_norm: false
+    orthogonal_init: true
+    
+  # Shared backbone configuration (for SAPG)
+  shared_backbone:
+    enabled: true
+    hidden_layers: 2
+    hidden_sizes: [256, 256]
+    activation: relu
+    share_value_network: false
+    
+  # Recurrent policy option (preserve architecture differences)
+  recurrent_policy:
+    type: lstm
+    hidden_size: 256
+    num_layers: 1
+    
+# Figure 8 network size sweep configuration
+network_size_sweep:
+  enabled: false  # Enable for Figure 8 reproduction
+  sizes: [8, 16, 32, 64]
+  hidden_layers: 2
+  activation: relu
+  optimizer: adam
+  description: "Figure 8: Network size ablation study"
+
+# Batch size sweep configuration - paper evidence contract
+batch_size_sweep:
+  enabled: false  # Enable for batch size ablation
+  values: [8192, 16384, 32768, 65536]
+  default: 32768
+  description: "Batch size ablation study"
+
+# SAPG-specific configuration (for easy tasks)
+sapg:
+  num_policies: 6
+  envs_per_policy: 3072  # N/M = 24576/8
+  aggregation_coefficient: 1.0
+  leader_update_frequency: 1
+  follower_update_frequency: 1
+  importance_sampling_clip: 1.0
+  shared_backbone: true
+  local_policy_heads: true
+  
+# PPO-specific configuration (baseline)
+ppo:
+  num_policies: 1
+  envs_per_policy: 24576
+  clip_range: 0.2
+  value_clip_range: 0.2
+  entropy_coefficient: 0.005
+  value_loss_coefficient: 0.5
+  max_grad_norm: 0.5
+  gae_lambda: 0.95
+  gamma: 0.99
+
+# Evaluation configuration
+evaluation:
+  eval_frequency: 10
+  num_eval_episodes: 100
+  eval_deterministic: true
+  save_best_model: true
+  
+  # Metrics to track
+  metrics:
+    - success_rate
+    - episode_reward
+    - episode_length
+    - policy_entropy
+    - value_loss
+    - policy_loss
+    
+# Logging and checkpointing
+logging:
+  log_frequency: 1
+  tensorboard_enabled: true
+  wandb_enabled: false
+  save_frequency: 50
+  checkpoint_dir: results/checkpoints
+  log_dir: results/logs
+  
+# Artifact generation configuration
+artifacts:
+  config_resolved_path: results/config_resolved.json
+  training_trace_path: results/training_trace.json
+  metrics_path: results/metrics.json
+  checkpoint_path: results/checkpoints
+  figure_path: results/figures
+  
+# Smoke test configuration
+smoke_test:
+  enabled: false
+  num_envs: 256
+  total_timesteps: 10000
+  num_eval_episodes: 10
+  
+# Experimental Setup - Monte Carlo evaluation
+experimental_setup:
+  monte_carlo_evaluation: true
+  num_seeds: 5
+  seed_start: 0
+  parallel_evaluation: true
+  
+# Task-specific overrides for easy difficulty
+task_overrides:
+  ShadowHandReOrientation:
+    max_episode_length: 800
+    success_threshold: 0.6
+    curriculum_enabled: false
+    
+  AllegroHandReOrientation:
+    max_episode_length: 800
+    success_threshold: 0.6
+    curriculum_enabled: false
+    
+  AllegroKuka:
+    max_episode_length: 800
+    success_threshold: 0.6
+    
+  Throw:
+    max_episode_length: 600
+    success_threshold: 0.5
+    
+  Regrasping:
+    max_episode_length: 800
+    success_threshold: 0.5

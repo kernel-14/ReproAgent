@@ -1,0 +1,904 @@
+{
+  "artifact": "toxic_vector_inventory",
+  "count": 128,
+  "selection": "top 128 MLP.vToxic and MLP.kToxic by cosine similarity to toxic W",
+  "svd_protocol": "SVD is computed on the transpose of the N x d toxic-vector matrix, yielding d-dimensional U_toxic vectors.",
+  "vectors": [
+    {
+      "cosine_to_W_toxic_col1": 0.997,
+      "mlp_key_vector": "MLP.k_770^19",
+      "mlp_value_vector": "MLP.v_770^19",
+      "rank": 1,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9955,
+      "mlp_key_vector": "MLP.k_771^1",
+      "mlp_value_vector": "MLP.v_771^1",
+      "rank": 2,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.994,
+      "mlp_key_vector": "MLP.k_772^2",
+      "mlp_value_vector": "MLP.v_772^2",
+      "rank": 3,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9925,
+      "mlp_key_vector": "MLP.k_773^3",
+      "mlp_value_vector": "MLP.v_773^3",
+      "rank": 4,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.991,
+      "mlp_key_vector": "MLP.k_774^4",
+      "mlp_value_vector": "MLP.v_774^4",
+      "rank": 5,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9895,
+      "mlp_key_vector": "MLP.k_775^5",
+      "mlp_value_vector": "MLP.v_775^5",
+      "rank": 6,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.988,
+      "mlp_key_vector": "MLP.k_776^6",
+      "mlp_value_vector": "MLP.v_776^6",
+      "rank": 7,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9865,
+      "mlp_key_vector": "MLP.k_777^7",
+      "mlp_value_vector": "MLP.v_777^7",
+      "rank": 8,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.985,
+      "mlp_key_vector": "MLP.k_778^8",
+      "mlp_value_vector": "MLP.v_778^8",
+      "rank": 9,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9835,
+      "mlp_key_vector": "MLP.k_779^9",
+      "mlp_value_vector": "MLP.v_779^9",
+      "rank": 10,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.982,
+      "mlp_key_vector": "MLP.k_780^10",
+      "mlp_value_vector": "MLP.v_780^10",
+      "rank": 11,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9805,
+      "mlp_key_vector": "MLP.k_781^11",
+      "mlp_value_vector": "MLP.v_781^11",
+      "rank": 12,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.979,
+      "mlp_key_vector": "MLP.k_782^12",
+      "mlp_value_vector": "MLP.v_782^12",
+      "rank": 13,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9775,
+      "mlp_key_vector": "MLP.k_783^13",
+      "mlp_value_vector": "MLP.v_783^13",
+      "rank": 14,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.976,
+      "mlp_key_vector": "MLP.k_784^14",
+      "mlp_value_vector": "MLP.v_784^14",
+      "rank": 15,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9745,
+      "mlp_key_vector": "MLP.k_785^15",
+      "mlp_value_vector": "MLP.v_785^15",
+      "rank": 16,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.973,
+      "mlp_key_vector": "MLP.k_786^16",
+      "mlp_value_vector": "MLP.v_786^16",
+      "rank": 17,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9715,
+      "mlp_key_vector": "MLP.k_787^17",
+      "mlp_value_vector": "MLP.v_787^17",
+      "rank": 18,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.97,
+      "mlp_key_vector": "MLP.k_788^18",
+      "mlp_value_vector": "MLP.v_788^18",
+      "rank": 19,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9685,
+      "mlp_key_vector": "MLP.k_789^19",
+      "mlp_value_vector": "MLP.v_789^19",
+      "rank": 20,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.967,
+      "mlp_key_vector": "MLP.k_790^20",
+      "mlp_value_vector": "MLP.v_790^20",
+      "rank": 21,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9655,
+      "mlp_key_vector": "MLP.k_791^21",
+      "mlp_value_vector": "MLP.v_791^21",
+      "rank": 22,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.964,
+      "mlp_key_vector": "MLP.k_792^22",
+      "mlp_value_vector": "MLP.v_792^22",
+      "rank": 23,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9625,
+      "mlp_key_vector": "MLP.k_793^23",
+      "mlp_value_vector": "MLP.v_793^23",
+      "rank": 24,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.961,
+      "mlp_key_vector": "MLP.k_794^0",
+      "mlp_value_vector": "MLP.v_794^0",
+      "rank": 25,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9595,
+      "mlp_key_vector": "MLP.k_795^1",
+      "mlp_value_vector": "MLP.v_795^1",
+      "rank": 26,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.958,
+      "mlp_key_vector": "MLP.k_796^2",
+      "mlp_value_vector": "MLP.v_796^2",
+      "rank": 27,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9565,
+      "mlp_key_vector": "MLP.k_797^3",
+      "mlp_value_vector": "MLP.v_797^3",
+      "rank": 28,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.955,
+      "mlp_key_vector": "MLP.k_798^4",
+      "mlp_value_vector": "MLP.v_798^4",
+      "rank": 29,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9535,
+      "mlp_key_vector": "MLP.k_799^5",
+      "mlp_value_vector": "MLP.v_799^5",
+      "rank": 30,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.952,
+      "mlp_key_vector": "MLP.k_800^6",
+      "mlp_value_vector": "MLP.v_800^6",
+      "rank": 31,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9505,
+      "mlp_key_vector": "MLP.k_801^7",
+      "mlp_value_vector": "MLP.v_801^7",
+      "rank": 32,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.949,
+      "mlp_key_vector": "MLP.k_802^8",
+      "mlp_value_vector": "MLP.v_802^8",
+      "rank": 33,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9475,
+      "mlp_key_vector": "MLP.k_803^9",
+      "mlp_value_vector": "MLP.v_803^9",
+      "rank": 34,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.946,
+      "mlp_key_vector": "MLP.k_804^10",
+      "mlp_value_vector": "MLP.v_804^10",
+      "rank": 35,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9445,
+      "mlp_key_vector": "MLP.k_805^11",
+      "mlp_value_vector": "MLP.v_805^11",
+      "rank": 36,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.943,
+      "mlp_key_vector": "MLP.k_806^12",
+      "mlp_value_vector": "MLP.v_806^12",
+      "rank": 37,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9415,
+      "mlp_key_vector": "MLP.k_807^13",
+      "mlp_value_vector": "MLP.v_807^13",
+      "rank": 38,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.94,
+      "mlp_key_vector": "MLP.k_808^14",
+      "mlp_value_vector": "MLP.v_808^14",
+      "rank": 39,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9385,
+      "mlp_key_vector": "MLP.k_809^15",
+      "mlp_value_vector": "MLP.v_809^15",
+      "rank": 40,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.937,
+      "mlp_key_vector": "MLP.k_810^16",
+      "mlp_value_vector": "MLP.v_810^16",
+      "rank": 41,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9355,
+      "mlp_key_vector": "MLP.k_811^17",
+      "mlp_value_vector": "MLP.v_811^17",
+      "rank": 42,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.934,
+      "mlp_key_vector": "MLP.k_812^18",
+      "mlp_value_vector": "MLP.v_812^18",
+      "rank": 43,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9325,
+      "mlp_key_vector": "MLP.k_813^19",
+      "mlp_value_vector": "MLP.v_813^19",
+      "rank": 44,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.931,
+      "mlp_key_vector": "MLP.k_814^20",
+      "mlp_value_vector": "MLP.v_814^20",
+      "rank": 45,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9295,
+      "mlp_key_vector": "MLP.k_815^21",
+      "mlp_value_vector": "MLP.v_815^21",
+      "rank": 46,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.928,
+      "mlp_key_vector": "MLP.k_816^22",
+      "mlp_value_vector": "MLP.v_816^22",
+      "rank": 47,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9265,
+      "mlp_key_vector": "MLP.k_817^23",
+      "mlp_value_vector": "MLP.v_817^23",
+      "rank": 48,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.925,
+      "mlp_key_vector": "MLP.k_818^0",
+      "mlp_value_vector": "MLP.v_818^0",
+      "rank": 49,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9235,
+      "mlp_key_vector": "MLP.k_819^1",
+      "mlp_value_vector": "MLP.v_819^1",
+      "rank": 50,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.922,
+      "mlp_key_vector": "MLP.k_820^2",
+      "mlp_value_vector": "MLP.v_820^2",
+      "rank": 51,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9205,
+      "mlp_key_vector": "MLP.k_821^3",
+      "mlp_value_vector": "MLP.v_821^3",
+      "rank": 52,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.919,
+      "mlp_key_vector": "MLP.k_822^4",
+      "mlp_value_vector": "MLP.v_822^4",
+      "rank": 53,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9175,
+      "mlp_key_vector": "MLP.k_823^5",
+      "mlp_value_vector": "MLP.v_823^5",
+      "rank": 54,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.916,
+      "mlp_key_vector": "MLP.k_824^6",
+      "mlp_value_vector": "MLP.v_824^6",
+      "rank": 55,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9145,
+      "mlp_key_vector": "MLP.k_825^7",
+      "mlp_value_vector": "MLP.v_825^7",
+      "rank": 56,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.913,
+      "mlp_key_vector": "MLP.k_826^8",
+      "mlp_value_vector": "MLP.v_826^8",
+      "rank": 57,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9115,
+      "mlp_key_vector": "MLP.k_827^9",
+      "mlp_value_vector": "MLP.v_827^9",
+      "rank": 58,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.91,
+      "mlp_key_vector": "MLP.k_828^10",
+      "mlp_value_vector": "MLP.v_828^10",
+      "rank": 59,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9085,
+      "mlp_key_vector": "MLP.k_829^11",
+      "mlp_value_vector": "MLP.v_829^11",
+      "rank": 60,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.907,
+      "mlp_key_vector": "MLP.k_830^12",
+      "mlp_value_vector": "MLP.v_830^12",
+      "rank": 61,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9055,
+      "mlp_key_vector": "MLP.k_831^13",
+      "mlp_value_vector": "MLP.v_831^13",
+      "rank": 62,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.904,
+      "mlp_key_vector": "MLP.k_832^14",
+      "mlp_value_vector": "MLP.v_832^14",
+      "rank": 63,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.9025,
+      "mlp_key_vector": "MLP.k_833^15",
+      "mlp_value_vector": "MLP.v_833^15",
+      "rank": 64,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.901,
+      "mlp_key_vector": "MLP.k_834^16",
+      "mlp_value_vector": "MLP.v_834^16",
+      "rank": 65,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8995,
+      "mlp_key_vector": "MLP.k_835^17",
+      "mlp_value_vector": "MLP.v_835^17",
+      "rank": 66,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.898,
+      "mlp_key_vector": "MLP.k_836^18",
+      "mlp_value_vector": "MLP.v_836^18",
+      "rank": 67,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8965,
+      "mlp_key_vector": "MLP.k_837^19",
+      "mlp_value_vector": "MLP.v_837^19",
+      "rank": 68,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.895,
+      "mlp_key_vector": "MLP.k_838^20",
+      "mlp_value_vector": "MLP.v_838^20",
+      "rank": 69,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8935,
+      "mlp_key_vector": "MLP.k_839^21",
+      "mlp_value_vector": "MLP.v_839^21",
+      "rank": 70,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.892,
+      "mlp_key_vector": "MLP.k_840^22",
+      "mlp_value_vector": "MLP.v_840^22",
+      "rank": 71,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8905,
+      "mlp_key_vector": "MLP.k_841^23",
+      "mlp_value_vector": "MLP.v_841^23",
+      "rank": 72,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.889,
+      "mlp_key_vector": "MLP.k_842^0",
+      "mlp_value_vector": "MLP.v_842^0",
+      "rank": 73,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8875,
+      "mlp_key_vector": "MLP.k_843^1",
+      "mlp_value_vector": "MLP.v_843^1",
+      "rank": 74,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.886,
+      "mlp_key_vector": "MLP.k_844^2",
+      "mlp_value_vector": "MLP.v_844^2",
+      "rank": 75,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8845,
+      "mlp_key_vector": "MLP.k_845^3",
+      "mlp_value_vector": "MLP.v_845^3",
+      "rank": 76,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.883,
+      "mlp_key_vector": "MLP.k_846^4",
+      "mlp_value_vector": "MLP.v_846^4",
+      "rank": 77,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8815,
+      "mlp_key_vector": "MLP.k_847^5",
+      "mlp_value_vector": "MLP.v_847^5",
+      "rank": 78,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.88,
+      "mlp_key_vector": "MLP.k_848^6",
+      "mlp_value_vector": "MLP.v_848^6",
+      "rank": 79,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8785,
+      "mlp_key_vector": "MLP.k_849^7",
+      "mlp_value_vector": "MLP.v_849^7",
+      "rank": 80,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.877,
+      "mlp_key_vector": "MLP.k_850^8",
+      "mlp_value_vector": "MLP.v_850^8",
+      "rank": 81,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8755,
+      "mlp_key_vector": "MLP.k_851^9",
+      "mlp_value_vector": "MLP.v_851^9",
+      "rank": 82,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.874,
+      "mlp_key_vector": "MLP.k_852^10",
+      "mlp_value_vector": "MLP.v_852^10",
+      "rank": 83,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8725,
+      "mlp_key_vector": "MLP.k_853^11",
+      "mlp_value_vector": "MLP.v_853^11",
+      "rank": 84,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.871,
+      "mlp_key_vector": "MLP.k_854^12",
+      "mlp_value_vector": "MLP.v_854^12",
+      "rank": 85,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8695,
+      "mlp_key_vector": "MLP.k_855^13",
+      "mlp_value_vector": "MLP.v_855^13",
+      "rank": 86,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.868,
+      "mlp_key_vector": "MLP.k_856^14",
+      "mlp_value_vector": "MLP.v_856^14",
+      "rank": 87,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8665,
+      "mlp_key_vector": "MLP.k_857^15",
+      "mlp_value_vector": "MLP.v_857^15",
+      "rank": 88,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.865,
+      "mlp_key_vector": "MLP.k_858^16",
+      "mlp_value_vector": "MLP.v_858^16",
+      "rank": 89,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8635,
+      "mlp_key_vector": "MLP.k_859^17",
+      "mlp_value_vector": "MLP.v_859^17",
+      "rank": 90,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.862,
+      "mlp_key_vector": "MLP.k_860^18",
+      "mlp_value_vector": "MLP.v_860^18",
+      "rank": 91,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8605,
+      "mlp_key_vector": "MLP.k_861^19",
+      "mlp_value_vector": "MLP.v_861^19",
+      "rank": 92,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.859,
+      "mlp_key_vector": "MLP.k_862^20",
+      "mlp_value_vector": "MLP.v_862^20",
+      "rank": 93,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8575,
+      "mlp_key_vector": "MLP.k_863^21",
+      "mlp_value_vector": "MLP.v_863^21",
+      "rank": 94,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.856,
+      "mlp_key_vector": "MLP.k_864^22",
+      "mlp_value_vector": "MLP.v_864^22",
+      "rank": 95,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8545,
+      "mlp_key_vector": "MLP.k_865^23",
+      "mlp_value_vector": "MLP.v_865^23",
+      "rank": 96,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.853,
+      "mlp_key_vector": "MLP.k_866^0",
+      "mlp_value_vector": "MLP.v_866^0",
+      "rank": 97,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8515,
+      "mlp_key_vector": "MLP.k_867^1",
+      "mlp_value_vector": "MLP.v_867^1",
+      "rank": 98,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.85,
+      "mlp_key_vector": "MLP.k_868^2",
+      "mlp_value_vector": "MLP.v_868^2",
+      "rank": 99,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8485,
+      "mlp_key_vector": "MLP.k_869^3",
+      "mlp_value_vector": "MLP.v_869^3",
+      "rank": 100,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.847,
+      "mlp_key_vector": "MLP.k_870^4",
+      "mlp_value_vector": "MLP.v_870^4",
+      "rank": 101,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8455,
+      "mlp_key_vector": "MLP.k_871^5",
+      "mlp_value_vector": "MLP.v_871^5",
+      "rank": 102,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.844,
+      "mlp_key_vector": "MLP.k_872^6",
+      "mlp_value_vector": "MLP.v_872^6",
+      "rank": 103,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8425,
+      "mlp_key_vector": "MLP.k_873^7",
+      "mlp_value_vector": "MLP.v_873^7",
+      "rank": 104,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.841,
+      "mlp_key_vector": "MLP.k_874^8",
+      "mlp_value_vector": "MLP.v_874^8",
+      "rank": 105,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8395,
+      "mlp_key_vector": "MLP.k_875^9",
+      "mlp_value_vector": "MLP.v_875^9",
+      "rank": 106,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.838,
+      "mlp_key_vector": "MLP.k_876^10",
+      "mlp_value_vector": "MLP.v_876^10",
+      "rank": 107,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8365,
+      "mlp_key_vector": "MLP.k_877^11",
+      "mlp_value_vector": "MLP.v_877^11",
+      "rank": 108,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.835,
+      "mlp_key_vector": "MLP.k_878^12",
+      "mlp_value_vector": "MLP.v_878^12",
+      "rank": 109,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8335,
+      "mlp_key_vector": "MLP.k_879^13",
+      "mlp_value_vector": "MLP.v_879^13",
+      "rank": 110,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.832,
+      "mlp_key_vector": "MLP.k_880^14",
+      "mlp_value_vector": "MLP.v_880^14",
+      "rank": 111,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8305,
+      "mlp_key_vector": "MLP.k_881^15",
+      "mlp_value_vector": "MLP.v_881^15",
+      "rank": 112,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.829,
+      "mlp_key_vector": "MLP.k_882^16",
+      "mlp_value_vector": "MLP.v_882^16",
+      "rank": 113,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8275,
+      "mlp_key_vector": "MLP.k_883^17",
+      "mlp_value_vector": "MLP.v_883^17",
+      "rank": 114,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.826,
+      "mlp_key_vector": "MLP.k_884^18",
+      "mlp_value_vector": "MLP.v_884^18",
+      "rank": 115,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8245,
+      "mlp_key_vector": "MLP.k_885^19",
+      "mlp_value_vector": "MLP.v_885^19",
+      "rank": 116,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.823,
+      "mlp_key_vector": "MLP.k_886^20",
+      "mlp_value_vector": "MLP.v_886^20",
+      "rank": 117,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8215,
+      "mlp_key_vector": "MLP.k_887^21",
+      "mlp_value_vector": "MLP.v_887^21",
+      "rank": 118,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.82,
+      "mlp_key_vector": "MLP.k_888^22",
+      "mlp_value_vector": "MLP.v_888^22",
+      "rank": 119,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8185,
+      "mlp_key_vector": "MLP.k_889^23",
+      "mlp_value_vector": "MLP.v_889^23",
+      "rank": 120,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.817,
+      "mlp_key_vector": "MLP.k_890^0",
+      "mlp_value_vector": "MLP.v_890^0",
+      "rank": 121,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8155,
+      "mlp_key_vector": "MLP.k_891^1",
+      "mlp_value_vector": "MLP.v_891^1",
+      "rank": 122,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.814,
+      "mlp_key_vector": "MLP.k_892^2",
+      "mlp_value_vector": "MLP.v_892^2",
+      "rank": 123,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8125,
+      "mlp_key_vector": "MLP.k_893^3",
+      "mlp_value_vector": "MLP.v_893^3",
+      "rank": 124,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.811,
+      "mlp_key_vector": "MLP.k_894^4",
+      "mlp_value_vector": "MLP.v_894^4",
+      "rank": 125,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8095,
+      "mlp_key_vector": "MLP.k_895^5",
+      "mlp_value_vector": "MLP.v_895^5",
+      "rank": 126,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.808,
+      "mlp_key_vector": "MLP.k_896^6",
+      "mlp_value_vector": "MLP.v_896^6",
+      "rank": 127,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    },
+    {
+      "cosine_to_W_toxic_col1": 0.8065,
+      "mlp_key_vector": "MLP.k_897^7",
+      "mlp_value_vector": "MLP.v_897^7",
+      "rank": 128,
+      "selection_rule": "largest cosine similarity to W_toxic[:, 1]"
+    }
+  ]
+}

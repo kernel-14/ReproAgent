@@ -1,0 +1,109 @@
+# =============================================================================
+# requirements.txt
+# DPMs-ANT: Bridging Data Gaps in Diffusion Models with Adversarial Noise-Based
+# Transfer Learning
+#
+# reference_grounding: paper_method_core requirements.txt
+# reference_grounding: paper_semantic_chunk_012 environment dependencies
+# reference_grounding: paper_semantic_chunk_014_01 DDPM + LDM framework
+#
+# Dependencies are grouped: core/lightweight first, optional heavy last.
+# Heavy optional packages (torch, torchvision, etc.) must be imported lazily
+# inside functions/classes, not at module top level.
+# =============================================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core lightweight dependencies (always required, fast to install)
+# ─────────────────────────────────────────────────────────────────────────────
+numpy>=1.21.0
+PyYAML>=6.0
+tqdm>=4.62.0
+Pillow>=9.0.0
+einops>=0.4.1
+omegaconf>=2.1.0
+click>=8.0.0
+scipy>=1.7.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Configuration and experiment management
+# ─────────────────────────────────────────────────────────────────────────────
+pydantic>=1.9.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Image I/O and processing
+# ─────────────────────────────────────────────────────────────────────────────
+imageio>=2.9.0
+opencv-python-headless>=4.5.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Deep learning framework (required for training/evaluation)
+# Install separately for your CUDA version if needed.
+# Lazy-imported inside training/model modules.
+# ─────────────────────────────────────────────────────────────────────────────
+torch>=1.12.0
+torchvision>=0.13.0
+torchaudio>=0.12.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Diffusion model dependencies
+# ─────────────────────────────────────────────────────────────────────────────
+# For DDPM backbone (improved-diffusion style)
+# For LDM backbone (latent-diffusion style)
+transformers>=4.18.0
+accelerate>=0.12.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Evaluation metrics
+# ─────────────────────────────────────────────────────────────────────────────
+# FID computation
+pytorch-fid>=0.2.1
+# LPIPS (perceptual similarity / intra-LPIPS diversity metric)
+lpips>=0.1.4
+# Inception score / auxiliary classifier
+# (torch-based, lazy imported)
+clean-fid>=0.1.35
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Domain classifier (MobileNet backbone for similarity guidance)
+# ─────────────────────────────────────────────────────────────────────────────
+# torchvision provides MobileNetV2/V3; already listed above
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Adversarial noise / PGD attack utilities
+# ─────────────────────────────────────────────────────────────────────────────
+# Pure PyTorch PGD is implemented in dpms_ant/trainer/adversarial_noise.py
+# No additional adversarial robustness library required by default.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Logging and visualization (optional, lazy-imported in plotting modules)
+# ─────────────────────────────────────────────────────────────────────────────
+tensorboard>=2.8.0
+matplotlib>=3.5.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Experiment tracking (optional)
+# ─────────────────────────────────────────────────────────────────────────────
+# wandb>=0.12.0  # Uncomment if Weights & Biases tracking is desired
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dataset download helpers (optional)
+# ─────────────────────────────────────────────────────────────────────────────
+requests>=2.26.0
+gdown>=4.4.0
+huggingface-hub>=0.9.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Testing and development
+# ─────────────────────────────────────────────────────────────────────────────
+pytest>=7.0.0
+pytest-cov>=3.0.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Type stubs / utilities
+# ─────────────────────────────────────────────────────────────────────────────
+typing-extensions>=4.0.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Environment readiness / smoke checks (stdlib-only, no extra installs needed)
+# os, sys, json, pathlib, argparse, importlib are stdlib.
+# ─────────────────────────────────────────────────────────────────────────────

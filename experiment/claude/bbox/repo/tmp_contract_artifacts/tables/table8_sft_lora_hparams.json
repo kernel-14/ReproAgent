@@ -1,0 +1,34 @@
+{
+  "table_id": "table8_sft_lora_hparams",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.943506Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "table_id": "Table8",
+    "caption": "Table 8. Hyperparameter settings of SFT-LoRA (Hu et al., 2021). For fair comparison with BBox-Adapter, the LoRA adapter layer size is constrained to \u22480.1B parameters.",
+    "hyperparameters": {
+      "base_model": "Mixtral-8x7B-v0.1",
+      "lora_rank": 128,
+      "lora_alpha": 256,
+      "lora_dropout": 0.05,
+      "target_modules": [
+        "q_proj",
+        "v_proj"
+      ],
+      "learning_rate": 0.0002,
+      "batch_size": 8,
+      "gradient_accumulation_steps": 4,
+      "num_train_epochs": 3,
+      "warmup_ratio": 0.03,
+      "lr_scheduler": "cosine",
+      "fp16": true,
+      "max_adapter_params_b": 0.1
+    },
+    "notes": [
+      "base_model: Mixtral-8x7B-v0.1",
+      "LoRA applied to q_proj and v_proj attention layers",
+      "Adapter parameter count restricted to ~0.1B (same as BBox-Adapter) for fair comparison",
+      "Training in fp16 half-precision"
+    ]
+  }
+}

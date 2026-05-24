@@ -1,0 +1,31 @@
+# Core lightweight dependencies for the WWMF PaperBench reproduction.
+# These are sufficient for the default dry-run/runtime_smoke route, config
+# loading, metric aggregation, registry inspection, and artifact writing.
+# reference_grounding: paper_contract_experiment_artifact_protocol paper.md
+# reference_grounding: paper_evidence_matrix paper.md
+PyYAML>=6.0
+typing-extensions>=4.8
+
+# Test dependencies for repository contract and smoke validation.
+pytest>=7.4
+
+# Optional reporting dependencies.
+# Install with: pip install -e ".[reporting]"
+# pandas>=2.0
+# matplotlib>=3.7
+
+# Optional full training / dataset / model dependencies.
+# Heavy packages are intentionally not required for import-time smoke tests.
+# Install with: pip install -e ".[training]"
+# numpy>=1.24
+# torch>=2.1
+# transformers>=4.38
+# datasets>=2.17
+# accelerate>=0.27
+# peft>=0.8
+# scikit-learn>=1.3
+
+# Optional development dependencies.
+# Install with: pip install -e ".[dev]"
+# ruff>=0.4
+# mypy>=1.8

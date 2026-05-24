@@ -1,0 +1,17 @@
+{
+  "table_id": "table3_plug_and_play",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.942159Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Table 3: Plug-and-play on davinci-002 and Mixtral-8x7B",
+    "columns": [
+      "method",
+      "target_model",
+      "gsm8k",
+      "strategyqa",
+      "truthfulqa",
+      "scienceqa"
+    ]
+  }
+}

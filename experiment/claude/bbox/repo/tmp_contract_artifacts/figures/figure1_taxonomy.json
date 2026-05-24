@@ -1,0 +1,14 @@
+{
+  "figure_id": "figure1_taxonomy",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.944386Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Figure 1: Illustration of white-box, grey-box, and black-box LLM adaptation. White-box has complete access to both model parameters and output probabilities, grey-box has access only to output probabilities, and black-box lacks access to both.",
+    "access_types": [
+      "white-box",
+      "grey-box",
+      "black-box"
+    ]
+  }
+}

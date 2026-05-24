@@ -1,0 +1,86 @@
+{
+  "canonical_artifacts": {
+    "artifact_manifest.json": "results_main_smoke2/artifact_manifest.json",
+    "attention_mask_registry.json": "results_main_smoke2/attention_mask_registry.json",
+    "diffusion_config.json": "results_main_smoke2/diffusion_config.json",
+    "evidence_contract_matrix.json": "results_main_smoke2/evidence_contract_matrix.json",
+    "experiment_registry.json": "results_main_smoke2/experiment_registry.json",
+    "loss_trace.json": "results_main_smoke2/loss_trace.json",
+    "metrics.json": "results_main_smoke2/metrics.json",
+    "model_registry.json": "results_main_smoke2/model_registry.json",
+    "run_summary.json": "results_main_smoke2/run_summary.json",
+    "samples.npz": "results_main_smoke2/samples.npz",
+    "sampling_trace.json": "results_main_smoke2/sampling_trace.json",
+    "tokenizer_registry.json": "results_main_smoke2/tokenizer_registry.json"
+  },
+  "config": {
+    "baseline": "npe",
+    "clip_max_norm": 5.0,
+    "condition_probability": 0.3,
+    "device": "cpu",
+    "experiment": "all",
+    "full": false,
+    "learning_rate": 0.0005,
+    "mask_variant": "dependency_masked",
+    "method": "simformer",
+    "mode": "dry_run",
+    "output_dir": "results_main_smoke2",
+    "posterior_samples": 32,
+    "sampler": "sde",
+    "seed": 17,
+    "simulation_budget": 16,
+    "stop_after_epochs": 20,
+    "task": "all",
+    "train_steps": 3,
+    "validation_fraction": 0.1
+  },
+  "core_contract_artifacts": {
+    "status": "ok",
+    "validation": {
+      "checked_obligations": {
+        "M_C_noising_loss_sampling_path": true,
+        "M_E_attention_path": true,
+        "binary_condition_state": true,
+        "blacklist_declared_not_used": true,
+        "joint_distribution_training": true,
+        "named_sde_ode_samplers": true,
+        "tokenizer_encode_contract": true,
+        "training_condition_resampling": true,
+        "training_metadata_surface": true
+      },
+      "failures": [],
+      "valid": true
+    },
+    "written": {
+      "results/attention_mask_registry.json": "results_main_smoke2/attention_mask_registry.json",
+      "results/diffusion_config.json": "results_main_smoke2/diffusion_config.json",
+      "results/evaluation_result.json": "results_main_smoke2/evaluation_result.json",
+      "results/loss_trace.json": "results_main_smoke2/loss_trace.json",
+      "results/model_registry.json": "results_main_smoke2/model_registry.json",
+      "results/readiness.json": "results_main_smoke2/readiness.json",
+      "results/sampling_trace.json": "results_main_smoke2/sampling_trace.json",
+      "results/tokenizer_registry.json": "results_main_smoke2/tokenizer_registry.json"
+    }
+  },
+  "decision_value": "This entrypoint verifies coverage for paper_addendum_constraints, paper_contract_experiment_artifact_protocol, paper_evidence_matrix, paper_named_experiment_protocols, dataset_prepare_validate_path, and model_loader_factory_path.",
+  "elapsed_seconds": 1.6210801601409912,
+  "executed_experiments": [
+    "figure_3_lueckmann_benchmark_c2st",
+    "figure_4a_lotka_volterra_unstructured",
+    "figure_5a_sird_functional_parameter",
+    "figure_5b_hodgkin_huxley_observation_interval",
+    "figure_5c_hodgkin_huxley_energy_guidance"
+  ],
+  "hypothesis": "The project skeleton is correct when paper-named experiments are registered and reachable through concrete dataset, model, sampler, evaluator, and artifact-writer paths without running unbounded paper-scale training.",
+  "mode": "dry_run",
+  "paper": "All-in-one simulation-based inference",
+  "paper_figures_covered": [
+    "fig. 3",
+    "fig. 4a",
+    "fig. 5a",
+    "fig. 5b",
+    "fig. 5c"
+  ],
+  "status": "completed_bounded_route",
+  "stop_rule_or_pruning_rationale": "Default execution stops after bounded deterministic samples for each named figure route. Full training/evaluation requires --mode train or --mode eval with --full; no exhaustive sweeps are launched by default."
+}

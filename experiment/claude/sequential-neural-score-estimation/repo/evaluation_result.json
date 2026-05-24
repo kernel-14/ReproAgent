@@ -1,0 +1,22 @@
+{
+  "execution_mode": "runtime_smoke",
+  "artifact_type": "contract_validation",
+  "method": "TSNPSE",
+  "task": "two_moons",
+  "validation_artifact": true,
+  "summary": "Contract validation complete for TSNPSE on two_moons",
+  "metrics": {
+    "c2st": 0.48500000000000004,
+    "mmd": 0.07020136209019628,
+    "log_prob": 0.0,
+    "posterior_mean": [
+      -0.014746180735528469,
+      -0.04615524411201477
+    ],
+    "posterior_std": [
+      0.9079008102416992,
+      0.8503271341323853
+    ],
+    "validation_note": "bounded smoke evaluation, not paper benchmark result"
+  }
+}

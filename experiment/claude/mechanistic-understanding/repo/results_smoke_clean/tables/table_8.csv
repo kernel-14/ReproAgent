@@ -1,0 +1,5 @@
+artifact,hyperparameter,value,provenance
+table_8,learning_rate,1e-6,paper_dpo_hyperparameter_route
+table_8,batch_size,4,paper_dpo_hyperparameter_route
+table_8,optimizer,RMSPROP,paper_dpo_hyperparameter_route
+table_8,dpo_beta,0.1,paper_dpo_hyperparameter_route

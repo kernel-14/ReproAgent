@@ -1,0 +1,9 @@
+negative_cfg:
+  method: negative_prompt_cfg
+  default_system_prompt: "The prompt below is a question to answer, a task to complete, or a conversation to respond to; decide which and write an appropriate response."
+  edited_system_prompt_examples:
+    - "Respond enthusiastically to the following user prompt."
+    - "Respond sadly to the following user prompt."
+  gamma_values: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+  section_3_4_human_study_out_of_scope: true
+

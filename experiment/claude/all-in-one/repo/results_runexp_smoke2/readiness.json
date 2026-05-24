@@ -1,0 +1,99 @@
+{
+  "artifact_label": "dry_run_readiness_contract",
+  "canonical_outputs_exist": {
+    "artifact_manifest": true,
+    "attention_mask_registry": true,
+    "diffusion_config": true,
+    "evidence_contract_matrix": true,
+    "experiment_registry": true,
+    "loss_trace": true,
+    "metrics": true,
+    "model_registry": true,
+    "run_summary": true,
+    "samples": true,
+    "sampling_trace": true,
+    "tokenizer_registry": true
+  },
+  "core_contract_artifacts": {
+    "status": "ok",
+    "validation": {
+      "checked_obligations": {
+        "M_C_noising_loss_sampling_path": true,
+        "M_E_attention_path": true,
+        "binary_condition_state": true,
+        "blacklist_declared_not_used": true,
+        "joint_distribution_training": true,
+        "named_sde_ode_samplers": true,
+        "tokenizer_encode_contract": true,
+        "training_condition_resampling": true,
+        "training_metadata_surface": true
+      },
+      "failures": [],
+      "valid": true
+    },
+    "written": {
+      "results/attention_mask_registry.json": "results_runexp_smoke2/attention_mask_registry.json",
+      "results/diffusion_config.json": "results_runexp_smoke2/diffusion_config.json",
+      "results/evaluation_result.json": "results_runexp_smoke2/evaluation_result.json",
+      "results/loss_trace.json": "results_runexp_smoke2/loss_trace.json",
+      "results/model_registry.json": "results_runexp_smoke2/model_registry.json",
+      "results/readiness.json": "results_runexp_smoke2/readiness.json",
+      "results/sampling_trace.json": "results_runexp_smoke2/sampling_trace.json",
+      "results/tokenizer_registry.json": "results_runexp_smoke2/tokenizer_registry.json"
+    }
+  },
+  "dry_run_contract_artifact": true,
+  "instantiated": {
+    "artifact_writer": true,
+    "dataset_factory": true,
+    "evaluator": true,
+    "model": true,
+    "model_loader": true,
+    "sampler": "sde",
+    "task": "two_moons"
+  },
+  "mode": "runtime_smoke",
+  "paper_scale_claim": false,
+  "ready": true,
+  "registry_visibility": {
+    "methods": [
+      "ours",
+      "simformer",
+      "npe",
+      "nle",
+      "nre",
+      "diffusion_model",
+      "lora",
+      "ground_truth_feedback"
+    ],
+    "sweep_keys": [
+      "alpha",
+      "beta",
+      "gamma",
+      "similarity_guidance_scale",
+      "mask_probability",
+      "simulation_budget",
+      "smoke_simulation_budget",
+      "mask_variant",
+      "population_size",
+      "lora_rank",
+      "noise_level_t",
+      "condition_state"
+    ],
+    "tasks": [
+      "two_moons",
+      "gaussian_linear",
+      "gaussian_mixture",
+      "slcp",
+      "lotka_volterra",
+      "sird",
+      "hodgkin_huxley"
+    ],
+    "trend_ids": [
+      "baseline_outperformance",
+      "positive_parameter_improves",
+      "structured_attention_efficiency",
+      "c2st_semantics"
+    ]
+  }
+}

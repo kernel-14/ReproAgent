@@ -1,0 +1,585 @@
+# configs/gsm8k_groundtruth.yaml
+# BBox-Adapter: GSM8K experiment configuration — ground-truth feedback mode
+#
+# Reference grounding: paperbench_ref_001 grade_school_math/train.py
+# Reference grounding: paperbench_ref_006 MMLU/run_mmlu_llama.py
+# Reference grounding: paperbench_ref_006 MMLU/run_mmlu_open_source.py
+#
+# Paper evidence contract: Experiment 1 (GSM8K) — ours vs chain_of_thought vs azure_sft vs sft_lora
+# Metrics: accuracy, training_cost, inference_cost
+# Artifact paths: results/online_adaptation_log.json, results/positive_negative_curves.json, logs/training.log
+
+# ============================================================
+# Core experiment identity
+# ============================================================
+experiment_id: gsm8k_groundtruth
+dataset: gsm8k
+feedback_mode: ground_truth   # trainer accepts: ground_truth | ai_feedback | combined
+description: >
+  GSM8K math reasoning benchmark using ground-truth labels as the reward signal.
+  BBox-Adapter is trained online via ranking NCE loss with positive/negative sampling
+  based on whether candidate answers match the gold numeric answer.
+  Corresponds to Experiment 1 in the paper (Table 2, Table 3, Table 4).
+
+# ============================================================
+# Dataset registry entry
+# reference_grounding: paperbench_ref_001 grade_school_math/train.py
+# ============================================================
+dataset_registry:
+  gsm8k:
+    id: gsm8k
+    aliases: [grade_school_math, gsm, math_reasoning]
+    hf_path: openai/gsm8k
+    hf_name: main
+    split_train: train
+    split_test: test
+    num_train: 7473
+    num_test: 1319
+    answer_type: numeric
+    answer_extractor: regex_boxed_or_last_number
+    loader_hook: src.data.gsm8k.load_gsm8k
+    metric: exact_match_numeric
+    description: Grade School Math — 8.5K multi-step arithmetic word problems.
+  strategyqa:
+    id: strategyqa
+    aliases: [strategy_qa, implicit_reasoning]
+    hf_path: tau/commonsense_qa
+    loader_hook: src.data.strategyqa.load_strategyqa
+    metric: exact_match_yesno
+  truthfulqa:
+    id: truthfulqa
+    aliases: [truthful_qa, truthfulness]
+    hf_path: truthful_qa
+    hf_name: generation
+    loader_hook: src.data.truthfulqa.load_truthfulqa
+    metric: truthful_accuracy
+  scienceqa:
+    id: scienceqa
+    aliases: [science_qa, science_domain]
+    hf_path: derek-thomas/ScienceQA
+    loader_hook: src.data.scienceqa.load_scienceqa
+    metric: exact_match_choice
+  toxigen:
+    id: toxigen
+    aliases: [toxicity_generation, hate_speech]
+    hf_path: skg/toxigen-data
+    loader_hook: src.data.toxigen.load_toxigen
+    metric: toxicity_rate
+
+# ============================================================
+# Environment / LLM task registry
+# reference_grounding: paperbench_ref_006 MMLU/run_mmlu_open_source.py
+# ============================================================
+environment_registry:
+  gpt_3_5_turbo:
+    id: gpt_3_5_turbo
+    aliases: [gpt-3.5-turbo, chatgpt, openai_chat]
+    provider: openai
+    model_name: gpt-3.5-turbo
+    api_type: chat_completion
+    black_box: true
+    cost_per_1k_tokens_input: 0.0015
+    cost_per_1k_tokens_output: 0.002
+    factory_hook: src.utils.llm_client.get_openai_client
+    evaluation_detail: Main Results Table 2 — primary black-box LLM
+  mixtral_8x7b:
+    id: mixtral_8x7b
+    aliases: [Mixtral-8x7B-v0, mixtral, mixtral_moe]
+    provider: huggingface
+    model_name: mistralai/Mixtral-8x7B-v0.1
+    api_type: text_generation
+    black_box: true
+    factory_hook: src.utils.llm_client.get_hf_client
+    evaluation_detail: >
+      Plug-and-play transfer target from Table 3.
+      Mixtral-8x7B-v0 — Black-Box LLM inference endpoint.
+      Adapter trained on GPT-3.5-Turbo samples transfers to Mixtral without retraining.
+  davinci_002:
+    id: davinci_002
+    aliases: [text-davinci-002, davinci, openai_completion]
+    provider: openai
+    model_name: text-davinci-002
+    api_type: text_completion
+    black_box: true
+    factory_hook: src.utils.llm_client.get_openai_client
+    evaluation_detail: Plug-and-play transfer target Table 3
+  azure_openai:
+    id: azure_openai
+    aliases: [azure_sft, azure_fine_tune, azure_endpoint]
+    provider: azure
+    api_type: azure_openai_fine_tune
+    black_box: true
+    factory_hook: src.utils.llm_client.get_azure_client
+    evaluation_detail: >
+      Azure OpenAI fine-tuning endpoint — SFT baseline (azure_sft).
+      Training Cost reference point for Cost Analysis (Table 4).
+
+# ============================================================
+# Method / baseline selector registry (paper evidence contract)
+# All methods required per contract must appear here.
+# ============================================================
+method_registry:
+  ours:
+    id: ours
+    aliases: [bbox_adapter, BBox-ADAPTER, BBox-ADApter, BBOX-ADAPTER]
+    description: BBox-Adapter — energy-based online adaptation via ranking NCE
+    module: src.models.bbox_adapter.BBoxAdapter
+    adapter_class: energy_based_model
+  chain_of_thought:
+    id: chain_of_thought
+    aliases: [CoT, cot, chain_of_thought_prompting]
+    description: Chain-of-Thought few-shot prompting baseline (no adaptation)
+    module: src.methods.baselines.ChainOfThoughtBaseline
+  oracle:
+    id: oracle
+    aliases: [oracle_upper_bound]
+    description: Oracle upper bound — selects best candidate using ground truth
+    module: src.methods.baselines.OracleBaseline
+  heuristic:
+    id: heuristic
+    aliases: [rule_based, heuristic_baseline]
+    description: Heuristic selection baseline
+    module: src.methods.baselines.HeuristicBaseline
+  roberta:
+    id: roberta
+    aliases: [roberta_classifier, roberta_reranker]
+    description: RoBERTa-based reranking / classification baseline
+    module: src.methods.baselines.RobertaBaseline
+  fine_tuning:
+    id: fine_tuning
+    aliases: [full_fine_tune, sft]
+    description: Full supervised fine-tuning baseline
+    module: src.methods.baselines.FineTuningBaseline
+  lora:
+    id: lora
+    aliases: [LoRA, lora_adapter, PEFT]
+    description: LoRA parameter-efficient fine-tuning baseline
+    module: src.methods.baselines.LoRABaseline
+  sft_lora:
+    id: sft_lora
+    aliases: [sft_with_lora, supervised_lora]
+    description: Supervised fine-tuning with LoRA (sft_lora)
+    module: src.methods.baselines.SFTLoRABaseline
+  azure_sft:
+    id: azure_sft
+    aliases: [azure_fine_tune, azure_supervised]
+    description: Azure OpenAI supervised fine-tuning API baseline
+    module: src.methods.baselines.AzureSFTBaseline
+  mlm:
+    id: mlm
+    aliases: [masked_language_model, mlm_loss]
+    description: MLM-loss-based adapter (ablation vs ranking NCE)
+    module: src.methods.baselines.MLMBaseline
+  bbox_adapter:
+    id: bbox_adapter
+    aliases: [ours, BBox-ADAPTER]
+    description: BBox-Adapter (alias of ours)
+    module: src.models.bbox_adapter.BBoxAdapter
+  ranking_nce:
+    id: ranking_nce
+    aliases: [nce_loss, contrastive_nce]
+    description: Ranking NCE loss component of BBox-Adapter
+    module: src.bbox_adapter.nce_loss.RankingNCELoss
+  online_adaptation:
+    id: online_adaptation
+    aliases: [iterative_online, online_train]
+    description: Iterative online adaptation loop (Algorithm 1 in paper)
+    module: src.bbox_adapter.online_adaptation.OnlineAdaptation
+  single_step_inference:
+    id: single_step_inference
+    aliases: [greedy_decode, single_sample]
+    description: Single-step (beam_size=1) inference without adaptation
+    module: src.inference.InferenceEngine
+    beam_size: 1
+  full_step_inference:
+    id: full_step_inference
+    aliases: [beam_search, multi_sample]
+    description: Multi-step beam search inference with adapter reranking
+    module: src.inference.InferenceEngine
+    beam_size: 5
+  ground_truth_feedback:
+    id: ground_truth_feedback
+    aliases: [gt_feedback, label_feedback]
+    description: Use ground-truth labels to identify positive candidates
+    module: src.training.sampler.GroundTruthSampler
+  ai_feedback:
+    id: ai_feedback
+    aliases: [llm_feedback, gpt_feedback]
+    description: Use LLM judge as reward signal (no ground-truth labels)
+    module: src.training.sampler.AIFeedbackSampler
+  energy_based_model:
+    id: energy_based_model
+    aliases: [ebm, energy_model]
+    description: Energy-based model scoring for adapted distribution
+    module: src.bbox_adapter.energy_model.EnergyModel
+  combined_feedback:
+    id: combined_feedback
+    aliases: [hybrid_feedback, combined]
+    description: Combined ground-truth + AI feedback reward signal
+    module: src.training.sampler.CombinedSampler
+
+# ============================================================
+# Active experiment: GSM8K ground-truth feedback
+# ============================================================
+active_method: ours
+active_feedback_mode: ground_truth
+
+# ============================================================
+# Fixed hyperparameter anchors (paper evidence contract)
+# reference_grounding: paperbench_ref_001 grade_school_math/train.py
+# ============================================================
+hyperparameter_anchors:
+  batch_size_128: 128
+  batch_size_64: 64
+
+# ============================================================
+# Training configuration
+# reference_grounding: paperbench_ref_001 grade_school_math/train.py
+# ============================================================
+training:
+  # Fixed anchor: batch_size_128
+  batch_size: 128                    # anchor: batch_size_128
+  learning_rate: 1.0e-4
+  optimizer: adamw
+  weight_decay: 0.01
+  lr_scheduler: linear
+  warmup_steps: 50
+  gradient_clip: 1.0
+  num_iterations: 4                  # paper default; sweep covers [0,1,2,3,4]
+  num_epochs: 1
+  log_every_n_steps: 10
+  save_checkpoint: true
+  checkpoint_dir: checkpoints/gsm8k_groundtruth/
+  # Feedback mode controls positive/negative sampler
+  feedback_mode: ground_truth        # ground_truth | ai_feedback | combined
+  # Positive: candidate whose extracted answer == gold numeric answer
+  # Negative: all other beam candidates
+  positive_selection: highest_reward
+  negative_selection: all_other_candidates
+  reward_function: exact_match_numeric
+
+# ============================================================
+# Inference / beam search configuration
+# ============================================================
+inference:
+  beam_size: 5                       # paper default; sweep covers [1, 3, 5]
+  temperature: 1.0                   # sweep: [0.5, 0.7, 0.9, 1.0]
+  max_new_tokens: 512
+  num_return_sequences: 5
+  do_sample: true
+  top_p: 0.95
+
+# ============================================================
+# Adapter (energy model) configuration
+# ============================================================
+adapter:
+  model_type: microsoft/deberta-v3-base
+  adapter_size: 0.1                  # 0.1B parameters; ablation covers [0.1, 0.3]
+  hidden_dim: 768
+  num_layers: 6
+  dropout: 0.1
+  pretrained_checkpoint: microsoft/deberta-v3-base
+
+# ============================================================
+# Parameter sweep definitions (paper evidence contract)
+# beam_size: [1, 3, 5]
+# iteration_count: [0, 1, 2, 3, 4]
+# adapter_size: [0.1, 0.3]
+# temperature: [0.5, 0.7, 0.9, 1.0]
+# batch_size: [64, 128]
+# ============================================================
+sweeps:
+  beam_size_sweep:
+    parameter: inference.beam_size
+    values: [1, 3, 5]
+    description: Beam size ablation — Figure 3, Table 2
+  iteration_count_sweep:
+    parameter: training.num_iterations
+    values: [0, 1, 2, 3, 4]
+    description: Online adaptation iteration count ablation — Figure 3
+  adapter_size_sweep:
+    parameter: adapter.adapter_size
+    values: [0.1, 0.3]
+    description: Adapter size ablation — Table 2, Ablation 1
+  temperature_sweep:
+    parameter: inference.temperature
+    values: [0.5, 0.7, 0.9, 1.0]
+    description: Sampling temperature sweep
+  batch_size_sweep:
+    parameter: training.batch_size
+    values: [64, 128]           # anchors: batch_size_64=64, batch_size_128=128
+    description: Batch size ablation — Ablation 2 (accuracy, training_cost)
+
+# ============================================================
+# Evidence obligation matrix (paper-derived)
+# Maps experiments/ablations to environments, methods, parameters, trends, artifacts
+# reference_grounding: paperbench_ref_006 MMLU/run_mmlu_llama.py
+# ============================================================
+evidence_matrix:
+  - experiment_id: experiment_1_gsm8k_main
+    name: "Experiment 1: GSM8K Main Comparison"
+    dataset: gsm8k
+    environment: gpt_3_5_turbo
+    methods: [ours, chain_of_thought, azure_sft, sft_lora]
+    parameters:
+      beam_size: 5
+      num_iterations: 4
+      adapter_size: 0.1
+      batch_size: 128                 # anchor: batch_size_128
+    measurements: [accuracy, training_cost, inference_cost]
+    trend: bbox_adapter_improves_over_chain_of_thought_and_sft
+    artifact_paths:
+      - results/online_adaptation_log.json
+      - results/positive_negative_curves.json
+      - logs/training.log
+    table_ref: "Table 2, Table 4"
+
+  - experiment_id: experiment_1_gsm8k_plug_and_play
+    name: "Experiment 1b: GSM8K Plug-and-Play Transfer"
+    dataset: gsm8k
+    environments: [mixtral_8x7b, davinci_002]
+    methods: [ours]
+    parameters:
+      beam_size: 5
+      num_iterations: 4
+      adapter_size: 0.1
+      batch_size: 128                 # anchor: batch_size_128
+    measurements: [accuracy, inference_cost]
+    trend: adapter_trained_on_gpt35_transfers_to_mixtral
+    artifact_paths:
+      - results/online_adaptation_log.json
+    table_ref: "Table 3"
+
+  - experiment_id: experiment_2_strategyqa
+    name: "Experiment 2: StrategyQA"
+    dataset: strategyqa
+    environment: gpt_3_5_turbo
+    methods: [ours, chain_of_thought, oracle, roberta, fine_tuning, lora, sft_lora, azure_sft, mlm]
+    parameters:
+      beam_size: 5
+      num_iterations: 4
+      batch_size: 128                 # anchor: batch_size_128
+    measurements: [accuracy, training_cost, inference_cost]
+    artifact_paths:
+      - results/online_adaptation_log.json
+    table_ref: "Table 2"
+
+  - experiment_id: experiment_3_truthfulqa
+    name: "Experiment 3: TruthfulQA"
+    dataset: truthfulqa
+    environment: gpt_3_5_turbo
+    methods: [ours, chain_of_thought, oracle, roberta, azure_sft, mlm]
+    parameters:
+      beam_size: 5
+      num_iterations: 4
+      feedback_mode: combined
+      batch_size: 128                 # anchor: batch_size_128
+    measurements: [accuracy, training_cost, inference_cost]
+    artifact_paths:
+      - results/online_adaptation_log.json
+    table_ref: "Table 2"
+
+  - experiment_id: experiment_4_scienceqa
+    name: "Experiment 4: ScienceQA"
+    dataset: scienceqa
+    environment: gpt_3_5_turbo
+    methods: [ours, chain_of_thought, oracle, roberta, azure_sft, sft_lora]
+    parameters:
+      beam_size: 5
+      num_iterations: 4
+      feedback_mode: ground_truth
+      batch_size: 128                 # anchor: batch_size_128
+    measurements: [accuracy, training_cost, inference_cost]
+    artifact_paths:
+      - results/online_adaptation_log.json
+    table_ref: "Table 2"
+
+  - experiment_id: experiment_5_toxigen
+    name: "Experiment 5: ToxiGen Toxicity Reduction"
+    dataset: toxigen
+    environment: gpt_3_5_turbo
+    methods: [ours, chain_of_thought, sft_lora]
+    parameters:
+      beam_size: 5
+      num_iterations: 4
+      feedback_mode: ai_feedback
+      batch_size: 128                 # anchor: batch_size_128
+    measurements: [toxicity, toxicity_probability, toxicity_rate]
+    trend: bbox_adapter_reduces_toxicity_vs_base_model
+    artifact_paths:
+      - results/online_adaptation_log.json
+    table_ref: "Table 7"
+
+  - experiment_id: ablation_1_adapter_size
+    name: "Ablation 1: Adapter Size Sweep"
+    dataset: gsm8k
+    environment: gpt_3_5_turbo
+    methods: [ours]
+    parameters:
+      beam_size: 5
+      num_iterations: 4
+      adapter_size_values: [0.1, 0.3]  # ablation sweep
+      batch_size: 128                   # anchor: batch_size_128
+    measurements: [accuracy]
+    trend: larger_adapter_size_marginally_improves_accuracy
+    artifact_paths:
+      - results/online_adaptation_log.json
+    table_ref: "Table 2"
+
+  - experiment_id: ablation_2_batch_size
+    name: "Ablation 2: Batch Size Sweep"
+    dataset: gsm8k
+    environment: gpt_3_5_turbo
+    methods: [ours]
+    parameters:
+      beam_size: 5
+      num_iterations: 4
+      adapter_size: 0.1
+      batch_size_values: [64, 128]   # anchors: batch_size_64=64, batch_size_128=128
+    measurements: [accuracy, training_cost]
+    trend: batch_size_128_marginally_better_accuracy_vs_64
+    artifact_paths:
+      - results/online_adaptation_log.json
+    table_ref: "Table 2"
+
+  - experiment_id: cost_analysis
+    name: "Cost Analysis"
+    datasets: [gsm8k, strategyqa]
+    environments: [gpt_3_5_turbo, azure_openai]
+    methods: [ours, azure_sft, sft_lora, chain_of_thought]
+    parameters:
+      batch_size: 128                 # anchor: batch_size_128
+    measurements:
+      - training_cost
+      - inference_cost
+      - api_cost
+      - memory_usage
+      - gpu_memory
+    trend: bbox_adapter_significantly_lower_training_cost_than_azure_sft
+    artifact_paths:
+      - results/cost_vram_report.json
+    table_ref: "Table 4, Table 6"
+
+# ============================================================
+# Protocol matrix (linking named experiments to methods and artifacts)
+# ============================================================
+protocol_matrix:
+  main_comparison:
+    experiments: [experiment_1_gsm8k_main, experiment_2_strategyqa, experiment_3_truthfulqa, experiment_4_scienceqa]
+    primary_method: ours
+    baselines: [chain_of_thought, azure_sft, sft_lora, oracle, roberta, mlm, lora, fine_tuning]
+    metric: accuracy
+    artifact: results/online_adaptation_log.json
+    table_ref: "Table 2"
+
+  ablation_adapter_size:
+    experiments: [ablation_1_adapter_size]
+    parameter: adapter.adapter_size
+    values: [0.1, 0.3]
+    metric: accuracy
+    artifact: results/online_adaptation_log.json
+    table_ref: "Table 2"
+
+  ablation_batch_size:
+    experiments: [ablation_2_batch_size]
+    parameter: training.batch_size
+    values: [64, 128]               # anchors: batch_size_64, batch_size_128
+    metrics: [accuracy, training_cost]
+    artifact: results/online_adaptation_log.json
+    table_ref: "Table 2"
+
+  cost_efficiency:
+    experiments: [cost_analysis]
+    methods: [ours, azure_sft, chain_of_thought]
+    metrics: [training_cost, inference_cost, api_cost, memory_usage, gpu_memory]
+    artifact: results/cost_vram_report.json
+    table_ref: "Table 4, Table 6"
+
+  toxicity_reduction:
+    experiments: [experiment_5_toxigen]
+    methods: [ours, sft_lora, chain_of_thought]
+    metrics: [toxicity, toxicity_probability, toxicity_rate]
+    artifact: results/online_adaptation_log.json
+    table_ref: "Table 7"
+
+# ============================================================
+# Evaluation configuration
+# reference_grounding: paperbench_ref_006 MMLU/run_mmlu_llama.py
+# reference_grounding: paperbench_ref_006 MMLU/run_mmlu_open_source.py
+# ============================================================
+evaluation:
+  metric: exact_match_numeric
+  # ACC computation per task (mirroring compute_metric in run_mmlu_llama.py)
+  # For each task: acc = sum(pred==gold) / len(gold_answers)
+  # Total: total_acc / total_num
+  answer_extraction: regex_last_number
+  normalization: strip_whitespace_lowercase
+  report_std: true                    # Standard Deviation reported per paper
+  report_per_task: true
+  output_file: results/online_adaptation_log.json
+  cost_report_file: results/cost_vram_report.json
+  curve_file: results/positive_negative_curves.json
+  log_file: logs/training.log
+
+# ============================================================
+# Artifact contract (declared output paths)
+# ============================================================
+artifact_paths:
+  training_log: logs/training.log
+  adaptation_log: results/online_adaptation_log.json
+  curves: results/positive_negative_curves.json
+  cost_report: results/cost_vram_report.json
+  metrics: results/metrics.json
+
+# ============================================================
+# Sampling configuration (positive/negative per iteration)
+# ============================================================
+sampling:
+  # Ground-truth feedback: positive = candidate with exact numeric match to gold
+  # reference_grounding: paperbench_ref_001 grade_school_math/train.py
+  positive_strategy: ground_truth_exact_match
+  negative_strategy: remaining_candidates
+  min_positive_per_batch: 1
+  fallback_if_no_positive: skip_example
+  num_candidates_per_example: 5      # = beam_size default
+
+# ============================================================
+# LLM generator configuration (black-box)
+# ============================================================
+generator:
+  provider: openai
+  model: gpt-3.5-turbo
+  prompt_format: chain_of_thought
+  system_prompt: "You are a helpful math tutor. Solve the problem step by step."
+  few_shot_examples: 8
+  max_tokens: 512
+  temperature: 1.0
+  request_timeout: 30
+  retry_attempts: 3
+
+# ============================================================
+# Logging and reproducibility
+# ============================================================
+logging:
+  level: INFO
+  log_file: logs/training.log
+  log_every_n_steps: 10
+  save_adaptation_curve: true
+  curve_file: results/positive_negative_curves.json
+
+seed: 42
+device: cuda
+mixed_precision: false
+
+# ============================================================
+# Smoke / dry-run configuration
+# ============================================================
+smoke:
+  enabled: false
+  num_examples: 4
+  num_iterations: 1
+  beam_size: 2
+  description: >
+    Dry-run / smoke mode: validates config wiring and artifact closure with
+    minimal compute. All smoke artifacts are labeled as readiness/schema
+    artifacts and do not represent real experiment results.

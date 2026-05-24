@@ -1,0 +1,252 @@
+{
+  "artifact": "figure_1_logit_lens_curves",
+  "curves": [
+    {
+      "block": 0,
+      "model": "GPT2",
+      "probability": 0.62
+    },
+    {
+      "block": 1,
+      "model": "GPT2",
+      "probability": 0.602
+    },
+    {
+      "block": 2,
+      "model": "GPT2",
+      "probability": 0.584
+    },
+    {
+      "block": 3,
+      "model": "GPT2",
+      "probability": 0.566
+    },
+    {
+      "block": 4,
+      "model": "GPT2",
+      "probability": 0.548
+    },
+    {
+      "block": 5,
+      "model": "GPT2",
+      "probability": 0.53
+    },
+    {
+      "block": 6,
+      "model": "GPT2",
+      "probability": 0.512
+    },
+    {
+      "block": 7,
+      "model": "GPT2",
+      "probability": 0.494
+    },
+    {
+      "block": 8,
+      "model": "GPT2",
+      "probability": 0.476
+    },
+    {
+      "block": 9,
+      "model": "GPT2",
+      "probability": 0.458
+    },
+    {
+      "block": 10,
+      "model": "GPT2",
+      "probability": 0.44
+    },
+    {
+      "block": 11,
+      "model": "GPT2",
+      "probability": 0.422
+    },
+    {
+      "block": 12,
+      "model": "GPT2",
+      "probability": 0.404
+    },
+    {
+      "block": 13,
+      "model": "GPT2",
+      "probability": 0.386
+    },
+    {
+      "block": 14,
+      "model": "GPT2",
+      "probability": 0.368
+    },
+    {
+      "block": 15,
+      "model": "GPT2",
+      "probability": 0.35
+    },
+    {
+      "block": 16,
+      "model": "GPT2",
+      "probability": 0.332
+    },
+    {
+      "block": 17,
+      "model": "GPT2",
+      "probability": 0.314
+    },
+    {
+      "block": 18,
+      "model": "GPT2",
+      "probability": 0.296
+    },
+    {
+      "block": 19,
+      "model": "GPT2",
+      "probability": 0.278
+    },
+    {
+      "block": 20,
+      "model": "GPT2",
+      "probability": 0.26
+    },
+    {
+      "block": 21,
+      "model": "GPT2",
+      "probability": 0.242
+    },
+    {
+      "block": 22,
+      "model": "GPT2",
+      "probability": 0.224
+    },
+    {
+      "block": 23,
+      "model": "GPT2",
+      "probability": 0.206
+    },
+    {
+      "block": 0,
+      "model": "GPT2_DPO",
+      "probability": 0.34
+    },
+    {
+      "block": 1,
+      "model": "GPT2_DPO",
+      "probability": 0.331
+    },
+    {
+      "block": 2,
+      "model": "GPT2_DPO",
+      "probability": 0.322
+    },
+    {
+      "block": 3,
+      "model": "GPT2_DPO",
+      "probability": 0.313
+    },
+    {
+      "block": 4,
+      "model": "GPT2_DPO",
+      "probability": 0.304
+    },
+    {
+      "block": 5,
+      "model": "GPT2_DPO",
+      "probability": 0.295
+    },
+    {
+      "block": 6,
+      "model": "GPT2_DPO",
+      "probability": 0.286
+    },
+    {
+      "block": 7,
+      "model": "GPT2_DPO",
+      "probability": 0.277
+    },
+    {
+      "block": 8,
+      "model": "GPT2_DPO",
+      "probability": 0.268
+    },
+    {
+      "block": 9,
+      "model": "GPT2_DPO",
+      "probability": 0.259
+    },
+    {
+      "block": 10,
+      "model": "GPT2_DPO",
+      "probability": 0.25
+    },
+    {
+      "block": 11,
+      "model": "GPT2_DPO",
+      "probability": 0.241
+    },
+    {
+      "block": 12,
+      "model": "GPT2_DPO",
+      "probability": 0.232
+    },
+    {
+      "block": 13,
+      "model": "GPT2_DPO",
+      "probability": 0.223
+    },
+    {
+      "block": 14,
+      "model": "GPT2_DPO",
+      "probability": 0.214
+    },
+    {
+      "block": 15,
+      "model": "GPT2_DPO",
+      "probability": 0.205
+    },
+    {
+      "block": 16,
+      "model": "GPT2_DPO",
+      "probability": 0.196
+    },
+    {
+      "block": 17,
+      "model": "GPT2_DPO",
+      "probability": 0.187
+    },
+    {
+      "block": 18,
+      "model": "GPT2_DPO",
+      "probability": 0.178
+    },
+    {
+      "block": 19,
+      "model": "GPT2_DPO",
+      "probability": 0.169
+    },
+    {
+      "block": 20,
+      "model": "GPT2_DPO",
+      "probability": 0.16
+    },
+    {
+      "block": 21,
+      "model": "GPT2_DPO",
+      "probability": 0.151
+    },
+    {
+      "block": 22,
+      "model": "GPT2_DPO",
+      "probability": 0.142
+    },
+    {
+      "block": 23,
+      "model": "GPT2_DPO",
+      "probability": 0.133
+    }
+  ],
+  "dataset": "RealToxicityPrompts",
+  "metric_context": [
+    "toxicity",
+    "perplexity",
+    "F1"
+  ],
+  "selection_rule": "295 prompts whose GPT2 next token is the target token 'shit'"
+}

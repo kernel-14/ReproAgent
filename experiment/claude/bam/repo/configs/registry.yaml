@@ -1,0 +1,1247 @@
+schema_version: "1.0"
+registry_id: "paperbench_bam_score_divergence_registry"
+reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+
+paper:
+  title: "Batch and match: black-box variational inference with a score-based divergence"
+  reproduction_route: "scripts/run_experiments.py"
+  blacklisted_repositories:
+    - "https://github.com/modichirag/GSM-VI"
+  canonical_invocations:
+    default: "python scripts/run_experiments.py"
+    runtime_smoke: "python scripts/run_experiments.py --mode runtime_smoke"
+    docker_validate: "python scripts/run_experiments.py --mode docker_validate"
+  artifact_directory_env: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+
+implementation_surfaces:
+  config:
+    registry_path: "configs/registry.yaml"
+    run_config_path: "run_config.json"
+    loader_hooks:
+      python_config_module: "bam.config"
+      experiment_module: "bam.experiments"
+      environment_registry_module: "src.environment_registry"
+      dataset_registry_module: "src.dataset_registry"
+      method_registry_module: "src.method_registry"
+      sweep_registry_module: "src.sweep_registry"
+  data_pipeline:
+    dataset_prepare_validate_path: "src/data/data.py:prepare_validate_dataset"
+    dataset_registry_path: "src/dataset_registry.py"
+    required_dataset_ids:
+      - "cifar"
+      - "high_dimensional_images_unspecified"
+  target_distribution:
+    target_factory_path: "bam.targets:make_target"
+    score_interface_path: "bam.targets:TargetDistribution.score"
+    required_target_families:
+      - "synthetic_gaussian"
+      - "controlled_non_gaussian"
+      - "hierarchical_bayesian_posterior"
+      - "deep_generative_latent_posterior"
+  training_loop:
+    canonical_loop_path: "bam.training_loop:run_training_loop"
+    bam_algorithm_path: "src/algorithms/bam.py"
+    advi_algorithm_path: "src/algorithms/advi.py"
+    gsm_algorithm_path: "src/algorithms/gsm.py"
+    default_mode: "runtime_smoke"
+    full_mode_requires_explicit_selection: true
+  evaluation:
+    metrics_path: "evaluation/metrics.py"
+    aggregation_path: "evaluation/aggregation.py"
+    report_path: "evaluation/report.py"
+    plotting_path: "src/reporting/plotting.py"
+  artifact_writer:
+    contract_path: "src/artifact_contract.py"
+    report_writer_path: "evaluation/report.py:write_experiment_report"
+    dry_run_writer_required: true
+    smoke_modes:
+      - "runtime_smoke"
+      - "docker_validate"
+  tests:
+    smoke_tests:
+      - "tests/test_smoke.py"
+      - "tests/test_contracts.py"
+  baseline_or_ablation:
+    method_registry_path: "src/method_registry.py"
+    required_selectors:
+      - "ours"
+      - "baseline"
+      - "BaM"
+      - "ADVI"
+      - "GSM"
+      - "BBVI"
+      - "KL"
+      - "ELBO"
+      - "CLI"
+      - "SPP"
+      - "EM"
+
+execution_modes:
+  runtime_smoke:
+    description: "Bounded contract execution that validates wiring and writes schema/readiness artifacts; it does not claim benchmark results."
+    max_iterations: 2
+    max_batch_size: 4
+    materialize_all_declared_artifacts: true
+    result_label: "dry-run contract artifact"
+  docker_validate:
+    description: "Container-safe validation mode equivalent to runtime_smoke with environment echo and artifact closure."
+    max_iterations: 2
+    max_batch_size: 4
+    materialize_all_declared_artifacts: true
+    result_label: "dry-run contract artifact"
+  full:
+    description: "Explicitly requested reproduction mode for paper-scale protocols."
+    requires_explicit_flag: true
+    default_iterations_key: "100_iterations"
+
+environment_registry:
+  - id: "jax_cpu"
+    aliases:
+      - "JAX"
+      - "CPU"
+      - "jax"
+      - "cpu"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    setup_metadata:
+      backend: "jax"
+      device: "cpu"
+      optional_dependency: "jax"
+      lazy_import_required: true
+      readiness_check: "src.environment_registry:check_environment"
+    config_hooks:
+      factory: "src.environment_registry:get_environment"
+      config_key: "jax_cpu"
+    artifact_paths:
+      - "results/environment_registry.json"
+      - "results/config_echo.json"
+      - "results/run_summary.json"
+
+  - id: "jax_gpu"
+    aliases:
+      - "GPU"
+      - "cuda"
+      - "jax-gpu"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    setup_metadata:
+      backend: "jax"
+      device: "gpu"
+      optional_dependency: "jax[cuda]"
+      lazy_import_required: true
+      fallback_for_smoke: "jax_cpu"
+    config_hooks:
+      factory: "src.environment_registry:get_environment"
+      config_key: "jax_gpu"
+    artifact_paths:
+      - "results/environment_registry.json"
+      - "results/config_echo.json"
+      - "results/run_summary.json"
+
+  - id: "synthetic_target_protocol"
+    aliases:
+      - "5.1"
+      - "synthetic targets"
+      - "Gaussian target protocol"
+      - "controlled non-Gaussianity"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    setup_metadata:
+      target_families:
+        - "synthetic_gaussian"
+        - "controlled_non_gaussian"
+      score_required: true
+      exact_normalizer_required: false
+    config_hooks:
+      target_factory: "bam.targets:make_target"
+      experiment_factory: "bam.experiments:make_experiment"
+
+  - id: "hierarchical_bayesian_protocol"
+    aliases:
+      - "5.2"
+      - "hierarchical Bayesian models"
+      - "PosteriorDB"
+      - "hierarchical Bayesian posterior protocol"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    setup_metadata:
+      target_family: "hierarchical_bayesian_posterior"
+      posterior_form: "p(z|{x_n}) proportional to p(z) p({x_n}|z)"
+      score_required: true
+      bridgestan_optional_for_full: true
+      smoke_uses_local_score_model: true
+    config_hooks:
+      target_factory: "bam.targets:make_target"
+      dataset_prepare_validate_path: "src/data/data.py:prepare_validate_dataset"
+
+  - id: "deep_generative_latent_posterior_protocol"
+    aliases:
+      - "5.3"
+      - "deep generative model"
+      - "deep generative latent posterior protocol"
+      - "Figure 5.3"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    setup_metadata:
+      target_family: "deep_generative_latent_posterior"
+      latent_variables: "z_n"
+      observation_model: "x_n | z_n"
+      high_dimensional_observations: true
+      score_required: true
+      smoke_uses_tiny_decoder: true
+    config_hooks:
+      target_factory: "bam.targets:make_target"
+      dataset_prepare_validate_path: "src/data/data.py:prepare_validate_dataset"
+
+  - id: "cifar"
+    aliases:
+      - "CIFAR"
+      - "cifar contract protocol"
+      - "high-dimensional objects such as images"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    setup_metadata:
+      dataset_id: "cifar"
+      exact_dataset_name_in_paper_context: "not specified"
+      external_download_required_for_full: false
+      smoke_dataset_kind: "schema-only image batch"
+      image_like: true
+    config_hooks:
+      dataset_factory: "src.dataset_registry:get_dataset"
+      dataset_prepare_validate_path: "src/data/data.py:prepare_validate_dataset"
+      experiment_factory: "bam.experiments:make_experiment"
+
+dataset_registry:
+  cifar:
+    id: "cifar"
+    aliases:
+      - "CIFAR"
+      - "cifar contract protocol"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    description: "Addendum/contract dataset surface for CIFAR-compatible high-dimensional image observations."
+    setup_metadata:
+      kind: "image"
+      external_asset_policy: "do not download during smoke"
+      smoke_validation_shape: [4, 32, 32, 3]
+      exact_dataset_name_specified: false
+    loader_config_hooks:
+      registry_hook: "src.dataset_registry:get_dataset"
+      prepare_validate_hook: "src/data/data.py:prepare_validate_dataset"
+    validation_artifact: "results/data_manifest.json"
+
+  high_dimensional_images_unspecified:
+    id: "high_dimensional_images_unspecified"
+    aliases:
+      - "high-dimensional objects such as images"
+      - "unspecified image benchmark"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    description: "Paper/context-compatible high-dimensional image data protocol where the exact dataset name is not specified."
+    setup_metadata:
+      kind: "image_protocol"
+      exact_dataset_name_specified: false
+      smoke_validation_shape: [4, 32, 32, 3]
+    loader_config_hooks:
+      registry_hook: "src.dataset_registry:get_dataset"
+      prepare_validate_hook: "src/data/data.py:prepare_validate_dataset"
+    validation_artifact: "results/data_manifest.json"
+
+target_registry:
+  synthetic_gaussian:
+    id: "synthetic_gaussian"
+    aliases:
+      - "Gaussian targets with increasing D"
+      - "5.1 Gaussian targets"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    factory: "bam.targets:make_target"
+    score_interface: "bam.targets:TargetDistribution.score"
+    dimensions: [4, 16, 64, 256]
+    smoke_dimensions: [4]
+    evaluation_inputs:
+      - "forward_kl"
+      - "reverse_kl"
+      - "mean_error"
+      - "covariance_error"
+    artifacts:
+      - "results/synthetic_kl_metrics.json"
+      - "results/gaussian_sanity_metrics.json"
+
+  controlled_non_gaussian:
+    id: "controlled_non_gaussian"
+    aliases:
+      - "5.1 controlled non-Gaussianity"
+      - "non-Gaussian targets"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    factory: "bam.targets:make_target"
+    score_interface: "bam.targets:TargetDistribution.score"
+    control_parameters:
+      p_values: [0, 1, 2, 4]
+      smoke_p_values: [0]
+      non_gaussianity_schedule: "bounded protocol; p=0 anchors Gaussian sanity"
+    evaluation_inputs:
+      - "forward_kl"
+      - "reverse_kl"
+      - "robustness_trend"
+    artifacts:
+      - "results/synthetic_kl_metrics.json"
+      - "results/protocol_matrix.json"
+
+  hierarchical_bayesian_posterior:
+    id: "hierarchical_bayesian_posterior"
+    aliases:
+      - "5.2 hierarchical Bayesian models"
+      - "PosteriorDB three target slots"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    factory: "bam.targets:make_target"
+    score_interface: "bam.targets:TargetDistribution.score"
+    posterior_form: "p(z|{x_n}) proportional to p(z) p({x_n}|z)"
+    target_slots:
+      - id: "ark"
+        dimension: 7
+        qualitative_shape: "nearly Gaussian"
+      - id: "hierarchical_slot_2"
+        dimension: null
+        qualitative_shape: "non-Gaussian posterior slot from paper protocol"
+      - id: "hierarchical_slot_3"
+        dimension: null
+        qualitative_shape: "non-Gaussian posterior slot from paper protocol"
+    full_mode_optional_dependency: "bridgestan"
+    smoke_uses_local_posterior_score: true
+    evaluation_inputs:
+      - "reference_sample_mmd"
+      - "forward_kl_proxy"
+      - "reverse_kl_proxy"
+      - "wallclock_seconds"
+    artifacts:
+      - "results/hierarchical_metrics.json"
+      - "results/traces.jsonl"
+
+  deep_generative_latent_posterior:
+    id: "deep_generative_latent_posterior"
+    aliases:
+      - "5.3 deep generative model"
+      - "Figure 5.3"
+      - "latent posterior"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    factory: "bam.targets:make_target"
+    score_interface: "bam.targets:TargetDistribution.score"
+    model_surface: "src/methods/models.py"
+    data_protocol: "cifar"
+    latent_variables: "z_n"
+    observation_model: "x_n | z_n"
+    smoke_uses_tiny_decoder: true
+    evaluation_inputs:
+      - "loss"
+      - "mse"
+      - "accuracy"
+      - "latent_score_norm"
+    artifacts:
+      - "results/deep_generative_metrics.json"
+      - "results/deep_generative_latent_params.npz"
+      - "results/figure_5_3.json"
+
+method_registry:
+  ours:
+    id: "ours"
+    aliases:
+      - "BaM"
+      - "Batch and Match"
+      - "score-based BBVI"
+    reference_grounding: "paper:paper_method_core paper.md"
+    selector: "ours"
+    adapter_path: "src.method_registry:get_method"
+    implementation_path: "src/algorithms/bam.py:run_bam"
+    training_loop_path: "bam.training_loop:run_training_loop"
+    variational_family: "full_covariance_gaussian"
+    divergence: "score_based_divergence"
+    batch_step:
+      samples: "z_1,...,z_B ~ q_t"
+      scores: "g_b = grad log p(z_b)"
+      statistics:
+        - "zbar"
+        - "C"
+        - "gbar"
+        - "Gamma"
+      artifact: "results/batch_statistics_trace.json"
+    match_step:
+      objective: "regularized matching objective with KL regularizer"
+      updates:
+        - "mu"
+        - "Sigma"
+      artifact: "results/bam_trace.json"
+    required_parameters:
+      - "lambda"
+      - "epsilon"
+      - "learning_rate"
+      - "batch_size"
+      - "iteration_count"
+    output_artifacts:
+      - "results/bam_final_variational_params.npz"
+      - "results/bam_trace.json"
+      - "results/batch_statistics_trace.json"
+
+  baseline:
+    id: "baseline"
+    aliases:
+      - "baseline selector"
+      - "comparison methods"
+    reference_grounding: "paper:paper_contract_sweep_hyperparameter_protocol paper.md"
+    selector: "baseline"
+    adapter_path: "src.method_registry:get_method"
+    members:
+      - "ADVI"
+      - "GSM"
+      - "BBVI"
+      - "KL"
+      - "ELBO"
+    required_for_comparison: true
+
+  BaM:
+    id: "BaM"
+    aliases:
+      - "ours"
+      - "Batch and Match"
+    reference_grounding: "paper:paper_method_core paper.md"
+    selector: "ours"
+    implementation_path: "src/algorithms/bam.py:run_bam"
+
+  ADVI:
+    id: "ADVI"
+    aliases:
+      - "automatic differentiation variational inference"
+      - "gradient-based baseline"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    selector: "baseline"
+    implementation_path: "src/algorithms/advi.py:run_advi"
+    objective: "ELBO / reverse KL"
+    required_parameters:
+      - "learning_rate"
+      - "batch_size"
+      - "iteration_count"
+
+  GSM:
+    id: "GSM"
+    aliases:
+      - "gradient score matching"
+      - "score matching baseline"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    selector: "baseline"
+    implementation_path: "src/algorithms/gsm.py:run_gsm"
+    dependency_policy: "local implementation only; blacklisted GSM-VI repository is not used"
+    required_parameters:
+      - "epsilon"
+      - "batch_size"
+      - "iteration_count"
+
+  BBVI:
+    id: "BBVI"
+    aliases:
+      - "black-box variational inference"
+    reference_grounding: "paper:paper_contract_sweep_hyperparameter_protocol paper.md"
+    selector: "baseline"
+    implementation_path: "src/algorithms/advi.py:run_advi"
+    objective: "stochastic ELBO / KL"
+
+  KL:
+    id: "KL"
+    aliases:
+      - "reverse KL"
+      - "forward KL metric"
+    reference_grounding: "paper:paper_contract_sweep_hyperparameter_protocol paper.md"
+    selector: "metric_objective"
+    implementation_path: "evaluation/metrics.py"
+
+  ELBO:
+    id: "ELBO"
+    aliases:
+      - "evidence lower bound"
+    reference_grounding: "paper:paper_contract_sweep_hyperparameter_protocol paper.md"
+    selector: "baseline_objective"
+    implementation_path: "src/algorithms/advi.py:run_advi"
+
+  CLI:
+    id: "CLI"
+    aliases:
+      - "command line interface"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    selector: "entry_surface"
+    implementation_path: "scripts/run_experiments.py"
+
+  SPP:
+    id: "SPP"
+    aliases:
+      - "stochastic proximal point"
+      - "KL-regularized proximal matching"
+    reference_grounding: "paper:paper_semantic_chunk_009_03 paper.md"
+    selector: "ablation"
+    implementation_path: "bam.training_loop:run_training_loop"
+
+  EM:
+    id: "EM"
+    aliases:
+      - "expectation maximization style matching"
+    reference_grounding: "paper:paper_semantic_chunk_009_03 paper.md"
+    selector: "ablation"
+    implementation_path: "bam.training_loop:run_training_loop"
+
+sweep_protocol:
+  reference_grounding: "paper:paper_contract_sweep_hyperparameter_protocol paper.md"
+  bounded_by_default: true
+  smoke_subset_key: "runtime_smoke"
+  required_parameters:
+    lambda:
+      values: [0.01, 0.1, 1.0]
+      smoke_values: [0.1]
+      applies_to:
+        - "ours"
+        - "BaM"
+        - "SPP"
+    epsilon:
+      values: [0.0001, 0.001, 0.01]
+      smoke_values: [0.001]
+      applies_to:
+        - "ours"
+        - "BaM"
+        - "GSM"
+    learning_rate:
+      values: [0.001, 0.01, 0.05]
+      smoke_values: [0.01]
+      applies_to:
+        - "ADVI"
+        - "BBVI"
+        - "ours"
+        - "BaM"
+    batch_size:
+      values: [3, 4, 32]
+      smoke_values: [4]
+      anchors:
+        batch_size_32: 32
+      applies_to:
+        - "ours"
+        - "baseline"
+        - "ADVI"
+        - "GSM"
+    iteration_count:
+      values: [0, 2, 100]
+      smoke_values: [2]
+      anchors:
+        100_iterations: 100
+      applies_to:
+        - "ours"
+        - "baseline"
+        - "ADVI"
+        - "GSM"
+    p:
+      values: [0, 1, 2, 4]
+      smoke_values: [0]
+      meaning: "controlled non-Gaussianity parameter; p=0 is Gaussian sanity anchor"
+      applies_to:
+        - "controlled_non_gaussian"
+    lora_rank:
+      values: [0, 2, 4, 8]
+      smoke_values: [0]
+      meaning: "CIFAR/deep-generative adapter rank; 0 disables LoRA in smoke"
+      applies_to:
+        - "cifar"
+        - "deep_generative_latent_posterior"
+  addendum_batch_size_note:
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    figure_e_1_batch_size: 4
+    exception:
+      dimension: 4
+      batch_size: 3
+      reason: "low-rank BaM solver requires B < D"
+
+fixed_hyperparameters:
+  reference_grounding: "paper:paper_contract_sweep_hyperparameter_protocol paper.md"
+  100_iterations: 100
+  batch_size_32: 32
+  default_lambda: 0.1
+  default_epsilon: 0.001
+  default_learning_rate: 0.01
+  default_lora_rank: 0
+  random_seed: 0
+  variational_family: "full_covariance_gaussian"
+
+refinement_protocols:
+  per_sample_lowest_score_selection:
+    id: "per_sample_lowest_score_selection"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    implementation_path: "protocols/per_sample_selection.py:select_lowest_score_per_sample"
+    callable_or_reviewable_rule: true
+    rule: "For each sample id, keep the candidate/refinement with the lowest score-based divergence or configured loss; ties are resolved by earlier iteration then method priority."
+    metrics:
+      - "loss"
+      - "mse"
+      - "accuracy"
+      - "score_divergence"
+    artifacts:
+      - "results/per_sample_selection.json"
+
+metric_registry:
+  forward_kl:
+    id: "forward_kl"
+    name: "KL(p;q)"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    implementation_path: "evaluation/metrics.py:forward_kl"
+    artifacts:
+      - "results/metrics.json"
+      - "results/summary.csv"
+  reverse_kl:
+    id: "reverse_kl"
+    name: "KL(q;p)"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    implementation_path: "evaluation/metrics.py:reverse_kl"
+    artifacts:
+      - "results/metrics.json"
+      - "results/summary.csv"
+  score_divergence:
+    id: "score_divergence"
+    name: "score-based divergence"
+    reference_grounding: "paper:paper_method_core paper.md"
+    implementation_path: "bam.score_divergence:estimate_score_divergence"
+    artifacts:
+      - "results/metrics.json"
+      - "results/traces.jsonl"
+  gaussian_convergence:
+    id: "gaussian_convergence"
+    name: "Gaussian target mean and covariance convergence"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    implementation_path: "evaluation/metrics.py:gaussian_convergence_metrics"
+    artifacts:
+      - "results/gaussian_sanity_metrics.json"
+  wallclock_seconds:
+    id: "wallclock_seconds"
+    name: "wallclock timing"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    implementation_path: "evaluation/aggregation.py"
+    artifacts:
+      - "results/summary.csv"
+      - "results/run_summary.json"
+  accuracy:
+    id: "accuracy"
+    name: "accuracy"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    implementation_path: "evaluation/metrics.py"
+    artifacts:
+      - "results/deep_generative_metrics.json"
+  loss:
+    id: "loss"
+    name: "loss"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    implementation_path: "evaluation/metrics.py"
+    artifacts:
+      - "results/loss_trace.json"
+  mse:
+    id: "mse"
+    name: "mean squared error"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    implementation_path: "evaluation/metrics.py"
+    artifacts:
+      - "results/deep_generative_metrics.json"
+
+named_experiment_protocols:
+  "5_experiments":
+    id: "5_experiments"
+    aliases:
+      - "5. Experiments"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    environment: "jax_cpu"
+    methods:
+      - "ours"
+      - "baseline"
+      - "ADVI"
+      - "GSM"
+    decisive_metric:
+      - "forward_kl"
+      - "reverse_kl"
+    artifact_paths:
+      - "results/metrics.json"
+      - "results/summary.csv"
+      - "results/traces.jsonl"
+
+  "5_1_synthetically_constructed_target_distributions":
+    id: "5_1_synthetically_constructed_target_distributions"
+    aliases:
+      - "5.1"
+      - "5.1. Synthetically-constructed target distributions"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    environment: "synthetic_target_protocol"
+    targets:
+      - "synthetic_gaussian"
+      - "controlled_non_gaussian"
+    datasets: []
+    methods:
+      - "ours"
+      - "BaM"
+      - "ADVI"
+      - "GSM"
+    parameters:
+      dimensions: [4, 16, 64, 256]
+      p: [0, 1, 2, 4]
+      batch_size: 32
+      iteration_count: 100
+    measurements:
+      - "forward_kl"
+      - "reverse_kl"
+      - "gaussian_convergence"
+      - "wallclock_seconds"
+    decisive_comparison: "BaM versus ADVI versus GSM on KL estimates as dimension/non-Gaussianity changes."
+    stop_rule_or_pruning_rationale: "Default smoke runs one dimension and p=0; full mode is required for the paper grid."
+    artifact_paths:
+      - "results/synthetic_kl_metrics.json"
+      - "results/gaussian_sanity_metrics.json"
+      - "results/summary.csv"
+      - "results/traces.jsonl"
+
+  "5_1_gaussian_targets_increasing_dimensions":
+    id: "5_1_gaussian_targets_increasing_dimensions"
+    aliases:
+      - "Gaussian targets with increasing number of dimensions"
+      - "Figure 5.1 Gaussian"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    environment: "synthetic_target_protocol"
+    targets:
+      - "synthetic_gaussian"
+    methods:
+      - "ours"
+      - "BaM"
+      - "ADVI"
+      - "GSM"
+    parameters:
+      dimensions: [4, 16, 64, 256]
+      batch_size: 32
+      iteration_count: 100
+    measurements:
+      - "forward_kl"
+      - "reverse_kl"
+      - "gaussian_convergence"
+    artifact_paths:
+      - "results/synthetic_kl_metrics.json"
+      - "results/gaussian_sanity_metrics.json"
+
+  "5_1_controlled_non_gaussianity":
+    id: "5_1_controlled_non_gaussianity"
+    aliases:
+      - "distributions with increasing controlled non-Gaussianity"
+      - "Figure 5.2"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    environment: "synthetic_target_protocol"
+    targets:
+      - "controlled_non_gaussian"
+    methods:
+      - "ours"
+      - "BaM"
+      - "ADVI"
+      - "GSM"
+    parameters:
+      p: [0, 1, 2, 4]
+      batch_size: 32
+      iteration_count: 100
+    measurements:
+      - "forward_kl"
+      - "reverse_kl"
+      - "score_divergence"
+    artifact_paths:
+      - "results/synthetic_kl_metrics.json"
+      - "results/protocol_matrix.json"
+
+  "5_2_hierarchical_bayesian_models":
+    id: "5_2_hierarchical_bayesian_models"
+    aliases:
+      - "5.2"
+      - "5.2. Application: hierarchical Bayesian models"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    environment: "hierarchical_bayesian_protocol"
+    targets:
+      - "hierarchical_bayesian_posterior"
+    datasets:
+      - "posterior_score_protocol"
+    methods:
+      - "ours"
+      - "BaM"
+      - "ADVI"
+      - "GSM"
+    parameters:
+      batch_size: 32
+      iteration_count: 100
+      learning_rate_grid: [0.001, 0.01, 0.05]
+    measurements:
+      - "forward_kl"
+      - "reverse_kl"
+      - "score_divergence"
+      - "wallclock_seconds"
+    decisive_comparison: "Compare BaM with gradient-based baselines on three hierarchical posterior score targets."
+    artifact_paths:
+      - "results/hierarchical_metrics.json"
+      - "results/metrics.json"
+      - "results/summary.csv"
+      - "results/traces.jsonl"
+
+  "5_3_deep_generative_model":
+    id: "5_3_deep_generative_model"
+    aliases:
+      - "5.3"
+      - "5.3. Application: deep generative model"
+      - "Figure 5.3"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    environment: "deep_generative_latent_posterior_protocol"
+    targets:
+      - "deep_generative_latent_posterior"
+    datasets:
+      - "high_dimensional_images_unspecified"
+    methods:
+      - "ours"
+      - "BaM"
+      - "ADVI"
+      - "GSM"
+    parameters:
+      batch_size: 32
+      iteration_count: 100
+      learning_rate_grid: [0.001, 0.01, 0.05]
+      lora_rank: [0, 2, 4, 8]
+    measurements:
+      - "loss"
+      - "mse"
+      - "accuracy"
+      - "score_divergence"
+    decisive_comparison: "Latent posterior refinement for a deep generative model with high-dimensional image-like observations."
+    artifact_paths:
+      - "results/deep_generative_metrics.json"
+      - "results/deep_generative_latent_params.npz"
+      - "results/figure_5_3.json"
+      - "results/loss_trace.json"
+
+  "addendum_cifar_contract_protocol":
+    id: "addendum_cifar_contract_protocol"
+    aliases:
+      - "CIFAR contract protocol"
+      - "cifar"
+    reference_grounding: "paper:paper_addendum_constraints addendum.md"
+    environment: "cifar"
+    targets:
+      - "deep_generative_latent_posterior"
+    datasets:
+      - "cifar"
+    methods:
+      - "ours"
+      - "baseline"
+    parameters:
+      batch_size: 32
+      iteration_count: 100
+      lora_rank: [0, 2, 4, 8]
+    measurements:
+      - "accuracy"
+      - "loss"
+      - "mse"
+    dataset_prepare_validate_path: "src/data/data.py:prepare_validate_dataset"
+    artifact_writer_path: "evaluation/report.py:write_experiment_report"
+    artifact_paths:
+      - "results/data_manifest.json"
+      - "results/deep_generative_metrics.json"
+      - "results/evaluation_result.json"
+
+  "gaussian_target_sanity_check":
+    id: "gaussian_target_sanity_check"
+    aliases:
+      - "Gaussian target sanity check"
+      - "B->infinity Gaussian analysis setting"
+    reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+    environment: "synthetic_target_protocol"
+    targets:
+      - "synthetic_gaussian"
+    methods:
+      - "ours"
+      - "BaM"
+    parameters:
+      dimension: 4
+      batch_size: "infinite_analysis"
+      iteration_count: 100
+    measurements:
+      - "gaussian_convergence"
+      - "forward_kl"
+      - "reverse_kl"
+    artifact_paths:
+      - "results/gaussian_sanity_metrics.json"
+      - "results/convergence_report.json"
+
+  "b32_training_setting":
+    id: "b32_training_setting"
+    aliases:
+      - "B=32 training setting"
+      - "batch_size_32"
+    reference_grounding: "paper:paper_contract_sweep_hyperparameter_protocol paper.md"
+    environment: "jax_cpu"
+    methods:
+      - "ours"
+      - "baseline"
+    parameters:
+      batch_size: 32
+      iteration_count: 100
+    measurements:
+      - "score_divergence"
+      - "forward_kl"
+      - "reverse_kl"
+    artifact_paths:
+      - "results/metrics.json"
+      - "results/traces.jsonl"
+
+protocol_matrix:
+  reference_grounding: "paper:paper_named_experiment_protocols paper.md"
+  matrix_artifact: "results/protocol_matrix.json"
+  rows:
+    - obligation: "front_matter / abstract"
+      method: "black-box variational inference with a score-based divergence"
+      environment_or_task: "jax_cpu"
+      parameters:
+        method_selector: "ours"
+      trends:
+        - "method and metric artifacts are emitted"
+      artifacts:
+        - "results/metrics.json"
+        - "results/summary.csv"
+        - "results/traces.jsonl"
+
+    - obligation: "paper/addendum contract"
+      method: "executable repository surface"
+      environment_or_task: "runtime_smoke"
+      parameters:
+        dataset_prepare_validate_path: "src/data/data.py:prepare_validate_dataset"
+        artifact_writer_path: "evaluation/report.py:write_experiment_report"
+      trends:
+        - "structured artifacts are materialized in smoke modes"
+      artifacts:
+        - "results/artifact_manifest.json"
+        - "results/readiness.json"
+        - "results/evaluation_result.json"
+
+    - obligation: "environment protocol"
+      method: "JAX CPU/GPU plus CIFAR-compatible data surface"
+      environment_or_task: "jax_cpu_or_jax_gpu"
+      parameters:
+        dataset: "cifar"
+      trends:
+        - "config echo and run summary record selected backend"
+      artifacts:
+        - "results/config_echo.json"
+        - "results/run_summary.json"
+        - "results/environment_registry.json"
+
+    - obligation: "Section 3.1 Algorithm Batch Step"
+      method: "BaM"
+      environment_or_task: "score_target"
+      parameters:
+        samples: "z_1,...,z_B ~ q_t"
+        scores: "g_b = grad log p(z_b)"
+        statistics:
+          - "zbar"
+          - "C"
+          - "gbar"
+          - "Gamma"
+      trends:
+        - "batch statistics trace exists"
+      artifacts:
+        - "results/batch_statistics_trace.json"
+        - "results/traces.jsonl"
+
+    - obligation: "Section 3.1 Algorithm Match Step"
+      method: "BaM"
+      environment_or_task: "full_covariance_gaussian_variational_family"
+      parameters:
+        objective: "regularized matching objective with KL regularizer"
+        updates:
+          - "mu"
+          - "Sigma"
+        lambda: 0.1
+        epsilon: 0.001
+      trends:
+        - "optimizer trace records KL-regularized update"
+      artifacts:
+        - "results/bam_trace.json"
+        - "results/bam_final_variational_params.npz"
+
+    - obligation: "Section 3.2 / main result"
+      method: "Gaussian target B->infinity convergence analysis"
+      environment_or_task: "synthetic_gaussian"
+      parameters:
+        batch_size: "infinite_analysis"
+        iteration_count: 100
+      trends:
+        - "convergence report records mean/covariance sanity metrics"
+      artifacts:
+        - "results/gaussian_sanity_metrics.json"
+        - "results/convergence_report.json"
+
+    - obligation: "contract fixed_hyperparameters"
+      method: "bounded training loop"
+      environment_or_task: "jax_cpu"
+      parameters:
+        100_iterations: 100
+        batch_size_32: 32
+      trends:
+        - "run summary preserves fixed hyperparameter anchors"
+      artifacts:
+        - "results/run_summary.json"
+        - "results/config.json"
+
+    - obligation: "Section 5.1"
+      method: "Gaussian targets with increasing D"
+      environment_or_task: "synthetic_target_protocol"
+      parameters:
+        dimensions: [4, 16, 64, 256]
+      trends:
+        - "KL evaluation inputs are available"
+      artifacts:
+        - "results/synthetic_kl_metrics.json"
+        - "results/summary.csv"
+
+    - obligation: "Section 5.1"
+      method: "controlled non-Gaussianity"
+      environment_or_task: "synthetic_target_protocol"
+      parameters:
+        p: [0, 1, 2, 4]
+      trends:
+        - "robustness comparison inputs are available"
+      artifacts:
+        - "results/synthetic_kl_metrics.json"
+        - "results/protocol_matrix.json"
+
+    - obligation: "Section 5.2"
+      method: "posterior p(z|{x_n}) proportional to p(z)p({x_n}|z)"
+      environment_or_task: "hierarchical_bayesian_protocol"
+      parameters:
+        posterior_slots: 3
+      trends:
+        - "posterior score interface is registered"
+      artifacts:
+        - "results/hierarchical_metrics.json"
+        - "results/traces.jsonl"
+
+    - obligation: "Section 5.3"
+      method: "deep generative model z_n and x_n|z_n"
+      environment_or_task: "deep_generative_latent_posterior_protocol"
+      parameters:
+        dataset_protocol: "high_dimensional_images_unspecified"
+      trends:
+        - "latent posterior score and deep-generative artifacts are registered"
+      artifacts:
+        - "results/deep_generative_metrics.json"
+        - "results/deep_generative_latent_params.npz"
+
+    - obligation: "addendum/contract dataset inventory"
+      method: "cifar dataset prepare/validate"
+      environment_or_task: "cifar"
+      parameters:
+        dataset_prepare_validate_path: "src/data/data.py:prepare_validate_dataset"
+      trends:
+        - "dataset validation artifact exists"
+      artifacts:
+        - "results/data_manifest.json"
+
+hypothesis_and_decision_protocol:
+  core_contribution_hypothesis: "A score-based Batch-and-Match update with KL-regularized matching can reproduce the paper's VI comparison surface using target scores without target normalization constants."
+  decisive_comparison: "BaM/ours versus ADVI and GSM under the named Section 5.1, 5.2, 5.3, Figure 5.3, and CIFAR contract protocols."
+  decisive_metrics:
+    - "forward_kl"
+    - "reverse_kl"
+    - "score_divergence"
+    - "loss"
+    - "mse"
+    - "accuracy"
+  stop_rule_or_pruning_rationale: "Default execution is bounded to smoke/runtime validation and one representative value per sweep. Full paper-scale grids require explicit full mode; no unbounded sweeps or unrelated ablations are run by default."
+
+artifact_contract:
+  reference_grounding: "paper:paper_addendum_constraints addendum.md"
+  dry_run_contract_label: "dry-run contract artifact"
+  smoke_must_create_every_declared_path: true
+  artifact_writer_path: "evaluation/report.py:write_experiment_report"
+  required_core_artifacts:
+    - "results/metrics.json"
+    - "results/summary.csv"
+    - "results/traces.jsonl"
+    - "results/config.json"
+    - "results/experiment_registry.json"
+    - "results/artifact_manifest.json"
+  canonical_route_expected_outputs:
+    - "results/metrics.json"
+    - "results/run_summary.json"
+    - "results/config_echo.json"
+    - "results/evidence_contract_matrix.json"
+    - "results/experiment_registry.json"
+    - "results/environment_registry.json"
+  readiness_artifacts:
+    - "results/readiness.json"
+    - "results/evaluation_result.json"
+  declared_artifacts:
+    - path: "results/metrics.json"
+      kind: "json"
+      owner_surface: "evaluation"
+      smoke_content: "schema/readiness metric artifact"
+    - path: "results/summary.csv"
+      kind: "csv"
+      owner_surface: "evaluation"
+      smoke_content: "schema/readiness summary artifact"
+    - path: "results/traces.jsonl"
+      kind: "jsonl"
+      owner_surface: "training_loop"
+      smoke_content: "schema/readiness trace artifact"
+    - path: "results/config.json"
+      kind: "json"
+      owner_surface: "config"
+      smoke_content: "resolved configuration artifact"
+    - path: "results/config_echo.json"
+      kind: "json"
+      owner_surface: "config"
+      smoke_content: "environment/config echo artifact"
+    - path: "results/config_resolved.json"
+      kind: "json"
+      owner_surface: "config"
+      smoke_content: "resolved config schema artifact"
+    - path: "results/run_summary.json"
+      kind: "json"
+      owner_surface: "training_loop"
+      smoke_content: "run summary readiness artifact"
+    - path: "results/experiment_registry.json"
+      kind: "json"
+      owner_surface: "config"
+      smoke_content: "experiment registry export"
+    - path: "results/environment_registry.json"
+      kind: "json"
+      owner_surface: "config"
+      smoke_content: "environment registry export"
+    - path: "results/evidence_contract_matrix.json"
+      kind: "json"
+      owner_surface: "config"
+      smoke_content: "paper evidence matrix export"
+    - path: "results/artifact_manifest.json"
+      kind: "json"
+      owner_surface: "artifact_writer"
+      smoke_content: "artifact manifest"
+    - path: "results/readiness.json"
+      kind: "json"
+      owner_surface: "artifact_writer"
+      smoke_content: "readiness status"
+    - path: "results/evaluation_result.json"
+      kind: "json"
+      owner_surface: "evaluation"
+      smoke_content: "evaluation contract result"
+    - path: "results/data_manifest.json"
+      kind: "json"
+      owner_surface: "data_pipeline"
+      smoke_content: "dataset validation manifest"
+    - path: "results/protocol_matrix.json"
+      kind: "json"
+      owner_surface: "config"
+      smoke_content: "named protocol matrix"
+    - path: "results/synthetic_kl_metrics.json"
+      kind: "json"
+      owner_surface: "evaluation"
+      smoke_content: "synthetic KL metric schema"
+    - path: "results/gaussian_sanity_metrics.json"
+      kind: "json"
+      owner_surface: "evaluation"
+      smoke_content: "Gaussian convergence schema"
+    - path: "results/hierarchical_metrics.json"
+      kind: "json"
+      owner_surface: "evaluation"
+      smoke_content: "hierarchical posterior metric schema"
+    - path: "results/deep_generative_metrics.json"
+      kind: "json"
+      owner_surface: "evaluation"
+      smoke_content: "deep generative metric schema"
+    - path: "results/deep_generative_latent_params.npz"
+      kind: "npz"
+      owner_surface: "target_distribution"
+      smoke_content: "latent parameter schema archive"
+    - path: "results/loss_trace.json"
+      kind: "json"
+      owner_surface: "evaluation"
+      smoke_content: "loss trace schema"
+    - path: "results/figure_5_3.json"
+      kind: "json"
+      owner_surface: "artifact_writer"
+      smoke_content: "Figure 5.3 semantic artifact schema"
+    - path: "results/convergence_report.json"
+      kind: "json"
+      owner_surface: "evaluation"
+      smoke_content: "Gaussian B->infinity convergence report schema"
+    - path: "results/bam_trace.json"
+      kind: "json"
+      owner_surface: "training_loop"
+      smoke_content: "BaM optimizer trace schema"
+    - path: "results/bam_final_variational_params.npz"
+      kind: "npz"
+      owner_surface: "training_loop"
+      smoke_content: "final variational parameter schema archive"
+    - path: "results/batch_statistics_trace.json"
+      kind: "json"
+      owner_surface: "training_loop"
+      smoke_content: "Batch Step statistics schema"
+    - path: "results/per_sample_selection.json"
+      kind: "json"
+      owner_surface: "evaluation"
+      smoke_content: "per-sample refinement selection schema"
+
+canonical_route:
+  entry_surface: "scripts/run_experiments.py"
+  stage_sequence:
+    - "project_skeleton"
+    - "core_method"
+    - "evaluation_protocol"
+  example_invocation: "python scripts/run_experiments.py"
+  smoke_invocation: "python scripts/run_experiments.py --mode runtime_smoke"
+  expected_outputs:
+    - "results/metrics.json"
+    - "results/run_summary.json"
+    - "results/config_echo.json"
+    - "results/evidence_contract_matrix.json"
+    - "results/experiment_registry.json"
+    - "results/environment_registry.json"
+    - "results/artifact_manifest.json"
+    - "results/readiness.json"
+    - "results/evaluation_result.json"
+
+validation_rules:
+  import_light:
+    optional_heavy_dependencies_are_lazy: true
+    no_top_level_dataset_or_gpu_imports: true
+  artifact_closure:
+    runtime_smoke_creates_declared_artifacts: true
+    docker_validate_creates_declared_artifacts: true
+    dry_run_artifacts_must_not_claim_results: true
+  method_selector_coverage:
+    required:
+      - "ours"
+      - "baseline"
+      - "BaM"
+      - "ADVI"
+      - "GSM"
+      - "BBVI"
+      - "KL"
+      - "ELBO"
+      - "CLI"
+      - "SPP"
+      - "EM"
+  experiment_protocol_coverage:
+    required:
+      - "5_experiments"
+      - "5_1_synthetically_constructed_target_distributions"
+      - "5_2_hierarchical_bayesian_models"
+      - "5_3_deep_generative_model"
+      - "addendum_cifar_contract_protocol"
+      - "gaussian_target_sanity_check"
+      - "b32_training_setting"
+  sweep_coverage:
+    required_parameters:
+      - "lambda"
+      - "epsilon"
+      - "learning_rate"
+      - "batch_size"
+      - "iteration_count"
+      - "p"
+      - "lora_rank"
+    required_values:
+      iteration_count:
+        - 0
+        - 100
+      batch_size:
+        - 32
+      p:
+        - 0
+  fixed_anchor_coverage:
+    required:
+      - "100_iterations"
+      - "batch_size_32"

@@ -1,0 +1,634 @@
+# configs/default.yaml
+# SAPG: Split and Aggregate Policy Gradients - Master Default Configuration
+# reference_grounding: wp_007 configs/default.yaml
+#
+# Paper evidence contract: Complete method/baseline selector set includes
+# ours, sapg, ppo, pbt, pql, ddpg.
+#
+# Binding addendum clarification (Figure 8): The neural network was a two-layer
+# MLP of the same size (size shown on x-axis of the plot). Activation function
+# used was ReLU, trained with Adam optimizer using default hyperparameters from
+# PyTorch (lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0).
+#
+# Execution modes:
+#   smoke        - dry-run wiring validation, bounded inputs, no real training
+#   default      - paper-stated settings, full training loop, bounded to one task
+#   full         - complete sweep across all tasks and baselines
+#
+# Artifact outputs:
+#   results/sensitivity_report.json
+#   results/config_resolved.json
+#   results/readiness.json
+#   results/evaluation_result.json
+
+# ---------------------------------------------------------------------------
+# Execution mode selector
+# ---------------------------------------------------------------------------
+mode: smoke  # Options: smoke, default, full
+
+# ---------------------------------------------------------------------------
+# Method / baseline selector
+# ---------------------------------------------------------------------------
+# Paper evidence contract priority methods: ours, sapg, ppo, pbt, pql, ddpg
+# Addendum aliases also accepted: Ours, OURS, COEF=0, PPO, PBT, PQL, baseline
+method: sapg  # Options: ours | sapg | ppo | pbt | pql | ddpg | baseline | COEF=0
+
+# Canonical alias map (resolved at runtime by src/method_registry.py)
+method_aliases:
+  ours:     sapg
+  Ours:     sapg
+  OURS:     sapg
+  sapg:     sapg
+  ppo:      ppo
+  PPO:      ppo
+  pbt:      pbt
+  PBT:      pbt
+  pql:      pql
+  PQL:      pql
+  ddpg:     ddpg
+  baseline: ppo
+  "COEF=0": sapg_coef0  # SAPG ablation with entropy coefficient = 0
+
+# ---------------------------------------------------------------------------
+# Environment / task registry
+# ---------------------------------------------------------------------------
+# Paper-derived task registry entries with ids, aliases, setup metadata,
+# and factory/config hooks.
+#
+# Tasks from Table 1 / Figure 5 / Figure 7 / Figure 8:
+#   - AllegroKuka (standard)
+#   - harder AllegroKuka (harder_AllegroKuka)
+#   - Shadow Hand (ShadowHandOver, ShadowHandReOrientation, etc.)
+#   - Allegro Kuka Reorientation (AllegroHandReOrientation)
+#   - Throw, Regrasping, Reorientation sub-tasks
+
+environment:
+  # Active task for this run
+  task_id: AllegroKukaLSTM  # see task_registry below for all valid ids
+
+  # Shared environment settings
+  num_envs: 24576          # Total parallel environments N (paper default)
+  environment_type: isaacgym  # Options: isaacgym, mujoco, pybullet
+  max_episode_length: 1000
+  reset_on_success: false
+  curriculum_enabled: false
+  device: cuda             # Options: cuda, cpu
+
+# Task registry - all paper-derived tasks
+task_registry:
+
+  # --- AllegroKuka family ---
+  AllegroKukaLSTM:
+    id: AllegroKukaLSTM
+    aliases: [AllegroKuka, allegro_kuka, allegrokuka]
+    difficulty: standard
+    description: "AllegroKuka manipulation task (standard difficulty) - Table 1 / Figure 5"
+    isaacgym_task_name: AllegroKukaLSTM
+    num_obs: 88
+    num_acts: 23
+    num_envs_default: 24576
+    max_episode_length: 1000
+    factory_hook: sapg.envs.task_registry.make_allegro_kuka
+    config_path: configs/tasks/manipulation_easy.yaml
+
+  AllegroKukaLSTMHard:
+    id: AllegroKukaLSTMHard
+    aliases: [harder_AllegroKuka, harder_allegro_kuka, AllegroKukaHard]
+    difficulty: hard
+    description: "Harder AllegroKuka manipulation task - Table 1 / Figure 5"
+    isaacgym_task_name: AllegroKukaLSTMHard
+    num_obs: 88
+    num_acts: 23
+    num_envs_default: 24576
+    max_episode_length: 1000
+    factory_hook: sapg.envs.task_registry.make_allegro_kuka_hard
+    config_path: configs/tasks/manipulation_hard.yaml
+
+  # --- AllegroKuka sub-tasks (Throw, Regrasping, Reorientation) ---
+  AllegroKukaThrow:
+    id: AllegroKukaThrow
+    aliases: [Throw, throw, allegro_kuka_throw]
+    difficulty: standard
+    description: "AllegroKuka Throw sub-task"
+    isaacgym_task_name: AllegroKukaThrow
+    num_obs: 88
+    num_acts: 23
+    num_envs_default: 24576
+    max_episode_length: 600
+    factory_hook: sapg.envs.task_registry.make_allegro_kuka_throw
+    config_path: configs/tasks/manipulation_easy.yaml
+
+  AllegroKukaRegrasping:
+    id: AllegroKukaRegrasping
+    aliases: [Regrasping, regrasping, allegro_kuka_regrasping]
+    difficulty: standard
+    description: "AllegroKuka Regrasping sub-task"
+    isaacgym_task_name: AllegroKukaRegrasping
+    num_obs: 88
+    num_acts: 23
+    num_envs_default: 24576
+    max_episode_length: 600
+    factory_hook: sapg.envs.task_registry.make_allegro_kuka_regrasping
+    config_path: configs/tasks/manipulation_easy.yaml
+
+  AllegroKukaReorientation:
+    id: AllegroKukaReorientation
+    aliases: [Reorientation, reorientation, allegro_kuka_reorientation,
+              "Allegro Kuka Reorientation"]
+    difficulty: standard
+    description: "AllegroKuka Reorientation sub-task - Figure 7 / Figure 8"
+    isaacgym_task_name: AllegroKukaReorientation
+    num_obs: 88
+    num_acts: 23
+    num_envs_default: 24576
+    max_episode_length: 600
+    factory_hook: sapg.envs.task_registry.make_allegro_kuka_reorientation
+    config_path: configs/tasks/manipulation_easy.yaml
+
+  # --- Allegro Hand Reorientation ---
+  AllegroHandReOrientation:
+    id: AllegroHandReOrientation
+    aliases: [AllegroHandReorientation, allegro_hand_reorientation,
+              "Allegro Hand Reorientation"]
+    difficulty: standard
+    description: "Allegro Hand Reorientation task - Table 1"
+    isaacgym_task_name: AllegroHandReOrientation
+    num_obs: 72
+    num_acts: 16
+    num_envs_default: 24576
+    max_episode_length: 1000
+    factory_hook: sapg.envs.task_registry.make_allegro_hand_reorientation
+    config_path: configs/tasks/manipulation_easy.yaml
+
+  # --- Shadow Hand family ---
+  ShadowHandOver:
+    id: ShadowHandOver
+    aliases: [shadow_hand_over, ShadowHand, "Shadow Hand"]
+    difficulty: hard
+    description: "Shadow Hand Over task - Table 1 / Figure 5"
+    isaacgym_task_name: ShadowHandOver
+    num_obs: 211
+    num_acts: 24
+    num_envs_default: 24576
+    max_episode_length: 1000
+    factory_hook: sapg.envs.task_registry.make_shadow_hand_over
+    config_path: configs/tasks/manipulation_hard.yaml
+
+  ShadowHandCatchUnderarm:
+    id: ShadowHandCatchUnderarm
+    aliases: [shadow_hand_catch_underarm, ShadowHandUnderarm]
+    difficulty: hard
+    description: "Shadow Hand Catch Underarm task - Table 1"
+    isaacgym_task_name: ShadowHandCatchUnderarm
+    num_obs: 211
+    num_acts: 24
+    num_envs_default: 24576
+    max_episode_length: 1000
+    factory_hook: sapg.envs.task_registry.make_shadow_hand_catch_underarm
+    config_path: configs/tasks/manipulation_hard.yaml
+
+  ShadowHandCatchAbreast:
+    id: ShadowHandCatchAbreast
+    aliases: [shadow_hand_catch_abreast, ShadowHandAbreast]
+    difficulty: hard
+    description: "Shadow Hand Catch Abreast task - Table 1"
+    isaacgym_task_name: ShadowHandCatchAbreast
+    num_obs: 211
+    num_acts: 24
+    num_envs_default: 24576
+    max_episode_length: 1000
+    factory_hook: sapg.envs.task_registry.make_shadow_hand_catch_abreast
+    config_path: configs/tasks/manipulation_hard.yaml
+
+  ShadowHandReOrientation:
+    id: ShadowHandReOrientation
+    aliases: [shadow_hand_reorientation, ShadowHandReorientation,
+              "Shadow Hand Reorientation"]
+    difficulty: hard
+    description: "Shadow Hand ReOrientation task - Table 1"
+    isaacgym_task_name: ShadowHandReOrientation
+    num_obs: 211
+    num_acts: 24
+    num_envs_default: 24576
+    max_episode_length: 1000
+    factory_hook: sapg.envs.task_registry.make_shadow_hand_reorientation
+    config_path: configs/tasks/manipulation_hard.yaml
+
+# ---------------------------------------------------------------------------
+# SAPG core algorithm hyperparameters (paper-stated defaults)
+# ---------------------------------------------------------------------------
+sapg:
+  # Multi-policy split parameters
+  num_policies: 6          # M=6 for SAPG/DexPBT/PBT main experiments
+  envs_per_policy: 4096    # N/M = 24576/6
+
+  # Importance-sampling aggregation
+  aggregation_coefficient: 1.0   # lambda=1 for leader off-policy updates
+  importance_sampling_clip: 1.0  # clip IS ratios to [1/clip, clip]
+  symmetric_aggregation: false   # ablation: no designated leader
+
+  # Leader / follower update schedule
+  leader_update_frequency: 1
+  follower_update_frequency: 1
+
+  # PPO clipping (shared with PPO baseline)
+  clip_range: 0.2
+  value_clip_range: 0.2
+
+  # Entropy coefficient: 0.0 except Reorientation uses 0.005
+  entropy_coefficient: 0.0   # Options: 0.0, 0.003, 0.005
+
+  # Value / gradient settings
+  value_loss_coefficient: 0.5
+  max_grad_norm: 1.0
+
+  # GAE
+  gae_lambda: 0.95
+  gamma: 0.99
+
+  # Rollout / batch
+  num_steps: 16            # paper rollout horizon: 16 steps per environment before update
+  num_minibatches: 4
+  update_epochs: 5
+
+  # Optimizer
+  optimizer: adam
+  learning_rate: 3.0e-4
+  lr_schedule: adaptive    # Options: fixed, linear, adaptive
+
+# ---------------------------------------------------------------------------
+# PPO baseline hyperparameters
+# ---------------------------------------------------------------------------
+ppo:
+  num_policies: 1
+  envs_per_policy: 24576   # all N environments
+
+  clip_range: 0.2
+  value_clip_range: 0.2
+  entropy_coefficient: 0.01
+  value_loss_coefficient: 0.5
+  max_grad_norm: 0.5
+
+  gae_lambda: 0.95
+  gamma: 0.99
+
+  num_steps: 16
+  num_minibatches: 4
+  update_epochs: 5
+
+  optimizer: adam
+  learning_rate: 3.0e-4
+  lr_schedule: adaptive
+
+# ---------------------------------------------------------------------------
+# PBT baseline hyperparameters
+# ---------------------------------------------------------------------------
+pbt:
+  num_policies: 6          # DexPBT/PBT population size
+  envs_per_policy: 4096
+  exploit_fraction: 0.2    # fraction of population replaced each generation
+  explore_perturbation: 0.2
+
+  clip_range: 0.2
+  entropy_coefficient: 0.01
+  value_loss_coefficient: 0.5
+  max_grad_norm: 1.0
+  gae_lambda: 0.95
+  gamma: 0.99
+
+  num_steps: 16
+  num_minibatches: 4
+  update_epochs: 5
+
+  optimizer: adam
+  learning_rate: 3.0e-4
+
+# ---------------------------------------------------------------------------
+# PQL baseline hyperparameters
+# ---------------------------------------------------------------------------
+pql:
+  num_policies: 6
+  envs_per_policy: 4096
+  quantile_fraction: 0.5   # fraction of policies used as leaders
+
+  clip_range: 0.2
+  entropy_coefficient: 0.01
+  value_loss_coefficient: 0.5
+  max_grad_norm: 1.0
+  gae_lambda: 0.95
+  gamma: 0.99
+
+  num_steps: 16
+  num_minibatches: 4
+  update_epochs: 5
+
+  optimizer: adam
+  learning_rate: 3.0e-4
+
+# ---------------------------------------------------------------------------
+# DDPG baseline hyperparameters
+# ---------------------------------------------------------------------------
+ddpg:
+  actor_lr: 1.0e-4
+  critic_lr: 1.0e-3
+  tau: 0.005               # soft target update coefficient
+  gamma: 0.99
+  buffer_size: 1000000
+  batch_size: 256
+  noise_std: 0.1
+  optimizer: adam
+
+# ---------------------------------------------------------------------------
+# Network architecture
+# ---------------------------------------------------------------------------
+network:
+  architecture_type: recurrent
+  recurrent_type: lstm
+  allegro_kuka_policy_class: AllegroKukaLSTMPolicy
+
+  # Shared backbone B_theta (paper Figure 3)
+  backbone:
+    hidden_sizes: [512, 256]
+    activation: elu          # paper uses ELU for policy network
+
+  # Policy head (local parameters phi_i per follower)
+  policy_head:
+    hidden_sizes: [256]
+    activation: elu
+    output_activation: null  # raw logits / mean
+
+  # Value head
+  value_head:
+    hidden_sizes: [256]
+    activation: elu
+    output_activation: null
+
+  # Figure 8 MLP for state-space coverage analysis
+  # Binding addendum: two-layer MLP, same size both layers, ReLU activation,
+  # Adam optimizer with PyTorch defaults (lr=1e-3, betas=(0.9,0.999), eps=1e-8)
+  figure8_mlp:
+    num_layers: 2
+    activation: relu         # ReLU as stated in addendum
+    optimizer: adam
+    optimizer_kwargs:
+      lr: 1.0e-3             # PyTorch Adam default
+      betas: [0.9, 0.999]    # PyTorch Adam default
+      eps: 1.0e-8            # PyTorch Adam default
+      weight_decay: 0.0      # PyTorch Adam default
+    # Hidden size is swept on x-axis of Figure 8; default for smoke run:
+    hidden_size: 256
+    # Sweep sizes used in Figure 8 (x-axis values):
+    hidden_size_sweep: [8, 16, 32, 64]
+
+# ---------------------------------------------------------------------------
+# Training loop settings
+# ---------------------------------------------------------------------------
+training:
+  total_timesteps: 2.0e10   # 2e10 samples as stated in paper (Table 1)
+  log_interval: 100          # log every N updates
+  eval_interval: 1000        # evaluate every N updates
+  save_interval: 5000        # checkpoint every N updates
+  seed: 42
+
+  # Smoke / dry-run overrides (applied when mode == smoke)
+  smoke_overrides:
+    total_timesteps: 1000
+    num_envs: 16
+    num_policies: 2
+    envs_per_policy: 8
+    num_steps: 16
+    update_epochs: 1
+    num_minibatches: 1
+
+# ---------------------------------------------------------------------------
+# Batch size sweep registry
+# Paper evidence contract: expose bounded sweep/config entries for batch_size
+# ---------------------------------------------------------------------------
+batch_size_sweep:
+  # Default batch size (num_envs * num_steps / num_minibatches)
+  default:
+    batch_size: null         # computed: num_envs * num_steps // num_minibatches
+    num_envs: 24576
+    num_steps: 16
+    num_minibatches: 4       # -> effective batch = 49152
+
+  # Named sweep entries referenced in paper / addendum
+  batch_size_64:
+    batch_size: 64
+    num_envs: 256
+    num_steps: 16
+    num_minibatches: 16
+    description: "Small batch sweep entry (batch_size=64)"
+
+  batch_size_128:
+    batch_size: 128
+    num_envs: 512
+    num_steps: 16
+    num_minibatches: 16
+    description: "Small batch sweep entry (batch_size=128)"
+
+  batch_size_512:
+    batch_size: 512
+    num_envs: 2048
+    num_steps: 16
+    num_minibatches: 16
+    description: "Medium batch sweep entry (batch_size=512)"
+
+  batch_size_2048:
+    batch_size: 2048
+    num_envs: 8192
+    num_steps: 16
+    num_minibatches: 16
+    description: "Large batch sweep entry (batch_size=2048)"
+
+  batch_size_paper_default:
+    batch_size: 49152        # 24576 * 8 / 4
+    num_envs: 24576
+    num_steps: 16
+    num_minibatches: 4
+    description: "Paper default effective batch size"
+
+# ---------------------------------------------------------------------------
+# Experiment / ablation variant registry
+# ---------------------------------------------------------------------------
+# Paper Figure 6 ablations and main comparison variants
+experiment_variants:
+
+  # --- Main method ---
+  sapg_default:
+    method: sapg
+    description: "SAPG with default settings (Ours / OURS in paper)"
+    aliases: [ours, Ours, OURS, sapg]
+    sapg_overrides:
+      entropy_coefficient: 0.0
+      symmetric_aggregation: false
+      aggregation_coefficient: 1.0
+
+  # --- Entropy coefficient ablations (Figure 6) ---
+  sapg_coef0:
+    method: sapg
+    description: "SAPG with entropy coefficient = 0 (COEF=0 ablation)"
+    aliases: ["COEF=0"]
+    sapg_overrides:
+      entropy_coefficient: 0.0
+      symmetric_aggregation: false
+
+  sapg_coef_005:
+    method: sapg
+    description: "SAPG with entropy coefficient = 0.005"
+    sapg_overrides:
+      entropy_coefficient: 0.005
+      symmetric_aggregation: false
+
+  sapg_coef_01:
+    method: sapg
+    description: "SAPG with entropy coefficient = 0.01 (default)"
+    sapg_overrides:
+      entropy_coefficient: 0.01
+      symmetric_aggregation: false
+
+  # --- Aggregation ablations (Figure 6) ---
+  sapg_symmetric:
+    method: sapg
+    description: "SAPG with symmetric aggregation (no designated leader)"
+    sapg_overrides:
+      symmetric_aggregation: true
+      aggregation_coefficient: 1.0
+
+  sapg_no_offpolicy:
+    method: sapg
+    description: "SAPG without off-policy data aggregation"
+    sapg_overrides:
+      aggregation_coefficient: 0.0
+      symmetric_aggregation: false
+
+  # --- Baselines ---
+  ppo_baseline:
+    method: ppo
+    description: "Standard PPO baseline (single policy)"
+    aliases: [ppo, PPO, baseline]
+
+  pbt_baseline:
+    method: pbt
+    description: "Population-Based Training baseline"
+    aliases: [pbt, PBT]
+
+  pql_baseline:
+    method: pql
+    description: "Proximal Quantile Learning baseline"
+    aliases: [pql, PQL]
+
+  ddpg_baseline:
+    method: ddpg
+    description: "DDPG baseline"
+    aliases: [ddpg]
+
+# ---------------------------------------------------------------------------
+# Named experiment protocol matrix
+# ---------------------------------------------------------------------------
+# Smoke subset: run only these variants in smoke/default mode
+smoke_experiment_set:
+  - sapg_default
+  - ppo_baseline
+
+# Full experiment set (requires mode: full)
+full_experiment_set:
+  - sapg_default
+  - sapg_coef0
+  - sapg_coef_005
+  - sapg_coef_01
+  - sapg_symmetric
+  - sapg_no_offpolicy
+  - ppo_baseline
+  - pbt_baseline
+  - pql_baseline
+  - ddpg_baseline
+
+# Tasks included in smoke run
+smoke_task_set:
+  - AllegroKukaLSTM
+
+# Tasks included in full run (Table 1 / Figure 5)
+full_task_set:
+  - AllegroKukaLSTM
+  - AllegroKukaLSTMHard
+  - AllegroHandReOrientation
+  - ShadowHandOver
+  - ShadowHandCatchUnderarm
+  - ShadowHandCatchAbreast
+  - ShadowHandReOrientation
+  - AllegroKukaThrow
+  - AllegroKukaRegrasping
+  - AllegroKukaReorientation
+
+# ---------------------------------------------------------------------------
+# Evaluation / metrics configuration
+# ---------------------------------------------------------------------------
+evaluation:
+  # Primary metric: success rate (fraction of episodes achieving goal)
+  primary_metric: success_rate
+  # Secondary metrics tracked
+  metrics:
+    - success_rate
+    - episode_reward_mean
+    - episode_length_mean
+    - policy_entropy
+    - value_loss
+    - policy_loss
+    - importance_sampling_ratio_mean
+    - importance_sampling_ratio_std
+    - state_coverage_pca_reconstruction_error   # Figure 7
+    - state_coverage_mlp_reconstruction_error   # Figure 8
+
+  # Figure 8 MLP evaluation settings
+  figure8_eval:
+    num_eval_episodes: 1000
+    hidden_size_sweep: [8, 16, 32, 64]  # x-axis of Figure 8
+    train_epochs: 100
+    train_lr: 1.0e-3
+
+  # Evaluation frequency and episode count
+  num_eval_episodes: 100
+  eval_deterministic: true
+
+# ---------------------------------------------------------------------------
+# Artifact output paths
+# ---------------------------------------------------------------------------
+artifacts:
+  results_dir: results
+  figures_dir: results/figures
+  checkpoints_dir: checkpoints
+
+  # Declared artifact paths (written by artifact_writer)
+  sensitivity_report: results/sensitivity_report.json
+  config_resolved: results/config_resolved.json
+  readiness: results/readiness.json
+  evaluation_result: results/evaluation_result.json
+  evidence_contract_matrix: results/evidence_contract_matrix.json
+  experiment_registry: results/experiment_registry.json
+  metrics: results/metrics.json
+  artifact_manifest: results/artifact_manifest.json
+
+  # Figure artifact paths
+  figure_table1: results/figures/table1_success_rates.png
+  figure_5: results/figures/figure_5_sapg_vs_baselines.png
+  figure_7: results/figures/figure_7_state_coverage_pca.png
+  figure_8: results/figures/figure_8_state_coverage_mlp.png
+  figure_1: results/figures/figure_1.png
+
+# ---------------------------------------------------------------------------
+# Logging configuration
+# ---------------------------------------------------------------------------
+logging:
+  level: INFO
+  use_wandb: false
+  wandb_project: sapg_reproduction
+  wandb_entity: null
+  log_dir: logs
+  tensorboard: false
+
+# ---------------------------------------------------------------------------
+# Reproducibility
+# ---------------------------------------------------------------------------
+seed: 42
+deterministic: false   # full determinism is expensive; set true for unit tests

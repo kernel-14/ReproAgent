@@ -1,0 +1,41 @@
+{
+  "artifact_kind": "dry-run contract artifact",
+  "created_at": "2026-05-21T19:06:58Z",
+  "encode_contract": {
+    "condition_state_binary": true,
+    "method": "encode(batch, condition_mask)",
+    "outputs": [
+      "variable_identifier",
+      "value_representation",
+      "condition_state"
+    ],
+    "training_time_condition_resampling": true
+  },
+  "mode": "runtime_smoke",
+  "reference_grounding": [
+    "paperbench_ref_001 docs/how_to_guide/04_embedding_networks.ipynb"
+  ],
+  "tokenizers": {
+    "sbi_joint_tokenizer": {
+      "artifact_path": "results/tokenizer_registry.json",
+      "condition_state": "binary M_C state, 1=conditioned/observed, 0=target/noised",
+      "emitted_fields": [
+        "variable_identifier",
+        "value_representation",
+        "condition_state"
+      ],
+      "factory": "all_in_one_sbi.encoding:SBITokenizer",
+      "input_distribution": "joint p(theta, x) / p(x_hat)",
+      "name": "sbi_joint_tokenizer",
+      "supports_condition_resampling": true,
+      "supports_high_dimensional_embeddings": true,
+      "variable_kinds": [
+        "parameter",
+        "observation",
+        "summary_statistic",
+        "function_parameter",
+        "missing_value"
+      ]
+    }
+  }
+}

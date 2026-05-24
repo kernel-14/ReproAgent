@@ -1,0 +1,22 @@
+{
+  "gsm8k": {
+    "source_split": "official",
+    "test": 1319,
+    "train": 7473
+  },
+  "scienceqa": {
+    "source_split": "non_image_random_subset",
+    "test": 500,
+    "train": 2000
+  },
+  "strategyqa": {
+    "source_split": "paper_90_10",
+    "test": 229,
+    "train": 2059
+  },
+  "truthfulqa": {
+    "source_split": "random_test_100",
+    "test": 100,
+    "train": 717
+  }
+}

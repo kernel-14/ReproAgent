@@ -1,0 +1,667 @@
+# =============================================================================
+# configs/ddpm_ffhq.yaml
+# DPMs-ANT – DDPM Framework / FFHQ Source Domain Configuration
+# Paper: "Bridging Data Gaps in Diffusion Models with Adversarial Noise-Based
+#         Transfer Learning"
+#
+# reference_grounding: paper_method_core configs/ddpm_ffhq.yaml
+# reference_grounding: paper_semantic_chunk_012 10-shot image generation experiments
+# reference_grounding: paper_semantic_chunk_014_01 DDPM + LDM framework evaluation
+#
+# Evidence obligation matrix rows bound here:
+#   addendum约束   -> batch_size=64, omega=0.02, adversarial_inner_steps=10,
+#                     5000_iterations, 300_training_iterations -> 配置文件
+#   DDPM框架+ShiftAdaptor(c=4,d=8) -> 10-shot FFHQ目标域(5个) -> FID评估
+#   配置系统       -> framework选择+domain映射+超参数 -> results/metrics.json
+#   experiment_did: DPMs-ANT(ours) -> Algorithm 1完整流程 -> DDPM+LDM两框架 -> 7个目标域
+#   FFHQ源域预训练DDPM -> 10-shot迁移: Babies/Sunglasses/Raphael Peale/Sketches/Modigliani
+# =============================================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Framework selector  (ddpm | ldm)
+# ─────────────────────────────────────────────────────────────────────────────
+framework: ddpm
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Method selector
+# Complete method/baseline selector set per paper evidence contract.
+# Values: ours | diffusion_model | ddpm | ldm | dpms_ant |
+#         similarity_guided_training | adversarial_noise_selection |
+#         ddpm_pa | tgan | ada | ewc | cdc | dcl | pgd | ddim
+# reference_grounding: paper_method_core method_registry
+# ─────────────────────────────────────────────────────────────────────────────
+method: dpms_ant
+
+# Available method/baseline adapters (selectable via --method flag or experiments.yaml):
+method_registry:
+  - id: ours
+    alias: dpms_ant
+    description: "DPMs-ANT: Similarity-Guided Training + Adversarial Noise Selection (Algorithm 1)"
+  - id: diffusion_model
+    alias: ddpm_baseline
+    description: "Plain DDPM fine-tuned on target domain without ANT strategies"
+  - id: ddpm
+    alias: ddpm_finetune
+    description: "DDPM direct fine-tuning baseline"
+  - id: ldm
+    alias: ldm_finetune
+    description: "LDM fine-tuning baseline"
+  - id: dpms_ant
+    alias: ours
+    description: "Full DPMs-ANT method with both strategies"
+  - id: similarity_guided_training
+    alias: sim_guide_only
+    description: "Ablation: similarity guidance only, no adversarial noise"
+  - id: adversarial_noise_selection
+    alias: adv_noise_only
+    description: "Ablation: adversarial noise only, no similarity guidance"
+  - id: ddpm_pa
+    alias: ddpm_pa
+    description: "DDPM-PA baseline (patch-based augmentation)"
+  - id: tgan
+    alias: tgan
+    description: "TransferGAN baseline"
+  - id: ada
+    alias: ada
+    description: "Adaptive Discriminator Augmentation baseline"
+  - id: ewc
+    alias: ewc
+    description: "Elastic Weight Consolidation baseline"
+  - id: cdc
+    alias: cdc
+    description: "CDC (Contrastive Diffusion Calibration) baseline"
+  - id: dcl
+    alias: dcl
+    description: "DCL baseline"
+  - id: pgd
+    alias: pgd
+    description: "PGD adversarial inner optimizer (sub-routine in ANT)"
+  - id: ddim
+    alias: ddim_sampler
+    description: "DDIM fast sampler for inference"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Source domain
+# ─────────────────────────────────────────────────────────────────────────────
+source_domain: ffhq
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dataset / Benchmark Registry
+# reference_grounding: paper_semantic_chunk_014_01 dataset registry
+# ─────────────────────────────────────────────────────────────────────────────
+dataset_registry:
+  # Source domains
+  - id: ffhq
+    alias: FFHQ
+    role: source
+    image_size: 256
+    num_classes: 1
+    data_path: data/ffhq
+    loader_hook: dpms_ant.data.few_shot_dataset.load_dataset
+    config_hook: configs/ddpm_ffhq.yaml
+    description: "Flickr-Faces-HQ – DDPM source domain (70k images, 256x256)"
+    pretrained_ckpt: checkpoints/ddpm/ffhq_model.pt
+
+  - id: lsun_church
+    alias: LSUN-Church
+    role: source
+    image_size: 256
+    num_classes: 1
+    data_path: data/lsun_church
+    loader_hook: dpms_ant.data.few_shot_dataset.load_dataset
+    config_hook: configs/ddpm_church.yaml
+    description: "LSUN Church – DDPM source domain (126k images, 256x256)"
+    pretrained_ckpt: checkpoints/ddpm/church_model.pt
+
+  - id: imagenet
+    alias: ImageNet
+    role: classifier_pretrain
+    image_size: 224
+    num_classes: 1000
+    data_path: data/imagenet
+    loader_hook: dpms_ant.classifier.domain_classifier.load_imagenet_pretrained
+    config_hook: configs/default.yaml
+    description: "ImageNet – MobileNet classifier pretraining source"
+
+  # Target domains (FFHQ source)
+  - id: babies
+    alias: Babies
+    role: target
+    source: ffhq
+    image_size: 256
+    shot_count: 10
+    data_path: data/few_shot/babies
+    loader_hook: dpms_ant.data.few_shot_dataset.load_few_shot
+    description: "10-shot Babies target domain (FFHQ source)"
+    artifact_path: results/ddpm_ffhq_babies
+
+  - id: sunglasses
+    alias: Sunglasses
+    role: target
+    source: ffhq
+    image_size: 256
+    shot_count: 10
+    data_path: data/few_shot/sunglasses
+    loader_hook: dpms_ant.data.few_shot_dataset.load_few_shot
+    description: "10-shot Sunglasses target domain (FFHQ source)"
+    artifact_path: results/ddpm_ffhq_sunglasses
+
+  - id: raphael_peale
+    alias: Raphael Peale
+    role: target
+    source: ffhq
+    image_size: 256
+    shot_count: 10
+    data_path: data/few_shot/raphael_peale
+    loader_hook: dpms_ant.data.few_shot_dataset.load_few_shot
+    description: "10-shot Raphael Peale portrait paintings (FFHQ source)"
+    artifact_path: results/ddpm_ffhq_raphael_peale
+
+  - id: sketches
+    alias: Sketches
+    role: target
+    source: ffhq
+    image_size: 256
+    shot_count: 10
+    data_path: data/few_shot/sketches
+    loader_hook: dpms_ant.data.few_shot_dataset.load_few_shot
+    description: "10-shot Sketches target domain (FFHQ source)"
+    artifact_path: results/ddpm_ffhq_sketches
+
+  - id: modigliani
+    alias: Amedeo Modigliani
+    role: target
+    source: ffhq
+    image_size: 256
+    shot_count: 10
+    data_path: data/few_shot/modigliani
+    loader_hook: dpms_ant.data.few_shot_dataset.load_few_shot
+    description: "10-shot Modigliani portrait paintings (FFHQ source)"
+    artifact_path: results/ddpm_ffhq_modigliani
+
+  # Target domains (LSUN Church source)
+  - id: haunted_houses
+    alias: Haunted Houses
+    role: target
+    source: lsun_church
+    image_size: 256
+    shot_count: 10
+    data_path: data/few_shot/haunted_houses
+    loader_hook: dpms_ant.data.few_shot_dataset.load_few_shot
+    description: "10-shot Haunted Houses target domain (LSUN Church source)"
+    artifact_path: results/ddpm_church_haunted_houses
+
+  - id: landscape_drawings
+    alias: Landscape Drawings
+    role: target
+    source: lsun_church
+    image_size: 256
+    shot_count: 10
+    data_path: data/few_shot/landscape_drawings
+    loader_hook: dpms_ant.data.few_shot_dataset.load_few_shot
+    description: "10-shot Landscape Drawings target domain (LSUN Church source)"
+    artifact_path: results/ddpm_church_landscape_drawings
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Environment / Task Registry
+# reference_grounding: paper_semantic_chunk_014_01 environment registry
+# ─────────────────────────────────────────────────────────────────────────────
+environment_registry:
+  - id: ant
+    alias: ANT
+    description: "Adversarial Noise-based Transfer learning environment"
+    factory_hook: dpms_ant.trainer.ant_trainer.ANTTrainer
+    config_hook: configs/ddpm_ffhq.yaml
+
+  - id: shot_image_generation
+    alias: "shot image generation"
+    description: "10-shot image generation experimental setup"
+    task_type: few_shot_generation
+    shot_counts: [10, 100]
+    factory_hook: dpms_ant.trainer.ant_trainer.ANTTrainer
+
+  - id: intra_lpips
+    alias: Intra-LPIPS
+    description: "Intra-LPIPS diversity metric evaluation environment"
+    factory_hook: dpms_ant.evaluation.metrics.compute_intra_lpips
+    metric_schema: results/metrics.json
+
+  - id: experimental_setup
+    alias: "Experimental Setup"
+    description: "Standard DPMs-ANT experimental setup as per paper Section 4"
+    framework: ddpm
+    source_domains: [ffhq, lsun_church]
+    target_domains: [babies, sunglasses, raphael_peale, sketches, modigliani, haunted_houses, landscape_drawings]
+    shot_count: 10
+
+  - id: lsun_church_env
+    alias: "LSUN Church"
+    description: "LSUN Church source domain environment"
+    config_hook: configs/ddpm_church.yaml
+    factory_hook: dpms_ant.data.few_shot_dataset.load_dataset
+
+  - id: raphael_peale_env
+    alias: "Raphael Peale"
+    description: "Raphael Peale target domain task"
+    source: ffhq
+    data_path: data/few_shot/raphael_peale
+
+  - id: modigliani_env
+    alias: "Amedeo Modigliani"
+    description: "Modigliani portrait target domain task"
+    source: ffhq
+    data_path: data/few_shot/modigliani
+
+  - id: haunted_houses_env
+    alias: "Haunted Houses"
+    description: "Haunted Houses target domain task (LSUN Church source)"
+    source: lsun_church
+    data_path: data/few_shot/haunted_houses
+
+  - id: imagenet_env
+    alias: "ImageNet"
+    description: "ImageNet pretraining environment for MobileNet domain classifier"
+    classifier: mobilenet_v2
+    pretrained: true
+    factory_hook: dpms_ant.classifier.domain_classifier.DomainClassifier
+
+  - id: ffhq_source_env
+    alias: "FFHQ (源域)"
+    description: "FFHQ source domain pretraining environment"
+    config_hook: configs/ddpm_ffhq.yaml
+    pretrained_ckpt: checkpoints/ddpm/ffhq_model.pt
+
+  - id: lsun_church_source_env
+    alias: "LSUN Church (源域)"
+    description: "LSUN Church source domain pretraining environment"
+    config_hook: configs/ddpm_church.yaml
+    pretrained_ckpt: checkpoints/ddpm/church_model.pt
+
+  - id: imagenet_classifier_env
+    alias: "ImageNet (分类器预训练环境)"
+    description: "ImageNet pretrained MobileNetV2 environment for similarity guidance"
+    classifier: mobilenet_v2
+    fine_tune_steps: 300
+    factory_hook: dpms_ant.classifier.domain_classifier.DomainClassifier
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DDPM UNet model configuration
+# ─────────────────────────────────────────────────────────────────────────────
+model:
+  type: ddpm_unet
+  image_size: 256
+  in_channels: 3
+  model_channels: 128
+  out_channels: 3
+  num_res_blocks: 2
+  attention_resolutions: [16, 8]
+  channel_mult: [1, 1, 2, 2, 4, 4]
+  num_heads: 4
+  use_scale_shift_norm: true
+  resblock_updown: true
+  dropout: 0.0
+
+  # Shift Adaptor  (DDPM framework: c=4, d=8)
+  # reference_grounding: paper_method_core dpms_ant/adaptor/shift_adaptor.py
+  shift_adaptor:
+    enabled: true
+    c: 4          # bottleneck compression ratio – paper anchor DDPM=4
+    d: 8          # number of adaptor insertion layers – paper anchor d=8
+    position: all_res_blocks
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Diffusion process
+# ─────────────────────────────────────────────────────────────────────────────
+diffusion:
+  timesteps: 1000
+  beta_schedule: linear
+  beta_start: 0.0001
+  beta_end: 0.02
+  model_mean_type: epsilon
+  model_var_type: fixed_large
+  loss_type: mse
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DDIM sampler configuration
+# ─────────────────────────────────────────────────────────────────────────────
+ddim:
+  enabled: true
+  ddim_steps: 100
+  ddim_eta: 0.0
+  clip_denoised: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Addendum-fixed hyperparameters (MUST NOT be overridden)
+# reference_grounding: paper_semantic_chunk_012 fixed hyperparameters
+# anchor: 5000_iterations, 300_training_iterations, 10_shot_setting,
+#         gamma_5, omega_0.02, adversarial_inner_steps_10, batch_size_64
+# ─────────────────────────────────────────────────────────────────────────────
+training:
+  # anchor: 5000_iterations
+  total_iterations: 5000
+  # anchor: 300_training_iterations (ablation / sensitivity cap)
+  ablation_iterations: 300
+  # anchor: batch_size_64
+  batch_size: 64
+  learning_rate: 2.0e-5
+  ema_rate: 0.9999
+  save_interval: 1000
+  log_interval: 100
+  seed: 42
+  num_workers: 4
+  # anchor: 10_shot_setting
+  shot_count: 10
+  mixed_precision: false
+  gradient_clip_norm: 1.0
+  optimizer: adam
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_eps: 1.0e-8
+  weight_decay: 0.0
+  lr_scheduler: constant
+  warmup_steps: 0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Similarity-Guided Training
+# reference_grounding: paper_method_core dpms_ant/trainer/similarity_guidance.py
+# anchor: gamma_5
+# ─────────────────────────────────────────────────────────────────────────────
+similarity_guidance:
+  enabled: true
+  # anchor: gamma_5
+  gamma: 5
+  classifier: mobilenet_v2
+  classifier_pretrained: imagenet
+  # anchor: 300_training_iterations (classifier fine-tune steps)
+  classifier_finetune_steps: 300
+  classifier_lr: 1.0e-4
+  kl_loss_weight: 1.0
+  loss_type: kl_divergence
+  factory_hook: dpms_ant.trainer.similarity_guidance.SimilarityGuidance
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Adversarial Noise Selection (PGD inner loop)
+# reference_grounding: paper_method_core dpms_ant/trainer/adversarial_noise.py
+# anchor: omega_0.02, adversarial_inner_steps_10
+# ─────────────────────────────────────────────────────────────────────────────
+adversarial_noise:
+  enabled: true
+  # anchor: omega_0.02 – perturbation budget (L-inf ball radius)
+  omega: 0.02
+  # anchor: adversarial_inner_steps_10
+  inner_steps: 10
+  # PGD step size = omega / inner_steps by default
+  alpha: 0.002
+  # PGD variant
+  optimizer: pgd
+  targeted: true
+  clamp_range: [-1.0, 1.0]
+  factory_hook: dpms_ant.trainer.adversarial_noise.AdversarialNoiseSelector
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Checkpoints
+# ─────────────────────────────────────────────────────────────────────────────
+checkpoints:
+  pretrained_model: checkpoints/ddpm/ffhq_model.pt
+  save_dir: checkpoints/ddpm/
+  resume: null
+  # Per-target checkpoint paths
+  target_checkpoints:
+    babies: checkpoints/ddpm/ffhq_babies_finetuned.pt
+    sunglasses: checkpoints/ddpm/ffhq_sunglasses_finetuned.pt
+    raphael_peale: checkpoints/ddpm/ffhq_raphael_peale_finetuned.pt
+    sketches: checkpoints/ddpm/ffhq_sketches_finetuned.pt
+    modigliani: checkpoints/ddpm/ffhq_modigliani_finetuned.pt
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Evaluation / Metrics
+# ─────────────────────────────────────────────────────────────────────────────
+evaluation:
+  num_samples: 5000
+  batch_size: 64
+  seed: 42
+  metrics:
+    - fid
+    - intra_lpips
+    - accuracy
+    - fidelity_score
+  fid:
+    dims: 2048
+    num_workers: 4
+    inception_weights: auto
+  intra_lpips:
+    num_pairs: 2000
+    net: alex
+  accuracy:
+    classifier: mobilenet_v2
+    pretrained: imagenet
+  fidelity_score:
+    enabled: true
+  artifact_paths:
+    metrics: results/metrics.json
+    generated_images: results/generated/
+    dataset_registry: results/dataset_registry.json
+    data_manifest: results/data_manifest.json
+    environment_registry: results/environment_registry.json
+    scope_report: results/scope_report.json
+    experiment_registry: results/experiment_registry.json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Sampling configuration
+# ─────────────────────────────────────────────────────────────────────────────
+sampling:
+  sampler: ddim          # ddim | ddpm
+  ddim_steps: 100
+  ddim_eta: 0.0
+  batch_size: 64
+  clip_denoised: true
+  output_dir: results/generated/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Parameter Sweeps (bounded, paper-derived)
+# reference_grounding: paper_method_core sweep definitions
+# ─────────────────────────────────────────────────────────────────────────────
+sweeps:
+  # Shot count sweep
+  shot_count:
+    values: [10, 100]
+    default: 10
+
+  # Training iteration sweep (ablation / sensitivity)
+  training_iteration_count:
+    values: [0, 50, 100, 150, 200, 250, 300, 350]
+    default: 300
+
+  # Similarity guidance scale (gamma) sweep
+  similarity_guidance_scale:
+    values: [1, 2, 3, 5, 7, 9, 10]
+    default: 5
+
+  # Adversarial noise perturbation budget (omega) sweep
+  adversarial_noise_scale:
+    values: [0.01, 0.02, 0.03, 0.04, 0.05]
+    default: 0.02
+
+  # Alpha (PGD step size) sweep
+  alpha:
+    values: [0.0005, 0.001, 0.002, 0.004, 0.008]
+    default: 0.002
+
+  # Gamma (similarity guidance weight) sweep (alias)
+  gamma:
+    values: [1, 2, 3, 5, 7, 9, 10]
+    default: 5
+
+  # Epsilon (adversarial perturbation, alias for omega) sweep
+  epsilon:
+    values: [0.01, 0.02, 0.03, 0.04, 0.05]
+    default: 0.02
+
+  # Iteration count sweep
+  iteration_count:
+    values: [500, 1000, 2000, 3000, 5000]
+    default: 5000
+
+  # Batch size sweep
+  batch_size:
+    values: [16, 32, 64, 128]
+    default: 64
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Protocol Matrix – Named Experiments
+# Maps experiment ids to environments, methods, parameters, and artifact paths
+# reference_grounding: paper_method_core experiment_protocol_matrix
+# ─────────────────────────────────────────────────────────────────────────────
+experiment_protocol_matrix:
+  # Core DPMs-ANT result (ours) vs all baselines
+  - experiment_id: DPMs-ANT-main
+    alias: "experiment_did: DPMs-ANT主方法实验(ours) vs 所有基线"
+    framework: ddpm
+    source_domain: ffhq
+    target_domains: [babies, sunglasses, raphael_peale, sketches, modigliani]
+    method: dpms_ant
+    baselines: [ddpm_pa, tgan, ada, ewc, cdc, dcl]
+    shot_count: 10
+    total_iterations: 5000
+    metrics: [fid, intra_lpips, accuracy, fidelity_score]
+    artifact_path: results/metrics.json
+    table: Table2
+
+  # Table 2 main comparison: FFHQ → Babies / Sunglasses
+  - experiment_id: Experiment-TableMain
+    alias: "FFHQ→Babies/Sunglasses全方法对比(Table 2)"
+    framework: ddpm
+    source_domain: ffhq
+    target_domains: [babies, sunglasses]
+    method: dpms_ant
+    baselines: [ddpm_pa, tgan, ada, ewc, cdc, dcl]
+    shot_count: 10
+    total_iterations: 5000
+    metrics: [fid, intra_lpips]
+    artifact_path: results/metrics.json
+    table: Table2
+
+  # Full 7 target-domain DDPM FID
+  - experiment_id: Experiment-FullDomain
+    alias: "全7目标域DDPM框架FID"
+    framework: ddpm
+    source_domains: [ffhq, lsun_church]
+    target_domains: [babies, sunglasses, raphael_peale, sketches, modigliani, haunted_houses, landscape_drawings]
+    method: dpms_ant
+    shot_count: 10
+    total_iterations: 5000
+    metrics: [fid]
+    artifact_path: results/metrics.json
+
+  # LDM framework comparison
+  - experiment_id: Experiment-LDM
+    alias: "LDM框架FID对比"
+    framework: ldm
+    source_domain: ffhq
+    target_domains: [babies, sunglasses, raphael_peale, sketches, modigliani]
+    method: dpms_ant
+    shift_adaptor_c: 2
+    shift_adaptor_d: 8
+    shot_count: 10
+    total_iterations: 5000
+    metrics: [fid]
+    artifact_path: results/metrics.json
+    config_hook: configs/ldm_ffhq.yaml
+
+  # Ablation: remove similarity guidance
+  - experiment_id: Ablation-SimGuide
+    alias: "移除相似性引导训练"
+    framework: ddpm
+    source_domain: ffhq
+    target_domains: [babies, sunglasses, raphael_peale, sketches, modigliani]
+    method: similarity_guided_training
+    use_sim_guide: false
+    use_adv_noise: true
+    shot_count: 10
+    total_iterations: 5000
+    metrics: [fid]
+    expected_trend: "FID↑ vs dpms_ant (validates sim guide effectiveness)"
+    artifact_path: results/metrics.json
+
+  # Ablation: remove adversarial noise
+  - experiment_id: Ablation-AdvNoise
+    alias: "移除对抗噪声选择"
+    framework: ddpm
+    source_domain: ffhq
+    target_domains: [babies, sunglasses, raphael_peale, sketches, modigliani]
+    method: adversarial_noise_selection
+    use_sim_guide: true
+    use_adv_noise: false
+    shot_count: 10
+    total_iterations: 5000
+    metrics: [fid]
+    expected_trend: "FID↑ vs dpms_ant (validates adv noise effectiveness)"
+    artifact_path: results/metrics.json
+
+  # Ablation: Shift Adaptor hyperparameter variants
+  - experiment_id: Ablation-AdaptorHyper
+    alias: "不同c/d配置对比"
+    framework: ddpm
+    source_domain: ffhq
+    target_domains: [babies]
+    method: dpms_ant
+    adaptor_variants:
+      - {c: 2, d: 4}
+      - {c: 2, d: 8}
+      - {c: 4, d: 4}
+      - {c: 4, d: 8}   # paper default DDPM
+      - {c: 8, d: 8}
+    shot_count: 10
+    total_iterations: 5000
+    metrics: [fid]
+    artifact_path: results/metrics.json
+
+  # Sensitivity: alpha (PGD step size)
+  - experiment_id: SensitivityAnalysis-Alpha
+    alias: "alpha参数扫描"
+    framework: ddpm
+    source_domain: ffhq
+    target_domains: [babies]
+    method: dpms_ant
+    sweep_param: alpha
+    sweep_values: [0.0005, 0.001, 0.002, 0.004, 0.008]
+    shot_count: 10
+    total_iterations: 5000
+    metrics: [fid]
+    artifact_path: results/metrics.json
+
+  # Sensitivity: iteration count
+  - experiment_id: SensitivityAnalysis-Iterations
+    alias: "iteration_count扫描"
+    framework: ddpm
+    source_domain: ffhq
+    target_domains: [babies]
+    method: dpms_ant
+    sweep_param: training_iteration_count
+    sweep_values: [0, 50, 100, 150, 200, 250, 300, 350]
+    shot_count: 10
+    total_iterations: 5000
+    metrics: [fid]
+    artifact_path: results/metrics.json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Logging / Output
+# ─────────────────────────────────────────────────────────────────────────────
+logging:
+  log_dir: logs/ddpm_ffhq/
+  tensorboard: true
+  wandb: false
+  log_interval: 100
+  save_interval: 1000
+  vis_interval: 500
+  num_vis_samples: 16
+
+output:
+  results_dir: results/
+  metrics_json: results/metrics.json
+  dataset_registry_json: results/dataset_registry.json
+  data_manifest_json: results/data_manifest.json
+  environment_registry_json: results/environment_registry.json
+  scope_report_json: results/scope_report.json
+  experiment_registry_json: results/experiment_registry.json
+  generated_images_dir: results/generated/ddpm_ffhq/

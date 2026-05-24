@@ -1,0 +1,76 @@
+{
+  "rows": [
+    {
+      "artifact": "results/metrics.json",
+      "implementation_route": "Simformer core path",
+      "obligation": "All-in-one simulation-based inference",
+      "paper_source": "front_matter/abstract"
+    },
+    {
+      "artifact": "results/run_summary.json",
+      "implementation_route": "train/eval/dry_run entrypoint",
+      "obligation": "amortized Bayesian inference and simulation-based inference",
+      "paper_source": "1. Introduction"
+    },
+    {
+      "artifact": "results/experiment_registry.json",
+      "implementation_route": "experiment registry entries for 4.1, 4.2, 4.3, 4.4",
+      "obligation": "named result sections",
+      "paper_source": "4. Results"
+    },
+    {
+      "artifact": "results/artifact_manifest.json",
+      "implementation_route": "write_named_result_artifacts",
+      "obligation": "stable metrics/tables/figures artifact schema",
+      "paper_source": "paper_contract_experiment_artifact_protocol"
+    },
+    {
+      "artifact": "results/evidence_contract_matrix.json",
+      "implementation_route": "bounded sweeps and interval-guidance config",
+      "obligation": "addendum-derived constraints preserved in config and artifacts",
+      "paper_source": "paper_addendum_constraints"
+    },
+    {
+      "artifact": "results/figures/figure_2_model_summary.json",
+      "implementation_route": "load_model().summary()['score_network']",
+      "obligation": "transformer score network",
+      "paper_source": "2.2 Transformers and attention mechanisms"
+    },
+    {
+      "artifact": "results/run_summary.json",
+      "implementation_route": "build_sampler('sde'|'ode')",
+      "obligation": "SDE and probability-flow ODE sampler interfaces",
+      "paper_source": "2.3 Score-based diffusion models"
+    },
+    {
+      "artifact": "results/metrics.json",
+      "implementation_route": "LocalDataset theta/x rows and LocalSimformerModel.train_smoke",
+      "obligation": "Simformer trained on p(theta,x)=p(x_hat)",
+      "paper_source": "3. Methods"
+    },
+    {
+      "artifact": "results/figures/figure_2_model_summary.json",
+      "implementation_route": "LocalSimformerModel.tokenizer",
+      "obligation": "identifier/value/condition-state tokenizer",
+      "paper_source": "3.1 A Tokenizer for SBI"
+    },
+    {
+      "artifact": "results/figures/figure_4_benchmark_performance.json",
+      "implementation_route": "mask_variant config passed to load_model",
+      "obligation": "attention mask M_E builder and model integration",
+      "paper_source": "3.2 Modelling dependency structures"
+    },
+    {
+      "artifact": "results/samples.npz",
+      "implementation_route": "run_experiment train/eval branches",
+      "obligation": "denoising score-matching trainer and conditional sampler",
+      "paper_source": "3.3 Simformer training and sampling"
+    },
+    {
+      "artifact": "results/figures/figure_7_hodgkin_huxley_interval_guidance.json",
+      "implementation_route": "similarity_guidance_scale and Hodgkin-Huxley route",
+      "obligation": "guided score modifier interface",
+      "paper_source": "3.4 Conditioning on intervals with diffusion guidance"
+    }
+  ]
+}

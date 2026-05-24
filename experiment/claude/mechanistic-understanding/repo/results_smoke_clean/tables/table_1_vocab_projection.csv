@@ -1,0 +1,4 @@
+source_vector,projection_space,top_tokens,score_type,addendum_binding
+"W_toxic[:, 1]",GPT2-medium vocabulary unembedding,token_17 token_42 token_103 token_256 token_511,dot_product,Table 1 top tokens are highest dot-products with the specified toxic vector.
+MLP.v_770^19,GPT2-medium vocabulary unembedding,token_17 token_42 token_103 token_256 token_511,dot_product,Table 1 top tokens are highest dot-products with the specified toxic vector.
+SVD.U_toxic[0],GPT2-medium vocabulary unembedding,token_17 token_42 token_103 token_256 token_511,dot_product,Table 1 top tokens are highest dot-products with the specified toxic vector.

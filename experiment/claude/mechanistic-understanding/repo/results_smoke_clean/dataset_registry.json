@@ -1,0 +1,106 @@
+{
+  "aliases": {
+    "1199_realtoxicityprompts_20_tokens": "realtoxicityprompts",
+    "realtoxicityprompts": "realtoxicityprompts",
+    "rtp": "realtoxicityprompts",
+    "wiki-text": "wikitext",
+    "wiki_text": "wikitext",
+    "wikitext": "wikitext",
+    "wikitext-2": "wikitext",
+    "wikitext103": "wikitext"
+  },
+  "benchmarks": {
+    "realtoxicityprompts": {
+      "aliases": [
+        "realtoxicityprompts",
+        "rtp",
+        "1199_realtoxicityprompts_20_tokens"
+      ],
+      "environment": "binary toxicity classification",
+      "full_download_required": true,
+      "lazy_loader": "datasets.load_dataset('allenai/real-toxicity-prompts') when use_full_dataset=True",
+      "license": "external dataset; loader kept lazy",
+      "name": "realtoxicityprompts",
+      "prompt_count": 1199,
+      "readiness_fixture": [
+        {
+          "id": "rtp_fixture_0000",
+          "label": 0,
+          "prompt": "Neutral bounded prompt 0"
+        },
+        {
+          "id": "rtp_fixture_0001",
+          "label": 1,
+          "prompt": "Neutral bounded prompt 1"
+        },
+        {
+          "id": "rtp_fixture_0002",
+          "label": 0,
+          "prompt": "Neutral bounded prompt 2"
+        },
+        {
+          "id": "rtp_fixture_0003",
+          "label": 1,
+          "prompt": "Neutral bounded prompt 3"
+        }
+      ],
+      "split": "paper_sample_1199",
+      "task": "toxicity generation evaluation"
+    },
+    "wikitext": {
+      "aliases": [
+        "wikitext",
+        "wiki-text",
+        "wikitext-2",
+        "wikitext103",
+        "wiki_text"
+      ],
+      "environment": "binary toxicity classification",
+      "full_download_required": true,
+      "lazy_loader": "datasets.load_dataset('wikitext', 'wikitext-2-raw-v1') when use_full_dataset=True",
+      "license": "CC-BY-SA compatible source corpus; loader keeps download lazy",
+      "name": "wikitext",
+      "prompt_count": null,
+      "readiness_fixture": [
+        {
+          "id": "wikitext_fixture_0001",
+          "label": 0,
+          "source": "bounded_safe_fixture_for_wikitext_route",
+          "text": "The encyclopedia article describes a public river restoration project."
+        },
+        {
+          "id": "wikitext_fixture_0002",
+          "label": 0,
+          "source": "bounded_safe_fixture_for_wikitext_route",
+          "text": "Editors discussed how to improve the article while remaining civil."
+        },
+        {
+          "id": "wikitext_fixture_0003",
+          "label": 1,
+          "source": "bounded_safe_fixture_for_binary_toxicity_route",
+          "text": "A moderation example notes that rude and disrespectful comments can make people leave a discussion."
+        },
+        {
+          "id": "wikitext_fixture_0004",
+          "label": 1,
+          "source": "bounded_safe_fixture_for_binary_toxicity_route",
+          "text": "The talk page records an unreasonable personal attack and asks reviewers to de-escalate."
+        }
+      ],
+      "split": "validation",
+      "task": "language modeling plus binary toxicity classification evaluation"
+    }
+  },
+  "coverage": {
+    "activation_cache": true,
+    "binary toxicity classification": true,
+    "dpo_intervention": true,
+    "realtoxicityprompts_1199x20": true,
+    "represent_full": true,
+    "wikitext": true
+  },
+  "created_at": "2026-05-21T19:35:11Z",
+  "lazy_download_policy": "Full dataset downloads occur only when InterventionsConfig.use_full_dataset is true.",
+  "paper": "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity",
+  "schema_version": "1.0"
+}

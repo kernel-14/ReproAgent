@@ -1,0 +1,16 @@
+{
+  "table_id": "table5_nce_vs_mlm",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.942682Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Table 5: Accuracy (%) with MLM loss vs ranking-based NCE loss",
+    "columns": [
+      "loss_type",
+      "gsm8k",
+      "strategyqa",
+      "truthfulqa",
+      "scienceqa"
+    ]
+  }
+}

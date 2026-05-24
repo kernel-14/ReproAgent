@@ -1,0 +1,40 @@
+{
+  "paper_id": "stay-on-topic-with-classifier-free-guidance",
+  "paper_title": "Stay on topic with Classifier-Free Guidance",
+  "canonical_entrypoint": "scripts/run_experiments.py",
+  "callable_entrypoint": "main:main",
+  "default_mode": "runtime_smoke",
+  "smoke_command": ["python", "scripts/run_experiments.py", "--mode", "runtime_smoke"],
+  "main_smoke_command": ["python", "main.py", "--mode", "runtime_smoke"],
+  "implemented_routes": [
+    "cfg_equation_7_logits",
+    "last_prompt_token_unconditional_context",
+    "negative_prompt_cfg",
+    "zero_shot_lm_eval_registry",
+    "gpt2_pythia_gamma_1_vs_1_5",
+    "gsm8k_aqua_cot_self_consistency",
+    "humaneval_codegen_pass_at_k",
+    "flops_section_4_1",
+    "entropy_top_p_mechanism_analysis",
+    "table3_dragon_paris_token_rank_trace",
+    "classifier_guidance_sentiment_toxicity"
+  ],
+  "artifact_outputs": [
+    "readiness.json",
+    "metrics.json",
+    "sample_traces.jsonl",
+    "zero_shot_summary.csv",
+    "cot_summary.csv",
+    "humaneval_summary.csv",
+    "table3_token_ranks.json",
+    "flops_analysis.json",
+    "classifier_guidance.json",
+    "artifact_manifest.json"
+  ],
+  "notes": [
+    "runtime_smoke uses deterministic tiny fixtures and marks outputs as smoke artifacts",
+    "full routes lazy-import transformers, datasets, lm-eval, and human-eval",
+    "blacklisted repository Vermeille/lm-evaluation-harness-cfg is not used"
+  ]
+}
+

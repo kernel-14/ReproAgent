@@ -1,0 +1,32 @@
+# Core lightweight dependencies for repository import, configuration, smoke routes,
+# Close/FAR diagnostics, registry artifacts, and bounded toy experiments.
+# reference_grounding: paperbench_ref_001 envs.py
+numpy>=1.23,<3
+PyYAML>=6.0
+typing-extensions>=4.8; python_version < "3.11"
+
+# Lightweight artifact and tabular output helpers used by measured evaluation/report routes.
+pandas>=2.0
+matplotlib>=3.7
+
+# Test runner for runtime smoke validation.
+pytest>=7.4
+
+# Optional heavy simulator / training backends are intentionally not installed by
+# default from this requirements.txt so imports remain lightweight. Install them
+# explicitly only for full experiment routes:
+#
+#   pip install "torch>=2.0"
+#   pip install "gymnasium[atari,accept-rom-license]>=0.29" "ale-py>=0.8" "opencv-python>=4.8"
+#   pip install "nle>=0.9"
+#
+# NetHack/NLD-AA addendum note:
+#   The NLE dataset interface used for NetHack Learning Environment / NLD-AA
+#   full-mode routes is provided by the main branch of:
+#   https://github.com/facebookresearch/nle
+#   After installing NLE and obtaining the nld folders, load the folders once so
+#   NLE creates the local sqlite3 database before running full NetHack routes.
+#
+# Robotics full routes may require the simulator package selected by the local
+# RoboticSequence adapter; the code keeps these imports lazy and exposes
+# readiness checks plus smoke fixtures when the backend is unavailable.

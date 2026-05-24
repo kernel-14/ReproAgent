@@ -1,0 +1,980 @@
+schema_version: "1.0"
+config_owner: "wp_eval_reporting"
+paper: "APT: Adaptive Pruning and Tuning Pretrained Language Models for Efficient Training and Inference"
+blacklisted_repositories:
+  - "https://github.com/ROIM1998/APT"
+
+reference_grounding:
+  - ref_id: "paperbench_ref_001"
+    source_path: "datasheet.md"
+    adapted_for: "data provenance, bounded/full split, artifact documentation"
+  - ref_id: "paperbench_ref_001"
+    source_path: "model_card.md"
+    adapted_for: "model and evaluation metadata reporting"
+  - ref_id: "paperbench_ref_001"
+    source_path: "prompt.txt"
+    adapted_for: "generation and instruction task prompt route"
+  - ref_id: "paperbench_ref_003"
+    source_path: "lm-evaluation-harness/README.md"
+    adapted_for: "task versioning and evaluation protocol visibility"
+
+runtime:
+  entrypoint: "main.py"
+  package_entrypoint: "apt.main"
+  default_mode: "runtime_smoke"
+  bounded_default: true
+  output_dir: "results"
+  auxiliary_artifact_env: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  default_invocation: "python main.py"
+  smoke_invocation: "python main.py --mode runtime_smoke"
+  full_invocation: "python main.py --mode full --bounded false"
+  status_taxonomy:
+    measured: "Value produced by an executed bounded or full metric function on actual predictions/traces."
+    bounded_proxy: "Value produced by the same implementation route on local bounded fixtures."
+    unavailable: "Full-mode backend, dataset, or checkpoint is not present; no benchmark claim is made."
+  active_stage_sequence:
+    - id: "configuration_registry_stage"
+      route: "src.apt.config.build_run_config"
+      writes: ["results/run_config.json", "results/config_resolved.json"]
+    - id: "dataset_model_method_stage"
+      route: "main.py:prepare_data -> build_model -> build_apt_adapter -> run_training"
+      writes: ["results/dataset_registry.json", "results/model_registry.json", "results/pruning_trace.json", "results/tuning_trace.json", "results/training_trace.json", "results/loss_trace.json"]
+    - id: "evaluation_reporting_stage"
+      route: "main.py:run_evaluation -> build_metric_formula_registry -> build_result_table -> write_all_artifact"
+      writes: ["results/evaluation_result.json", "results/metrics.json", "results/metric_formula.json", "results/result_table.json", "results/artifact_manifest.json"]
+    - id: "table_figure_artifact_stage"
+      route: "src.apt.reporting.run_figure_1_route + run_figure_2_route + run_figure_4_route + run_figure_5_route + run_figure_5a_route + run_table_5_route + run_table_7_route + run_table_8_route + run_table_9_route + run_table_10_route + run_table_12_route"
+      bounded_default: true
+      writes:
+        - "results/figures/figure_1.json"
+        - "results/figures/figure_2.json"
+        - "results/figures/figure_4.json"
+        - "results/figures/figure_5.json"
+        - "results/figures/figure_5a.json"
+        - "results/tables/table_5.json"
+        - "results/tables/table_7.json"
+        - "results/tables/table_8.json"
+        - "results/tables/table_9.json"
+        - "results/tables/table_10.json"
+        - "results/tables/table_12.json"
+
+runtime_blocker_repairs:
+  - id: "training_layer_masks_signature"
+    validation_trace: "src/apt/training.py::_build_adapter_reports -> _layer_masks(layer, idx)"
+    repaired_signature: "_layer_masks(layer, index=0)"
+    required_consumer_calls:
+      - "_initial_adapter_state(first_layer, 0)"
+      - "_build_adapter_reports(layer, idx)"
+    contract_reason: "Adapter registry generation must accept both lightweight layer fixtures and the deterministic layer index used for m_i/m_o fallback masks."
+    status: "active_runtime_contract"
+
+cli_flags:
+  reference_method:
+    flag: "--reference-method"
+    default: "FT"
+    choices: ["FT", "fine_tuning", "LoRA", "MaskTuning", "CoFi", "APT"]
+  target_accuracy:
+    flag: "--target-accuracy"
+    default: null
+    type: "float"
+  batch_size:
+    flag: "--batch-size"
+    default: 32
+    bounded_sweep: [32]
+    full_sweep: [32, 128]
+  half_precision_attack:
+    flag: "--half-precision-attack"
+    default: false
+    choices: [false, true]
+  model:
+    flag: "--model"
+    default: "roberta-base"
+    choices: ["bert-base", "roberta-base", "t5-small", "llama"]
+  method:
+    flag: "--method"
+    default: "APT"
+    choices: ["FT", "fine_tuning", "LoRA", "MaskTuning", "CoFi", "APT", "ours", "lora", "test_time_adaptation"]
+
+artifact_targets:
+  results_dir: "results"
+  primary_outputs:
+    - "results/evaluation_result.json"
+    - "results/result_table.json"
+    - "results/metric_formula.json"
+    - "results/artifact_manifest.json"
+    - "results/run_config.json"
+    - "results/metrics.json"
+    - "results/dataset_registry.json"
+    - "results/model_registry.json"
+    - "results/baseline_registry.json"
+    - "results/environment_registry.json"
+    - "results/environment_readiness.json"
+    - "results/experiment_registry.json"
+    - "results/method_registry.json"
+    - "results/evidence_contract_matrix.json"
+    - "results/sst2_mnli_relative_accuracy_inputs.json"
+    - "results/pruning_trace.json"
+    - "results/tuning_trace.json"
+    - "results/training_trace.json"
+    - "results/loss_trace.json"
+    - "results/config_resolved.json"
+  checkpoint_assets:
+    cofi:
+      path: "checkpoints/cofi"
+      metadata_writer: "apt.ensure_checkpoint_assets"
+      full_mode_requirement: "Populate with CoFi distillation checkpoint weights before full benchmark reproduction."
+    mask_tuning:
+      path: "checkpoints/mask_tuning"
+      metadata_writer: "apt.ensure_checkpoint_assets"
+      full_mode_requirement: "Populate with Mask Tuning baseline checkpoint weights before full benchmark reproduction."
+
+callable_symbols:
+  create_model:
+    bounded_call_path: "apt.load_transformer_backend"
+    full_call_path: "src.apt.models.create_model"
+    required_signature: "create_model(model_name, method, adapter_config, bounded)"
+    lazy_backends: ["transformers", "torch"]
+  inject_apt_adapters:
+    bounded_call_path: "apt.create_apt_adapter"
+    full_call_path: "src.apt.models.inject_apt_adapters"
+    required_signature: "inject_apt_adapters(model, target_modules, config)"
+  run_baseline:
+    bounded_call_path: "apt.select_method"
+    full_call_path: "src.apt.baselines.run_baseline"
+    required_signature: "run_baseline(method, model, dataset, config)"
+  evaluate_predictions:
+    bounded_call_path: "apt.run_bounded_training"
+    full_call_path: "src.apt.evaluation.evaluate_predictions"
+    required_signature: "evaluate_predictions(config)"
+  compute_task_metrics:
+    bounded_call_paths: ["apt.accuracy", "apt.f1_score"]
+    full_call_path: "src.apt.metrics.compute_task_metrics"
+    required_signature: "compute_task_metrics(predictions, labels, dataset_name)"
+  compute_generation_metrics:
+    bounded_call_paths: ["apt.rouge_l"]
+    full_call_path: "src.apt.metrics.compute_generation_metrics"
+    required_signature: "compute_generation_metrics(predictions, references, dataset_name)"
+  compute_rouge:
+    bounded_call_path: "apt.rouge_l"
+    full_call_path: "src.apt.metrics.compute_rouge"
+    required_signature: "compute_rouge(predictions, references)"
+  compute_efficiency_metrics:
+    bounded_call_paths: ["apt.training_cost", "apt.inference_cost", "apt.memory_usage", "apt.gpu_memory"]
+    full_call_path: "src.apt.metrics.compute_efficiency_metrics"
+    required_signature: "compute_efficiency_metrics(trace, reference_trace)"
+  compute_relative_accuracy:
+    bounded_formula: "method_score / reference_score when reference_score > 0 else 0"
+    full_call_path: "src.apt.metrics.compute_relative_accuracy"
+    required_signature: "compute_relative_accuracy(method_score, reference_score)"
+  artifact_writers:
+    write_evaluation_result_artifact: "apt.write_evaluation_result_artifact"
+    write_result_table_artifact: "apt.write_result_table_artifact"
+    write_metric_formula_artifact: "src.apt.artifacts.write_metric_formula_artifact"
+    write_artifact_manifest_artifact: "apt.write_artifact_manifest"
+    write_run_config_artifact: "apt.write_run_config_artifact"
+    write_metrics_artifact: "src.apt.artifacts.write_metrics_artifact"
+    write_dataset_registry_artifact: "src.apt.artifacts.write_dataset_registry_artifact"
+    write_model_registry_artifact: "apt.write_model_registry_artifact"
+    run_table_4_route: "src.apt.reporting.run_table_4_route"
+    write_table_4_artifact: "src.apt.reporting.write_table_4_artifact"
+    run_figure_1_route: "src.apt.reporting.run_figure_1_route"
+    write_figure_1_artifact: "src.apt.reporting.write_figure_1_artifact"
+    run_figure_2_route: "src.apt.reporting.run_figure_2_route"
+    write_figure_2_artifact: "src.apt.reporting.write_figure_2_artifact"
+    run_figure_4_route: "src.apt.reporting.run_figure_4_route"
+    write_figure_4_artifact: "src.apt.reporting.write_figure_4_artifact"
+    run_figure_5_route: "src.apt.reporting.run_figure_5_route"
+    write_figure_5_artifact: "src.apt.reporting.write_figure_5_artifact"
+    run_figure_5a_route: "src.apt.reporting.run_figure_5a_route"
+    write_figure_5a_artifact: "src.apt.reporting.write_figure_5a_artifact"
+    run_table_5_route: "src.apt.reporting.run_table_5_route"
+    write_table_5_artifact: "src.apt.reporting.write_table_5_artifact"
+    run_table_7_route: "src.apt.reporting.run_table_7_route"
+    write_table_7_artifact: "src.apt.reporting.write_table_7_artifact"
+    run_table_8_route: "src.apt.reporting.run_table_8_route"
+    write_table_8_artifact: "src.apt.reporting.write_table_8_artifact"
+    run_table_9_route: "src.apt.reporting.run_table_9_route"
+    write_table_9_artifact: "src.apt.reporting.write_table_9_artifact"
+    run_table_10_route: "src.apt.reporting.run_table_10_route"
+    write_table_10_artifact: "src.apt.reporting.write_table_10_artifact"
+    run_table_12_route: "src.apt.reporting.run_table_12_route"
+    write_table_12_artifact: "src.apt.reporting.write_table_12_artifact"
+
+active_writer_call_sites:
+  evaluation_reporting_stage:
+    route: "main.py:run_evaluation -> write_all_artifacts"
+    calls:
+      - "write_evaluation_result_artifact"
+      - "write_result_table_artifact"
+      - "write_metric_formula_artifact"
+      - "write_artifact_manifest_artifact"
+      - "write_run_config_artifact"
+      - "write_metrics_artifact"
+      - "write_dataset_registry_artifact"
+      - "write_model_registry_artifact"
+    inputs:
+      - "results/run_config.json"
+      - "results/dataset_registry.json"
+      - "results/model_registry.json"
+      - "results/pruning_trace.json"
+      - "results/tuning_trace.json"
+      - "results/training_trace.json"
+      - "results/tuning_trace.json:A_T metadata"
+    outputs:
+      - "results/evaluation_result.json"
+      - "results/result_table.json"
+      - "results/metric_formula.json"
+      - "results/artifact_manifest.json"
+      - "results/run_config.json"
+      - "results/metrics.json"
+      - "results/dataset_registry.json"
+      - "results/model_registry.json"
+  table_figure_artifact_stage:
+    route: "main.py:write_all_artifacts -> src.apt.reporting"
+    calls:
+      - "run_table_4_route"
+      - "write_table_4_artifact"
+      - "run_figure_1_route"
+      - "write_figure_1_artifact"
+      - "run_figure_2_route"
+      - "write_figure_2_artifact"
+      - "run_figure_4_route"
+      - "write_figure_4_artifact"
+      - "run_figure_5_route"
+      - "write_figure_5_artifact"
+      - "run_figure_5a_route"
+      - "write_figure_5a_artifact"
+      - "run_table_5_route"
+      - "write_table_5_artifact"
+      - "run_table_7_route"
+      - "write_table_7_artifact"
+      - "run_table_8_route"
+      - "write_table_8_artifact"
+      - "run_table_9_route"
+      - "write_table_9_artifact"
+      - "run_table_10_route"
+      - "write_table_10_artifact"
+      - "run_table_12_route"
+      - "write_table_12_artifact"
+    bounded_execution_rule: "Each table or figure route consumes current-run evaluation, model, pruning, tuning, training, loss, config, or metric-formula artifacts before writing paper-visible content."
+    outputs:
+      - "results/tables/table_4.json"
+      - "results/figures/figure_1.json"
+      - "results/figures/figure_2.json"
+      - "results/figures/figure_4.json"
+      - "results/figures/figure_5.json"
+      - "results/figures/figure_5a.json"
+      - "results/tables/table_5.json"
+      - "results/tables/table_7.json"
+      - "results/tables/table_8.json"
+      - "results/tables/table_9.json"
+      - "results/tables/table_10.json"
+      - "results/tables/table_12.json"
+
+paper_constants:
+  salience_ema_decay: 0.85
+  salience_ema_update: 0.15
+  distill_layer_weight_glue: 0.9
+  distill_layer_weight_squad: 0.1
+  lora_scaling: 1.0
+  rank_initial: 8
+  r_apt_default: 8
+  gamma_t_default: 0.0
+  gamma_T_default: 0.5
+  delta_default: 1
+  early_training_steps_default: 4
+  pruning_start_step: 1
+  pruning_end_step: 4
+  tau_default: 1.0
+  alpha_default: 3
+  10_shot_setting: 10
+  batch_size_32: 32
+  batch_size_128: 128
+  d_m: 768
+  n_L: 12
+  n_h: 12
+  n_f: 3072
+  C_head: 196608
+  C_neuron: 1536
+  C_dimension: 110592
+
+parameter_defaults:
+  method: "APT"
+  model_name: "roberta-base"
+  dataset_name: "SST2"
+  target_sparsity: 0.5
+  pruning_warmup_steps: 1
+  pruning_end_step: 4
+  mask_granularity: "block"
+  mask_granularity_choices: ["input", "output", "block"]
+  m_i: [1, 1, 1, 1]
+  m_o: [1, 1]
+  r_apt: 8
+  tuning_budget: 32
+  precision: "fp32"
+  precision_choices: ["fp32", "fp16"]
+  half_precision_attack: false
+  batch_size: 32
+  max_steps: 4
+  bounded: true
+  distillation: true
+
+parameter_sweeps:
+  batch_size:
+    bounded: [32]
+    full: [32, 128]
+  target_sparsity:
+    bounded: [0.5]
+    full: [0.5, 0.75]
+  pruning_warmup_steps:
+    bounded: [1]
+    full: [0, 1]
+  mask_granularity:
+    bounded: ["block"]
+    full: ["input", "output", "block"]
+  r_apt:
+    bounded: [4]
+    full: [4, 8]
+  precision:
+    bounded: ["fp32"]
+    full: ["fp32", "fp16"]
+  half_precision_attack:
+    bounded: [false]
+    full: [false, true]
+
+environment_registry:
+  unit-001:
+    aliases: ["unit-001", "bounded_smoke", "local_fixture"]
+    availability_check: "always_available"
+    setup_metadata: "Dependency-light local fixture route for runtime smoke only."
+    config_hook: "apt.resolve_config"
+  glue:
+    aliases: ["glue", "GLUE benchmark", "sst2", "SST2", "mnli", "MNLI"]
+    availability_check: "apt.load_dataset_backend('glue', full_mode=False)"
+    full_loader: "datasets.load_dataset('glue', subset)"
+    default_metric: "dev accuracy"
+    config_hook: "src.apt.data.load_dataset"
+  squad:
+    aliases: ["squad", "SQuAD v2.0", "squad_v2"]
+    availability_check: "apt.load_dataset_backend('squad_v2', full_mode=False)"
+    full_loader: "datasets.load_dataset('squad_v2')"
+    default_metric: "dev F1"
+    config_hook: "src.apt.data.load_dataset"
+  generation:
+    aliases: ["CNN/DailyMail", "TruthfulQA", "LLaMA generation/instruction task interface"]
+    availability_check: "apt.load_dataset_backend(dataset_name, full_mode=False)"
+    full_loader: "datasets.load_dataset(dataset_name)"
+    default_metric: "ROUGE or truthfulness generation metric"
+    config_hook: "src.apt.data.load_generation_dataset"
+
+dataset_registry:
+  SST2:
+    ids: ["SST2", "sst2", "glue/sst2"]
+    benchmark: "glue"
+    aliases: ["sst2", "GLUE benchmark"]
+    model_routes: ["bert-base", "roberta-base", "t5-small"]
+    split: "validation"
+    bounded_loader: "apt.bounded_dataset"
+    full_loader: "datasets.load_dataset('glue', 'sst2')"
+    prepare_validate_path: "src.apt.data.prepare_validate_dataset"
+    metric_functions: ["apt.accuracy"]
+    artifact_target: "results/dataset_registry.json"
+  MNLI:
+    ids: ["MNLI", "mnli", "glue/mnli"]
+    benchmark: "glue"
+    aliases: ["mnli", "GLUE benchmark"]
+    model_routes: ["bert-base", "roberta-base", "t5-small"]
+    split: "validation_matched"
+    bounded_loader: "apt.bounded_dataset"
+    full_loader: "datasets.load_dataset('glue', 'mnli')"
+    prepare_validate_path: "src.apt.data.prepare_validate_dataset"
+    metric_functions: ["apt.accuracy"]
+    artifact_target: "results/dataset_registry.json"
+  "SQuAD v2.0":
+    ids: ["SQuAD v2.0", "squad", "squad_v2"]
+    benchmark: "squad"
+    aliases: ["squad", "squad_v2"]
+    model_routes: ["roberta-base"]
+    split: "validation"
+    bounded_loader: "apt.bounded_dataset"
+    full_loader: "datasets.load_dataset('squad_v2')"
+    prepare_validate_path: "src.apt.data.prepare_validate_dataset"
+    metric_functions: ["apt.f1_score"]
+    artifact_target: "results/dataset_registry.json"
+  "CNN/DailyMail":
+    ids: ["CNN/DailyMail", "cnn_dailymail", "cnn/dailymail"]
+    benchmark: "summarization"
+    aliases: ["cnn_dailymail", "generation"]
+    model_routes: ["t5-small"]
+    split: "validation"
+    bounded_loader: "apt.bounded_dataset"
+    full_loader: "datasets.load_dataset('cnn_dailymail', '3.0.0')"
+    prepare_validate_path: "src.apt.data.prepare_validate_dataset"
+    metric_functions: ["apt.rouge_l"]
+    artifact_target: "results/dataset_registry.json"
+  TruthfulQA:
+    ids: ["TruthfulQA", "truthfulqa"]
+    benchmark: "truthfulqa"
+    aliases: ["truthfulqa", "LLaMA generation/instruction task interface"]
+    model_routes: ["llama"]
+    split: "validation"
+    bounded_loader: "apt.bounded_dataset"
+    full_loader: "datasets.load_dataset('truthful_qa', 'generation')"
+    prompt_template_source:
+      reference_grounding: "paperbench_ref_001 prompt.txt"
+      route: "src.apt.data.build_instruction_prompt"
+    prepare_validate_path: "src.apt.data.prepare_validate_dataset"
+    metric_functions: ["src.apt.metrics.compute_generation_metrics"]
+    artifact_target: "results/dataset_registry.json"
+
+model_registry:
+  APT_adapter:
+    display_name: "APT adapter与LoRA基础适配器模块"
+    forward_route_name: "APT adapter前向计算"
+    bounded_factory: "apt.create_apt_adapter"
+    full_factory: "src.apt.models.inject_apt_adapters"
+    base_adapter: "LoRA"
+    masks: ["m_i", "m_o"]
+    dynamic_rank: "r_apt"
+    output_artifact: "results/model_registry.json"
+  bert:
+    aliases: ["bert", "bert-base"]
+    bounded_factory: "apt.load_transformer_backend"
+    full_factory: "transformers.AutoModelForSequenceClassification.from_pretrained"
+  roberta:
+    aliases: ["roberta", "roberta-base"]
+    bounded_factory: "apt.load_transformer_backend"
+    full_factory: "transformers.AutoModelForSequenceClassification.from_pretrained"
+  t5:
+    aliases: ["t5", "t5-small"]
+    bounded_factory: "apt.load_transformer_backend"
+    full_factory: "transformers.AutoModelForSeq2SeqLM.from_pretrained"
+  llama:
+    aliases: ["llama", "LLaMA generation/instruction task interface"]
+    bounded_factory: "apt.load_transformer_backend"
+    full_factory: "transformers.AutoModelForCausalLM.from_pretrained"
+
+method_registry:
+  ours:
+    aliases: ["ours", "APT"]
+    selector: "apt.select_method"
+    family: "APT"
+    uses: ["APT_adapter", "A_P", "A_T", "self_knowledge_distillation"]
+    output_artifacts: ["results/model_registry.json", "results/pruning_trace.json", "results/tuning_trace.json", "results/loss_trace.json"]
+  fine_tuning:
+    aliases: ["fine_tuning", "FT"]
+    selector: "apt.select_method"
+    family: "baseline"
+    uses: ["full_model_finetuning"]
+  lora:
+    aliases: ["lora", "LoRA"]
+    selector: "apt.select_method"
+    family: "baseline"
+    uses: ["LoRA"]
+  lora_prune:
+    aliases: ["LoRA+Prune", "lora_prune"]
+    selector: "apt.select_method"
+    family: "baseline"
+    uses: ["LoRA", "binary_pruning_masks"]
+  mask_tuning:
+    aliases: ["MaskTuning", "Mask Tuning", "mask_tuning"]
+    selector: "apt.select_method"
+    family: "baseline"
+    uses: ["mask_tuning"]
+    checkpoint_dir: "checkpoints/mask_tuning"
+  cofi:
+    aliases: ["CoFi", "cofi"]
+    selector: "apt.select_method"
+    family: "baseline"
+    uses: ["pruning", "distillation"]
+    checkpoint_dir: "checkpoints/cofi"
+  bert:
+    aliases: ["bert"]
+    selector: "apt.select_method"
+    family: "model_route"
+  roberta:
+    aliases: ["roberta"]
+    selector: "apt.select_method"
+    family: "model_route"
+  t5:
+    aliases: ["t5"]
+    selector: "apt.select_method"
+    family: "model_route"
+  test_time_adaptation:
+    aliases: ["test_time_adaptation", "TTA"]
+    selector: "apt.select_method"
+    family: "adaptation"
+    uses: ["test_time_adaptation"]
+
+algorithm_routes:
+  problem_formulation:
+    section: "3. Problem Formulation"
+    symbols: ["Theta", "gamma_T", "gamma_t", "Delta_t", "M_t", "R_t", "Theta_T", "M_T", "delta", "Theta_t", "Theta_0", "M_0"]
+    objective: "minimize task loss L subject to target sparsity gamma_T and tuning-parameter budget Delta_t"
+    executable_checks:
+      sparsity_constraint: "1 - C(Theta_t, M_t) / C(Theta_0, M_0) >= gamma_t"
+      tuning_budget_constraint: "delta(Theta_t, M_t, R_t) <= Delta_t"
+  apt_adapter:
+    section: "4.1. APT adapter"
+    display_name: "APT adapter前向计算"
+    formula: "H_apt(X) = m_o o (W + s * W_B W_A) X o m_i"
+    symbols: ["H_apt", "r_apt", "d_i", "d_o", "m_i", "m_o", "W_A", "W_B", "delta", "Theta_t", "M_t", "R_t"]
+    executable_route: "apt.APTAdapter.__call__"
+    metadata_route: "apt.APTAdapter.parameter_report"
+    output_artifact: "results/model_registry.json"
+  A_P:
+    section: "4.2. Low-cost Adaptive LM Pruning"
+    display_name: "低成本自适应LM剪枝A_P模块"
+    salience_route_name: "outlier-aware salience score计算"
+    fast_search_route_name: "fast search生成二值剪枝掩码"
+    salience_formula: "S_hat(block) = |W_i,j * gradient_i,j| * (1 + max(kurtosis(activation), 0) / 10)"
+    ema_formula: "S_bar^t = 0.85 * S_bar^(t-1) + 0.15 * S_hat"
+    mu_formula: "mu = min(1, max(0, (global_step - pruning_start_step) / (pruning_end_step - pruning_start_step)))"
+    symbols: ["W_i,j", "D_t", "S_hat", "W_:,j", "sum_i", "Theta_t", "M_t", "H_j,i", "O_:,j", "X_j,:^top", "O_j", "gamma_t", "d_h", "d_m"]
+    executable_routes:
+      salience: "apt.outlier_aware_salience"
+      kurtosis: "apt.kurtosis"
+      ema_and_trace: "apt.AdaptivePruner.collect_step_statistics"
+      fast_search: "apt.AdaptivePruner.search_masks"
+      apply_masks: "apt.AdaptivePruner.apply_masks"
+    output_artifact: "results/pruning_trace.json"
+  A_T:
+    section: "4.3. Adaptive and Efficient LM Tuning"
+    display_name: "可训练参数与APT元数据提取"
+    objective: "select task-sensitive APT adapters and add dynamic ranks under tuning budget"
+    executable_routes:
+      importance: "apt.AdaptiveTuner.compute_layer_importance"
+      allocate_ranks: "apt.AdaptiveTuner.allocate_ranks"
+      metadata: "apt.AdaptiveTuner.metadata"
+    consumes: ["pruning_trace.records", "model_registry.adapter_report", "run_config.tuning_budget"]
+    produces: ["A_T metadata", "trainable_parameter_count", "relative_training_memory", "training_cost", "memory_usage"]
+    output_artifact: "results/tuning_trace.json"
+  self_knowledge_distillation:
+    section: "4.4. Efficient Self-Knowledge Distillation"
+    formula_glue: "L_distill = L_pred + 0.9 * L_layer"
+    formula_squad: "L_distill = L_pred + 0.1 * L_layer"
+    symbols: ["L_distill", "L_pred", "L_layer", "teacher", "student", "tau"]
+    executable_route: "apt.distillation_loss"
+    output_artifact: "results/loss_trace.json"
+  half_precision_attack:
+    protocol: "half_precision_attack"
+    precision_choices: ["fp32", "fp16"]
+    enabled_flag: "--half-precision-attack"
+    metadata_fields: ["precision", "half_precision_attack", "max_memory_allocated"]
+    executable_route: "apt.run_bounded_training"
+    output_artifact: "results/config_resolved.json"
+
+metric_formula_artifact:
+  path: "results/metric_formula.json"
+  writer: "src.apt.artifacts.write_metric_formula_artifact"
+  formulas:
+    trainable_parameter_count:
+      formula: "sum(A_T_metadata.dynamic_added_tuning_parameters.values()) or adapter_report.r_apt * (d_i + d_o)"
+      consumes: ["results/tuning_trace.json:A_T metadata", "results/model_registry.json:adapter_report"]
+    training_cost:
+      formula: "trainable_parameter_count * batch_size / 1024"
+      consumes: ["results/tuning_trace.json:A_T metadata.trainable_parameter_count", "results/training_trace.json:batch_size"]
+    inference_cost:
+      formula: "retained_base_parameters / base_parameters"
+      consumes: ["results/model_registry.json:adapter_report.retained_base_parameters", "results/model_registry.json:adapter_report.base_parameters"]
+    memory_usage:
+      formula: "trainable_parameter_count * bytes_per_parameter where fp16=2 and fp32=4"
+      consumes: ["results/tuning_trace.json:A_T metadata.trainable_parameter_count", "results/run_config.json:precision"]
+    relative_training_peak_memory:
+      formula: "method_training_peak_memory / reference_training_peak_memory"
+      consumes: ["results/training_trace.json:max_memory_allocated", "reference_trace:max_memory_allocated"]
+    relative_training_speed:
+      formula: "reference_training_time / method_training_time"
+      consumes: ["results/training_trace.json:training_time", "reference_trace:training_time"]
+    relative_inference_memory:
+      formula: "method_inference_memory / reference_inference_memory"
+      consumes: ["results/evaluation_result.json:memory_usage", "reference_trace:memory_usage"]
+    relative_inference_speed:
+      formula: "reference_inference_time / method_inference_time"
+      consumes: ["results/evaluation_result.json:inference_time", "reference_trace:inference_time"]
+    relative_accuracy:
+      formula: "method_score / reference_score"
+      consumes: ["results/sst2_mnli_relative_accuracy_inputs.json:method_score", "results/sst2_mnli_relative_accuracy_inputs.json:reference_score"]
+    TTA:
+      formula: "test-time adaptation metric aggregate over per-sample adaptation records"
+      consumes: ["results/evaluation_result.json:test_time_adaptation"]
+    dev_accuracy:
+      formula: "correct_predictions / labeled_examples"
+      consumes: ["results/evaluation_result.json:predictions", "results/evaluation_result.json:labels"]
+    dev_F1:
+      formula: "mean token F1 over prediction/reference pairs"
+      consumes: ["results/evaluation_result.json:predictions", "results/evaluation_result.json:labels"]
+    ROUGE:
+      formula: "mean ROUGE-L longest-common-subsequence recall over generated prediction/reference pairs"
+      consumes: ["results/evaluation_result.json:predictions", "results/evaluation_result.json:references"]
+
+evaluation_route:
+  entrypoint: "apt.run_bounded_training"
+  required_reads:
+    - "results/run_config.json"
+    - "results/dataset_registry.json"
+    - "results/model_registry.json"
+    - "results/pruning_trace.json"
+    - "results/tuning_trace.json"
+    - "results/training_trace.json"
+    - "results/tuning_trace.json:A_T metadata"
+  writes:
+    evaluation_result: "results/evaluation_result.json"
+    result_table: "results/result_table.json"
+    metric_formula: "results/metric_formula.json"
+    relative_accuracy_inputs: "results/sst2_mnli_relative_accuracy_inputs.json"
+  evaluation_result_fields:
+    required_metrics: ["accuracy", "f1", "loss", "rouge", "training_time", "training_cost", "inference_cost", "memory_usage", "gpu_memory"]
+    required_datasets_visible: ["SST2", "MNLI", "SQuAD v2.0", "CNN/DailyMail", "TruthfulQA"]
+    provenance_fields: ["status", "mode", "dataset_name", "model_name", "method", "artifact_sources"]
+  relative_accuracy_inputs:
+    path: "results/sst2_mnli_relative_accuracy_inputs.json"
+    datasets: ["SST2", "MNLI"]
+    reference_method: "FT"
+    target_method: "APT"
+    preserve_raw_scores: true
+
+result_table_artifact:
+  path: "results/result_table.json"
+  writer: "apt.write_result_table_artifact"
+  aggregation_keys: ["task", "dataset", "model", "method", "baseline", "metric", "status", "artifact_source", "table_source", "figure_source"]
+  required_artifact_sources:
+    - "results/evaluation_result.json"
+    - "results/metric_formula.json"
+    - "results/sst2_mnli_relative_accuracy_inputs.json"
+    - "results/model_registry.json"
+    - "results/pruning_trace.json"
+    - "results/tuning_trace.json"
+    - "results/training_trace.json"
+  relative_metric_inputs: "results/sst2_mnli_relative_accuracy_inputs.json"
+
+artifact_manifest:
+  path: "results/artifact_manifest.json"
+  writer: "apt.write_artifact_manifest"
+  must_include:
+    - "results/evaluation_result.json"
+    - "results/result_table.json"
+    - "results/metric_formula.json"
+    - "results/sst2_mnli_relative_accuracy_inputs.json"
+    - "results/model_registry.json"
+    - "results/pruning_trace.json"
+    - "results/tuning_trace.json"
+    - "results/training_trace.json"
+    - "results/loss_trace.json"
+    - "checkpoints/cofi/metadata.json"
+    - "checkpoints/mask_tuning/metadata.json"
+    - "results/tables/table_5.json"
+    - "results/tables/table_7.json"
+    - "results/tables/table_8.json"
+    - "results/tables/table_9.json"
+    - "results/tables/table_10.json"
+    - "results/tables/table_12.json"
+    - "results/figures/figure_1.json"
+    - "results/figures/figure_2.json"
+    - "results/figures/figure_4.json"
+    - "results/figures/figure_5.json"
+    - "results/figures/figure_5a.json"
+
+artifact_obligations:
+  Figure 1:
+    route: "src.apt.reporting.run_figure_1_route"
+    writer: "src.apt.reporting.write_figure_1_artifact"
+    path: "results/figures/figure_1.json"
+    source: "method overview and evidence contract"
+    bounded_route_inputs: ["results/model_registry.json", "results/pruning_trace.json", "results/tuning_trace.json"]
+    metric_or_trace_source: "APT adapter, A_P pruning, A_T tuning, and self-distillation route metadata"
+    runtime_stage: "table_figure_artifact_stage"
+    status_policy: "bounded_proxy allowed only when built from current-run bounded traces"
+  Figure 2:
+    route: "src.apt.reporting.run_figure_2_route"
+    writer: "src.apt.reporting.write_figure_2_artifact"
+    path: "results/figures/figure_2.json"
+    source: "adaptive pruning and tuning procedure"
+    bounded_route_inputs: ["results/pruning_trace.json", "results/tuning_trace.json", "results/loss_trace.json"]
+    metric_or_trace_source: "APT pruning/tuning procedure trace produced by run_training"
+    runtime_stage: "table_figure_artifact_stage"
+    status_policy: "bounded_proxy allowed only when built from current-run bounded traces"
+  Figure 4:
+    route: "src.apt.reporting.run_figure_4_route"
+    writer: "src.apt.reporting.write_figure_4_artifact"
+    path: "results/figures/figure_4.json"
+    source: "evaluation efficiency curve"
+    bounded_route_inputs: ["results/evaluation_result.json", "results/training_trace.json", "results/metric_formula.json"]
+    metric_or_trace_source: "training_cost, inference_cost, memory_usage, gpu_memory"
+    runtime_stage: "table_figure_artifact_stage"
+    status_policy: "bounded_proxy allowed only when built from current-run metric functions"
+  Figure 5:
+    route: "src.apt.reporting.run_figure_5_route"
+    writer: "src.apt.reporting.write_figure_5_artifact"
+    path: "results/figures/figure_5.json"
+    source: "ablation or efficiency plot"
+    bounded_route_inputs: ["results/result_table.json", "results/metric_formula.json"]
+    metric_or_trace_source: "APT versus LoRA, Mask Tuning, CoFi, and FT ablation rows"
+    runtime_stage: "table_figure_artifact_stage"
+    status_policy: "bounded_proxy allowed only when built from current-run result_table rows"
+  Figure 5a:
+    route: "src.apt.reporting.run_figure_5a_route"
+    writer: "src.apt.reporting.write_figure_5a_artifact"
+    path: "results/figures/figure_5a.json"
+    source: "half precision attack or sensitivity subfigure"
+    bounded_route_inputs: ["results/config_resolved.json", "results/evaluation_result.json"]
+    metric_or_trace_source: "half_precision_attack precision metadata and measured/bounded efficiency metrics"
+    runtime_stage: "table_figure_artifact_stage"
+    status_policy: "bounded_proxy allowed only when attack flag and precision metadata are current-run values"
+  Table 1:
+    route: "src.apt.reporting.run_table_1_route"
+    writer: "src.apt.reporting.write_table_1_artifact"
+    path: "results/tables/table_1.csv"
+  Table 2:
+    route: "src.apt.reporting.run_table_2_route"
+    writer: "src.apt.reporting.write_table_2_artifact"
+    path: "results/tables/table_2.json"
+  Table 3:
+    route: "src.apt.reporting.run_table_3_route"
+    writer: "src.apt.reporting.write_table_3_artifact"
+    path: "results/tables/table_3.json"
+  Table 4:
+    route: "src.apt.reporting.run_table_4_route"
+    writer: "src.apt.reporting.write_table_4_artifact"
+    path: "results/tables/table_4.json"
+  Table 5:
+    route: "src.apt.reporting.run_table_5_route"
+    writer: "src.apt.reporting.write_table_5_artifact"
+    path: "results/tables/table_5.json"
+    bounded_route_inputs: ["results/evaluation_result.json", "results/result_table.json", "results/metric_formula.json"]
+    rows_from: ["SST2", "MNLI", "SQuAD v2.0"]
+    runtime_stage: "table_figure_artifact_stage"
+    status_policy: "bounded_proxy allowed only when rows are computed by run_evaluation and metric functions"
+  Table 7:
+    route: "src.apt.reporting.run_table_7_route"
+    writer: "src.apt.reporting.write_table_7_artifact"
+    path: "results/tables/table_7.json"
+    bounded_route_inputs: ["results/model_registry.json", "results/tuning_trace.json", "results/training_trace.json"]
+    rows_from: ["trainable_parameter_count", "relative_training_peak_memory", "relative_training_speed"]
+    runtime_stage: "table_figure_artifact_stage"
+    status_policy: "bounded_proxy allowed only when rows consume A_T metadata and current training trace"
+  Table 8:
+    route: "src.apt.reporting.run_table_8_route"
+    writer: "src.apt.reporting.write_table_8_artifact"
+    path: "results/tables/table_8.json"
+    bounded_route_inputs: ["results/evaluation_result.json", "results/model_registry.json", "results/pruning_trace.json"]
+    rows_from: ["relative_inference_memory", "relative_inference_speed", "inference_cost"]
+    runtime_stage: "table_figure_artifact_stage"
+    status_policy: "bounded_proxy allowed only when rows consume current evaluation and pruning outputs"
+  Table 9:
+    route: "src.apt.reporting.run_table_9_route"
+    writer: "src.apt.reporting.write_table_9_artifact"
+    path: "results/tables/table_9.json"
+    bounded_route_inputs: ["results/sst2_mnli_relative_accuracy_inputs.json", "results/evaluation_result.json"]
+    rows_from: ["relative_accuracy", "SST2", "MNLI"]
+    runtime_stage: "table_figure_artifact_stage"
+    status_policy: "bounded_proxy allowed only when raw method/reference scores are preserved"
+  Table 10:
+    route: "src.apt.reporting.run_table_10_route"
+    writer: "src.apt.reporting.write_table_10_artifact"
+    path: "results/tables/table_10.json"
+    bounded_route_inputs: ["results/evaluation_result.json", "results/config_resolved.json"]
+    rows_from: ["half_precision_attack", "precision", "memory_usage", "gpu_memory"]
+    runtime_stage: "table_figure_artifact_stage"
+    status_policy: "bounded_proxy allowed only when attack protocol route executed"
+  Table 11:
+    route: "src.apt.reporting.run_table_11_route"
+    writer: "src.apt.reporting.write_table_11_artifact"
+    path: "results/tables/table_11.json"
+  Table 12:
+    route: "src.apt.reporting.run_table_12_route"
+    writer: "src.apt.reporting.write_table_12_artifact"
+    path: "results/tables/table_12.json"
+    bounded_route_inputs: ["results/evaluation_result.json", "results/result_table.json"]
+    rows_from: ["CNN/DailyMail", "TruthfulQA", "ROUGE", "truthfulness"]
+    runtime_stage: "table_figure_artifact_stage"
+    status_policy: "bounded_proxy allowed only when generation metric functions produced the row values"
+  result_table:
+    route: "apt.build_result_table"
+    writer: "apt.write_result_table_artifact"
+    path: "results/result_table.json"
+    bounded_route_inputs: ["results/evaluation_result.json", "results/metric_formula.json", "results/sst2_mnli_relative_accuracy_inputs.json"]
+    rows_from: ["task", "dataset", "model", "method", "baseline", "metric", "artifact_source", "figure_source", "table_source"]
+    runtime_stage: "evaluation_reporting_stage"
+
+runtime_artifact_route_coverage:
+  validation_contract: "Declared paper-visible tables and figures are active reporting routes, not detached registry rows."
+  route_owner: "src.apt.reporting"
+  canonical_call_site: "main.py write_all_artifacts after run_evaluation and build_result_table"
+  bounded_execution_rule: "Each route must consume current-run evaluation, model, pruning, tuning, training, or metric-formula artifacts before writing benchmark-visible content."
+  required_routes:
+    figure_1:
+      run: "src.apt.reporting.run_figure_1_route"
+      write: "src.apt.reporting.write_figure_1_artifact"
+      output: "results/figures/figure_1.json"
+    figure_2:
+      run: "src.apt.reporting.run_figure_2_route"
+      write: "src.apt.reporting.write_figure_2_artifact"
+      output: "results/figures/figure_2.json"
+    figure_4:
+      run: "src.apt.reporting.run_figure_4_route"
+      write: "src.apt.reporting.write_figure_4_artifact"
+      output: "results/figures/figure_4.json"
+    figure_5:
+      run: "src.apt.reporting.run_figure_5_route"
+      write: "src.apt.reporting.write_figure_5_artifact"
+      output: "results/figures/figure_5.json"
+    figure_5a:
+      run: "src.apt.reporting.run_figure_5a_route"
+      write: "src.apt.reporting.write_figure_5a_artifact"
+      output: "results/figures/figure_5a.json"
+    table_5:
+      run: "src.apt.reporting.run_table_5_route"
+      write: "src.apt.reporting.write_table_5_artifact"
+      output: "results/tables/table_5.json"
+    table_7:
+      run: "src.apt.reporting.run_table_7_route"
+      write: "src.apt.reporting.write_table_7_artifact"
+      output: "results/tables/table_7.json"
+    table_8:
+      run: "src.apt.reporting.run_table_8_route"
+      write: "src.apt.reporting.write_table_8_artifact"
+      output: "results/tables/table_8.json"
+    table_9:
+      run: "src.apt.reporting.run_table_9_route"
+      write: "src.apt.reporting.write_table_9_artifact"
+      output: "results/tables/table_9.json"
+    table_10:
+      run: "src.apt.reporting.run_table_10_route"
+      write: "src.apt.reporting.write_table_10_artifact"
+      output: "results/tables/table_10.json"
+    table_12:
+      run: "src.apt.reporting.run_table_12_route"
+      write: "src.apt.reporting.write_table_12_artifact"
+      output: "results/tables/table_12.json"
+  result_table_links:
+    table_source_fields: ["Table 5", "Table 7", "Table 8", "Table 9", "Table 10", "Table 12"]
+    figure_source_fields: ["Figure 1", "Figure 2", "Figure 4", "Figure 5", "Figure 5a"]
+    artifact_source_fields:
+      - "results/evaluation_result.json"
+      - "results/metric_formula.json"
+      - "results/model_registry.json"
+      - "results/pruning_trace.json"
+      - "results/tuning_trace.json"
+      - "results/training_trace.json"
+
+protocol_matrix:
+  - id: "apt_nlu_joint_pruning_tuning"
+    display_name: "APT在NLU任务上的联合剪枝与调参复现实验"
+    paper_section: "Section 5.1 Tasks"
+    tasks: ["SST2", "MNLI", "SQuAD v2.0"]
+    methods: ["ours", "fine_tuning", "lora", "mask_tuning", "cofi"]
+    models: ["bert-base", "roberta-base", "t5-small"]
+    metric_functions: ["apt.accuracy", "apt.f1_score", "apt.training_cost", "apt.memory_usage"]
+    route: "apt.run_bounded_training"
+    artifact_writers: ["apt.write_evaluation_result_artifact", "apt.write_result_table_artifact", "apt.write_model_registry_artifact"]
+  - id: "apt_generation_instruction_coverage"
+    display_name: "APT在生成与指令接口上的任务覆盖实验"
+    paper_section: "LLaMA generation/instruction task interface"
+    tasks: ["CNN/DailyMail", "TruthfulQA"]
+    methods: ["ours", "lora", "test_time_adaptation"]
+    models: ["t5-small", "llama"]
+    metric_functions: ["apt.rouge_l", "src.apt.metrics.compute_generation_metrics"]
+    route: "apt.run_bounded_training"
+    artifact_writers: ["apt.write_evaluation_result_artifact", "apt.write_result_table_artifact"]
+  - id: "baseline_efficiency_artifact_contract"
+    display_name: "基线比较、相对效率指标与可见工件契约实验"
+    paper_section: "Tables and Figures"
+    tasks: ["SST2", "MNLI", "SQuAD v2.0", "CNN/DailyMail", "TruthfulQA"]
+    methods: ["ours", "fine_tuning", "lora", "mask_tuning", "cofi", "test_time_adaptation"]
+    metric_functions: ["apt.training_cost", "apt.inference_cost", "apt.memory_usage", "apt.gpu_memory"]
+    route: "apt.main"
+    artifact_writers: ["apt.write_artifact_manifest", "apt.write_result_table_artifact"]
+  - id: "config_registry_entrypoint_modules"
+    display_name: "配置、注册表与运行入口模块"
+    route: "apt.resolve_config"
+    outputs: ["results/run_config.json", "results/config_resolved.json"]
+  - id: "dataset_registry_builder"
+    display_name: "构建数据集注册表"
+    route: "src.apt.config.build_dataset_registry"
+    outputs: ["results/dataset_registry.json"]
+  - id: "method_baseline_registry_builder"
+    display_name: "构建方法与基线注册表"
+    route: "apt.get_method_registry"
+    outputs: ["results/method_registry.json", "results/baseline_registry.json"]
+  - id: "paper_section_4_adaptive_pruning_and_tuning"
+    display_name: "论文第 4 节 Adaptive Pruning and Tuning"
+    route: "apt.run_bounded_training"
+    algorithms: ["A_P", "A_T", "self_knowledge_distillation"]
+  - id: "paper_section_4_1_apt_adapter"
+    display_name: "论文第 4.1 节 APT adapter"
+    route: "apt.create_apt_adapter"
+    algorithms: ["apt_adapter"]
+  - id: "paper_section_4_2_low_cost_A_P"
+    display_name: "论文第 4.2 节 Low-cost Adaptive LM Pruning A_P"
+    route: "apt.AdaptivePruner.search_masks"
+    algorithms: ["A_P"]
+  - id: "paper_section_4_3_A_T"
+    display_name: "论文第 4.3 节 Adaptive and Efficient LM Tuning A_T"
+    route: "apt.AdaptiveTuner.allocate_ranks"
+    algorithms: ["A_T"]
+  - id: "paper_section_4_4_distillation"
+    display_name: "论文第 4.4 节 Efficient Self-Knowledge Distillation"
+    route: "apt.distillation_loss"
+    algorithms: ["self_knowledge_distillation"]
+  - id: "table_4_ablation_protocol"
+    display_name: "Table 4 ablation protocol"
+    route: "src.apt.reporting.run_table_4_route"
+    methods: ["ours", "lora_prune", "mask_tuning", "cofi"]
+  - id: "half_precision_attack_protocol"
+    display_name: "half_precision_attack protocol"
+    route: "apt.run_bounded_training"
+    precision: ["fp32", "fp16"]
+    flag: "--half-precision-attack"
+  - id: "bert_roberta_t5_sst2_mnli"
+    display_name: "BERT/RoBERTa/T5 on SST2 and MNLI"
+    route: "apt.run_bounded_training"
+    tasks: ["SST2", "MNLI"]
+    models: ["bert-base", "roberta-base", "t5-small"]
+  - id: "roberta_base_squad_v2"
+    display_name: "RoBERTa_base on SQuAD v2.0"
+    route: "apt.run_bounded_training"
+    tasks: ["SQuAD v2.0"]
+    models: ["roberta-base"]
+
+experiment_specs:
+  core_contribution_hypothesis: "APT can jointly prune and tune pretrained language models while preserving task performance and reducing training/inference costs."
+  decisive_comparison: "APT versus FT, LoRA, LoRA+Prune, Mask Tuning, CoFi, and test_time_adaptation across GLUE, SQuAD, summarization, and TruthfulQA generation routes."
+  decisive_metric_functions: ["dev_accuracy", "dev_F1", "ROUGE", "training_cost", "inference_cost", "memory_usage", "relative_accuracy"]
+  positive_implementation_scope_boundary: "Bounded default runs exercise the same adapter, pruning, tuning, distillation, metric, and artifact-writer code paths on tiny fixtures; full mode is required for paper-scale benchmark claims."
+  bounded_default_subset:
+    tasks: ["SST2", "TruthfulQA"]
+    methods: ["ours", "lora", "mask_tuning", "cofi"]
+    batch_size: 32
+    max_steps: 4
+  full_set:
+    tasks: ["SST2", "MNLI", "SQuAD v2.0", "CNN/DailyMail", "TruthfulQA"]
+    methods: ["ours", "fine_tuning", "lora", "lora_prune", "mask_tuning", "cofi", "test_time_adaptation"]
+    batch_sizes: [32, 128]
+
+evidence_contract_matrix:
+  path: "results/evidence_contract_matrix.json"
+  rows:
+    - obligation: "APT adapter -> LoRA base adapter + binary pruning masks m_i/m_o + dynamic rank r_apt"
+      callable: "apt.APTAdapter"
+      artifact: "results/model_registry.json"
+    - obligation: "Low-cost A_P -> outlier-aware salience score + fast search + binary masks"
+      callable: "apt.AdaptivePruner"
+      artifact: "results/pruning_trace.json"
+    - obligation: "Adaptive A_T -> tuning layer importance + dynamic ranks + A_T metadata"
+      callable: "apt.AdaptiveTuner"
+      artifact: "results/tuning_trace.json"
+    - obligation: "Efficient Self-Knowledge Distillation -> shared teacher/student loss route"
+      callable: "apt.distillation_loss"
+      artifact: "results/loss_trace.json"
+    - obligation: "half_precision_attack protocol -> precision/attack configuration + measured trace metadata"
+      callable: "apt.run_bounded_training"
+      artifact: "results/config_resolved.json"
+    - obligation: "fixed hyperparameter batch_size_32 -> bounded/full config registry"
+      callable: "apt.resolve_config"
+      artifact: "results/config_resolved.json"
+
+readiness_outputs:
+  readiness: "results/readiness.json"
+  evaluation_result: "results/evaluation_result.json"
+  label: "readiness/schema/contract artifacts are auxiliary; benchmark-visible outputs require bounded measured or full measured code paths."

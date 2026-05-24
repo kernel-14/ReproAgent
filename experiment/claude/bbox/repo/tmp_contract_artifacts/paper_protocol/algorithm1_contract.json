@@ -1,0 +1,9 @@
+{
+  "eq4": "sample M candidates from p_theta_t(y|x_i)",
+  "eq5": "update positive from previous positive plus adapted candidates",
+  "eq6": "update negative from previous negative plus adapted candidates",
+  "eq7": "theta_{t+1} = theta_t - eta * grad_theta Eq3",
+  "eta": 5e-06,
+  "stateful_negative": "y_i-^(t)",
+  "stateful_positive": "y_i+^(t)"
+}

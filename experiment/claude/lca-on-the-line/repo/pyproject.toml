@@ -1,0 +1,237 @@
+# LCA-on-the-Line: Project Configuration
+# Paper: LCA-on-the-Line: Benchmarking Out-of-Distribution Generalization with Class Taxonomies
+#
+# reference_grounding: paperbench_ref_001 references/classification/README.md
+# reference_grounding: paperbench_ref_006 eval_tiny_imagenet_truncate.ipynb
+#
+# This configuration follows the method obligation:
+# "Declare lightweight core dependencies separately from optional heavy simulator/training dependencies when possible."
+#
+# Dependency groups:
+# - Core: Lightweight analysis, metrics, hierarchy computation
+# - Training: Heavy ML frameworks (torch, torchvision, timm)
+# - VLM: Vision-language model dependencies (CLIP, OpenCLIP)
+# - Visualization: Plotting and figure generation
+# - Dev: Development and testing tools
+
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lca-on-the-line"
+version = "1.0.0"
+description = "Benchmarking Out-of-Distribution Generalization with Class Taxonomies"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "LCA-on-the-Line Authors"}
+]
+keywords = [
+    "out-of-distribution",
+    "generalization",
+    "taxonomy",
+    "hierarchical classification",
+    "imagenet",
+    "vision models",
+    "vision-language models"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Core lightweight dependencies - required for basic functionality
+# Excludes heavy ML frameworks to enable lightweight analysis and smoke testing
+dependencies = [
+    "numpy>=1.23.0,<2.0.0",
+    "scipy>=1.10.0",
+    "pandas>=1.5.0",
+    "scikit-learn>=1.2.0",
+    "networkx>=3.0",
+    "nltk>=3.8",
+    "PyYAML>=6.0",
+    "omegaconf>=2.3.0",
+    "tqdm>=4.65.0",
+    "Pillow>=9.0.0",
+]
+
+[project.optional-dependencies]
+# Heavy ML frameworks - required for model loading and evaluation
+# Separated to allow lightweight smoke testing without GPU dependencies
+training = [
+    "torch>=1.13.0,<3.0.0",
+    "torchvision>=0.14.0,<1.0.0",
+    "timm>=0.9.0",
+    "transformers>=4.30.0",
+]
+
+# Vision-Language Models - required for CLIP/OpenCLIP-based VLM evaluation
+# reference_grounding: paperbench_ref_006 extract_clip.ipynb
+vlm = [
+    "open-clip-torch>=2.20.0",
+    "ftfy>=6.1.0",
+    "regex>=2023.0.0",
+]
+
+# Dataset loading via HuggingFace
+data = [
+    "datasets>=2.14.0",
+]
+
+# Visualization dependencies for figure generation (Figure 1, 3, 4, 5)
+visualization = [
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+]
+
+# Development and testing tools
+dev = [
+    "pytest>=7.3.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.3.0",
+]
+
+# Full installation - all optional dependencies
+all = [
+    "torch>=1.13.0,<3.0.0",
+    "torchvision>=0.14.0,<1.0.0",
+    "timm>=0.9.0",
+    "transformers>=4.30.0",
+    "open-clip-torch>=2.20.0",
+    "ftfy>=6.1.0",
+    "regex>=2023.0.0",
+    "datasets>=2.14.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "pytest>=7.3.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.3.0",
+]
+
+[project.scripts]
+lca-benchmark = "main:main"
+lca-evaluate = "main:main"
+
+[project.urls]
+Homepage = "https://github.com/paperbench/lca-on-the-line"
+Repository = "https://github.com/paperbench/lca-on-the-line"
+Documentation = "https://github.com/paperbench/lca-on-the-line#readme"
+
+[tool.setuptools]
+packages = ["src", "src.data", "src.methods", "src.experiments", "src.reporting"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json"]
+
+# =============================================================================
+# Environment and Task Registry Configuration
+# =============================================================================
+# Explicit registry entries for paper-derived environments and tasks:
+#
+# Datasets:
+# - imagenet (ID): ImageNet-1K with WordNet hierarchy
+# - imagenet_v2: MatchedFrequency variant (OOD)
+# - imagenet_a: ImageNet-A natural adversarial examples (OOD)
+# - imagenet_r: ImageNet-R renditions (OOD)
+# - imagenet_sketch: ImageNet-Sketch (OOD)
+# - objectnet: ObjectNet (OOD)
+#
+# Tasks/Environments:
+# - OOD Top-1 accuracy evaluation
+# - OOD Top-5 accuracy evaluation
+# - ID LCA distance computation
+# - Correlation analysis (ID LCA vs OOD accuracy)
+#
+# Methods/Baselines:
+# - Ours: Hierarchy-aware training with soft labels
+# - Baseline: Standard cross-entropy training
+# - Latent hierarchy: K-means constructed taxonomy
+# - WordNet hierarchy: External knowledge-based taxonomy
+#
+# Measurements (Fig 3, Figure 3, Figure 4 reproduction artifacts):
+# - Linear regression R² between ID LCA and OOD accuracy
+# - Spearman ρ correlation coefficient
+# - Mean Absolute Error (MAE) for error prediction
+# - Top-1 and Top-5 accuracy on OOD datasets
+
+# =============================================================================
+# Tool Configuration
+# =============================================================================
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | _build
+  | build
+  | dist
+  | data
+  | checkpoints
+  | results
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+known_first_party = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--tb=short",
+    "-v",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "gpu: marks tests requiring GPU",
+    "integration: marks integration tests",
+]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

@@ -1,0 +1,46 @@
+{
+  "created_at": "2026-05-21T19:35:11Z",
+  "datasets": [
+    "wikitext",
+    "realtoxicityprompts"
+  ],
+  "lazy_downloads": true,
+  "paper": "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity",
+  "prediction_rows": 60,
+  "readiness": {
+    "realtoxicityprompts": {
+      "aliases": [
+        "realtoxicityprompts",
+        "rtp",
+        "1199_realtoxicityprompts_20_tokens"
+      ],
+      "environment": "binary toxicity classification",
+      "fixture_records": 4,
+      "full_download_required": true,
+      "lazy_loader": "datasets.load_dataset('allenai/real-toxicity-prompts') when use_full_dataset=True",
+      "name": "realtoxicityprompts",
+      "ready_without_network": true,
+      "split": "paper_sample_1199",
+      "task": "toxicity generation evaluation"
+    },
+    "wikitext": {
+      "aliases": [
+        "wikitext",
+        "wiki-text",
+        "wikitext-2",
+        "wikitext103",
+        "wiki_text"
+      ],
+      "environment": "binary toxicity classification",
+      "fixture_records": 4,
+      "full_download_required": true,
+      "lazy_loader": "datasets.load_dataset('wikitext', 'wikitext-2-raw-v1') when use_full_dataset=True",
+      "name": "wikitext",
+      "ready_without_network": true,
+      "split": "validation",
+      "task": "language modeling plus binary toxicity classification evaluation"
+    }
+  },
+  "records_evaluated": 12,
+  "schema_version": "1.0"
+}

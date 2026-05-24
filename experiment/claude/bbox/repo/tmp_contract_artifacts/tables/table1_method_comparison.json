@@ -1,0 +1,20 @@
+{
+  "table_id": "table1_method_comparison",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.941531Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Table 1: Method comparison (5 criteria)",
+    "schema": [
+      {
+        "method": "Full Fine-Tuning (white-box)",
+        "model_params_access": true,
+        "high_dim_repr": true,
+        "token_probs": true,
+        "retrieval_corpus": false,
+        "smaller_adapter": false,
+        "access_type": "white-box"
+      }
+    ]
+  }
+}

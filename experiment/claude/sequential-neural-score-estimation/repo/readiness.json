@@ -1,0 +1,18 @@
+{
+  "status": "ready",
+  "mode": "runtime_smoke",
+  "artifacts_generated": [
+    "results/metrics.json",
+    "results/posterior_samples.npz",
+    "results/benchmark_metrics.csv",
+    "simulated_data/train.npz",
+    "simulated_data/test.npz",
+    "results/figures/posterior_plots.pdf"
+  ],
+  "validation_artifact": true,
+  "contracts_satisfied": [
+    "entrypoint",
+    "config",
+    "artifact_generation"
+  ]
+}

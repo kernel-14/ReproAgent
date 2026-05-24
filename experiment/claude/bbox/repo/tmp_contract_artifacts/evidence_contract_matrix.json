@@ -1,0 +1,617 @@
+{
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.934709Z",
+  "schema_version": "1.0.0",
+  "evidence_matrix": [
+    {
+      "row_id": "exp1_gsm8k",
+      "experiment": "Experiment 1: GSM8K",
+      "environment": "gsm8k",
+      "methods": [
+        "chain_of_thought",
+        "azure_sft",
+        "sft_lora",
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "parameters": {
+        "feedback_mode": "groundtruth",
+        "temperature": 1.0,
+        "beam_width": 3
+      },
+      "measurements": [
+        "accuracy",
+        "training_cost",
+        "inference_cost"
+      ],
+      "trend": "baseline_outperformance: BBox-Adapter > chain_of_thought baseline by avg +6.39%; azure_lora achieves 3.10% gain on GSM8K vs 12.68% on StrategyQA",
+      "artifact": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+      "paper_tables": [
+        "Table2",
+        "Table10"
+      ]
+    },
+    {
+      "row_id": "exp2_strategyqa",
+      "experiment": "Experiment 2: StrategyQA",
+      "environment": "strategyqa",
+      "methods": [
+        "chain_of_thought",
+        "azure_sft",
+        "azure_lora",
+        "sft_lora",
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "parameters": {
+        "feedback_mode": "ai_feedback",
+        "temperature": 1.0,
+        "beam_width": 3
+      },
+      "measurements": [
+        "accuracy",
+        "training_cost",
+        "inference_cost"
+      ],
+      "trend": "baseline_outperformance: BBox-Adapter > all baselines; azure_lora +12.68%",
+      "artifact": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+      "paper_tables": [
+        "Table2",
+        "Table4",
+        "Table10"
+      ]
+    },
+    {
+      "row_id": "exp3_truthfulqa",
+      "experiment": "Experiment 3: TruthfulQA",
+      "environment": "truthfulqa",
+      "methods": [
+        "chain_of_thought",
+        "azure_sft",
+        "azure_lora",
+        "sft_lora",
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "parameters": {
+        "feedback_mode": "combined",
+        "temperature": 1.0
+      },
+      "measurements": [
+        "accuracy",
+        "training_cost",
+        "inference_cost"
+      ],
+      "trend": "baseline_outperformance: BBox-Adapter > CoT; azure_lora +18%",
+      "artifact": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+      "paper_tables": [
+        "Table2",
+        "Table10"
+      ]
+    },
+    {
+      "row_id": "exp4_scienceqa",
+      "experiment": "Experiment 4: ScienceQA",
+      "environment": "scienceqa",
+      "methods": [
+        "chain_of_thought",
+        "azure_sft",
+        "azure_lora",
+        "sft_lora",
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "parameters": {
+        "feedback_mode": "groundtruth",
+        "temperature": 1.0
+      },
+      "measurements": [
+        "accuracy",
+        "training_cost",
+        "inference_cost"
+      ],
+      "trend": "baseline_outperformance: BBox-Adapter > CoT baseline",
+      "artifact": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+      "paper_tables": [
+        "Table2",
+        "Table10"
+      ]
+    },
+    {
+      "row_id": "exp5_toxigen",
+      "experiment": "Experiment 5: ToxiGen",
+      "environment": "toxigen",
+      "methods": [
+        "base_model",
+        "sft_lora",
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "parameters": {
+        "feedback_mode": "ai_feedback",
+        "judge_model": "roberta-base",
+        "toxicity_threshold": 0.5
+      },
+      "measurements": [
+        "hate_speech_rate",
+        "toxicity_probability"
+      ],
+      "trend": "toxicity_reduction: BBox-Adapter reduces HateSpeechRate and ToxicityProbability vs base_model",
+      "artifact": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/toxigen/metrics.json",
+      "paper_tables": [
+        "Table7"
+      ]
+    },
+    {
+      "row_id": "abl1_adapter_size",
+      "experiment": "Ablation 1: Adapter size sweep",
+      "environment": "strategyqa,gsm8k",
+      "methods": [
+        "bbox_adapter_0.1B",
+        "bbox_adapter_0.3B"
+      ],
+      "parameters": {
+        "adapter_size_b": [
+          0.1,
+          0.3
+        ]
+      },
+      "measurements": [
+        "accuracy"
+      ],
+      "trend": "positive_parameter_improves: larger adapter_size_b (0.3B) >= smaller (0.1B) in avg accuracy",
+      "artifact": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/ablation/metrics.json",
+      "paper_tables": [
+        "Table2"
+      ]
+    },
+    {
+      "row_id": "abl2_batch_size",
+      "experiment": "Ablation 2: Batch size sweep",
+      "environment": "strategyqa",
+      "methods": [
+        "bbox_adapter"
+      ],
+      "parameters": {
+        "batch_size": [
+          64,
+          128
+        ]
+      },
+      "measurements": [
+        "accuracy",
+        "training_cost"
+      ],
+      "trend": "positive_parameter_improves: batch_size=128 >= batch_size=64 in accuracy",
+      "artifact": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/ablation/metrics.json",
+      "paper_tables": []
+    },
+    {
+      "row_id": "cost_analysis",
+      "experiment": "Cost Analysis: Table 4",
+      "environment": "strategyqa,gsm8k",
+      "methods": [
+        "base_model",
+        "azure_sft",
+        "bbox_adapter_single_step"
+      ],
+      "parameters": {
+        "beam_width": 1
+      },
+      "measurements": [
+        "training_cost",
+        "inference_cost",
+        "api_cost",
+        "memory_usage",
+        "gpu_memory"
+      ],
+      "trend": "cost_reduction: BBox-Adapter single-step brings +3.45% accuracy at 31.30x lower training cost, 1.84x lower inference cost vs Azure-SFT. Azure-SFT boosts avg 6.35% at significantly higher cost.",
+      "artifact": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/cost_analysis/metrics.json",
+      "paper_tables": [
+        "Table4"
+      ]
+    }
+  ],
+  "trend_assertions": [
+    {
+      "assertion_id": "baseline_outperformance_avg",
+      "type": "baseline_outperformance",
+      "description": "BBox-Adapter consistently outperforms gpt-3.5-turbo CoT baseline by an average of 6.39% across all datasets (Table 2).",
+      "threshold": 0.0,
+      "expected_delta_pct": 6.39,
+      "comparison": "bbox_adapter vs chain_of_thought",
+      "datasets": [
+        "gsm8k",
+        "strategyqa",
+        "truthfulqa",
+        "scienceqa"
+      ],
+      "metric": "accuracy"
+    },
+    {
+      "assertion_id": "baseline_outperformance_max",
+      "type": "baseline_outperformance",
+      "description": "BBox-Adapter improves accuracy up to 6.77% over CoT (Table 2).",
+      "threshold": 0.0,
+      "expected_delta_pct": 6.77,
+      "comparison": "bbox_adapter vs chain_of_thought",
+      "metric": "accuracy"
+    },
+    {
+      "assertion_id": "positive_parameter_improves_adapter_size",
+      "type": "positive_parameter_improves",
+      "description": "Larger adapter size (0.3B) achieves >= accuracy compared to 0.1B on average.",
+      "parameter": "adapter_size_b",
+      "direction": "larger_is_better",
+      "values": [
+        0.1,
+        0.3
+      ],
+      "metric": "accuracy"
+    },
+    {
+      "assertion_id": "positive_parameter_improves_beam_width",
+      "type": "positive_parameter_improves",
+      "description": "Larger beam_width improves accuracy on StrategyQA (Figure 3a).",
+      "parameter": "beam_width",
+      "direction": "larger_is_better",
+      "values": [
+        1,
+        3,
+        5
+      ],
+      "metric": "accuracy",
+      "dataset": "strategyqa"
+    },
+    {
+      "assertion_id": "positive_parameter_improves_iterations",
+      "type": "positive_parameter_improves",
+      "description": "More online adaptation iterations improve accuracy on StrategyQA (Figure 3b).",
+      "parameter": "num_iterations",
+      "direction": "larger_is_better",
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "metric": "accuracy",
+      "dataset": "strategyqa"
+    },
+    {
+      "assertion_id": "cost_reduction_training",
+      "type": "cost_reduction",
+      "description": "BBox-Adapter achieves 31.30x training-cost reduction vs Azure-SFT (Table 4).",
+      "expected_ratio": 31.3,
+      "comparison": "bbox_adapter vs azure_sft",
+      "metric": "training_cost",
+      "direction": "lower_is_better"
+    },
+    {
+      "assertion_id": "cost_reduction_inference",
+      "type": "cost_reduction",
+      "description": "BBox-Adapter achieves 1.84x inference-cost reduction vs Azure-SFT (Table 4).",
+      "expected_ratio": 1.84,
+      "comparison": "bbox_adapter vs azure_sft",
+      "metric": "inference_cost",
+      "direction": "lower_is_better"
+    },
+    {
+      "assertion_id": "toxicity_reduction",
+      "type": "toxicity_reduction",
+      "description": "BBox-Adapter reduces HateSpeechRate and ToxicityProbability vs base_model (Table 7).",
+      "comparison": "bbox_adapter vs base_model",
+      "metrics": [
+        "hate_speech_rate",
+        "toxicity_probability"
+      ],
+      "direction": "lower_is_better"
+    },
+    {
+      "assertion_id": "nce_better_than_mlm",
+      "type": "baseline_outperformance",
+      "description": "Ranking NCE loss outperforms MLM loss on all 4 QA datasets (Table 5).",
+      "comparison": "bbox_adapter_nce vs bbox_adapter_mlm",
+      "metric": "accuracy"
+    }
+  ],
+  "protocol_matrix": [
+    {
+      "protocol_id": "main_comparison",
+      "description": "Main results: BBox-Adapter vs baselines on 4 QA datasets",
+      "environments": [
+        "gsm8k",
+        "strategyqa",
+        "truthfulqa",
+        "scienceqa"
+      ],
+      "methods": {
+        "baselines": [
+          "chain_of_thought",
+          "azure_sft",
+          "azure_lora",
+          "sft_lora"
+        ],
+        "proposed": [
+          "bbox_adapter_0.1B",
+          "bbox_adapter_0.3B"
+        ]
+      },
+      "measurements": [
+        "accuracy"
+      ],
+      "hyperparams": {
+        "temperature": 1.0,
+        "beam_width": 3,
+        "batch_size": 128,
+        "num_iterations": 3,
+        "prompt_style": "chain_of_thought"
+      },
+      "artifact_paths": [
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/tables/table2_main_results.json",
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/tables/table10_full_main_results.json"
+      ],
+      "paper_tables": [
+        "Table2",
+        "Table10"
+      ],
+      "experiment_ids": [
+        "gsm8k_main",
+        "strategyqa_main",
+        "truthfulqa_main",
+        "scienceqa_main"
+      ]
+    },
+    {
+      "protocol_id": "ablation_adapter_size",
+      "description": "Adapter size ablation: 0.1B vs 0.3B on StrategyQA and GSM8K",
+      "environments": [
+        "strategyqa",
+        "gsm8k"
+      ],
+      "methods": {
+        "proposed": [
+          "bbox_adapter_0.1B",
+          "bbox_adapter_0.3B"
+        ]
+      },
+      "measurements": [
+        "accuracy"
+      ],
+      "hyperparams": {
+        "adapter_size_b": [
+          0.1,
+          0.3
+        ],
+        "beam_width": 3,
+        "batch_size": 128
+      },
+      "artifact_paths": [
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/ablation/metrics.json"
+      ],
+      "paper_tables": [
+        "Table2"
+      ],
+      "experiment_ids": [
+        "ablation_adapter_size"
+      ]
+    },
+    {
+      "protocol_id": "ablation_batch_size",
+      "description": "Batch size ablation: 64 vs 128 on StrategyQA",
+      "environments": [
+        "strategyqa"
+      ],
+      "methods": {
+        "proposed": [
+          "bbox_adapter"
+        ]
+      },
+      "measurements": [
+        "accuracy",
+        "training_cost"
+      ],
+      "hyperparams": {
+        "batch_size": [
+          64,
+          128
+        ]
+      },
+      "artifact_paths": [
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/ablation/metrics.json"
+      ],
+      "paper_tables": [],
+      "experiment_ids": [
+        "ablation_batch_size"
+      ]
+    },
+    {
+      "protocol_id": "cost_efficiency",
+      "description": "Table 4: training_cost + inference_cost per 1000 questions. BBox-Adapter single-step inference vs Azure-SFT. Expected: 31.30x training-cost reduction, 1.84x inference-cost reduction.",
+      "environments": [
+        "strategyqa",
+        "gsm8k"
+      ],
+      "methods": {
+        "baselines": [
+          "base_model",
+          "azure_sft"
+        ],
+        "proposed": [
+          "bbox_adapter_single_step",
+          "bbox_adapter_full_step"
+        ]
+      },
+      "measurements": [
+        "accuracy",
+        "training_cost",
+        "inference_cost",
+        "api_cost"
+      ],
+      "hyperparams": {
+        "temperature": 1.0,
+        "beam_width": 1
+      },
+      "artifact_paths": [
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/cost_analysis/metrics.json",
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/tables/table4_cost_efficiency.json"
+      ],
+      "paper_tables": [
+        "Table4"
+      ],
+      "experiment_ids": [
+        "cost_efficiency"
+      ]
+    },
+    {
+      "protocol_id": "toxicity_reduction",
+      "description": "Table 7: Adapt Mixtral-8x7B-v0.1 on ToxiGen. Judge model: roberta-base. Metrics: HateSpeechRate, ToxicityProbability (lower=better).",
+      "environments": [
+        "toxigen"
+      ],
+      "methods": {
+        "baselines": [
+          "base_model",
+          "sft_lora"
+        ],
+        "proposed": [
+          "bbox_adapter_0.1B",
+          "bbox_adapter_0.3B"
+        ]
+      },
+      "measurements": [
+        "hate_speech_rate",
+        "toxicity_probability"
+      ],
+      "hyperparams": {
+        "judge_model": "roberta-base",
+        "toxicity_threshold": 0.5,
+        "temperature": 1.0,
+        "beam_width": 3
+      },
+      "artifact_paths": [
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/toxigen/metrics.json",
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/tables/table7_toxigen.json"
+      ],
+      "paper_tables": [
+        "Table7"
+      ],
+      "experiment_ids": [
+        "toxigen_main"
+      ]
+    },
+    {
+      "protocol_id": "nce_vs_mlm",
+      "description": "Table 5: NCE ranking loss vs MLM loss on all 4 QA datasets",
+      "environments": [
+        "strategyqa",
+        "gsm8k",
+        "truthfulqa",
+        "scienceqa"
+      ],
+      "methods": {
+        "ablation": [
+          "bbox_adapter_mlm",
+          "bbox_adapter_nce"
+        ]
+      },
+      "measurements": [
+        "accuracy"
+      ],
+      "hyperparams": {
+        "loss_type": [
+          "mlm",
+          "ranking_nce"
+        ]
+      },
+      "artifact_paths": [
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/ablation/metrics.json",
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/tables/table5_nce_vs_mlm.json"
+      ],
+      "paper_tables": [
+        "Table5"
+      ],
+      "experiment_ids": [
+        "ablation_nce_vs_mlm"
+      ]
+    },
+    {
+      "protocol_id": "scale_analysis",
+      "description": "Figure 3: beam_size and iteration count scale analysis on StrategyQA",
+      "environments": [
+        "strategyqa"
+      ],
+      "methods": {
+        "proposed": [
+          "bbox_adapter"
+        ]
+      },
+      "measurements": [
+        "accuracy"
+      ],
+      "hyperparams": {
+        "beam_width": [
+          1,
+          3,
+          5
+        ],
+        "num_iterations": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "prompt_shots": 2
+      },
+      "artifact_paths": [
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/ablation/metrics.json",
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/figures/figure3_scale_analysis.json"
+      ],
+      "paper_figures": [
+        "Figure3"
+      ],
+      "experiment_ids": [
+        "ablation_scale_analysis"
+      ]
+    },
+    {
+      "protocol_id": "plug_and_play",
+      "description": "Table 3: Transfer BBox-Adapter (tuned on gpt-3.5-turbo) to davinci-002 and Mixtral-8x7B",
+      "environments": [
+        "gsm8k",
+        "strategyqa",
+        "truthfulqa",
+        "scienceqa"
+      ],
+      "methods": {
+        "proposed": [
+          "bbox_adapter_transfer"
+        ]
+      },
+      "measurements": [
+        "accuracy"
+      ],
+      "hyperparams": {
+        "source_model": "gpt-3.5-turbo",
+        "target_models": [
+          "davinci-002",
+          "Mixtral-8x7B"
+        ]
+      },
+      "artifact_paths": [
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/main_comparison/metrics.json",
+        "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_open_source/bbox/final_repo/results/tables/table3_plug_and_play.json"
+      ],
+      "paper_tables": [
+        "Table3"
+      ],
+      "experiment_ids": [
+        "plug_and_play_davinci",
+        "plug_and_play_mixtral"
+      ]
+    }
+  ]
+}

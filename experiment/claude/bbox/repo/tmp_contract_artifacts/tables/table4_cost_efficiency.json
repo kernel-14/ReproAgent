@@ -1,0 +1,16 @@
+{
+  "table_id": "table4_cost_efficiency",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.942428Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Table 4: Performance and cost comparison",
+    "columns": [
+      "method",
+      "dataset",
+      "accuracy_pct",
+      "training_cost_usd_per_1k",
+      "inference_cost_usd_per_1k"
+    ]
+  }
+}

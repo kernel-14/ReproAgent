@@ -1,0 +1,69 @@
+{
+  "F1": {
+    "mean": 0.7333333333333334,
+    "mean_percent": 73.33333333333334,
+    "n": 1.0,
+    "std": 0.0,
+    "std_percent": 0.0
+  },
+  "accuracy": {
+    "mean": 0.75,
+    "mean_percent": 75.0,
+    "n": 1.0,
+    "std": 0.0,
+    "std_percent": 0.0
+  },
+  "experiment_id": "smm_smoke",
+  "fidelity_score": {
+    "mean": 0.9914570967727084,
+    "n": 1.0,
+    "std": 0.0
+  },
+  "loss": {
+    "mean": 0.5,
+    "n": 1.0,
+    "std": 0.0
+  },
+  "mode": "runtime_smoke",
+  "paper": "Sample-specific Masks for Visual Reprogramming-based Prompting",
+  "records": [
+    {
+      "accuracy": 0.75,
+      "accuracy_percent": 75.0,
+      "backbone": "resnet18_imagenet1k",
+      "dataset": "unit-001",
+      "experiment_id": "smm_smoke",
+      "f1": 0.7333333333333334,
+      "fidelity_score": 0.9914570967727084,
+      "labels": [
+        0,
+        1,
+        2,
+        3,
+        0,
+        1,
+        2,
+        3
+      ],
+      "loss": 0.5,
+      "mask_variant": "ours_multi_channel",
+      "measured_samples": 8,
+      "method": "Ours",
+      "mode": "runtime_smoke",
+      "output_mapping": "Rlm_random_label_mapping",
+      "predictions": [
+        0,
+        1,
+        3,
+        3,
+        1,
+        1,
+        2,
+        3
+      ],
+      "reference_grounding": "reference_grounding: chunk_016_01 /mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/paperbench_data/sample-specific-masks/paper.md",
+      "seed": 0,
+      "train_loss": 0.5
+    }
+  ]
+}

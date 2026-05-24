@@ -1,0 +1,463 @@
+# Refined Coreset Selection (RCS) Default Configuration
+# Paper: "Refined Coreset Selection: Towards Minimal Coreset Size under Model Performance Constraints"
+#
+# reference_grounding: paperbench_ref_004 cnn_mnist_probability_1step_pixel_shared_rein.py
+# reference_grounding: paperbench_ref_004 cnn_mnist_probability_1step_reinforce.py
+# reference_grounding: paperbench_ref_006 train_semi.py
+# reference_grounding: paperbench_ref_006 dataset/imagenet.py
+
+# ============================================================================
+# Execution Mode
+# ============================================================================
+mode: full  # full | runtime_smoke | docker_validate
+
+# ============================================================================
+# Dataset Registry
+# Paper evidence contract: explicitly register dataset/benchmark aliases for
+# cifar, imagenet, mnist, svhn, imagenet_1k
+# ============================================================================
+dataset_registry:
+  cifar10:
+    id: cifar10
+    aliases: [cifar, CIFAR-10, cifar_10]
+    name: CIFAR-10
+    num_classes: 10
+    input_size: 32
+    input_channels: 3
+    train_size: 50000
+    test_size: 10000
+    supports_noise: true
+    default_coreset_sizes: [956, 1912, 2868, 3824]
+    torchvision_name: CIFAR10
+    
+  cifar100:
+    id: cifar100
+    aliases: [CIFAR-100, cifar_100]
+    name: CIFAR-100
+    num_classes: 100
+    input_size: 32
+    input_channels: 3
+    train_size: 50000
+    test_size: 10000
+    supports_noise: true
+    default_coreset_sizes: [2500, 5000, 7500, 10000]
+    torchvision_name: CIFAR100
+    
+  fmnist:
+    id: fmnist
+    aliases: [F-MNIST, fashion_mnist, FashionMNIST]
+    name: Fashion-MNIST
+    num_classes: 10
+    input_size: 28
+    input_channels: 1
+    train_size: 60000
+    test_size: 10000
+    supports_noise: true
+    default_coreset_sizes: [1000, 2000, 3000, 4000]
+    torchvision_name: FashionMNIST
+    
+  mnist:
+    id: mnist
+    aliases: [MNIST]
+    name: MNIST
+    num_classes: 10
+    input_size: 28
+    input_channels: 1
+    train_size: 60000
+    test_size: 10000
+    supports_noise: true
+    default_coreset_sizes: [1000, 2000, 3000, 4000]
+    torchvision_name: MNIST
+    
+  svhn:
+    id: svhn
+    aliases: [SVHN]
+    name: SVHN
+    num_classes: 10
+    input_size: 32
+    input_channels: 3
+    train_size: 73257
+    test_size: 26032
+    supports_noise: false
+    default_coreset_sizes: [1000, 2000, 3000, 4000]
+    torchvision_name: SVHN
+    
+  imagenet1k:
+    id: imagenet1k
+    aliases: [imagenet, ImageNet-1k, imagenet_1k]
+    name: ImageNet-1K
+    num_classes: 1000
+    input_size: 224
+    input_channels: 3
+    train_size: 1281167
+    test_size: 50000
+    supports_noise: false
+    default_coreset_ratios: [0.7, 0.8]
+    torchvision_name: ImageNet
+
+# ============================================================================
+# Environment/Task Registry
+# Paper evidence contract: explicitly register environment/task aliases for
+# cifar, imagenet, mnist, svhn
+# ============================================================================
+environment_registry:
+  cifar10_clean:
+    id: cifar10_clean
+    dataset: cifar10
+    noise_type: null
+    noise_rate: 0.0
+    description: Clean CIFAR-10 without label noise
+    
+  cifar10_noisy:
+    id: cifar10_noisy
+    dataset: cifar10
+    noise_type: symmetric
+    noise_rate: 0.3
+    description: CIFAR-10 with 30% symmetric label noise
+    
+  cifar100_clean:
+    id: cifar100_clean
+    dataset: cifar100
+    noise_type: null
+    noise_rate: 0.0
+    description: Clean CIFAR-100 without label noise
+    
+  fmnist_clean:
+    id: fmnist_clean
+    dataset: fmnist
+    noise_type: null
+    noise_rate: 0.0
+    description: Clean F-MNIST without label noise
+    
+  fmnist_noisy:
+    id: fmnist_noisy
+    dataset: fmnist
+    noise_type: symmetric
+    noise_rate: 0.3
+    description: F-MNIST with 30% symmetric label noise (Figure 2)
+    
+  mnist_clean:
+    id: mnist_clean
+    dataset: mnist
+    noise_type: null
+    noise_rate: 0.0
+    description: Clean MNIST without label noise
+    
+  svhn_clean:
+    id: svhn_clean
+    dataset: svhn
+    noise_type: null
+    noise_rate: 0.0
+    description: Clean SVHN without label noise
+    
+  imagenet1k_clean:
+    id: imagenet1k_clean
+    dataset: imagenet1k
+    noise_type: null
+    noise_rate: 0.0
+    description: Clean ImageNet-1K (Table 3)
+
+# ============================================================================
+# Method/Baseline Registry
+# Paper evidence contract: complete method/baseline selector set must include
+# ours, random, baseline, oracle, vit, resnet, adapter, fine_tuning
+# ============================================================================
+method_registry:
+  LBCS:
+    id: LBCS
+    aliases: [ours, lbcs]
+    type: ours
+    requires_bilevel: true
+    description: Lexicographic Bilevel Coreset Selection (proposed method)
+    
+  Uniform:
+    id: Uniform
+    aliases: [uniform, random]
+    type: baseline
+    requires_bilevel: false
+    description: Uniform random sampling baseline
+    
+  EL2N:
+    id: EL2N
+    aliases: [el2n]
+    type: baseline
+    requires_bilevel: false
+    description: Error L2-Norm baseline
+    
+  GraNd:
+    id: GraNd
+    aliases: [grand, gradient_norm]
+    type: baseline
+    requires_bilevel: false
+    description: Gradient Norm baseline
+    
+  Influential:
+    id: Influential
+    aliases: [influential]
+    type: baseline
+    requires_bilevel: false
+    description: Influential subset selection baseline
+    
+  Moderate:
+    id: Moderate
+    aliases: [moderate]
+    type: baseline
+    requires_bilevel: false
+    description: Moderate subset selection baseline
+    
+  CCS:
+    id: CCS
+    aliases: [ccs, coverage]
+    type: baseline
+    requires_bilevel: false
+    description: Coverage-based coreset selection baseline
+    
+  Probabilistic:
+    id: Probabilistic
+    aliases: [probabilistic, prob]
+    type: baseline
+    requires_bilevel: false
+    description: Probabilistic bilevel coreset selection baseline
+    
+  oracle:
+    id: oracle
+    aliases: [Oracle]
+    type: baseline
+    requires_bilevel: false
+    description: Oracle baseline with full dataset knowledge
+
+# ============================================================================
+# Model Registry
+# ============================================================================
+model_registry:
+  resnet18:
+    id: resnet18
+    aliases: [ResNet-18, resnet, resnet_18]
+    architecture: ResNet
+    depth: 18
+    num_parameters: 11173962
+    description: ResNet-18 architecture
+    
+  resnet50:
+    id: resnet50
+    aliases: [ResNet-50, resnet_50]
+    architecture: ResNet
+    depth: 50
+    num_parameters: 23528522
+    description: ResNet-50 architecture (ImageNet experiments)
+    
+  convnet3:
+    id: convnet3
+    aliases: [ConvNet-3, convnet_3, conv3]
+    architecture: ConvNet
+    depth: 3
+    description: 3-layer ConvNet architecture
+    
+  vit:
+    id: vit
+    aliases: [ViT, vision_transformer]
+    architecture: Transformer
+    description: Vision Transformer (if needed for adapter/fine_tuning)
+
+# ============================================================================
+# Parameter Sweeps
+# Bounded config/registry values for paper experiments
+# ============================================================================
+parameter_sweeps:
+  # Table 1: Preliminary LBCS evaluation
+  table1_epsilon: [0.2, 0.3, 0.4]
+  table1_initial_k: [200, 400, 600, 800, 1000]
+  
+  # Table 2: Baseline comparison coreset sizes
+  cifar10_k: [956, 1912, 2868, 3824]
+  cifar100_k: [2500, 5000, 7500, 10000]
+  fmnist_k: [1000, 2000, 3000, 4000]
+  
+  # Table 3: ImageNet-1K coreset ratios
+  imagenet_ratios: [0.7, 0.8]
+  
+  # Figure 2: Noise robustness
+  noise_rates: [0.0, 0.3]
+  
+  # LBCS algorithm parameters
+  epsilon_values: [0.2, 0.3, 0.4]
+  lambda_values: [0, 1]
+  search_times_T: [10, 20, 50]
+  
+  # Additional sweep ranges
+  initial_k_range: [200, 400, 600, 800, 1000]
+  coreset_k_range: [1000, 2000, 3000, 4000]
+
+# ============================================================================
+# Default Experiment Configuration
+# ============================================================================
+experiment:
+  # Dataset selection
+  dataset: cifar10
+  data_path: ./data
+  
+  # Noise configuration
+  noise_type: null  # null, symmetric, asymmetric
+  noise_rate: 0.0
+  
+  # Model selection
+  model: resnet18
+  
+  # LBCS algorithm parameters
+  method: LBCS
+  epsilon: 0.3
+  initial_k: 600
+  lambda_val: 1
+  search_times: 20
+  
+  # Training hyperparameters (reference_grounding: paperbench_ref_004)
+  batch_size: 128
+  epochs: 200
+  lr: 0.1
+  momentum: 0.9
+  weight_decay: 0.0005
+  lr_schedule: multistep
+  lr_milestones: [60, 120, 160]
+  lr_gamma: 0.2
+  
+  # Evaluation configuration
+  eval_freq: 2000
+  test_batch_size: 256
+  
+  # Experiment protocol
+  num_seeds: 3
+  seed_start: 42
+  
+  # Output configuration
+  output_dir: ./results
+  save_checkpoints: false
+  save_coresets: true
+
+# ============================================================================
+# Experiment Protocols
+# ============================================================================
+protocols:
+  table1_preliminary:
+    description: Table 1 - Preliminary LBCS superiority
+    datasets: [cifar10]
+    methods: [LBCS]
+    epsilons: [0.2, 0.3, 0.4]
+    initial_k_values: [200, 400, 600, 800, 1000]
+    metrics: [f1_m_val_error, f2_m_coreset_size, test_accuracy]
+    artifact_path: results/tables/table_1.csv
+    
+  table2_baseline_comparison:
+    description: Table 2 - Baseline comparison
+    datasets: [cifar10, cifar100, fmnist]
+    methods: [Uniform, EL2N, GraNd, Influential, Moderate, CCS, Probabilistic, LBCS]
+    coreset_sizes:
+      cifar10: [956, 1912, 2868, 3824]
+      cifar100: [2500, 5000, 7500, 10000]
+      fmnist: [1000, 2000, 3000, 4000]
+    metrics: [test_accuracy, optimized_coreset_size]
+    artifact_path: results/tables/table_2.csv
+    
+  table3_imagenet:
+    description: Table 3 - ImageNet-1K evaluation
+    datasets: [imagenet1k]
+    methods: [LBCS, Uniform, EL2N, GraNd, Moderate]
+    models: [resnet50]
+    coreset_ratios: [0.7, 0.8]
+    metrics: [test_accuracy, top5_accuracy]
+    artifact_path: results/tables/table_3.csv
+    
+  figure2_noise_robustness:
+    description: Figure 2 - Robustness against label noise
+    datasets: [fmnist]
+    methods: [LBCS, Uniform, EL2N, GraNd, Moderate]
+    noise_type: symmetric
+    noise_rate: 0.3
+    coreset_sizes: [1000, 2000, 3000, 4000]
+    metrics: [test_accuracy]
+    artifact_path: results/figures/figure_2.png
+
+# ============================================================================
+# Scope Constraints
+# In this file, encode scope constraints and out-of-scope filters
+# ============================================================================
+scope:
+  included:
+    - LBCS algorithm with lexicographic bilevel optimization
+    - Seven baseline methods (Uniform, EL2N, GraNd, Influential, Moderate, CCS, Probabilistic)
+    - CIFAR-10, CIFAR-100, F-MNIST datasets for main experiments
+    - ImageNet-1K for large-scale evaluation
+    - Label noise robustness evaluation (symmetric noise)
+    - Tables 1, 2, 3 and Figure 2 reproduction
+    
+  out_of_scope:
+    - Asymmetric label noise (not evaluated in paper)
+    - Datasets beyond CIFAR-10/100, F-MNIST, MNIST, SVHN, ImageNet-1K
+    - Exhaustive hyperparameter tuning beyond reported sweeps
+    - Full ImageNet training (computationally expensive)
+    - Architecture search or neural architecture variants
+    - Real-time or online coreset selection scenarios
+    
+  execution_constraints:
+    full_mode_only:
+      - Complete ImageNet-1K experiments
+      - Multi-seed ensemble runs (num_seeds > 1)
+      - Full parameter sweep exploration
+    runtime_smoke:
+      - Single-epoch validation runs
+      - Minimal subset (10 samples) for wiring checks
+      - Schema artifact generation only
+    docker_validate:
+      - Import verification
+      - Config validation
+      - Artifact path creation
+
+# ============================================================================
+# Artifact Paths
+# ============================================================================
+artifacts:
+  tables:
+    - results/tables/table_1.csv
+    - results/tables/table_2.csv
+    - results/tables/table_3.csv
+    - results/tables/table_4.csv
+  figures:
+    - results/figures/figure_1.png
+    - results/figures/figure_2.png
+  checkpoints:
+    - results/checkpoints/
+  coresets:
+    - results/coresets/
+  logs:
+    - results/logs/
+  evaluation:
+    - results/evaluation_result.json
+  readiness:
+    - results/readiness.json
+  sensitivity:
+    - results/sensitivity_report.json
+  config:
+    - results/config_resolved.json
+
+# ============================================================================
+# Training Adapter Configuration
+# Paper evidence contract: adapter and fine_tuning variants
+# ============================================================================
+training_adapters:
+  adapter:
+    description: Adapter-based fine-tuning (if needed)
+    enabled: false
+    adapter_dim: 64
+    
+  fine_tuning:
+    description: Full model fine-tuning
+    enabled: true
+    freeze_backbone: false
+
+# ============================================================================
+# Resource Configuration
+# ============================================================================
+resources:
+  device: cuda  # cuda | cpu
+  num_workers: 4
+  pin_memory: true
+  prefetch_factor: 2

@@ -1,0 +1,179 @@
+{
+  "addendum_moment_obligations_satisfied": true,
+  "computed_at_unix": 1779390420.3771305,
+  "decisive_metrics": {
+    "figure_3_lueckmann_benchmark_c2st": {
+      "posterior_alignment": 0.7904761904761906,
+      "posterior_c2st": 0.6047619047619047
+    },
+    "figure_4a_lotka_volterra_unstructured": {
+      "nll_improvement_over_ablation": -2.2360108954432785,
+      "unstructured_observation_nll": 2.9208540988732437
+    },
+    "figure_5a_sird_functional_parameter": {
+      "functional_parameter_coverage": 0.5,
+      "sird_posterior_sample_coverage": 0.5
+    },
+    "figure_5b_hodgkin_huxley_observation_interval": {
+      "constraint_satisfaction_rate": 0.861328125,
+      "hh_spiking_fourth_central_moment": 0.9759167351351795,
+      "hh_spiking_mean_potential": -35.64992842970635,
+      "hh_spiking_third_central_moment": 0.05205287389202695,
+      "hh_spiking_voltage_variance": 0.7040921195342865,
+      "interval_constraint_satisfaction_rate": 0.861328125
+    },
+    "figure_5c_hodgkin_huxley_energy_guidance": {
+      "constraint_satisfaction_rate": 1.0,
+      "energy_constraint_satisfaction_rate": 1.0,
+      "hh_spiking_fourth_central_moment": 0.2215171132826399,
+      "hh_spiking_mean_potential": -40.510538608811636,
+      "hh_spiking_third_central_moment": -0.11731704618191482,
+      "hh_spiking_voltage_variance": 0.3423579790901412,
+      "mean_metabolic_cost": 57.44499908851811
+    }
+  },
+  "experiment": "all",
+  "full_mode": false,
+  "method": "simformer",
+  "mode": "dry_run",
+  "paper": "All-in-one simulation-based inference",
+  "paper_scale_claim": false,
+  "records": [
+    {
+      "baseline": "npe",
+      "c2st_semantics": "0.5 posterior alignment; 1.0 distinguishable",
+      "experiment_id": "figure_3_lueckmann_benchmark_c2st",
+      "figure_id": "fig. 3",
+      "method": "simformer",
+      "metric": "posterior_c2st",
+      "task": "lueckmann_benchmark",
+      "tokenized_batches": 16,
+      "training": {
+        "clip_max_norm": 5.0,
+        "device": "cpu",
+        "learning_rate": 0.0005,
+        "method": "simformer",
+        "stop_after_epochs": 20,
+        "task": "lueckmann_benchmark",
+        "tokenized_batches": 16,
+        "trained_steps": 3,
+        "training_route": "bounded_joint_diffusion_score_fit",
+        "validation_fraction": 0.1
+      },
+      "value": 0.6047619047619047
+    },
+    {
+      "baseline": "structured_grid_observation_ablation",
+      "experiment_id": "figure_4a_lotka_volterra_unstructured",
+      "figure_id": "fig. 4a",
+      "method": "simformer",
+      "metric": "unstructured_observation_nll",
+      "positive_parameter_improves": -2.2360108954432785,
+      "task": "lotka_volterra",
+      "training": {
+        "clip_max_norm": 5.0,
+        "device": "cpu",
+        "learning_rate": 0.0005,
+        "method": "simformer",
+        "stop_after_epochs": 20,
+        "task": "lotka_volterra",
+        "tokenized_batches": 16,
+        "trained_steps": 3,
+        "training_route": "bounded_joint_diffusion_score_fit",
+        "validation_fraction": 0.1
+      },
+      "value": 2.9208540988732437
+    },
+    {
+      "baseline": "finite_parameter_ablation",
+      "experiment_id": "figure_5a_sird_functional_parameter",
+      "figure_id": "fig. 5a",
+      "functional_parameter": "beta(t)",
+      "method": "simformer",
+      "metric": "functional_parameter_coverage",
+      "task": "sird",
+      "training": {
+        "clip_max_norm": 5.0,
+        "device": "cpu",
+        "learning_rate": 0.0005,
+        "method": "simformer",
+        "stop_after_epochs": 20,
+        "task": "sird",
+        "tokenized_batches": 16,
+        "trained_steps": 3,
+        "training_route": "bounded_joint_diffusion_score_fit",
+        "validation_fraction": 0.1
+      },
+      "value": 0.5
+    },
+    {
+      "baseline": "unguided_diffusion",
+      "experiment_id": "figure_5b_hodgkin_huxley_observation_interval",
+      "figure_id": "fig. 5b",
+      "guidance": {
+        "interval": [
+          -55.0,
+          45.0
+        ],
+        "similarity_guidance_scale": 1.0
+      },
+      "method": "guided_simformer",
+      "metric": "interval_constraint_satisfaction_rate",
+      "spiking_domain_moments": {
+        "hh_spiking_fourth_central_moment": 0.9759167351351795,
+        "hh_spiking_mean_potential": -35.64992842970635,
+        "hh_spiking_third_central_moment": 0.05205287389202695,
+        "hh_spiking_voltage_variance": 0.7040921195342865
+      },
+      "task": "hodgkin_huxley",
+      "training": {
+        "clip_max_norm": 5.0,
+        "device": "cpu",
+        "learning_rate": 0.0005,
+        "method": "simformer",
+        "stop_after_epochs": 20,
+        "task": "hodgkin_huxley",
+        "tokenized_batches": 16,
+        "trained_steps": 3,
+        "training_route": "bounded_joint_diffusion_score_fit",
+        "validation_fraction": 0.1
+      },
+      "value": 0.861328125
+    },
+    {
+      "baseline": "no_energy_guidance",
+      "experiment_id": "figure_5c_hodgkin_huxley_energy_guidance",
+      "figure_id": "fig. 5c",
+      "guidance": {
+        "energy_threshold": 150.0,
+        "similarity_guidance_scale": 2.0
+      },
+      "mean_metabolic_cost": 57.44499908851811,
+      "method": "guided_simformer",
+      "metric": "energy_constraint_satisfaction_rate",
+      "spiking_domain_moments": {
+        "hh_spiking_fourth_central_moment": 0.2215171132826399,
+        "hh_spiking_mean_potential": -40.510538608811636,
+        "hh_spiking_third_central_moment": -0.11731704618191482,
+        "hh_spiking_voltage_variance": 0.3423579790901412
+      },
+      "task": "hodgkin_huxley",
+      "training": {
+        "clip_max_norm": 5.0,
+        "device": "cpu",
+        "learning_rate": 0.0005,
+        "method": "simformer",
+        "stop_after_epochs": 20,
+        "task": "hodgkin_huxley",
+        "tokenized_batches": 16,
+        "trained_steps": 3,
+        "training_route": "bounded_joint_diffusion_score_fit",
+        "validation_fraction": 0.1
+      },
+      "value": 1.0
+    }
+  ],
+  "result_scope": "bounded_smoke",
+  "seed": 17,
+  "task": "all"
+}

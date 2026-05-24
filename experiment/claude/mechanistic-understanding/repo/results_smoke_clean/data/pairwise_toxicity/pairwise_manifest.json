@@ -1,0 +1,11 @@
+{
+  "artifact": "pplm_pairwise_dpo_dataset",
+  "bounded_pairs_written": 8,
+  "negative_continuation": "PPLM toxic continuation guided by the W_toxic attribute classifier",
+  "positive_continuation": "greedy GPT2 continuation filtered as non-toxic",
+  "preference_convention": "chosen is non-toxic; rejected is toxic",
+  "prompt_source": "Wikitext-2 prompts",
+  "status": "bounded_fixture_written_full_route_declared",
+  "target_pairs": 24576,
+  "toxicity_scorer": "unitary/unbiased-toxic-roberta"
+}

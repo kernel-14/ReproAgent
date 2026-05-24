@@ -1,0 +1,4 @@
+problem,optimizer,per_iteration_seconds,dry_run,note
+convection,L-BFGS,0.0,True,
+convection,NNCG,0.0,True,
+wave,NNCG,0.0,True,wave HVPs involve second derivatives

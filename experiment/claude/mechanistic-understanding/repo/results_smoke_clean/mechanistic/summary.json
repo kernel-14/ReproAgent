@@ -1,0 +1,30 @@
+{
+  "artifacts": {
+    "dpo_training": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_repro/batch20r_pipelinefix_mechanistic_understanding_20260521_230239/repo/results_smoke_clean/mechanistic/dpo_training.json",
+    "layer19_activation": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_repro/batch20r_pipelinefix_mechanistic_understanding_20260521_230239/repo/results_smoke_clean/mechanistic/layer19_activation.json",
+    "logit_lens_shit": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_repro/batch20r_pipelinefix_mechanistic_understanding_20260521_230239/repo/results_smoke_clean/mechanistic/logit_lens_shit.json",
+    "parameter_similarity": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_repro/batch20r_pipelinefix_mechanistic_understanding_20260521_230239/repo/results_smoke_clean/mechanistic/parameter_similarity.json",
+    "pc1_svd_pca": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_repro/batch20r_pipelinefix_mechanistic_understanding_20260521_230239/repo/results_smoke_clean/mechanistic/pc1_svd_pca.json",
+    "realtoxicityprompts_activations": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_repro/batch20r_pipelinefix_mechanistic_understanding_20260521_230239/repo/results_smoke_clean/mechanistic/realtoxicityprompts_activations.json",
+    "residual_shift": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_repro/batch20r_pipelinefix_mechanistic_understanding_20260521_230239/repo/results_smoke_clean/mechanistic/residual_shift.json",
+    "toxicity_scores": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_repro/batch20r_pipelinefix_mechanistic_understanding_20260521_230239/repo/results_smoke_clean/mechanistic/toxicity_scores.json",
+    "unalign_top7": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_repro/batch20r_pipelinefix_mechanistic_understanding_20260521_230239/repo/results_smoke_clean/mechanistic/unalign_top7.json",
+    "vector_subtraction_hook": "/mnt/paper2any/pzw/proj/paperagent/hx/Research_space/Reproduction/output/paperbench_repro/batch20r_pipelinefix_mechanistic_understanding_20260521_230239/repo/results_smoke_clean/mechanistic/vector_subtraction_hook.json"
+  },
+  "created_at": "2026-05-21T19:35:11Z",
+  "mode": "runtime_smoke",
+  "status": "fallback_fixture",
+  "target_routes": [
+    "unbiased-toxic-roberta",
+    "realtoxicityprompts_1199x20_activations",
+    "gpt2-medium_residual_average",
+    "layer19_mlp770_activation",
+    "gpt2_logit_lens_shit",
+    "parameter_cosine_similarity",
+    "residual_stream_difference",
+    "pc1_svd_pca",
+    "vector_subtraction_hook",
+    "top7_unalign_scaling",
+    "gpt2_dpo_training"
+  ]
+}

@@ -1,0 +1,6 @@
+problem,optimizer,width,seed,final_loss,final_L2RE,dry_run
+wave,Adam,32,0,1.0,0.9,True
+wave,Adam+L-BFGS,32,0,0.65,0.55,True
+wave,NNCG after Adam+L-BFGS,32,0,0.12,0.22,True
+convection,Adam+L-BFGS,32,0,0.5,0.4,True
+reaction,Adam+L-BFGS,32,0,0.5,0.4,True

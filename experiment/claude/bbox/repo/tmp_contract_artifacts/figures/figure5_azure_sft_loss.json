@@ -1,0 +1,14 @@
+{
+  "figure_id": "figure5_azure_sft_loss",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.945020Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Figure 5: Loss curve of Azure-SFT on (a) StrategyQA, (b) TruthfulQA, and (c) ScienceQA datasets.",
+    "datasets": [
+      "strategyqa",
+      "truthfulqa",
+      "scienceqa"
+    ]
+  }
+}

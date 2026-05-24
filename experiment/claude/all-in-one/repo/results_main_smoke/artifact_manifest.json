@@ -1,0 +1,136 @@
+{
+  "artifact_contract": [
+    "metrics.json",
+    "samples.npz",
+    "run_summary.json",
+    "experiment_registry.json",
+    "evidence_contract_matrix.json",
+    "artifact_manifest.json",
+    "model_registry.json",
+    "tokenizer_registry.json",
+    "attention_mask_registry.json",
+    "diffusion_config.json",
+    "loss_trace.json",
+    "sampling_trace.json"
+  ],
+  "auxiliary_artifacts": {
+    "evaluation_result.json": "results_main_smoke/evaluation_result.json",
+    "readiness.json": "results_main_smoke/readiness.json"
+  },
+  "core_contract_artifacts": {
+    "status": "ok",
+    "validation": {
+      "checked_obligations": {
+        "M_C_noising_loss_sampling_path": true,
+        "M_E_attention_path": true,
+        "binary_condition_state": true,
+        "blacklist_declared_not_used": true,
+        "joint_distribution_training": true,
+        "named_sde_ode_samplers": true,
+        "tokenizer_encode_contract": true,
+        "training_condition_resampling": true,
+        "training_metadata_surface": true
+      },
+      "failures": [],
+      "valid": true
+    },
+    "written": {
+      "results/attention_mask_registry.json": "results_main_smoke/results/attention_mask_registry.json",
+      "results/diffusion_config.json": "results_main_smoke/results/diffusion_config.json",
+      "results/evaluation_result.json": "results_main_smoke/results/evaluation_result.json",
+      "results/loss_trace.json": "results_main_smoke/results/loss_trace.json",
+      "results/model_registry.json": "results_main_smoke/results/model_registry.json",
+      "results/readiness.json": "results_main_smoke/results/readiness.json",
+      "results/sampling_trace.json": "results_main_smoke/results/sampling_trace.json",
+      "results/tokenizer_registry.json": "results_main_smoke/results/tokenizer_registry.json"
+    }
+  },
+  "paper_figure_registry": {
+    "fig. 3": {
+      "artifact_status": "registry_declared; bounded metrics written to results/metrics.json",
+      "baseline_or_ablation": [
+        "npe",
+        "nle",
+        "nre"
+      ],
+      "decisive_metric": "posterior_c2st",
+      "dry_run_placeholder_policy": "No fake per-figure image/table is written in dry_run; status and full-mode requirements are recorded here.",
+      "experiment_id": "figure_3_lueckmann_benchmark_c2st",
+      "full_mode_requirement": "Run --mode eval --experiment fig.3 --full for paper-scale benchmark.",
+      "generation_status": "bounded_computed",
+      "method": "simformer",
+      "route": "run_figure_3_lueckmann_benchmark",
+      "task": "lueckmann_benchmark"
+    },
+    "fig. 4a": {
+      "artifact_status": "registry_declared; bounded metrics written to results/metrics.json",
+      "baseline_or_ablation": [
+        "structured_grid_observation_ablation"
+      ],
+      "decisive_metric": "unstructured_observation_nll",
+      "dry_run_placeholder_policy": "No fake per-figure image/table is written in dry_run; status and full-mode requirements are recorded here.",
+      "experiment_id": "figure_4a_lotka_volterra_unstructured",
+      "full_mode_requirement": "Run --mode eval --experiment fig.4a --full for full Lotka-Volterra protocol.",
+      "generation_status": "bounded_computed",
+      "method": "simformer",
+      "route": "run_figure_4a_lotka_volterra",
+      "task": "lotka_volterra"
+    },
+    "fig. 5a": {
+      "artifact_status": "registry_declared; bounded metrics written to results/metrics.json",
+      "baseline_or_ablation": [
+        "finite_parameter_ablation"
+      ],
+      "decisive_metric": "functional_parameter_coverage",
+      "dry_run_placeholder_policy": "No fake per-figure image/table is written in dry_run; status and full-mode requirements are recorded here.",
+      "experiment_id": "figure_5a_sird_functional_parameter",
+      "full_mode_requirement": "Run --mode eval --experiment fig.5a --full for full SIRD protocol.",
+      "generation_status": "bounded_computed",
+      "method": "simformer",
+      "route": "run_figure_5a_sird_functional",
+      "task": "sird"
+    },
+    "fig. 5b": {
+      "artifact_status": "registry_declared; bounded metrics written to results/metrics.json",
+      "baseline_or_ablation": [
+        "unguided_diffusion"
+      ],
+      "decisive_metric": "interval_constraint_satisfaction_rate",
+      "dry_run_placeholder_policy": "No fake per-figure image/table is written in dry_run; status and full-mode requirements are recorded here.",
+      "experiment_id": "figure_5b_hodgkin_huxley_observation_interval",
+      "full_mode_requirement": "Run --mode eval --experiment fig.5b --full for full HH interval protocol.",
+      "generation_status": "bounded_computed",
+      "method": "guided_simformer",
+      "route": "run_figure_5b_hodgkin_huxley_interval",
+      "task": "hodgkin_huxley"
+    },
+    "fig. 5c": {
+      "artifact_status": "registry_declared; bounded metrics and addendum moments written to results/metrics.json",
+      "baseline_or_ablation": [
+        "no_energy_guidance"
+      ],
+      "decisive_metric": "energy_constraint_satisfaction_rate",
+      "dry_run_placeholder_policy": "No fake per-figure image/table is written in dry_run; status and full-mode requirements are recorded here.",
+      "experiment_id": "figure_5c_hodgkin_huxley_energy_guidance",
+      "full_mode_requirement": "Run --mode eval --experiment fig.5c --full for full HH energy protocol.",
+      "generation_status": "bounded_computed",
+      "method": "guided_simformer",
+      "route": "run_figure_5c_hodgkin_huxley_energy",
+      "task": "hodgkin_huxley"
+    }
+  },
+  "writes_artifacts": {
+    "results/artifact_manifest.json": true,
+    "results/attention_mask_registry.json": false,
+    "results/diffusion_config.json": false,
+    "results/evidence_contract_matrix.json": true,
+    "results/experiment_registry.json": true,
+    "results/loss_trace.json": false,
+    "results/metrics.json": true,
+    "results/model_registry.json": false,
+    "results/run_summary.json": true,
+    "results/samples.npz": true,
+    "results/sampling_trace.json": false,
+    "results/tokenizer_registry.json": false
+  }
+}

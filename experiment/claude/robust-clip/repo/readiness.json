@@ -1,0 +1,14 @@
+{
+  "_artifact_type": "readiness_manifest",
+  "_note": "Contract validation only, not experiment results",
+  "status": "artifacts_created",
+  "mode": "smoke_validation",
+  "artifacts": [
+    "figures/figure1_radar.png",
+    "figures/figure1_radar.pdf",
+    "results/metrics.json",
+    "results/robustness_table.csv",
+    "checkpoints/fare_clip.pth",
+    "checkpoints/fare_clip_final.pth"
+  ]
+}

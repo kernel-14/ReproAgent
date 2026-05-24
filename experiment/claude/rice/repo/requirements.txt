@@ -1,0 +1,75 @@
+# ============================================================================
+# RICE: Breaking Through the Training Bottlenecks of RL with Explanation
+# Requirements File
+# ============================================================================
+# 
+# Core lightweight dependencies are listed first.
+# Heavy simulator, RL, and GPU dependencies are marked as optional below.
+# The codebase uses lazy imports for optional dependencies to support
+# minimal smoke testing and partial installation scenarios.
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Core Dependencies (Lightweight)
+# ----------------------------------------------------------------------------
+numpy>=1.21.0,<2.0.0
+pyyaml>=6.0
+pathlib2>=2.3.7; python_version < '3.4'
+
+# ----------------------------------------------------------------------------
+# RL Training and Policy Dependencies
+# ----------------------------------------------------------------------------
+# PyTorch for neural networks and policy models
+torch>=1.13.0,<3.0.0
+torchvision>=0.14.0
+
+# Gymnasium/Gym for RL environments
+gymnasium>=0.28.0
+gymnasium[mujoco]>=0.28.0
+
+# Stable Baselines3 for PPO and DRL algorithms
+stable-baselines3>=2.0.0
+
+# ----------------------------------------------------------------------------
+# Environment Dependencies (Optional Heavy Simulators)
+# ----------------------------------------------------------------------------
+# MuJoCo physics engine for robotics tasks
+mujoco>=2.3.0
+
+# Additional environment simulators (optional)
+# metadrive-simulator>=0.2.5  # Autonomous driving
+# gym-malware>=0.0.1  # Malware mutation
+# pygame>=2.1.0  # Game environments
+
+# ----------------------------------------------------------------------------
+# Data Processing and Metrics
+# ----------------------------------------------------------------------------
+pandas>=1.3.0
+scipy>=1.7.0
+scikit-learn>=1.0.0
+
+# ----------------------------------------------------------------------------
+# Visualization and Plotting
+# ----------------------------------------------------------------------------
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# ----------------------------------------------------------------------------
+# Experiment Tracking and Logging
+# ----------------------------------------------------------------------------
+tensorboard>=2.10.0
+tqdm>=4.62.0
+
+# ----------------------------------------------------------------------------
+# Testing and Development (Optional)
+# ----------------------------------------------------------------------------
+pytest>=7.0.0
+pytest-cov>=3.0.0
+black>=22.0.0
+flake8>=4.0.0
+
+# ----------------------------------------------------------------------------
+# Utilities
+# ----------------------------------------------------------------------------
+pillow>=9.0.0
+imageio>=2.9.0

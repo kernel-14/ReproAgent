@@ -1,0 +1,312 @@
+{
+  "schema_version": "1.0.0",
+  "project": {
+    "name": "paperbench_bam_score_based_bbvi",
+    "paper_title": "Batch and match: black-box variational inference with a score-based divergence",
+    "canonical_entrypoint": "scripts/run_experiments.py",
+    "default_invocation": "python scripts/run_experiments.py --mode runtime_smoke",
+    "reference_grounding": [
+      "paper:paper_addendum_constraints addendum.md",
+      "paper:paper_contract_sweep_hyperparameter_protocol paper.md",
+      "paper:paper_named_experiment_protocols paper.md",
+      "paper:paper_semantic_chunk_002_training_loss_objective_introduction_introdu paper.md"
+    ]
+  },
+  "execution_modes": {
+    "default": {
+      "mode": "runtime_smoke",
+      "description": "Bounded repository wiring check that calls dataset, method, metric, training-loop, refinement, and artifact-writer surfaces without expensive external execution.",
+      "execute_expensive": false,
+      "download_external_assets": false,
+      "iteration_count": 0,
+      "materialize_all_declared_artifact_paths": true,
+      "dry_run_contract_artifacts": true
+    },
+    "runtime_smoke": {
+      "mode": "runtime_smoke",
+      "command": "python scripts/run_experiments.py --mode runtime_smoke",
+      "timeout_seconds": 10,
+      "execute_expensive": false,
+      "download_external_assets": false,
+      "iteration_count": 0,
+      "materialize_all_declared_artifact_paths": true,
+      "dry_run_contract_artifacts": true
+    },
+    "docker_validate": {
+      "mode": "docker_validate",
+      "command": "python scripts/run_experiments.py --mode docker_validate",
+      "execute_expensive": false,
+      "download_external_assets": false,
+      "iteration_count": 0,
+      "materialize_all_declared_artifact_paths": true,
+      "dry_run_contract_artifacts": true
+    },
+    "paper_full": {
+      "mode": "paper_full",
+      "command": "python scripts/run_experiments.py --mode paper_full --execute-expensive",
+      "execute_expensive": true,
+      "download_external_assets": true,
+      "iteration_count": 100,
+      "materialize_all_declared_artifact_paths": true,
+      "dry_run_contract_artifacts": false
+    }
+  },
+  "implementation_paths": {
+    "config_path": "run_config.json",
+    "experiment_registry_path": "configs/registry.yaml",
+    "dataset_prepare_validate_path": "src/data/data.py:prepare_validate_dataset",
+    "dataset_registry_path": "src/dataset_registry.py:get_dataset_registry",
+    "method_registry_path": "src/method_registry.py:get_method_registry",
+    "sweep_registry_path": "src/sweep_registry.py:get_sweep_registry",
+    "training_loop_path": "bam/training_loop.py:run_training_loop",
+    "bam_reproduction_path": "src/algorithms/bam.py:run_bam",
+    "ours_method_path": "src/algorithms/bam.py:run_bam",
+    "advi_baseline_path": "src/algorithms/advi.py:run_advi",
+    "gsm_baseline_path": "src/algorithms/gsm.py:run_gsm",
+    "score_divergence_path": "bam/score_divergence.py:score_based_divergence",
+    "metric_formula_path": "evaluation/metrics.py",
+    "aggregation_path": "evaluation/aggregation.py",
+    "artifact_writer_path": "evaluation/report.py:write_artifacts",
+    "plotting_path": "src/reporting/plotting.py",
+    "per_sample_lowest_score_selection_path": "protocols/per_sample_selection.py:per_sample_lowest_score_selection"
+  },
+  "artifact_contract": {
+    "artifact_root_env": "PAPERBENCH_REPRO_ARTIFACT_DIR",
+    "default_artifact_root": ".",
+    "declared_outputs": {
+      "metrics": "results/metrics.json",
+      "summary_csv": "results/summary.csv",
+      "traces": "results/traces.jsonl",
+      "config": "results/config.json",
+      "config_echo": "results/config_echo.json",
+      "run_config": "results/run_config.json",
+      "run_summary": "results/run_summary.json",
+      "experiment_registry": "results/experiment_registry.json",
+      "environment_registry": "results/environment_registry.json",
+      "dataset_registry": "results/dataset_registry.json",
+      "evidence_contract_matrix": "results/evidence_contract_matrix.json",
+      "artifact_manifest": "results/artifact_manifest.json",
+      "readiness": "results/readiness.json",
+      "evaluation_result": "results/evaluation_result.json"
+    },
+    "smoke_artifact_policy": {
+      "label": "dry-run contract artifact",
+      "must_create_every_declared_path": true,
+      "must_not_claim_completed_benchmark_results": true,
+      "must_include_schema_fields": [
+        "mode",
+        "artifact_label",
+        "created_at",
+        "config_id",
+        "experiment_protocols",
+        "methods",
+        "datasets",
+        "metrics"
+      ]
+    }
+  },
+  "fixed_hyperparameters": {
+    "reference_grounding": "paper:paper_contract_sweep_hyperparameter_protocol paper.md",
+    "100_iterations": {
+      "iteration_count": 100,
+      "description": "Paper/addendum fixed hyperparameter exposed separately from bounded smoke execution."
+    },
+    "smoke_iterations": {
+      "iteration_count": 0,
+      "description": "Cost-saving validation setting; does not erase the paper-stated 100_iterations configuration."
+    },
+    "default_batch_size": 4,
+    "figure_e1_d4_batch_size": 3,
+    "lambda": 1.0,
+    "epsilon": 0.001,
+    "learning_rate": 0.001,
+    "batch_size": 4,
+    "random_seed": 0,
+    "variational_family": "full_covariance_gaussian"
+  },
+  "bounded_sweeps": {
+    "reference_grounding": "paper:paper_contract_sweep_hyperparameter_protocol paper.md",
+    "description": "Bounded registry-level sweeps expose paper-required hyperparameters without expanding generation into exhaustive work packages.",
+    "sweep_keys": [
+      "lambda",
+      "epsilon",
+      "learning_rate",
+      "batch_size",
+      "iteration_count"
+    ],
+    "lambda": [
+      0.1,
+      1.0,
+      10.0
+    ],
+    "epsilon": [
+      0.0001,
+      0.001,
+      0.01
+    ],
+    "learning_rate": [
+      0.0003,
+      0.001,
+      0.003
+    ],
+    "batch_size": [
+      3,
+      4,
+      16
+    ],
+    "iteration_count": [
+      0,
+      100
+    ],
+    "default_selector": {
+      "lambda": 1.0,
+      "epsilon": 0.001,
+      "learning_rate": 0.001,
+      "batch_size": 4,
+      "iteration_count": 0
+    },
+    "full_selector": {
+      "lambda": 1.0,
+      "epsilon": 0.001,
+      "learning_rate": 0.001,
+      "batch_size": 4,
+      "iteration_count": 100
+    },
+    "pruning_rationale": "Stop at paper-specified lambda, epsilon, learning-rate, batch-size, and 0/100-iteration protocol entries; avoid unbounded exhaustive sweeps during repository generation."
+  },
+  "methods": {
+    "reference_grounding": "paper:paper_named_experiment_protocols paper.md",
+    "default_method": "ours",
+    "required_methods": [
+      "ours",
+      "bam",
+      "advi",
+      "gsm"
+    ],
+    "method_bindings": {
+      "ours": {
+        "display_name": "ours",
+        "algorithm": "BaM",
+        "binding_path": "src/algorithms/bam.py:run_bam",
+        "training_loop_path": "bam/training_loop.py:run_training_loop",
+        "model_or_method_surface": "score-based Batch and Match black-box VI with full-covariance Gaussian variational family",
+        "enabled_in_smoke": true
+      },
+      "bam": {
+        "display_name": "BaM",
+        "algorithm": "Batch and Match",
+        "binding_path": "src/algorithms/bam.py:run_bam",
+        "training_loop_path": "bam/training_loop.py:run_training_loop",
+        "model_or_method_surface": "score-based divergence, Batch Step, Match Step",
+        "enabled_in_smoke": true
+      },
+      "advi": {
+        "display_name": "ADVI",
+        "algorithm": "Automatic Differentiation Variational Inference baseline",
+        "binding_path": "src/algorithms/advi.py:run_advi",
+        "training_loop_path": "bam/training_loop.py:run_training_loop",
+        "baseline_or_ablation": true,
+        "enabled_in_smoke": true
+      },
+      "gsm": {
+        "display_name": "GSM",
+        "algorithm": "Gaussian score matching baseline",
+        "binding_path": "src/algorithms/gsm.py:run_gsm",
+        "training_loop_path": "bam/training_loop.py:run_training_loop",
+        "baseline_or_ablation": true,
+        "enabled_in_smoke": true
+      }
+    }
+  },
+  "datasets": {
+    "reference_grounding": "paper:paper_addendum_constraints addendum.md",
+    "required_datasets": [
+      "synthetic_gaussian",
+      "synthetic_nongaussian",
+      "posteriordb",
+      "deep_generative_latent",
+      "cifar"
+    ],
+    "dataset_protocols": {
+      "synthetic_gaussian": {
+        "dataset_id": "synthetic_gaussian",
+        "prepare_validate_path": "src/data/data.py:prepare_validate_dataset",
+        "target_registry_path": "bam/targets.py:get_target",
+        "score_interface_required": true,
+        "dimensions": [
+          4,
+          16,
+          64,
+          256
+        ],
+        "external_assets_required": false
+      },
+      "synthetic_nongaussian": {
+        "dataset_id": "synthetic_nongaussian",
+        "prepare_validate_path": "src/data/data.py:prepare_validate_dataset",
+        "target_registry_path": "bam/targets.py:get_target",
+        "score_interface_required": true,
+        "external_assets_required": false
+      },
+      "posteriordb": {
+        "dataset_id": "posteriordb",
+        "prepare_validate_path": "src/data/data.py:prepare_validate_dataset",
+        "target_registry_path": "bam/targets.py:get_target",
+        "score_interface_required": true,
+        "posterior_score_backend": "bridgestan_when_available",
+        "external_assets_required": true,
+        "models": [
+          "ark",
+          "dogs",
+          "eight_schools"
+        ]
+      },
+      "deep_generative_latent": {
+        "dataset_id": "deep_generative_latent",
+        "prepare_validate_path": "src/data/data.py:prepare_validate_dataset",
+        "target_registry_path": "bam/targets.py:get_target",
+        "score_interface_required": true,
+        "external_assets_required": true
+      },
+      "cifar": {
+        "dataset_id": "cifar",
+        "prepare_validate_path": "src/data/data.py:prepare_validate_dataset",
+        "target_registry_path": "bam/targets.py:get_target",
+        "score_interface_required": false,
+        "metrics": [
+          "accuracy",
+          "loss",
+          "mse"
+        ],
+        "external_assets_required": true,
+        "smoke_uses_schema_only": true,
+        "contract_required": true
+      }
+    }
+  },
+  "metrics": {
+    "reference_grounding": "paper:paper_named_experiment_protocols paper.md",
+    "metric_formula_path": "evaluation/metrics.py",
+    "required_metrics": [
+      "forward_kl",
+      "reverse_kl",
+      "relative_mean_error",
+      "wallclock_seconds",
+      "accuracy",
+      "loss",
+      "mse"
+    ],
+    "metric_bindings": {
+      "forward_kl": {
+        "formula": "KL(p;q)=E_p[log p(z)-log q(z)]",
+        "callable": "evaluation/metrics.py:estimate_forward_kl",
+        "applies_to": [
+          "synthetic_gaussian",
+          "synthetic_nongaussian"
+        ]
+      },
+      "reverse_kl": {
+        "formula": "KL(q;p)=E_q[log q(z)-log p(z)]",
+        "callable": "evaluation/metrics.py:estimate_reverse_kl",
+        "applies_to": [
+          "synthetic_gaussian",

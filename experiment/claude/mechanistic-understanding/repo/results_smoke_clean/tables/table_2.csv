@@ -1,0 +1,6 @@
+artifact,method,intervention_strength,accuracy,f1,loss,provenance
+table_2,dpo,0.0,0.6666666666666666,0.5,0.5118335710557114,measured_interventions_route
+table_2,dpo_plus_toxicity_vector_intervention,0.0,0.6666666666666666,0.5,0.5118335710557114,measured_interventions_route
+table_2,dpo_plus_toxicity_vector_intervention,0.5,0.6666666666666666,0.5,0.4028877514638223,measured_interventions_route
+table_2,dpo_plus_toxicity_vector_intervention,1.0,0.6666666666666666,0.5,0.3172522158074644,measured_interventions_route
+table_2,pretrained,0.0,0.6666666666666666,0.5,0.6868072974334841,measured_interventions_route

@@ -1,0 +1,228 @@
+{
+  "artifact_label": "dry_run_contract_artifact",
+  "artifact_writer": {
+    "function": "write_named_result_artifacts",
+    "written": {
+      "figure_3": "results/figures/figure_3_two_moons_conditionals.json",
+      "figure_4": "results/figures/figure_4_benchmark_performance.json",
+      "figure_4a": "results/figures/figure_4a_c2st.json",
+      "figure_4b": "results/figures/figure_4b_arbitrary_conditionals.json",
+      "protocol_matrix": "results/tables/protocol_matrix.json",
+      "trend_obligations": "results/tables/trend_obligations.json"
+    }
+  },
+  "core_contract_artifacts": {
+    "status": "ok",
+    "validation": {
+      "checked_obligations": {
+        "M_C_noising_loss_sampling_path": true,
+        "M_E_attention_path": true,
+        "binary_condition_state": true,
+        "blacklist_declared_not_used": true,
+        "joint_distribution_training": true,
+        "named_sde_ode_samplers": true,
+        "tokenizer_encode_contract": true,
+        "training_condition_resampling": true,
+        "training_metadata_surface": true
+      },
+      "failures": [],
+      "valid": true
+    },
+    "written": {
+      "results/attention_mask_registry.json": "results_runexp_smoke2/attention_mask_registry.json",
+      "results/diffusion_config.json": "results_runexp_smoke2/diffusion_config.json",
+      "results/evaluation_result.json": "results_runexp_smoke2/evaluation_result.json",
+      "results/loss_trace.json": "results_runexp_smoke2/loss_trace.json",
+      "results/model_registry.json": "results_runexp_smoke2/model_registry.json",
+      "results/readiness.json": "results_runexp_smoke2/readiness.json",
+      "results/sampling_trace.json": "results_runexp_smoke2/sampling_trace.json",
+      "results/tokenizer_registry.json": "results_runexp_smoke2/tokenizer_registry.json"
+    }
+  },
+  "dataset_validation": {
+    "available_fields": [
+      "theta",
+      "x"
+    ],
+    "dataset": "two_moons",
+    "mode": "runtime_smoke",
+    "path": "data/two_moons",
+    "required_fields": [
+      "theta",
+      "x"
+    ],
+    "rows": 16,
+    "schema": {
+      "kind": "benchmark",
+      "required_fields": [
+        "theta",
+        "x"
+      ],
+      "theta_dim": 2,
+      "x_dim": 2
+    },
+    "schema_valid": true,
+    "smoke_fixture_available": true
+  },
+  "decision_value": "C2ST gap to 0.5 and NLL on benchmark posterior samples.",
+  "evaluator": {
+    "class": "LocalEvaluator",
+    "metrics": [
+      "experiment_id",
+      "paper_section",
+      "task",
+      "method",
+      "mode_label",
+      "c2st",
+      "nll",
+      "posterior_mean_error",
+      "c2st_semantics",
+      "baseline_comparisons",
+      "denoising_score_matching_loss",
+      "conditioned_loss",
+      "simulation_budget",
+      "mask_variant",
+      "sampler",
+      "similarity_guidance_scale",
+      "mask_probability_0.3",
+      "noise_level_t",
+      "binary_condition_state",
+      "paper_scale_claim",
+      "bounded_input",
+      "trend_obligations"
+    ]
+  },
+  "experiment": {
+    "artifact_keys": [
+      "figure_3",
+      "figure_4",
+      "figure_4a",
+      "figure_4b"
+    ],
+    "baselines": [
+      "NPE",
+      "NLE",
+      "NRE"
+    ],
+    "decision_value": "C2ST gap to 0.5 and NLL on benchmark posterior samples.",
+    "experiment_id": "benchmark_4_1",
+    "hypothesis": "Simformer posterior samples align with reference samples and are compared against explicit SBI baselines.",
+    "mask_variants": [
+      "dense",
+      "directed_graph",
+      "undirected_graph"
+    ],
+    "method": "simformer",
+    "metrics": [
+      "c2st",
+      "nll",
+      "posterior_mean_error"
+    ],
+    "mode_defaults": [
+      "runtime_smoke",
+      "eval",
+      "train"
+    ],
+    "paper_section": "4.1 Benchmark tasks",
+    "sampler_families": [
+      "sde",
+      "ode"
+    ],
+    "simulation_budgets": [
+      16,
+      10000,
+      100000
+    ],
+    "stop_rule_or_pruning_rationale": "Smoke uses one bounded fixture and one seed; full mode enables paper budgets.",
+    "task": "two_moons",
+    "title": "Benchmark posterior inference with Simformer and NPE/NLE/NRE comparisons",
+    "trend_obligations": [
+      "baseline_outperformance",
+      "c2st_semantics"
+    ]
+  },
+  "hypothesis": "Simformer posterior samples align with reference samples and are compared against explicit SBI baselines.",
+  "mode": "runtime_smoke",
+  "model_summary": {
+    "checkpoint_interface": {
+      "load": "optional path",
+      "save": "artifact writer route"
+    },
+    "method": "simformer",
+    "model_loader_factory_path": "run_experiments.load_model",
+    "score_network": {
+      "architecture": "transformer_score_network",
+      "attention_mask": "dense",
+      "noise_level_t": "sampled_uniformly_at_random"
+    },
+    "task": "two_moons",
+    "tokenizer": {
+      "binary_condition_state": true,
+      "condition_state": [
+        "latent",
+        "conditioned"
+      ],
+      "identifier": "variable_name",
+      "value": "float_or_summary"
+    },
+    "training_state": {
+      "last_loss": 0.0019320056480900212,
+      "steps": 2
+    }
+  },
+  "paper_scale_claim": false,
+  "readiness_contract": true,
+  "registry_visibility": {
+    "methods": [
+      "ours",
+      "simformer",
+      "npe",
+      "nle",
+      "nre",
+      "diffusion_model",
+      "lora",
+      "ground_truth_feedback"
+    ],
+    "sweep_keys": [
+      "alpha",
+      "beta",
+      "gamma",
+      "similarity_guidance_scale",
+      "mask_probability",
+      "simulation_budget",
+      "smoke_simulation_budget",
+      "mask_variant",
+      "population_size",
+      "lora_rank",
+      "noise_level_t",
+      "condition_state"
+    ],
+    "tasks": [
+      "two_moons",
+      "gaussian_linear",
+      "gaussian_mixture",
+      "slcp",
+      "lotka_volterra",
+      "sird",
+      "hodgkin_huxley"
+    ],
+    "trend_ids": [
+      "baseline_outperformance",
+      "positive_parameter_improves",
+      "structured_attention_efficiency",
+      "c2st_semantics"
+    ]
+  },
+  "sampler": {
+    "family": "sde",
+    "similarity_guidance_scale": 1.0
+  },
+  "scope_constraints": [
+    "Code implements train/eval paths but default generation does not run expensive paper-scale training.",
+    "Smoke fixtures validate data/model/method/metric/artifact wiring without substituting for full benchmark results.",
+    "Infinite-dimensional SIRD parameters are represented by configurable finite query points.",
+    "Only paper-required interval and threshold constraints are included for guided diffusion."
+  ],
+  "status": "ok",
+  "stop_rule_or_pruning_rationale": "Smoke uses one bounded fixture and one seed; full mode enables paper budgets."
+}

@@ -1,0 +1,1184 @@
+schema_version: "1.0"
+config_id: "pinn_loss_landscape"
+paper_title: "Challenges in Training PINNs: A Loss Landscape Perspective"
+canonical_entrypoint: "run_experiments.py"
+default_mode: "runtime_smoke"
+reference_grounding: "paper:unit_004 paper.md"
+blacklist_compliance:
+  prohibited_repositories:
+    - "https://github.com/pratikrathore8/opt_for_pinns"
+  policy: "No code, hyperparameter loader, checkpoint, or registry entry may fetch or import from prohibited repositories."
+
+hypothesis:
+  core_contribution: "PINN training failures are strongly coupled to loss-landscape conditioning and under-optimization; Adam+L-BFGS improves loss and L2RE over single optimizers, and NysNewton-CG after Adam+L-BFGS can further reduce under-optimized loss."
+  decisive_comparison: "Adam vs L-BFGS vs Adam+L-BFGS vs NNCG after Adam+L-BFGS on convection, reaction, and wave PINN tasks."
+  decisive_metric: "L2RE with total PINN loss, residual/initial/boundary loss components, gradient norm, Hessian eigenvalue diagnostics, and kappa_L."
+  stop_rule_or_pruning_rationale: "Execute bounded smoke routes by default to validate real registry, sampler, model/loss, optimizer, metric, Hessian, and writer surfaces; paper-scale 41000-iteration grids require --mode full. Omit unrelated sweeps and exhaustive exploratory variants that do not change the optimizer-conditioning decision."
+
+runtime:
+  output_root: "results"
+  auxiliary_output_env: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  smoke:
+    label: "dry-run contract artifact"
+    mode_names:
+      - "runtime_smoke"
+      - "docker_validate"
+    max_experiments: 6
+    max_iterations: 3
+    n_residual_points: 32
+    n_initial_points: 16
+    n_boundary_points: 16
+    n_reference_points: 64
+    create_all_declared_artifacts: true
+    write_readiness_json: true
+    write_evaluation_result_json: true
+    never_claim_scores: true
+  full:
+    label: "paper-scale execution"
+    total_iterations: 41000
+    requires_explicit_mode: true
+    expand_full_matrix: true
+    expensive_hessian_spectrum: "enabled_only_when_requested"
+
+implementation_surfaces:
+  config: "This file is the canonical experiment, method, metric, sweep, and artifact registry."
+  analysis: "Hessian eigenvalue, condition-number, loss/L2RE trend, and optimizer trajectory routes are declared and routable."
+  data_pipeline: "Problem factories and collocation/reference sampler budgets are exposed for convection, reaction, and wave."
+  model_or_method: "PINN MLP, PINN loss, optimizer adapters, NNCG, Newton-CG, CG/PCG, and baseline selectors are registered."
+  training_loop: "Adam, L-BFGS, Adam+L-BFGS, and NNCG-after-Adam+L-BFGS iteration budgets and logging schema are configured."
+  optimizer: "Optimizer hyperparameters, switch points, line-search options, memory size, and diagnostic hooks are explicit."
+  artifact_writer: "Every declared JSON/CSV/figure-schema output path is listed with smoke-readiness behavior."
+  metric_formula: "L2RE, total/component losses, gradient norm, Hessian eigenvalues, and kappa_L formulas are declared."
+
+paper_evidence_obligation_matrix:
+  - id: "section_2_1_pinn_loss"
+    section: "Section 2.1 PINNs"
+    evidence: "Least-squares PINN loss combines differential residual D[u,x] and boundary/initial operator B[u,x]."
+    implementation_binding:
+      surface: "pinn_landscape.losses"
+      config_hook: "loss_registry.pinn_least_squares"
+      required_terms:
+        - "residual_loss"
+        - "initial_loss"
+        - "boundary_loss"
+        - "total_loss"
+    artifact_paths:
+      - "results/metrics.json"
+      - "results/loss_curves.json"
+    reference_grounding: "paper:paper_method_core paper.md"
+  - id: "section_2_2_problem_registry"
+    section: "Section 2.2"
+    evidence: "Experiments cover convection PDE, reaction ODE, and wave PDEs."
+    implementation_binding:
+      surface: "pinn_landscape.problems"
+      config_hook: "problem_registry"
+      problem_ids:
+        - "convection"
+        - "reaction"
+        - "wave"
+    artifact_paths:
+      - "results/experiment_registry.json"
+      - "results/experiment_index.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "section_2_2_collocation_sampler"
+    section: "Section 2.2"
+    evidence: "Use 10000 residual points sampled from a 255 x 100 interior grid."
+    implementation_binding:
+      surface: "pinn_landscape.sampling"
+      config_hook: "sampling.paper_default"
+      n_residual_points: 10000
+      interior_grid:
+        x_points: 255
+        t_points: 100
+    artifact_paths:
+      - "results/experiment_registry.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "ill_conditioning_hessian_hooks"
+    section: "Ill-conditioning discussion"
+    evidence: "PINN losses are ill-conditioned; Hessian spectra and condition diagnostics are required."
+    implementation_binding:
+      surface: "pinn_landscape.hessian"
+      config_hook: "analysis.figure10_hessian_conditioning"
+      measurements:
+        - "hessian_eigenvalues"
+        - "condition_number_kappa_L"
+        - "gradient_norm"
+    artifact_paths:
+      - "results/figure10_residual_hessian_condition.json"
+      - "results/figure3_component_spectra.json"
+    reference_grounding: "paper:unit_005 paper.md"
+  - id: "abstract_optimizer_comparison"
+    section: "Abstract"
+    evidence: "Compare Adam, L-BFGS, Adam+L-BFGS and introduce NysNewton-CG."
+    implementation_binding:
+      surface: "pinn_landscape.optimizers"
+      config_hook: "optimizer_registry"
+      optimizer_ids:
+        - "adam"
+        - "lbfgs"
+        - "adam_lbfgs"
+        - "nncg_after_adam_lbfgs"
+    artifact_paths:
+      - "results/metrics.json"
+      - "results/optimizer_comparison_metrics.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "section_2_2_adam_lr_grid"
+    section: "Section 2.2"
+    evidence: "Adam learning-rate grid is used for optimizer comparison."
+    implementation_binding:
+      surface: "pinn_landscape.optimizers"
+      config_hook: "sweeps.adam_learning_rate_grid"
+      values:
+        - 0.00001
+        - 0.0001
+        - 0.001
+        - 0.01
+        - 0.1
+    artifact_paths:
+      - "results/experiment_registry.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "section_2_2_lbfgs_runner"
+    section: "Section 2.2"
+    evidence: "L-BFGS uses learning rate 1.0, memory size 100, and strong Wolfe line search."
+    implementation_binding:
+      surface: "pinn_landscape.optimizers"
+      config_hook: "optimizer_registry.lbfgs"
+      lr: 1.0
+      history_size: 100
+      line_search_fn: "strong_wolfe"
+    artifact_paths:
+      - "results/method_registry.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "section_2_2_budget"
+    section: "Section 2.2"
+    evidence: "Paper-scale training budget is 41000 iterations."
+    implementation_binding:
+      surface: "pinn_landscape.training"
+      config_hook: "training_budget.paper_total_iterations"
+      total_iterations: 41000
+    artifact_paths:
+      - "results/experiment_registry.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "bfgs_conditioning_diagnostics"
+    section: "BFGS conditioning discussion"
+    evidence: "Optimizer logs must expose conditioning-related diagnostics."
+    implementation_binding:
+      surface: "pinn_landscape.optimizers"
+      config_hook: "optimizer_diagnostics"
+      fields:
+        - "step_norm"
+        - "gradient_norm"
+        - "line_search_evaluations"
+        - "hessian_condition_proxy"
+        - "negative_curvature_detected"
+    artifact_paths:
+      - "results/optimizer_comparison_metrics.json"
+    reference_grounding: "paper:unit_005 paper.md"
+  - id: "section_2_2_full_matrix"
+    section: "Section 2.2"
+    evidence: "Full PDE x optimizer x architecture width x seed matrix is retained."
+    implementation_binding:
+      surface: "pinn_landscape.experiments"
+      config_hook: "experiment_matrix.paper_full"
+      axes:
+        problem: ["convection", "reaction", "wave"]
+        optimizer: ["adam", "lbfgs", "adam_lbfgs", "nncg_after_adam_lbfgs"]
+        width: [50, 100, 200, 400]
+        seed_count: 5
+    artifact_paths:
+      - "results/experiment_registry.json"
+      - "results/experiment_index.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "figure_1_wave_trajectory"
+    section: "Figure 1"
+    evidence: "Wave PDE optimizer trajectory compares Adam, Adam+L-BFGS, and NNCG after Adam+L-BFGS."
+    implementation_binding:
+      surface: "pinn_landscape.reporting"
+      config_hook: "protocol_matrix.figure_1_wave_trajectory"
+      problem: "wave"
+      optimizers:
+        - "adam"
+        - "adam_lbfgs"
+        - "nncg_after_adam_lbfgs"
+    artifact_paths:
+      - "results/figure1_wave_trajectory.json"
+    reference_grounding: "paper:unit_004 paper.md"
+
+problem_registry:
+  convection:
+    id: "convection"
+    aliases:
+      - "convection PDE"
+      - "convection"
+      - "convection；reaction；wave。"
+    kind: "pde"
+    factory: "pinn_landscape.problems:create_problem"
+    factory_kwargs:
+      problem_id: "convection"
+    domain:
+      x: [0.0, 1.0]
+      t: [0.0, 1.0]
+    operators:
+      residual: "u_t + beta * u_x"
+      boundary_initial: "periodic boundary plus initial condition"
+    challenging_coefficients:
+      status: "retained_config_slot"
+      beta: null
+      note: "Fill with exact paper/addendum difficult coefficient when supplied; no invented value is used."
+    sampler_hook: "sampling.paper_default"
+    reference_solution_hook: "pinn_landscape.problems:reference_solution"
+    reference_grounding: "paper:unit_004 paper.md"
+  reaction:
+    id: "reaction"
+    aliases:
+      - "reaction ODE"
+      - "reaction"
+      - "convection；reaction；wave。"
+    kind: "ode"
+    factory: "pinn_landscape.problems:create_problem"
+    factory_kwargs:
+      problem_id: "reaction"
+    domain:
+      x: null
+      t: [0.0, 1.0]
+    operators:
+      residual: "u_t - reaction_rhs(u,t)"
+      boundary_initial: "initial condition"
+    challenging_coefficients:
+      status: "retained_config_slot"
+      rho: null
+      note: "Fill with exact paper/addendum difficult coefficient when supplied; no invented value is used."
+    sampler_hook: "sampling.paper_default"
+    reference_solution_hook: "pinn_landscape.problems:reference_solution"
+    reference_grounding: "paper:unit_004 paper.md"
+  wave:
+    id: "wave"
+    aliases:
+      - "wave PDE"
+      - "wave PDEs"
+      - "wave"
+      - "convection；reaction；wave。"
+    kind: "pde"
+    factory: "pinn_landscape.problems:create_problem"
+    factory_kwargs:
+      problem_id: "wave"
+    domain:
+      x: [0.0, 1.0]
+      t: [0.0, 1.0]
+    operators:
+      residual: "u_tt - c^2 * u_xx"
+      boundary_initial: "boundary plus displacement and velocity initial conditions"
+    challenging_coefficients:
+      status: "retained_config_slot"
+      wave_speed: null
+      note: "Fill with exact paper/addendum difficult coefficient when supplied; no invented value is used."
+    sampler_hook: "sampling.paper_default"
+    reference_solution_hook: "pinn_landscape.problems:reference_solution"
+    reference_grounding: "paper:unit_004 paper.md"
+
+sampling:
+  paper_default:
+    id: "paper_default_collocation"
+    sampler: "pinn_landscape.sampling:build_collocation_batch"
+    n_residual_points: 10000
+    interior_grid:
+      x_points: 255
+      t_points: 100
+      total_grid_points: 25500
+    selection: "bounded random or deterministic subsample without replacement when feasible"
+    n_initial_points: 256
+    n_boundary_points: 256
+    n_reference_points: 10000
+    records_grid_metadata: true
+    reference_grounding: "paper:unit_004 paper.md"
+  smoke:
+    id: "smoke_collocation"
+    inherits: "paper_default"
+    n_residual_points: 32
+    interior_grid:
+      x_points: 8
+      t_points: 8
+      total_grid_points: 64
+    n_initial_points: 16
+    n_boundary_points: 16
+    n_reference_points: 64
+    label: "dry-run contract artifact"
+  figure10_residual_count_sweep:
+    id: "figure10_residual_count_sweep"
+    sampler: "pinn_landscape.sampling:build_residual_count_sweep"
+    residual_point_counts:
+      - 100
+      - 1000
+      - 10000
+    smoke_residual_point_counts:
+      - 16
+      - 32
+    analysis_targets:
+      - "hessian_eigenvalues"
+      - "condition_number_kappa_L"
+    reference_grounding: "paper:unit_010 paper.md"
+
+model_registry:
+  pinn_mlp:
+    id: "pinn_mlp"
+    display_name: "PINN"
+    adapter: "pinn_landscape.models:MLP"
+    activation: "tanh"
+    hidden_layers: 3
+    widths:
+      - 50
+      - 100
+      - 200
+      - 400
+    smoke_width: 16
+    initialization:
+      weights: "xavier_normal"
+      bias: "zeros"
+    input_coordinates_by_problem:
+      convection: ["x", "t"]
+      reaction: ["t"]
+      wave: ["x", "t"]
+    output_dimension: 1
+    reference_grounding: "paper:paper_method_core paper.md"
+
+loss_registry:
+  pinn_least_squares:
+    id: "pinn_least_squares"
+    display_name: "PINN Loss"
+    adapter: "pinn_landscape.losses:pinn_loss"
+    formula: "loss = residual_loss + initial_loss + boundary_loss"
+    differential_operator_term: "D[u,x] residual"
+    boundary_initial_operator_term: "B[u,x] boundary/initial"
+    component_names:
+      - "total_loss"
+      - "residual_loss"
+      - "initial_loss"
+      - "boundary_loss"
+    reduction: "mean_squared_error"
+    required_in_metrics_json: true
+    reference_grounding: "paper:paper_method_core paper.md"
+
+metric_registry:
+  total_loss:
+    id: "loss"
+    output_key: "loss"
+    formula: "residual_loss + initial_loss + boundary_loss"
+    required_artifacts:
+      - "results/metrics.json"
+      - "results/loss_curves.json"
+  residual_loss:
+    id: "residual_loss"
+    output_key: "residual_loss"
+    formula: "mean(square(D[u,x]))"
+    required_artifacts:
+      - "results/metrics.json"
+  initial_loss:
+    id: "initial_loss"
+    output_key: "initial_loss"
+    formula: "mean(square(u(x,0)-u0(x)))"
+    required_artifacts:
+      - "results/metrics.json"
+  boundary_loss:
+    id: "boundary_loss"
+    output_key: "boundary_loss"
+    formula: "mean(square(B[u,x]))"
+    required_artifacts:
+      - "results/metrics.json"
+  l2re:
+    id: "L2RE"
+    display_name: "relative L2 error"
+    output_key: "L2RE"
+    formula: "sqrt(sum((u_pred - u_ref)^2)) / max(sqrt(sum(u_ref^2)), eps)"
+    eps: 0.000000000001
+    required_artifacts:
+      - "results/metrics.json"
+    reference_grounding: "paper:unit_006 paper.md"
+  gradient_norm:
+    id: "gradient_norm"
+    output_key: "gradient_norm"
+    formula: "sqrt(sum_i ||grad_theta_i loss||_2^2)"
+    required_artifacts:
+      - "results/metrics.json"
+      - "results/optimizer_comparison_metrics.json"
+  hessian_eigenvalues:
+    id: "hessian_eigenvalues"
+    output_key: "hessian_eigenvalues"
+    formula: "eigvals(H_theta loss) or configured Lanczos/Nyström estimate"
+    required_artifacts:
+      - "results/figure10_residual_hessian_condition.json"
+      - "results/figure3_component_spectra.json"
+  condition_number_kappa_L:
+    id: "kappa_L"
+    output_key: "kappa_L"
+    formula: "max(abs(lambda_i)) / max(min(abs(lambda_i where abs(lambda_i)>eps)), eps)"
+    eps: 0.000000000001
+    required_artifacts:
+      - "results/figure10_residual_hessian_condition.json"
+
+optimizer_registry:
+  adam:
+    id: "adam"
+    aliases:
+      - "Adam"
+    display_name: "Adam"
+    adapter: "pinn_landscape.optimizers:create_optimizer"
+    method_family: "first_order"
+    learning_rate_grid:
+      - 0.00001
+      - 0.0001
+      - 0.001
+      - 0.01
+      - 0.1
+    default_learning_rate: 0.001
+    full_iterations: 41000
+    logs:
+      - "loss"
+      - "L2RE"
+      - "gradient_norm"
+      - "total_loss"
+      - "residual_loss"
+      - "initial_loss"
+      - "boundary_loss"
+    reference_grounding: "paper:unit_004 paper.md"
+  lbfgs:
+    id: "lbfgs"
+    aliases:
+      - "L-BFGS"
+      - "L-BFGS Optimizes"
+      - "BFGS"
+    display_name: "L-BFGS"
+    adapter: "pinn_landscape.optimizers:create_optimizer"
+    method_family: "quasi_newton"
+    lr: 1.0
+    history_size: 100
+    line_search_fn: "strong_wolfe"
+    full_iterations: 41000
+    diagnostics:
+      - "line_search_evaluations"
+      - "step_norm"
+      - "gradient_norm"
+      - "hessian_condition_proxy"
+    reference_grounding: "paper:unit_004 paper.md"
+  adam_lbfgs:
+    id: "adam_lbfgs"
+    aliases:
+      - "Adam+L-BFGS"
+      - "combined_feedback"
+    display_name: "Adam+L-BFGS"
+    adapter: "pinn_landscape.optimizers:create_composite_optimizer"
+    method_family: "combined_first_order_quasi_newton"
+    switch_iterations:
+      - 1000
+      - 11000
+      - 31000
+    default_switch_iteration: 1000
+    adam:
+      learning_rate_grid:
+        - 0.00001
+        - 0.0001
+        - 0.001
+        - 0.01
+        - 0.1
+      default_learning_rate: 0.001
+    lbfgs:
+      lr: 1.0
+      history_size: 100
+      line_search_fn: "strong_wolfe"
+    full_iterations: 41000
+    expected_trend: "lower loss and L2RE than Adam or L-BFGS alone in the main comparison"
+    reference_grounding: "paper:unit_004 paper.md"
+  nncg_after_adam_lbfgs:
+    id: "nncg_after_adam_lbfgs"
+    aliases:
+      - "NNCG"
+      - "NysNewton-CG"
+      - "NysNewton-CG after Adam+L-BFGS"
+      - "Newton-CG"
+      - "CG"
+      - "PCG"
+      - "ours"
+    display_name: "NysNewton-CG after Adam+L-BFGS"
+    adapter: "pinn_landscape.nncg:NysNewtonCG"
+    method_family: "second_order_nystrom_newton_cg"
+    warm_start: "adam_lbfgs"
+    damping: "adaptive"
+    nystrom_rank: 50
+    cg_tolerance: 0.000001
+    max_cg_iterations: 100
+    preconditioner: "nystrom"
+    full_iterations_after_warm_start: 1000
+    diagnostics:
+      - "cg_iterations"
+      - "pcg_residual_norm"
+      - "damped_newton_decrement"
+      - "hessian_vector_products"
+      - "negative_curvature_detected"
+    expected_trend: "further loss and L2RE improvement after Adam+L-BFGS when loss is under-optimized"
+    reference_grounding: "paper:unit_005 paper.md"
+  gradient_descent_after_adam_lbfgs:
+    id: "gd_after_adam_lbfgs"
+    aliases:
+      - "gradient descent phase"
+    display_name: "GD after Adam+L-BFGS"
+    adapter: "pinn_landscape.optimizers:create_optimizer"
+    method_family: "first_order_refinement"
+    warm_start: "adam_lbfgs"
+    learning_rate: 0.0001
+    full_iterations_after_warm_start: 1000
+    reference_grounding: "paper:unit_005 paper.md"
+  oracle:
+    id: "oracle"
+    aliases:
+      - "oracle"
+    display_name: "Oracle reference selector"
+    adapter: "src.methods.baselines:OracleSelector"
+    method_family: "evaluation_selector"
+    role: "paperbench_priority_method_compatibility"
+    selection_rule: "select lowest L2RE among completed configured candidates per problem/width/seed; never used as trainable optimizer"
+    required_for_contract: true
+  combined_feedback:
+    id: "combined_feedback"
+    aliases:
+      - "combined_feedback"
+      - "Adam+L-BFGS"
+    display_name: "Combined feedback adapter"
+    adapter: "src.methods.baselines:CombinedFeedbackAdapter"
+    method_family: "composite_baseline_alias"
+    maps_to_optimizer: "adam_lbfgs"
+    required_for_contract: true
+
+method_selector_set:
+  required_selectors:
+    - "PINN"
+    - "PINN Loss"
+    - "L2RE"
+    - "Adam"
+    - "BFGS"
+    - "L-BFGS"
+    - "L-BFGS Optimizes"
+    - "Adam+L-BFGS"
+    - "CG"
+    - "PCG"
+    - "Newton-CG"
+    - "NNCG"
+    - "NysNewton-CG"
+    - "Ill-conditioning"
+    - "ours"
+    - "oracle"
+    - "combined_feedback"
+  selector_bindings:
+    PINN: "model_registry.pinn_mlp"
+    "PINN Loss": "loss_registry.pinn_least_squares"
+    L2RE: "metric_registry.l2re"
+    Adam: "optimizer_registry.adam"
+    BFGS: "optimizer_registry.lbfgs"
+    "L-BFGS": "optimizer_registry.lbfgs"
+    "L-BFGS Optimizes": "optimizer_registry.lbfgs"
+    "Adam+L-BFGS": "optimizer_registry.adam_lbfgs"
+    CG: "optimizer_registry.nncg_after_adam_lbfgs"
+    PCG: "optimizer_registry.nncg_after_adam_lbfgs"
+    "Newton-CG": "optimizer_registry.nncg_after_adam_lbfgs"
+    NNCG: "optimizer_registry.nncg_after_adam_lbfgs"
+    "NysNewton-CG": "optimizer_registry.nncg_after_adam_lbfgs"
+    Ill-conditioning: "analysis.figure10_hessian_conditioning"
+    ours: "optimizer_registry.nncg_after_adam_lbfgs"
+    oracle: "optimizer_registry.oracle"
+    combined_feedback: "optimizer_registry.combined_feedback"
+
+training_budget:
+  paper_total_iterations: 41000
+  smoke_total_iterations: 3
+  log_every: 100
+  smoke_log_every: 1
+  checkpoint_every: 1000
+  width_axis:
+    - 50
+    - 100
+    - 200
+    - 400
+  seed_axis:
+    seed_count: 5
+    seeds:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+  adam_lbfgs_switch_iterations:
+    - 1000
+    - 11000
+    - 31000
+  reference_grounding: "paper:unit_004 paper.md"
+
+sweeps:
+  adam_learning_rate_grid:
+    parameter: "learning_rate"
+    values:
+      - 0.00001
+      - 0.0001
+      - 0.001
+      - 0.01
+      - 0.1
+    default_for_smoke: 0.001
+    bounded_execution: true
+    reference_grounding: "paper:unit_004 paper.md"
+  lbfgs_learning_rate:
+    parameter: "learning_rate"
+    values:
+      - 1.0
+    bounded_execution: true
+    reference_grounding: "paper:unit_004 paper.md"
+  lbfgs_memory_size:
+    parameter: "history_size"
+    values:
+      - 100
+    bounded_execution: true
+  iteration_count:
+    parameter: "iteration_count"
+    values:
+      - 1000
+      - 11000
+      - 31000
+      - 41000
+    smoke_values:
+      - 1
+      - 2
+      - 3
+    bounded_execution: true
+  width:
+    parameter: "width"
+    values:
+      - 50
+      - 100
+      - 200
+      - 400
+    smoke_values:
+      - 16
+    bounded_execution: true
+  residual_point_count:
+    parameter: "n_res"
+    values:
+      - 10000
+    smoke_values:
+      - 32
+    bounded_execution: true
+  p:
+    parameter: "p"
+    values:
+      - 1
+      - 2
+    role: "paperbench_priority_sweep_compatibility"
+    execution_default: "registry_only_unless_requested"
+    bounded_execution: true
+  population_size:
+    parameter: "population_size"
+    values:
+      - 8
+      - 16
+    role: "paperbench_priority_sweep_compatibility"
+    execution_default: "registry_only_unless_requested"
+    bounded_execution: true
+  beta:
+    parameter: "beta"
+    values:
+      - 0
+      - 2
+      - 1
+    role: "paperbench_priority_sweep_and_convection_coefficient_slot"
+    execution_default: "registry_only_unless_requested"
+    bounded_execution: true
+  similarity_guidance_scale:
+    parameter: "similarity_guidance_scale"
+    values:
+      - 1
+      - 2
+      - 4
+    role: "paperbench_priority_sweep_compatibility"
+    execution_default: "registry_only_unless_requested"
+    bounded_execution: true
+  gamma:
+    parameter: "gamma"
+    values:
+      - 0.1
+      - 1.0
+    role: "paperbench_priority_sweep_compatibility"
+    execution_default: "registry_only_unless_requested"
+    bounded_execution: true
+
+experiment_matrix:
+  paper_full:
+    id: "section_2_2_full_optimizer_pde_architecture_seed_matrix"
+    expand_axes:
+      problem:
+        - "convection"
+        - "reaction"
+        - "wave"
+      optimizer:
+        - "adam"
+        - "lbfgs"
+        - "adam_lbfgs"
+        - "nncg_after_adam_lbfgs"
+      width:
+        - 50
+        - 100
+        - 200
+        - 400
+      seed:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+    total_declared_runs: 240
+    mode: "full_only"
+    registry_writer: "results/experiment_registry.json"
+    index_writer: "results/experiment_index.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  smoke_default:
+    id: "bounded_smoke_matrix"
+    expand_axes:
+      problem:
+        - "convection"
+        - "reaction"
+        - "wave"
+      optimizer:
+        - "adam"
+        - "adam_lbfgs"
+      width:
+        - 16
+      seed:
+        - 0
+    total_declared_runs: 6
+    mode: "runtime_smoke"
+    label: "dry-run contract artifact"
+  figure1_wave:
+    id: "figure1_wave_optimizer_trajectory"
+    expand_axes:
+      problem:
+        - "wave"
+      optimizer:
+        - "adam"
+        - "adam_lbfgs"
+        - "nncg_after_adam_lbfgs"
+      width:
+        - 100
+      seed:
+        - 0
+    mode: "smoke_and_full"
+    artifact_path: "results/figure1_wave_trajectory.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  figure10_conditioning:
+    id: "figure10_residual_count_hessian_conditioning"
+    expand_axes:
+      problem:
+        - "convection"
+        - "reaction"
+        - "wave"
+      optimizer:
+        - "adam_lbfgs"
+      residual_point_count:
+        - 100
+        - 1000
+        - 10000
+      width:
+        - 100
+      seed:
+        - 0
+    smoke_residual_point_count:
+      - 16
+      - 32
+    mode: "analysis_full_only_with_smoke_schema"
+    artifact_path: "results/figure10_residual_hessian_condition.json"
+    reference_grounding: "paper:unit_010 paper.md"
+
+protocol_matrix:
+  - id: "pinn_optimization_convection"
+    name: "PINN optimization on convection"
+    problem: "convection"
+    methods:
+      - "adam"
+      - "lbfgs"
+      - "adam_lbfgs"
+      - "nncg_after_adam_lbfgs"
+    measurements:
+      - "loss"
+      - "L2RE"
+      - "gradient_norm"
+      - "residual_loss"
+      - "initial_loss"
+      - "boundary_loss"
+    artifact_paths:
+      - "results/metrics.json"
+      - "results/loss_curves.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "pinn_optimization_wave"
+    name: "PINN optimization on wave PDEs"
+    problem: "wave"
+    methods:
+      - "adam"
+      - "lbfgs"
+      - "adam_lbfgs"
+      - "nncg_after_adam_lbfgs"
+    measurements:
+      - "loss"
+      - "L2RE"
+      - "gradient_norm"
+      - "residual_loss"
+      - "initial_loss"
+      - "boundary_loss"
+    artifact_paths:
+      - "results/metrics.json"
+      - "results/loss_curves.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "pinn_optimization_reaction"
+    name: "PINN optimization on reaction ODE"
+    problem: "reaction"
+    methods:
+      - "adam"
+      - "lbfgs"
+      - "adam_lbfgs"
+      - "nncg_after_adam_lbfgs"
+    measurements:
+      - "loss"
+      - "L2RE"
+      - "gradient_norm"
+      - "residual_loss"
+      - "initial_loss"
+      - "boundary_loss"
+    artifact_paths:
+      - "results/metrics.json"
+      - "results/loss_curves.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "figure_1_wave_trajectory"
+    runtime_route: "figure_1"
+    name: "Figure 1 wave PDE trajectory"
+    problem: "wave"
+    methods:
+      - "adam"
+      - "adam_lbfgs"
+      - "nncg_after_adam_lbfgs"
+    measurements:
+      - "iteration"
+      - "loss"
+      - "L2RE"
+      - "gradient_norm"
+    artifact_paths:
+      - "results/figure1_wave_trajectory.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "section_6_optimizer_comparison_convection"
+    name: "Section 6 optimizer comparison on convection"
+    problem: "convection"
+    methods:
+      - "adam"
+      - "lbfgs"
+      - "adam_lbfgs"
+      - "nncg_after_adam_lbfgs"
+    measurements:
+      - "loss"
+      - "L2RE"
+    artifact_paths:
+      - "results/metrics.json"
+      - "results/optimizer_comparison_metrics.json"
+    reference_grounding: "paper:unit_005 paper.md"
+  - id: "section_6_optimizer_comparison_wave"
+    name: "Section 6 optimizer comparison on wave PDEs"
+    problem: "wave"
+    methods:
+      - "adam"
+      - "lbfgs"
+      - "adam_lbfgs"
+      - "nncg_after_adam_lbfgs"
+    measurements:
+      - "loss"
+      - "L2RE"
+    artifact_paths:
+      - "results/metrics.json"
+      - "results/optimizer_comparison_metrics.json"
+    reference_grounding: "paper:unit_005 paper.md"
+  - id: "section_6_optimizer_comparison_reaction"
+    name: "Section 6 optimizer comparison on reaction ODE"
+    problem: "reaction"
+    methods:
+      - "adam"
+      - "lbfgs"
+      - "adam_lbfgs"
+      - "nncg_after_adam_lbfgs"
+    measurements:
+      - "loss"
+      - "L2RE"
+    artifact_paths:
+      - "results/metrics.json"
+      - "results/optimizer_comparison_metrics.json"
+    reference_grounding: "paper:unit_005 paper.md"
+  - id: "section_2_2_full_matrix"
+    name: "Section 2.2 full optimizer/PDE/architecture/seed matrix"
+    matrix_ref: "experiment_matrix.paper_full"
+    measurements:
+      - "loss"
+      - "L2RE"
+      - "gradient_norm"
+      - "total_loss"
+      - "residual_loss"
+      - "initial_loss"
+      - "boundary_loss"
+    artifact_paths:
+      - "results/experiment_registry.json"
+      - "results/experiment_index.json"
+      - "results/metrics.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  - id: "section_6_main_optimizer_comparison"
+    name: "Section 6 main optimizer comparison"
+    problems:
+      - "convection"
+      - "reaction"
+      - "wave"
+    methods:
+      - "adam"
+      - "lbfgs"
+      - "adam_lbfgs"
+      - "nncg_after_adam_lbfgs"
+    measurements:
+      - "loss"
+      - "L2RE"
+      - "gradient_norm"
+      - "optimizer_diagnostics"
+    artifact_paths:
+      - "results/metrics.json"
+      - "results/optimizer_comparison_metrics.json"
+    reference_grounding: "paper:unit_005 paper.md"
+  - id: "figure_10_residual_hessian_condition"
+    runtime_route: "figure_10"
+    name: "Figure 10 residual point count, Hessian eigenvalues, and kappa_L"
+    matrix_ref: "experiment_matrix.figure10_conditioning"
+    measurements:
+      - "residual_point_count"
+      - "hessian_eigenvalues"
+      - "condition_number_kappa_L"
+    artifact_paths:
+      - "results/figure10_residual_hessian_condition.json"
+      - "results/figure3_component_spectra.json"
+    reference_grounding: "paper:unit_010 paper.md"
+
+analysis:
+  loss_vs_l2re:
+    id: "figure2_loss_vs_l2re"
+    runtime_route: "figure_2"
+    input_metrics: "results/metrics.json"
+    grouping:
+      - "problem"
+      - "optimizer"
+      - "width"
+      - "seed"
+    x_metric: "loss"
+    y_metric: "L2RE"
+    artifact_path: "results/figure2_loss_vs_l2re.csv"
+    trend_assertion: "Near-zero PINN loss is required for reasonably low L2RE."
+    reference_grounding: "paper:unit_006 paper.md"
+  component_spectra:
+    id: "figure3_component_spectra"
+    runtime_route: "figure_3"
+    hessian_surface: "pinn_landscape.hessian"
+    components:
+      - "total_loss"
+      - "residual_loss"
+      - "initial_loss"
+      - "boundary_loss"
+    artifact_path: "results/figure3_component_spectra.json"
+    smoke_behavior: "write schema plus tiny Hessian/Lanczos diagnostic if available"
+    reference_grounding: "paper:unit_005 paper.md"
+  best_l2re_run:
+    id: "figure4_best_l2re"
+    runtime_route: "figure_4"
+    selection_rule: "lowest L2RE among Adam+L-BFGS runs for each PDE"
+    artifact_path: "results/figure4_best_l2re_trace.json"
+    reference_grounding: "paper:unit_006 paper.md"
+  optimizer_appendix_comparison:
+    id: "figure8_appendix_optimizer_comparison"
+    runtime_route: "figure_8"
+    problems:
+      - "convection"
+      - "reaction"
+      - "wave"
+    methods:
+      - "adam"
+      - "lbfgs"
+      - "adam_lbfgs"
+    artifact_path: "results/figure8_appendix_optimizer_comparison.json"
+    reference_grounding: "paper:unit_004 paper.md"
+  figure10_hessian_conditioning:
+    id: "figure10_hessian_conditioning"
+    runtime_route: "figure_10"
+    residual_point_counts:
+      - 100
+      - 1000
+      - 10000
+    smoke_residual_point_counts:
+      - 16
+      - 32
+    metrics:
+      - "hessian_eigenvalues"
+      - "condition_number_kappa_L"
+    artifact_path: "results/figure10_residual_hessian_condition.json"
+    reference_grounding: "paper:unit_010 paper.md"
+  runtime_routes:
+    figure_1: "pinn_landscape.reporting:write_wave_trajectory"
+    figure_2: "pinn_landscape.reporting:write_loss_vs_l2re"
+    figure_3: "pinn_landscape.reporting:write_component_spectra"
+    figure_4: "pinn_landscape.reporting:write_best_l2re_trace"
+    figure_5: "pinn_landscape.reporting:write_loss_landscape_slice"
+    figure_6: "pinn_landscape.reporting:write_gradient_norm_trace"
+    figure_7: "pinn_landscape.reporting:write_optimizer_diagnostics"
+    figure_8: "pinn_landscape.reporting:write_appendix_optimizer_comparison"
+    figure_10: "pinn_landscape.reporting:write_residual_hessian_condition"
+
+metrics_json_schema:
+  path: "results/metrics.json"
+  record_required_fields:
+    - "problem"
+    - "optimizer"
+    - "width"
+    - "seed"
+    - "iteration"
+    - "loss"
+    - "L2RE"
+  record_optional_but_expected_fields:
+    - "total_loss"
+    - "residual_loss"
+    - "initial_loss"
+    - "boundary_loss"
+    - "gradient_norm"
+    - "learning_rate"
+    - "n_residual_points"
+    - "mode"
+    - "artifact_label"
+  aggregation:
+    primary_group_keys:
+      - "problem"
+      - "optimizer"
+      - "width"
+      - "seed"
+    per_sample_selection: "lowest configured primary metric within each group for reporting summaries"
+    primary_metric: "L2RE"
+  smoke_label_required: true
+
+artifact_contract:
+  declared_artifacts:
+    - path: "results/metrics.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_metrics"
+      required_in_smoke: true
+      contains_records_with_fields:
+        - "problem"
+        - "optimizer"
+        - "width"
+        - "seed"
+        - "iteration"
+        - "loss"
+        - "L2RE"
+    - path: "results/experiment_registry.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_experiment_registry"
+      required_in_smoke: true
+    - path: "results/artifact_manifest.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_artifact_manifest"
+      required_in_smoke: true
+    - path: "results/figure1_wave_trajectory.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_wave_trajectory"
+      required_in_smoke: true
+      figure: "Figure 1"
+    - path: "results/figure2_loss_vs_l2re.csv"
+      type: "csv"
+      writer: "pinn_landscape.reporting:write_loss_vs_l2re"
+      required_in_smoke: true
+    - path: "results/figure3_component_spectra.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_component_spectra"
+      required_in_smoke: true
+    - path: "results/figure10_residual_hessian_condition.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_residual_hessian_condition"
+      required_in_smoke: true
+      figure: "Figure 10"
+    - path: "results/loss_curves.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_loss_curves"
+      required_in_smoke: true
+    - path: "results/experiment_index.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_experiment_index"
+      required_in_smoke: true
+    - path: "results/loss_trace.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_loss_trace"
+      required_in_smoke: true
+    - path: "results/method_registry.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_method_registry"
+      required_in_smoke: true
+    - path: "results/optimizer_comparison_metrics.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_optimizer_comparison_metrics"
+      required_in_smoke: true
+    - path: "results/readiness.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_readiness"
+      required_in_smoke: true
+      label: "dry-run contract artifact"
+    - path: "results/evaluation_result.json"
+      type: "json"
+      writer: "pinn_landscape.reporting:write_evaluation_result"
+      required_in_smoke: true
+      label: "dry-run contract artifact"
+  dry_run_contract:
+    all_declared_paths_materialized: true
+    parent_directories_created: true
+    artifact_label: "dry-run contract artifact"
+    must_not_claim:
+      - "paper-scale training completed"
+      - "benchmark score"
+      - "trained checkpoint quality"
+      - "real final L2RE unless mode is full"
+
+readiness_checks:
+  importable_without_torch: true
+  optional_dependencies_lazy:
+    - "torch"
+    - "scipy"
+    - "pandas"
+    - "matplotlib"
+  required_static_files:
+    - "configs/pinn_loss_landscape.yaml"
+    - "run_experiments.py"
+    - "main.py"
+  required_runtime_surfaces:
+    - "problem_registry"
+    - "sampling"
+    - "model_registry"
+    - "loss_registry"
+    - "optimizer_registry"
+    - "metric_registry"
+    - "protocol_matrix"
+    - "artifact_contract"
+  smoke_command: "python run_experiments.py --mode runtime_smoke"
+  docker_validate_command: "python run_experiments.py --mode docker_validate"
+
+scope_constraints:
+  full_spectrum_estimation_default: "disabled"
+  full_spectrum_estimation_reason: "Generation and smoke validation must not execute expensive full Hessian spectrum estimation."
+  artifact_writers_are_not_substitutes: true
+  required_real_surfaces:
+    - "PDE/ODE problem factories"
+    - "collocation sampler"
+    - "PINN model factory"
+    - "PINN loss implementation"
+    - "optimizer adapters"
+    - "training loop"
+    - "metric formulas"
+    - "Hessian analysis hooks"
+  out_of_scope:
+    - "Using blacklisted repositories"
+    - "Unbounded hyperparameter sweeps during default execution"
+    - "Claiming smoke artifacts are final paper results"
+    - "Replacing method implementation with only README tables or manifests"

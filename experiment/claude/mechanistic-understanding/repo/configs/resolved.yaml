@@ -1,0 +1,790 @@
+schema_version: "1.0"
+config_id: "resolved_dpo_toxicity_mechanistic_repro"
+task_id: "task_029"
+work_package_id: "project_skeleton"
+resolved_from:
+  - "configs/reproduction.yaml"
+  - "configs/pipeline.yaml"
+  - "configs/setup.yaml"
+  - "configs/setup_or_flags_documented.yaml"
+  - "configs/schema.yaml"
+paper:
+  title: "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity"
+  reproduction_id: "dpo_toxicity_mechanistic_repro"
+  blacklisted_repositories:
+    - "https://github.com/ajyl/dpo_toxic"
+  evidence_contract:
+    priority_methods:
+      - "ours"
+      - "ppo"
+      - "oracle"
+    priority_model_variants:
+      - "GPT2"
+      - "Llama2"
+      - "GPT2_DPO"
+      - "Llama2_DPO"
+    priority_sweeps:
+      similarity_guidance_scale:
+        values: [9, 1, 10]
+        bounded_default: [9]
+        full_mode_values: [9, 1, 10]
+        selector_key: "method_registry.pplm_guidance.parameters.similarity_guidance_scale"
+        execution_policy: "registry_exposed_bounded_default_full_mode_required_for_all_values"
+      generation_tokens:
+        values: [20]
+        bounded_default: 20
+        selector_key: "generation.max_new_tokens"
+      table_1_vector_example:
+        layer: 19
+        vector_id: "MLP.v_770^19"
+        matrix_index: 770
+        value_vector_kind: "mlp_value_vector"
+        notation: "Superscript denotes layer number and subscript denotes index number in the MLP value parameter matrix."
+    addendum_clarifications:
+      binary_probe_formula: "W_toxic x"
+      toxic_probe_weight_shape: "[d_model, 2]"
+      toxic_probe_nontoxic_column: "W_toxic[:, 0]"
+      toxic_probe_direction: "W_toxic[:, 1]"
+      toxic_vector_similarity_target: "Compute cosine similarity against W_toxic[:, 1], not the whole probe matrix."
+      table_1_top_tokens_definition: "Tokens with highest dot products against the specified toxic vector."
+      mlp_value_vector_notation: "For MLP value vectors, superscript is layer number and subscript is index number in the parameter matrix."
+      svd_protocol: "SVD-derived toxicity directions are exposed through the vector extraction stage and evaluated with the same token projection and intervention interfaces as probe and MLP value vectors."
+
+reference_grounding: "paperbench_ref_001 releases/20170613-score_normalization_v1.md"
+score_protocol:
+  toxicity_score_normalization:
+    id: "normalized_toxicity_score_v1"
+    purpose: "Keep toxicity-rate thresholds comparable and avoid silent mixing of calibrated score scales."
+    normalized_by_default: true
+    score_range: [0.0, 1.0]
+    default_binary_threshold: 0.5
+    threshold_action_required: true
+    threshold_metadata_required_in_artifacts: true
+    calibration_fields:
+      - "score_name"
+      - "score_normalized"
+      - "threshold"
+      - "threshold_source"
+      - "scorer_id"
+    binary_label_rule: "toxic if normalized toxicity score >= threshold"
+    artifact_fields:
+      score_normalization_reference: "paperbench_ref_001 releases/20170613-score_normalization_v1.md"
+      score_name: "toxicity"
+      score_normalized: true
+      threshold: 0.5
+      threshold_source: "resolved_config.score_protocol.toxicity_score_normalization.default_binary_threshold"
+
+execution:
+  entrypoint: "scripts/run_reproduction.py"
+  python_entrypoint: "main.py"
+  canonical_route:
+    - "setup_config"
+    - "core_method"
+    - "evaluation_protocol"
+  default_mode: "runtime_smoke"
+  full_mode: "full"
+  smoke_safe: true
+  default_command: "python scripts/run_reproduction.py --mode runtime_smoke"
+  full_command: "python scripts/run_reproduction.py --mode full"
+  artifact_dir_env: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  output_dir: "results"
+  create_parent_dirs_in_smoke: true
+  paper_visible_outputs_require_measured_code_path: true
+  mode_policies:
+    runtime_smoke:
+      description: "Exercise real configuration, registry, data-pipeline, model/method, training-loop, evaluation, and artifact-writer surfaces with bounded safe fixtures."
+      max_records_per_split: 8
+      max_train_steps: 2
+      max_eval_batches: 2
+      execute_full_training: false
+      execute_all_sweeps: false
+      selected_similarity_guidance_scale_values: [9]
+      write_readiness_artifacts: true
+      write_paper_visible_metrics_only_if_measured: true
+    docker_validate:
+      description: "Import and readiness validation with dependency and path checks; no expensive training."
+      max_records_per_split: 4
+      max_train_steps: 1
+      max_eval_batches: 1
+      execute_full_training: false
+      execute_all_sweeps: false
+      selected_similarity_guidance_scale_values: [9]
+      write_readiness_artifacts: true
+    full:
+      description: "Run full configured data preparation, probe training/loading, vector extraction, DPO/PPO/oracle comparisons, interventions, un-aligning, and reporting."
+      max_records_per_split: null
+      max_train_steps: null
+      max_eval_batches: null
+      execute_full_training: true
+      execute_all_sweeps: true
+      selected_similarity_guidance_scale_values: [9, 1, 10]
+      write_readiness_artifacts: true
+      write_paper_visible_metrics_only_if_measured: true
+
+scope:
+  hypothesis: "DPO reduces toxic generations by changing or bypassing toxicity-relevant representations rather than eliminating the underlying toxic capability; probe/vector/intervention and un-align analyses should reveal retained but rerouted toxicity features."
+  core_contribution_hypothesis: "Toxicity directions extracted from the binary probe, MLP value vectors, and SVD components mechanistically explain DPO toxicity reduction and support causal editing/intervention tests."
+  decisive_comparison:
+    methods: ["ours", "ppo", "oracle"]
+    model_variants: ["GPT2", "GPT2_DPO"]
+    optional_out_of_scope_variants: ["Llama2", "Llama2_DPO"]
+  decisive_metric:
+    primary: "toxicity_rate"
+    secondary:
+      - "probe_f1"
+      - "activation_shift"
+      - "perplexity"
+      - "logit_lens_toxic_probability"
+      - "intervention_delta_toxicity"
+      - "unalign_recovery_rate"
+  stop_rule_or_pruning_rationale: "Stop at the paper-specified protocol, registry, artifact, and bounded smoke-test surfaces; expose all required methods and sweeps but avoid unbounded training, exhaustive sweeps, unrelated models, and inaccessible Llama2 execution by default."
+  in_scope:
+    - "binary toxicity classification"
+    - "wikitext evaluation"
+    - "GPT2 and GPT2_DPO adapters"
+    - "DPO training protocol"
+    - "PPO and oracle baseline selectors"
+    - "PPLM/similarity-guidance sweep registry"
+    - "probe, MLP value-vector, and SVD toxicity directions"
+    - "Table 1-style top-token artifact writer"
+    - "intervention and un-align evaluation protocols"
+  out_of_scope:
+    - id: "llama2_execution_default"
+      reason: "Results related to Llama2 are excluded from default execution because access to Llama2 model weights depends on external permission."
+      retained_registry_entries:
+        - "Llama2"
+        - "Llama2_DPO"
+      policy: "registered_but_skip_unless_user_provides_weights_and_full_mode"
+
+environment_registry:
+  - id: "binary_toxicity_classification"
+    aliases:
+      - "binary toxicity classification"
+      - "toxicity_probe_task"
+      - "classification_binary_toxicity"
+    type: "supervised_binary_classification"
+    setup_metadata:
+      labels: ["non_toxic", "toxic"]
+      normalized_score_threshold: 0.5
+      probe_weight_shape: "[d_model, 2]"
+      toxic_direction_column: 1
+      safety_default_uses_fixture_text: true
+    factory_hook: "src.classification_binary_toxicity:build_binary_toxicity_task"
+    config_hook: "configs.resolved.environment_registry.binary_toxicity_classification"
+    data_pipeline_hook: "dpo_toxicity.data:prepare_toxicity_classification_data"
+    evaluation_hook: "dpo_toxicity.evaluation:evaluate_binary_probe"
+    artifact_writer_hook: "dpo_toxicity.reporting:write_probe_artifacts"
+  - id: "wikitext"
+    aliases:
+      - "wikitext"
+      - "WikiText"
+      - "wikitext_language_modeling"
+      - "paper_environment_wikitext"
+    type: "language_modeling_benchmark"
+    setup_metadata:
+      benchmark_family: "wikitext"
+      default_subset: "wikitext-2-raw-v1"
+      splits: ["train", "validation", "test"]
+      purpose: "Perplexity and generation prompt source for toxicity/alignment evaluation."
+      loader_requires_optional_dependency: "datasets"
+    factory_hook: "dpo_toxicity.data:build_wikitext_environment"
+    config_hook: "configs.resolved.dataset_registry.wikitext"
+    data_pipeline_hook: "dpo_toxicity.data:load_wikitext"
+    evaluation_hook: "dpo_toxicity.evaluation:evaluate_perplexity"
+    artifact_writer_hook: "dpo_toxicity.reporting:write_data_manifest"
+  - id: "editing_models"
+    aliases:
+      - "editing models"
+      - "model_editing"
+      - "causal_intervention_models"
+    type: "causal_model_editing"
+    setup_metadata:
+      vector_sources: ["probe_direction", "mlp_value_vector", "svd_direction"]
+      interventions: ["activation_addition", "activation_subtraction", "value_vector_patch", "logit_lens_projection"]
+      default_layer: 19
+      default_vector_id: "MLP.v_770^19"
+    factory_hook: "dpo_toxicity.interventions:build_editing_environment"
+    config_hook: "configs.resolved.vector_registry"
+    data_pipeline_hook: "dpo_toxicity.vectors:extract_toxicity_vectors"
+    evaluation_hook: "dpo_toxicity.evaluation:evaluate_interventions"
+    artifact_writer_hook: "dpo_toxicity.reporting:write_table_1_artifact"
+  - id: "determines_which"
+    aliases:
+      - "determines which"
+      - "feature_attribution_selector"
+      - "which_vectors_determine_toxicity"
+    type: "mechanistic_attribution"
+    setup_metadata:
+      purpose: "Rank which probe, MLP value-vector, and SVD directions determine toxicity-related generation behavior."
+      ranking_metrics: ["cosine_similarity_to_W_toxic_col1", "dot_product_top_tokens", "intervention_delta_toxicity"]
+    factory_hook: "dpo_toxicity.vectors:build_vector_attribution_task"
+    config_hook: "configs.resolved.vector_registry"
+    data_pipeline_hook: "dpo_toxicity.vectors:rank_toxicity_vectors"
+    evaluation_hook: "dpo_toxicity.evaluation:evaluate_vector_attribution"
+    artifact_writer_hook: "dpo_toxicity.reporting:write_sensitivity_report"
+  - id: "keep_all_paper_visible"
+    aliases:
+      - "keep all paper-visible"
+      - "paper_visible_artifact_contract"
+      - "artifact_closure"
+    type: "artifact_contract"
+    setup_metadata:
+      purpose: "Ensure every paper-visible output is produced only by a measured implementation path or marked as full-mode required in readiness artifacts."
+    factory_hook: "dpo_toxicity.reporting:build_artifact_contract"
+    config_hook: "configs.resolved.artifacts"
+  - id: "config_data_pipeline"
+    aliases:
+      - "config data-pipeline"
+      - "configuration_data_pipeline"
+      - "resolved_data_pipeline"
+    type: "configuration_pipeline"
+    setup_metadata:
+      purpose: "Resolve dataset, split, normalization, tokenization, generation, and artifact writer configuration."
+    factory_hook: "dpo_toxicity.config:load_resolved_config"
+    config_hook: "configs.resolved.data_pipeline"
+  - id: "config_factory"
+    aliases:
+      - "config factory"
+      - "environment/config factory"
+      - "resolved_config_factory"
+    type: "configuration_factory"
+    setup_metadata:
+      purpose: "Merge schema, setup, reproduction, and resolved selectors into executable configuration objects."
+    factory_hook: "dpo_toxicity.config:ConfigFactory.from_yaml"
+    config_hook: "configs.resolved"
+  - id: "registry_configuration_artifact"
+    aliases:
+      - "registry configuration artifact"
+      - "experiment_registry"
+      - "dataset_registry"
+      - "method_registry"
+    type: "registry_artifact_writer"
+    setup_metadata:
+      purpose: "Write machine-readable registry artifacts for datasets, methods, tasks, sweeps, metrics, and experiments."
+    factory_hook: "dpo_toxicity.registry:build_registries"
+    config_hook: "configs.resolved"
+    artifact_writer_hook: "dpo_toxicity.reporting:write_registry_artifacts"
+
+dataset_registry:
+  wikitext:
+    id: "wikitext"
+    aliases:
+      - "wikitext"
+      - "WikiText"
+      - "wikitext-2"
+      - "wikitext_language_modeling"
+    benchmark_type: "language_modeling"
+    setup_metadata:
+      source: "HuggingFace datasets when available; local fixture fallback only for runtime smoke wiring."
+      hf_dataset_name: "wikitext"
+      hf_config_name: "wikitext-2-raw-v1"
+      splits:
+        train: "train"
+        validation: "validation"
+        test: "test"
+      text_field: "text"
+      tokenizer_required_for_full: true
+      optional_dependency: "datasets"
+    loader_hook: "dpo_toxicity.data:load_wikitext"
+    prepare_hook: "dpo_toxicity.data:prepare_language_modeling_batches"
+    validate_hook: "dpo_toxicity.data:validate_text_dataset"
+    artifact_manifest_path: "results/data_manifest.json"
+  toxicity_probe_training:
+    id: "toxicity_probe_training"
+    aliases:
+      - "jigsaw_toxicity"
+      - "toxicity_probe"
+      - "binary toxicity classification"
+    benchmark_type: "binary_text_classification"
+    setup_metadata:
+      label_field: "label"
+      text_field: "text"
+      normalized_score_field: "toxicity_score"
+      binary_threshold: 0.5
+      score_protocol: "normalized_toxicity_score_v1"
+    loader_hook: "dpo_toxicity.data:load_toxicity_classification_dataset"
+    prepare_hook: "dpo_toxicity.data:prepare_toxicity_classification_data"
+    validate_hook: "dpo_toxicity.data:validate_toxicity_labels"
+    artifact_manifest_path: "results/data_manifest.json"
+  preference_pairs:
+    id: "preference_pairs"
+    aliases:
+      - "dpo_pairs"
+      - "toxicity_preference_pairs"
+      - "chosen_rejected_pairs"
+    benchmark_type: "pairwise_preference"
+    setup_metadata:
+      prompt_field: "prompt"
+      chosen_field: "chosen"
+      rejected_field: "rejected"
+      preference_rule: "chosen response is less toxic according to normalized toxicity score or curated pair label."
+    loader_hook: "dpo_toxicity.data:load_preference_pairs"
+    prepare_hook: "dpo_toxicity.data:prepare_dpo_pairs"
+    validate_hook: "dpo_toxicity.data:validate_preference_pairs"
+    artifact_manifest_path: "results/data_manifest.json"
+
+data_pipeline:
+  id: "resolved_data_pipeline"
+  factory_hook: "dpo_toxicity.data:build_data_pipeline"
+  tokenizer:
+    default_model_family: "gpt2"
+    max_length: 1024
+    padding: "longest"
+    truncation: true
+  generation_prompts:
+    dataset_id: "wikitext"
+    split: "test"
+    prompt_max_tokens: 64
+    max_new_tokens: 20
+    batch_size_runtime_smoke: 2
+    batch_size_full: 4
+  toxicity_classification:
+    dataset_id: "toxicity_probe_training"
+    label_rule: "normalized_score_greater_equal_threshold"
+    threshold: 0.5
+    train_split: "train"
+    validation_split: "validation"
+    test_split: "test"
+  preference_training:
+    dataset_id: "preference_pairs"
+    train_split: "train"
+    validation_split: "validation"
+    max_prompt_length: 512
+    max_response_length: 256
+  validation_checks:
+    - "non_empty_text"
+    - "required_fields_present"
+    - "binary_labels_in_0_1"
+    - "pairwise_chosen_rejected_distinct"
+    - "score_normalization_metadata_present"
+  smoke_bounds:
+    max_records_per_split: 8
+    max_prompt_records: 8
+    max_pair_records: 4
+  full_bounds:
+    max_records_per_split: null
+    max_prompt_records: null
+    max_pair_records: null
+
+model_registry:
+  GPT2:
+    id: "GPT2"
+    aliases: ["gpt2", "base_gpt2", "GPT2"]
+    family: "causal_lm"
+    access_policy: "public"
+    default_model_name_or_path: "gpt2"
+    adapter_hook: "dpo_toxicity.modeling:load_causal_lm"
+    tokenizer_hook: "dpo_toxicity.modeling:load_tokenizer"
+    activation_hook: "dpo_toxicity.modeling:attach_activation_cache"
+    full_execution_enabled_by_default: true
+  GPT2_DPO:
+    id: "GPT2_DPO"
+    aliases: ["gpt2_dpo", "DPO_GPT2", "GPT2_DPO"]
+    family: "causal_lm_aligned"
+    base_model_id: "GPT2"
+    access_policy: "train_or_load_from_artifact"
+    checkpoint_path: "results/checkpoints/gpt2_dpo"
+    adapter_hook: "dpo_toxicity.modeling:load_causal_lm"
+    tokenizer_hook: "dpo_toxicity.modeling:load_tokenizer"
+    training_hook: "dpo_toxicity.dpo_training:train_dpo"
+    full_execution_enabled_by_default: true
+  Llama2:
+    id: "Llama2"
+    aliases: ["llama2", "Llama-2", "Llama2"]
+    family: "causal_lm"
+    access_policy: "restricted_external_permission_required"
+    default_model_name_or_path: "meta-llama/Llama-2-7b-hf"
+    adapter_hook: "dpo_toxicity.modeling:load_causal_lm"
+    tokenizer_hook: "dpo_toxicity.modeling:load_tokenizer"
+    activation_hook: "dpo_toxicity.modeling:attach_activation_cache"
+    full_execution_enabled_by_default: false
+    skip_reason_default: "Requires user-provided access to Llama2 weights."
+  Llama2_DPO:
+    id: "Llama2_DPO"
+    aliases: ["llama2_dpo", "DPO_Llama2", "Llama2_DPO"]
+    family: "causal_lm_aligned"
+    base_model_id: "Llama2"
+    access_policy: "restricted_external_permission_required"
+    checkpoint_path: "results/checkpoints/llama2_dpo"
+    adapter_hook: "dpo_toxicity.modeling:load_causal_lm"
+    tokenizer_hook: "dpo_toxicity.modeling:load_tokenizer"
+    training_hook: "dpo_toxicity.dpo_training:train_dpo"
+    full_execution_enabled_by_default: false
+    skip_reason_default: "Requires user-provided access to Llama2 weights."
+
+method_registry:
+  ours:
+    id: "ours"
+    aliases:
+      - "ours"
+      - "mechanistic_dpo_toxicity"
+      - "probe_vector_intervention"
+    method_type: "paper_core_method"
+    description: "Train/load a binary toxicity probe, extract W_toxic[:,1], compare against MLP value vectors and SVD directions, evaluate DPO toxicity reduction, perform causal interventions and un-aligning analysis."
+    model_variants: ["GPT2", "GPT2_DPO", "Llama2", "Llama2_DPO"]
+    default_model_variants_runtime_smoke: ["GPT2", "GPT2_DPO"]
+    train_hook: "dpo_toxicity.dpo_training:train_dpo"
+    vector_hook: "dpo_toxicity.vectors:extract_toxicity_vectors"
+    intervention_hook: "dpo_toxicity.interventions:run_interventions"
+    unalign_hook: "dpo_toxicity.unalign:run_unalign"
+    evaluation_hook: "dpo_toxicity.evaluation:evaluate_mechanistic_route"
+    artifact_writer_hook: "dpo_toxicity.reporting:write_mechanistic_artifacts"
+    enabled: true
+  ppo:
+    id: "ppo"
+    aliases:
+      - "ppo"
+      - "rlhf_ppo"
+      - "policy_gradient_baseline"
+    method_type: "baseline"
+    description: "PPO/RLHF-style toxicity-reduction baseline exposed for paper-visible comparison."
+    model_variants: ["GPT2", "Llama2"]
+    default_model_variants_runtime_smoke: ["GPT2"]
+    train_hook: "dpo_toxicity.dpo_training:train_ppo_baseline"
+    evaluation_hook: "dpo_toxicity.evaluation:evaluate_generation_toxicity"
+    artifact_writer_hook: "dpo_toxicity.reporting:write_baseline_artifacts"
+    enabled: true
+  oracle:
+    id: "oracle"
+    aliases:
+      - "oracle"
+      - "oracle_filter"
+      - "toxicity_oracle_baseline"
+    method_type: "baseline"
+    description: "Oracle response selector/filter using toxicity scores to bound the achievable toxicity-rate reduction under a known scorer."
+    model_variants: ["GPT2", "GPT2_DPO", "Llama2", "Llama2_DPO"]
+    default_model_variants_runtime_smoke: ["GPT2", "GPT2_DPO"]
+    selection_hook: "dpo_toxicity.evaluation:oracle_select_least_toxic"
+    evaluation_hook: "dpo_toxicity.evaluation:evaluate_oracle_baseline"
+    artifact_writer_hook: "dpo_toxicity.reporting:write_baseline_artifacts"
+    enabled: true
+  dpo:
+    id: "dpo"
+    aliases: ["dpo", "direct_preference_optimization", "GPT2_DPO", "Llama2_DPO"]
+    method_type: "training_algorithm"
+    description: "Direct Preference Optimization training route used to produce DPO-aligned models."
+    train_hook: "dpo_toxicity.dpo_training:train_dpo"
+    loss_hook: "dpo_toxicity.dpo_training:dpo_loss"
+    evaluation_hook: "dpo_toxicity.evaluation:evaluate_generation_toxicity"
+    enabled: true
+  pplm_guidance:
+    id: "pplm_guidance"
+    aliases: ["pplm", "similarity_guidance", "guided_generation"]
+    method_type: "decoding_or_generation_variant"
+    description: "PPLM-style similarity-guided generation variant with bounded paper-visible scale sweep."
+    generation_hook: "src.pplm_pairwise_toxicity:generate_with_similarity_guidance"
+    evaluation_hook: "src.pplm_pairwise_toxicity:evaluate_pairwise_toxicity"
+    parameters:
+      similarity_guidance_scale:
+        values: [9, 1, 10]
+        default: 9
+        runtime_smoke_values: [9]
+      step_size: 0.4
+      temperature: 1.0
+      top_k: 10
+      num_iterations: 50
+      window_length: 5
+      max_new_tokens: 20
+    enabled: true
+
+training:
+  dpo:
+    learning_rate: 0.000001
+    batch_size: 4
+    optimizer: "RMSprop"
+    gradient_accumulation_steps: 1
+    max_gradient_norm: 10
+    validation_metric: "loss/valid"
+    validation_patience: 10
+    beta: 0.1
+    train_hook: "dpo_toxicity.dpo_training:train_dpo"
+    trace_path: "results/training_trace.json"
+    checkpoint_dir: "results/checkpoints/gpt2_dpo"
+  probe:
+    task_id: "binary_toxicity_classification"
+    classifier_type: "linear_probe"
+    weight_shape: "[d_model, 2]"
+    toxic_direction: "W_toxic[:, 1]"
+    train_hook: "dpo_toxicity.probes:train_binary_toxicity_probe"
+    evaluate_hook: "dpo_toxicity.evaluation:evaluate_binary_probe"
+    checkpoint_path: "results/checkpoints/toxicity_probe.json"
+  ppo:
+    train_hook: "dpo_toxicity.dpo_training:train_ppo_baseline"
+    batch_size: 4
+    learning_rate: 0.000001
+    max_gradient_norm: 10
+    trace_path: "results/training_trace.json"
+  runtime_bounds:
+    runtime_smoke:
+      max_train_steps: 2
+      max_probe_steps: 2
+      max_generation_batches: 2
+    docker_validate:
+      max_train_steps: 1
+      max_probe_steps: 1
+      max_generation_batches: 1
+    full:
+      max_train_steps: null
+      max_probe_steps: null
+      max_generation_batches: null
+
+vector_registry:
+  probe_toxic_direction:
+    id: "probe_toxic_direction"
+    aliases: ["W_toxic[:,1]", "toxic_probe_vector", "probe_direction"]
+    source: "binary_toxicity_probe"
+    shape_contract: "[d_model]"
+    extraction_rule: "take column 1 from W_toxic matrix of shape [d_model, 2]"
+    extraction_hook: "dpo_toxicity.probes:extract_toxic_probe_direction"
+    projection_hook: "dpo_toxicity.vectors:project_vector_to_vocab"
+  mlp_value_vector_layer19_index770:
+    id: "MLP.v_770^19"
+    aliases: ["MLP.v_770^19", "layer_19_value_770", "table_1_example_vector"]
+    source: "transformer_mlp_value_matrix"
+    layer: 19
+    matrix_index: 770
+    value_vector_kind: "mlp_value_vector"
+    extraction_hook: "dpo_toxicity.vectors:extract_mlp_value_vector"
+    projection_hook: "dpo_toxicity.vectors:project_vector_to_vocab"
+    table_1_required: true
+  svd_toxic_direction:
+    id: "svd_toxic_direction"
+    aliases: ["svd_direction", "toxic_svd_component"]
+    source: "toxicity_activation_decomposition"
+    extraction_hook: "dpo_toxicity.vectors:extract_svd_toxic_direction"
+    projection_hook: "dpo_toxicity.vectors:project_vector_to_vocab"
+    evaluation_hook: "dpo_toxicity.evaluation:evaluate_vector_attribution"
+
+sweep_registry:
+  selected_default_sweep_id: "bounded_similarity_guidance_scale"
+  sweeps:
+    bounded_similarity_guidance_scale:
+      id: "bounded_similarity_guidance_scale"
+      parameter: "method_registry.pplm_guidance.parameters.similarity_guidance_scale"
+      values: [9, 1, 10]
+      runtime_smoke_values: [9]
+      full_mode_values: [9, 1, 10]
+      decisive_default: 9
+      rationale: "Paper-visible similarity-guidance values are exposed as bounded registry values; default smoke executes only the decisive wiring value to avoid exhaustive generation."
+      artifact_path: "results/sensitivity_report.json"
+    generation_length:
+      id: "generation_length_20_tokens"
+      parameter: "generation.max_new_tokens"
+      values: [20]
+      runtime_smoke_values: [20]
+      full_mode_values: [20]
+      rationale: "Paper-derived protocol generates 20 tokens."
+    table_1_layer_vector:
+      id: "table_1_layer19_mlp_v770"
+      parameter: "vector_registry.mlp_value_vector_layer19_index770"
+      values:
+        - layer: 19
+          vector_id: "MLP.v_770^19"
+          matrix_index: 770
+      runtime_smoke_values:
+        - layer: 19
+          vector_id: "MLP.v_770^19"
+          matrix_index: 770
+      full_mode_values:
+        - layer: 19
+          vector_id: "MLP.v_770^19"
+          matrix_index: 770
+      rationale: "Addendum-clarified Table 1 example vector."
+
+generation:
+  max_new_tokens: 20
+  temperature: 1.0
+  top_k: 10
+  do_sample: true
+  prompt_dataset_id: "wikitext"
+  toxicity_scorer:
+    scorer_id: "normalized_toxicity_score_v1"
+    threshold: 0.5
+    scorer_hook: "dpo_toxicity.evaluation:score_toxicity"
+  output_fields:
+    - "prompt_id"
+    - "model_id"
+    - "method_id"
+    - "prompt"
+    - "completion"
+    - "toxicity_score"
+    - "score_normalized"
+    - "is_toxic"
+
+evaluation:
+  protocol_id: "mechanistic_dpo_toxicity_evaluation"
+  hook: "dpo_toxicity.evaluation:run_evaluation_protocol"
+  metrics:
+    toxicity_rate:
+      id: "toxicity_rate"
+      formula: "mean(is_toxic)"
+      threshold_source: "score_protocol.toxicity_score_normalization.default_binary_threshold"
+      artifact_path: "results/metrics.json"
+    probe_f1:
+      id: "probe_f1"
+      formula: "2 * precision * recall / (precision + recall)"
+      artifact_path: "results/metrics.json"
+    activation_shift:
+      id: "activation_shift"
+      formula: "mean_vector_difference(normed residual or MLP activations between base and DPO model)"
+      artifact_path: "results/metrics.json"
+    perplexity:
+      id: "perplexity"
+      formula: "exp(mean_negative_log_likelihood)"
+      dataset_id: "wikitext"
+      artifact_path: "results/metrics.json"
+    logit_lens_toxic_probability:
+      id: "logit_lens_toxic_probability"
+      formula: "probability mass or ranked logit projection for toxic-vector top tokens through logit lens"
+      artifact_path: "results/metrics.json"
+    intervention_delta_toxicity:
+      id: "intervention_delta_toxicity"
+      formula: "toxicity_rate(intervened) - toxicity_rate(control)"
+      artifact_path: "results/metrics.json"
+    unalign_recovery_rate:
+      id: "unalign_recovery_rate"
+      formula: "toxicity_rate(unaligned_variant) - toxicity_rate(DPO_model)"
+      artifact_path: "results/metrics.json"
+  table_1_reproduction:
+    id: "table_1_top_token_projection"
+    hook: "src.reproduction_table_measurement:measure_table_1_vectors"
+    artifact_path: "results/tables/table_1_top_tokens.csv"
+    top_tokens_definition: "Tokens with highest dot-products against the specified toxic vector."
+    required_vectors:
+      - "probe_toxic_direction"
+      - "MLP.v_770^19"
+      - "svd_toxic_direction"
+    safety_policy: "Default smoke route may compute safe fixture tokens and must not print offensive paper examples."
+  sensitivity:
+    hook: "dpo_toxicity.evaluation:run_sensitivity_evaluation"
+    artifact_path: "results/sensitivity_report.json"
+    parameters:
+      similarity_guidance_scale: [9, 1, 10]
+      max_new_tokens: [20]
+
+experiment_registry:
+  default_runtime_smoke:
+    id: "default_runtime_smoke"
+    mode: "runtime_smoke"
+    hypothesis: "Wiring and bounded measured paths are executable without full training."
+    methods: ["ours", "ppo", "oracle"]
+    model_variants: ["GPT2", "GPT2_DPO"]
+    datasets: ["wikitext", "toxicity_probe_training", "preference_pairs"]
+    sweeps:
+      similarity_guidance_scale: [9]
+      max_new_tokens: [20]
+    outputs:
+      - "results/readiness.json"
+      - "results/evaluation_result.json"
+      - "results/config_resolved.json"
+      - "results/dataset_registry.json"
+      - "results/data_manifest.json"
+      - "results/experiment_registry.json"
+      - "results/sensitivity_report.json"
+  full_paper_route:
+    id: "full_paper_route"
+    mode: "full"
+    hypothesis: "DPO toxicity reduction is explained by mechanistic changes in toxicity directions and can be causally probed by interventions and un-aligning."
+    methods: ["ours", "ppo", "oracle"]
+    model_variants: ["GPT2", "GPT2_DPO"]
+    optional_model_variants_if_accessible: ["Llama2", "Llama2_DPO"]
+    datasets: ["wikitext", "toxicity_probe_training", "preference_pairs"]
+    sweeps:
+      similarity_guidance_scale: [9, 1, 10]
+      max_new_tokens: [20]
+      table_1_vector:
+        - "MLP.v_770^19"
+    outputs:
+      - "results/config_resolved.json"
+      - "results/dataset_registry.json"
+      - "results/data_manifest.json"
+      - "results/experiment_registry.json"
+      - "results/metrics.json"
+      - "results/sensitivity_report.json"
+      - "results/training_trace.json"
+      - "results/tables/table_1_top_tokens.csv"
+
+artifacts:
+  root: "results"
+  auxiliary_artifact_dir_env: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  config_resolved_json: "results/config_resolved.json"
+  readiness_json: "results/readiness.json"
+  evaluation_result_json: "results/evaluation_result.json"
+  sensitivity_report_json: "results/sensitivity_report.json"
+  dataset_registry_json: "results/dataset_registry.json"
+  environment_registry_json: "results/environment_registry.json"
+  method_registry_json: "results/method_registry.json"
+  ablation_registry_json: "results/ablation_registry.json"
+  experiment_registry_json: "results/experiment_registry.json"
+  data_manifest_json: "results/data_manifest.json"
+  metrics_json: "results/metrics.json"
+  training_trace_json: "results/training_trace.json"
+  artifact_manifest_json: "results/artifact_manifest.json"
+  scope_report_json: "results/scope_report.json"
+  table_1_top_tokens_csv: "results/tables/table_1_top_tokens.csv"
+  summary_table_csv: "results/tables/summary.csv"
+  checkpoints_dir: "results/checkpoints"
+  writer_hooks:
+    config_resolved: "dpo_toxicity.reporting:write_config_resolved"
+    registry_artifacts: "dpo_toxicity.reporting:write_registry_artifacts"
+    data_manifest: "dpo_toxicity.reporting:write_data_manifest"
+    metrics: "dpo_toxicity.reporting:write_metrics"
+    sensitivity: "dpo_toxicity.reporting:write_sensitivity_report"
+    training_trace: "dpo_toxicity.reporting:write_training_trace"
+    table_1: "dpo_toxicity.reporting:write_table_1_artifact"
+    readiness: "dpo_toxicity.reporting:write_readiness"
+  smoke_rules:
+    create_parent_directories: true
+    readiness_artifacts_allowed: true
+    schema_only_paper_visible_outputs_forbidden: true
+    paper_visible_content_requires_measured_code_path: true
+
+factory:
+  config_factory_hook: "dpo_toxicity.config:ConfigFactory.from_yaml"
+  load_resolved_config_hook: "dpo_toxicity.config:load_resolved_config"
+  registry_factory_hook: "dpo_toxicity.registry:build_registries"
+  environment_factory_hook: "dpo_toxicity.registry:build_environment_registry"
+  data_pipeline_factory_hook: "dpo_toxicity.data:build_data_pipeline"
+  model_factory_hook: "dpo_toxicity.modeling:build_model_adapter"
+  method_factory_hook: "dpo_toxicity.registry:build_method_registry"
+  evaluation_factory_hook: "dpo_toxicity.evaluation:build_evaluation_protocol"
+  artifact_writer_factory_hook: "dpo_toxicity.reporting:build_artifact_writer"
+
+tests:
+  interface_tests:
+    - "tests/test_interfaces.py::test_resolved_config_contains_required_methods"
+    - "tests/test_interfaces.py::test_wikitext_alias_registered"
+    - "tests/test_interfaces.py::test_bounded_similarity_guidance_sweep_values"
+    - "tests/test_interfaces.py::test_runtime_smoke_route_writes_readiness"
+  runtime_smoke_command: "python scripts/run_reproduction.py --mode runtime_smoke"
+  timeout_seconds: 10
+  required_importable_surfaces:
+    - "dpo_toxicity.config"
+    - "dpo_toxicity.registry"
+    - "dpo_toxicity.data"
+    - "dpo_toxicity.modeling"
+    - "dpo_toxicity.probes"
+    - "dpo_toxicity.dpo_training"
+    - "dpo_toxicity.evaluation"
+    - "dpo_toxicity.vectors"
+    - "dpo_toxicity.interventions"
+    - "dpo_toxicity.unalign"
+    - "dpo_toxicity.reporting"
+    - "src.classification_binary_toxicity"
+    - "src.reproduction_table_measurement"
+    - "src.evaluation_protocol"
+    - "src.pplm_pairwise_toxicity"
+
+dependency_policy:
+  optional_heavy_dependencies:
+    - "torch"
+    - "transformers"
+    - "datasets"
+    - "trl"
+    - "accelerate"
+    - "numpy"
+    - "pandas"
+    - "sklearn"
+  lazy_import_required: true
+  minimal_environment_import_must_not_require_heavy_dependencies: true
+  unavailable_dependency_behavior: "Raise clear runtime error inside full training/evaluation functions, while runtime_smoke may use bounded local fixtures through the same public interfaces."

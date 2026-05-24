@@ -1,0 +1,984 @@
+{
+  "artifact_id": "artifact_manifest",
+  "artifacts": {
+    "artifact_manifest": {
+      "artifact_id": "artifact_manifest",
+      "caption": "Complete artifact manifest.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "manifest covers figure 3, table 1, figure 9, figure 5, table 2, table 3, figure 6, figure 7, result_table",
+      "path": "results/artifact_manifest.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_artifact_manifest",
+      "schema": {
+        "artifact_ids": "all"
+      },
+      "writer_name": "write_artifact_manifest"
+    },
+    "checkpoint": {
+      "artifact_id": "checkpoint",
+      "caption": "Checkpoint manifest for optimizer switch points.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "Adam, Adam+L-BFGS, and NNCG switch-point bookkeeping",
+      "path": "results/checkpoints/checkpoint_manifest.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_checkpoint",
+      "schema": {
+        "switch_points": [
+          "after_adam",
+          "after_adam_lbfgs",
+          "after_nncg"
+        ]
+      },
+      "writer_name": "write_checkpoint_manifest"
+    },
+    "config": {
+      "artifact_id": "config",
+      "caption": "Resolved reproduction configuration with full and smoke budgets.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "configured_full_budget versus executed_smoke_budget declaration",
+      "path": "results/config_resolved.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_config",
+      "schema": {
+        "fields": [
+          "configured_full_budget",
+          "executed_smoke_budget"
+        ]
+      },
+      "writer_name": "write_config_resolved"
+    },
+    "evaluation_result": {
+      "artifact_id": "evaluation_result",
+      "caption": "Smoke evaluation result schema.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "contract evaluation summary, not a benchmark score",
+      "path": "results/evaluation_result.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_evaluation_result",
+      "schema": {
+        "fields": [
+          "status",
+          "dry_run",
+          "fidelity_score_schema"
+        ]
+      },
+      "writer_name": "write_evaluation_result"
+    },
+    "evidence_contract_matrix": {
+      "artifact_id": "evidence_contract_matrix",
+      "caption": "Paper evidence contract matrix.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "machine-readable evidence and trend obligations",
+      "path": "results/evidence_contract_matrix.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_evidence_contract_matrix",
+      "schema": {
+        "trends": [
+          "baseline_outperformance",
+          "positive_parameter_improves",
+          "wave_trajectory_improves"
+        ]
+      },
+      "writer_name": "write_evidence_contract_matrix"
+    },
+    "experiment_registry": {
+      "artifact_id": "experiment_registry",
+      "caption": "Experiment registry preserving paper comparison matrix.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "problem/optimizer/width/seed matrix with bounded smoke selector",
+      "path": "results/experiment_registry.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_experiment_registry",
+      "schema": {
+        "optimizers": [
+          "Adam",
+          "L-BFGS",
+          "Adam+L-BFGS",
+          "NNCG after Adam+L-BFGS",
+          "GD after Adam+L-BFGS"
+        ],
+        "problems": [
+          "convection",
+          "reaction",
+          "wave"
+        ]
+      },
+      "writer_name": "write_experiment_registry"
+    },
+    "figure1_wave_trajectory_json": {
+      "artifact_id": "figure1_wave_trajectory_json",
+      "caption": "Machine-readable Figure 1 wave trajectory data.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "wave PDE Adam/Adam+L-BFGS/NNCG trajectory mapping",
+      "path": "results/figure1_wave_trajectory.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure1_wave_trajectory_json",
+      "schema": {
+        "series": [
+          "Adam",
+          "Adam+L-BFGS",
+          "NNCG after Adam+L-BFGS"
+        ]
+      },
+      "writer_name": "write_figure1_wave_trajectory_json"
+    },
+    "figure2_loss_vs_l2re_csv": {
+      "artifact_id": "figure2_loss_vs_l2re_csv",
+      "caption": "Machine-readable Figure 2 loss versus L2RE scatter data.",
+      "kind": "table",
+      "out_of_scope": false,
+      "paper_semantics": "final L2RE versus final loss per width/optimizer/seed",
+      "path": "results/figure2_loss_vs_l2re.csv",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure2_loss_vs_l2re_csv",
+      "schema": {
+        "columns": [
+          "problem",
+          "optimizer",
+          "width",
+          "seed",
+          "final_loss",
+          "final_L2RE"
+        ]
+      },
+      "writer_name": "write_figure2_loss_vs_l2re_csv"
+    },
+    "figure3_component_spectra_json": {
+      "artifact_id": "figure3_component_spectra_json",
+      "caption": "Machine-readable Figure 3/Figure 7 spectral diagnostics.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "Hessian eigenvalues, spectral density, and condition proxy",
+      "path": "results/figure3_component_spectra.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure3_component_spectra_json",
+      "schema": {
+        "metrics": [
+          "hessian_eigenvalues",
+          "spectral_density",
+          "condition_number"
+        ]
+      },
+      "writer_name": "write_figure3_component_spectra_json"
+    },
+    "figure4_lbfgs_diagnostics_csv": {
+      "artifact_id": "figure4_lbfgs_diagnostics_csv",
+      "caption": "Machine-readable Figure 4 NNCG/GD fine-tuning diagnostics.",
+      "kind": "table",
+      "out_of_scope": false,
+      "paper_semantics": "loss and gradient norm after Adam+L-BFGS fine-tuning",
+      "path": "results/figure4_lbfgs_diagnostics.csv",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure4_lbfgs_diagnostics_csv",
+      "schema": {
+        "columns": [
+          "problem",
+          "method",
+          "iteration",
+          "loss",
+          "gradient_norm"
+        ]
+      },
+      "writer_name": "write_figure4_lbfgs_diagnostics_csv"
+    },
+    "figure_1": {
+      "artifact_id": "figure_1",
+      "caption": "Figure 1. Wave PDE optimizer trajectory: Adam converges slowly due to ill-conditioning; Adam+L-BFGS stalls after about 40000 steps; NNCG after Adam+L-BFGS provides further improvement.",
+      "kind": "figure",
+      "out_of_scope": false,
+      "paper_semantics": "wave PDE trajectory for Adam, Adam+L-BFGS, and NNCG after Adam+L-BFGS",
+      "path": "results/figures/figure_1.png",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure_1",
+      "schema": {
+        "series": [
+          "Adam",
+          "Adam+L-BFGS",
+          "NNCG after Adam+L-BFGS"
+        ],
+        "x": "iteration",
+        "y": "loss/L2RE"
+      },
+      "writer_name": "write_figure_1"
+    },
+    "figure_10": {
+      "artifact_id": "figure_10",
+      "caption": "Figure 10. Estimated condition number after 41000 iterations of Adam+L-BFGS with different residual point counts from a 255 x 100 interior grid; reports Hessian eigenvalues and kappa_L.",
+      "kind": "figure",
+      "out_of_scope": false,
+      "paper_semantics": "residual point count versus Hessian eigenvalues and condition number kappa_L",
+      "path": "results/figures/figure_10.png",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure_10",
+      "schema": {
+        "metrics": [
+          "lambda_i",
+          "condition_number"
+        ],
+        "x": "residual_point_count",
+        "y": "kappa_L"
+      },
+      "writer_name": "write_figure_10"
+    },
+    "figure_2": {
+      "artifact_id": "figure_2",
+      "caption": "Figure 2. Final L2RE against final loss for each combination of network width, optimization strategy, and random seed across all PDEs.",
+      "kind": "figure",
+      "out_of_scope": false,
+      "paper_semantics": "loss-vs-L2RE scatter demonstrating lower loss generally corresponds to lower L2RE",
+      "path": "results/figures/figure_2.png",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure_2",
+      "schema": {
+        "group_by": [
+          "problem",
+          "optimizer",
+          "width",
+          "seed"
+        ],
+        "x": "final_loss",
+        "y": "final_L2RE"
+      },
+      "writer_name": "write_figure_2"
+    },
+    "figure_3": {
+      "artifact_id": "figure_3",
+      "caption": "Figure 3. Spectral density of Hessian and preconditioned Hessian after 41000 iterations of Adam+L-BFGS, showing ill-conditioning and conditioning improvement by L-BFGS.",
+      "kind": "figure",
+      "out_of_scope": false,
+      "paper_semantics": "total-loss Hessian and preconditioned-Hessian spectral density",
+      "path": "results/figures/figure_3.png",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure_3",
+      "schema": {
+        "metrics": [
+          "hessian_eigenvalues",
+          "spectral_density",
+          "condition_number"
+        ]
+      },
+      "writer_name": "write_figure_3"
+    },
+    "figure_4": {
+      "artifact_id": "figure_4",
+      "caption": "Figure 4. Performance of NNCG and GD after Adam+L-BFGS; NNCG reduces loss by more than 10x while GD fails to make comparable progress.",
+      "kind": "figure",
+      "out_of_scope": false,
+      "paper_semantics": "NNCG versus gradient descent fine-tuning after Adam+L-BFGS",
+      "path": "results/figures/figure_4.png",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure_4",
+      "schema": {
+        "metrics": [
+          "loss",
+          "gradient_norm"
+        ],
+        "series": [
+          "NNCG after Adam+L-BFGS",
+          "GD after Adam+L-BFGS"
+        ]
+      },
+      "writer_name": "write_figure_4"
+    },
+    "figure_5": {
+      "artifact_id": "figure_5",
+      "caption": "Figure 5. Absolute errors of PINN solutions at optimizer switch points: after Adam, after Adam+L-BFGS, and after NNCG.",
+      "kind": "figure",
+      "out_of_scope": false,
+      "paper_semantics": "absolute-error maps at optimizer switch points",
+      "path": "results/figures/figure_5.png",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure_5",
+      "schema": {
+        "columns": [
+          "after_adam",
+          "after_adam_lbfgs",
+          "after_nncg"
+        ]
+      },
+      "writer_name": "write_figure_5"
+    },
+    "figure_6": {
+      "artifact_id": "figure_6",
+      "caption": "Figure 6. Exact and PINN solution failure-case visualization. Addendum clarification: reproduction of Figure 6 results is out of scope; the artifact path is still materialized as a labeled contract artifact.",
+      "kind": "figure",
+      "out_of_scope": true,
+      "paper_semantics": "out-of-scope failure-case visualization path retained for manifest completeness",
+      "path": "results/figures/figure_6.png",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure_6",
+      "schema": {
+        "status": "out_of_scope_by_addendum"
+      },
+      "writer_name": "write_figure_6"
+    },
+    "figure_7": {
+      "artifact_id": "figure_7",
+      "caption": "Figure 7. Spectral density of Hessian and preconditioned Hessian of each loss component after 41000 iterations of Adam+L-BFGS for reaction and wave problems.",
+      "kind": "figure",
+      "out_of_scope": false,
+      "paper_semantics": "component-wise residual/initial/boundary Hessian spectral density",
+      "path": "results/figures/figure_7.png",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure_7",
+      "schema": {
+        "metrics": [
+          "component_hessian_eigenvalues",
+          "component_spectral_density",
+          "component_condition_number"
+        ]
+      },
+      "writer_name": "write_figure_7"
+    },
+    "figure_8": {
+      "artifact_id": "figure_8",
+      "caption": "Figure 8. Tuned performance of Adam, L-BFGS, and Adam+L-BFGS; min, median, and max loss/L2RE across random seeds for each width.",
+      "kind": "figure",
+      "out_of_scope": false,
+      "paper_semantics": "Appendix D optimizer comparison at difficult coefficient settings",
+      "path": "results/figures/figure_8.png",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure_8",
+      "schema": {
+        "aggregations": [
+          "min",
+          "median",
+          "max"
+        ],
+        "metrics": [
+          "loss",
+          "L2RE"
+        ]
+      },
+      "writer_name": "write_figure_8"
+    },
+    "figure_9": {
+      "artifact_id": "figure_9",
+      "caption": "Figure 9. Loss evaluated along the L-BFGS search direction at different step sizes after 41000 iterations of Adam+L-BFGS.",
+      "kind": "figure",
+      "out_of_scope": false,
+      "paper_semantics": "line-search diagnostic and strong-Wolfe-condition analysis",
+      "path": "results/figures/figure_9.png",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_figure_9",
+      "schema": {
+        "x": "step_size",
+        "y": "loss_along_direction"
+      },
+      "writer_name": "write_figure_9"
+    },
+    "log": {
+      "artifact_id": "log",
+      "caption": "Structured run log.",
+      "kind": "jsonl",
+      "out_of_scope": false,
+      "paper_semantics": "runner trace for smoke/full execution",
+      "path": "results/logs/run_log.jsonl",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_log",
+      "schema": {
+        "fields": [
+          "timestamp",
+          "mode",
+          "event",
+          "artifact"
+        ]
+      },
+      "writer_name": "write_log"
+    },
+    "metrics_json": {
+      "artifact_id": "metrics_json",
+      "caption": "Canonical metrics containing problem, optimizer, width, seed, iteration, loss, and L2RE.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "primary per-run measurement file",
+      "path": "results/metrics.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_metrics_json",
+      "schema": {
+        "metric_schemas": {
+          "L2RE": {
+            "aggregation": [
+              "min",
+              "median",
+              "final"
+            ],
+            "formula": "sqrt(sum_i (u_pred_i-u_ref_i)^2) / max(sqrt(sum_i u_ref_i^2), eps)",
+            "required": true,
+            "type": "float"
+          },
+          "accuracy": {
+            "description": "Auxiliary evidence-contract metric; for PINNs accuracy is normally derived from relative error thresholds.",
+            "required": false,
+            "type": "float"
+          },
+          "condition_number": {
+            "aggregation": [
+              "per_residual_point_count",
+              "per_problem"
+            ],
+            "formula": "kappa_L = lambda_max / max(lambda_min_positive, eps)",
+            "required": false,
+            "type": "float"
+          },
+          "fidelity_score": {
+            "formula": "bounded score combining artifact completeness and trend-consistency checks",
+            "required": false,
+            "type": "float"
+          },
+          "gradient_norm": {
+            "aggregation": [
+              "final",
+              "min"
+            ],
+            "required": false,
+            "type": "float"
+          },
+          "hessian_eigenvalues": {
+            "aggregation": [
+              "top",
+              "bottom_positive",
+              "condition_proxy"
+            ],
+            "required": false,
+            "type": "array[float]"
+          },
+          "loss": {
+            "aggregation": [
+              "min",
+              "median",
+              "final",
+              "trajectory"
+            ],
+            "description": "Total PINN objective; component losses are recorded independently.",
+            "required": true,
+            "type": "float"
+          },
+          "loss_components": {
+            "aggregation": [
+              "component_min",
+              "component_final"
+            ],
+            "description": "Named residual/initial/boundary/data terms before summing total loss.",
+            "fields": [
+              "residual",
+              "initial",
+              "boundary",
+              "data"
+            ],
+            "required": true,
+            "type": "object"
+          },
+          "precision": {
+            "description": "Auxiliary evidence-contract metric retained for benchmark schema compatibility.",
+            "required": false,
+            "type": "float"
+          },
+          "return": {
+            "description": "Auxiliary evidence-contract metric; not a primary PINN paper metric.",
+            "required": false,
+            "type": "float"
+          },
+          "spectral_density": {
+            "aggregation": [
+              "per_problem",
+              "per_component"
+            ],
+            "fields": [
+              "bins",
+              "density",
+              "operator",
+              "loss_component"
+            ],
+            "required": false,
+            "type": "object"
+          },
+          "training_time": {
+            "aggregation": [
+              "sum",
+              "per_iteration"
+            ],
+            "required": false,
+            "type": "float",
+            "unit": "seconds"
+          }
+        },
+        "required_fields": [
+          "problem",
+          "optimizer",
+          "width",
+          "seed",
+          "iteration",
+          "loss",
+          "L2RE"
+        ]
+      },
+      "writer_name": "write_metrics_json"
+    },
+    "predictions": {
+      "artifact_id": "predictions",
+      "caption": "Per-sample PINN prediction records for reference-solution comparison.",
+      "kind": "jsonl",
+      "out_of_scope": false,
+      "paper_semantics": "prediction bookkeeping for L2RE and absolute-error figures",
+      "path": "results/predictions.jsonl",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_predictions",
+      "schema": {
+        "fields": [
+          "problem",
+          "optimizer",
+          "width",
+          "seed",
+          "coordinates",
+          "prediction",
+          "reference"
+        ]
+      },
+      "writer_name": "write_predictions"
+    },
+    "readiness": {
+      "artifact_id": "readiness",
+      "caption": "Smoke readiness report.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "confirms dry-run artifact closure without claiming results",
+      "path": "results/readiness.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_readiness",
+      "schema": {
+        "fields": [
+          "ready",
+          "mode",
+          "dry_run",
+          "created_artifacts"
+        ]
+      },
+      "writer_name": "write_readiness"
+    },
+    "result_figure": {
+      "artifact_id": "result_figure",
+      "caption": "Aggregated experiment result figure for the canonical runner.",
+      "kind": "figure",
+      "out_of_scope": false,
+      "paper_semantics": "summary route combining decisive optimizer-conditioning comparison",
+      "path": "results/figures/experiment_results.png",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_result_figure",
+      "schema": {
+        "metrics": [
+          "loss",
+          "L2RE",
+          "gradient_norm",
+          "condition_number"
+        ]
+      },
+      "writer_name": "write_result_figure"
+    },
+    "result_table": {
+      "artifact_id": "result_table",
+      "caption": "Canonical aggregated result table.",
+      "kind": "table",
+      "out_of_scope": false,
+      "paper_semantics": "machine-readable summary of decisive comparisons",
+      "path": "results/tables/experiment_results.csv",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_result_table",
+      "schema": {
+        "columns": [
+          "problem",
+          "optimizer",
+          "width",
+          "seed",
+          "final_loss",
+          "final_L2RE"
+        ]
+      },
+      "writer_name": "write_result_table"
+    },
+    "run_config": {
+      "artifact_id": "run_config",
+      "caption": "Resolved run configuration for the canonical reproduction route.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "run-level configuration with explicit budget, optimizer, and sweep metadata",
+      "path": "results/run_config.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_run_config",
+      "schema": {
+        "fields": [
+          "configured_full_budget",
+          "executed_smoke_budget",
+          "trend_obligations"
+        ]
+      },
+      "writer_name": "write_run_config"
+    },
+    "run_manifest": {
+      "artifact_id": "run_manifest",
+      "caption": "Run manifest with protocol, trend, and artifact coverage metadata.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "run manifest covering named experiments, baselines, and trend assertions",
+      "path": "results/run_manifest.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_run_manifest",
+      "schema": {
+        "fields": [
+          "artifact_ids",
+          "trend_obligations",
+          "protocol_matrix"
+        ]
+      },
+      "writer_name": "write_run_manifest"
+    },
+    "table_1": {
+      "artifact_id": "table_1",
+      "caption": "Table 1. Lowest loss for Adam, L-BFGS, and Adam+L-BFGS across all network widths after hyperparameter tuning.",
+      "kind": "table",
+      "out_of_scope": false,
+      "paper_semantics": "Adam+L-BFGS should attain smaller loss and L2RE than Adam or L-BFGS alone",
+      "path": "results/tables/table_1.csv",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_table_1",
+      "schema": {
+        "columns": [
+          "problem",
+          "optimizer",
+          "width",
+          "lowest_loss",
+          "L2RE",
+          "seed"
+        ]
+      },
+      "writer_name": "write_table_1"
+    },
+    "table_2": {
+      "artifact_id": "table_2",
+      "caption": "Table 2. Loss and L2RE after fine-tuning by NNCG and GD.",
+      "kind": "table",
+      "out_of_scope": false,
+      "paper_semantics": "NNCG outperforms GD and original Adam+L-BFGS after fine-tuning",
+      "path": "results/tables/table_2.csv",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_table_2",
+      "schema": {
+        "columns": [
+          "problem",
+          "baseline_loss",
+          "method",
+          "fine_tuned_loss",
+          "L2RE"
+        ]
+      },
+      "writer_name": "write_table_2"
+    },
+    "table_3": {
+      "artifact_id": "table_3",
+      "caption": "Table 3. Per-iteration times in seconds of L-BFGS and NNCG on each PDE.",
+      "kind": "table",
+      "out_of_scope": false,
+      "paper_semantics": "NNCG is slower than L-BFGS, especially on wave due to second-derivative HVPs",
+      "path": "results/tables/table_3.csv",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_table_3",
+      "schema": {
+        "columns": [
+          "problem",
+          "optimizer",
+          "per_iteration_seconds"
+        ]
+      },
+      "writer_name": "write_table_3"
+    },
+    "trend_obligations": {
+      "artifact_id": "trend_obligations",
+      "caption": "Semantic result-trend obligations.",
+      "kind": "json",
+      "out_of_scope": false,
+      "paper_semantics": "baseline_outperformance and positive_parameter_improves trend metadata",
+      "path": "results/trend_obligations.json",
+      "required_in_smoke": true,
+      "route_name": "runtime_route_trend_obligations",
+      "schema": {
+        "trend_names": [
+          "baseline_outperformance",
+          "positive_parameter_improves",
+          "wave_trajectory_improves"
+        ]
+      },
+      "writer_name": "write_trend_obligations"
+    }
+  },
+  "configured_full_budget": {
+    "adam_iterations": 41000,
+    "adam_lbfgs_switch_iteration": 40000,
+    "configured_full_budget": true,
+    "figure10_grid": "255 x 100 interior grid",
+    "full_residual_points": 10000,
+    "optimizers": [
+      "Adam",
+      "L-BFGS",
+      "Adam+L-BFGS",
+      "NNCG after Adam+L-BFGS",
+      "GD after Adam+L-BFGS"
+    ],
+    "problems": [
+      "convection",
+      "reaction",
+      "wave"
+    ],
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "spectral_diagnostic_iteration": 41000,
+    "widths": [
+      50,
+      100,
+      200,
+      400
+    ]
+  },
+  "coverage": {
+    "figure6_scope": "out_of_scope_by_addendum_but_path_materialized",
+    "metrics_json_required_fields": [
+      "problem",
+      "optimizer",
+      "width",
+      "seed",
+      "iteration",
+      "loss",
+      "L2RE"
+    ],
+    "required_manifest_entries": [
+      "figure_3",
+      "table_1",
+      "figure_9",
+      "figure_5",
+      "table_2",
+      "table_3",
+      "figure_6",
+      "figure_7",
+      "result_table",
+      "run_config",
+      "run_manifest"
+    ]
+  },
+  "created_at_unix": 1779377166.3971975,
+  "dry_run": true,
+  "executed_smoke_budget": {
+    "boundary_points": 16,
+    "executed_smoke_budget": true,
+    "initial_points": 16,
+    "label": "dry-run contract artifact",
+    "max_experiments": 6,
+    "max_iterations": 3,
+    "reference_points": 64,
+    "residual_points": 32
+  },
+  "label": "dry-run contract artifact",
+  "metric_schemas": {
+    "L2RE": {
+      "aggregation": [
+        "min",
+        "median",
+        "final"
+      ],
+      "formula": "sqrt(sum_i (u_pred_i-u_ref_i)^2) / max(sqrt(sum_i u_ref_i^2), eps)",
+      "required": true,
+      "type": "float"
+    },
+    "accuracy": {
+      "description": "Auxiliary evidence-contract metric; for PINNs accuracy is normally derived from relative error thresholds.",
+      "required": false,
+      "type": "float"
+    },
+    "condition_number": {
+      "aggregation": [
+        "per_residual_point_count",
+        "per_problem"
+      ],
+      "formula": "kappa_L = lambda_max / max(lambda_min_positive, eps)",
+      "required": false,
+      "type": "float"
+    },
+    "fidelity_score": {
+      "formula": "bounded score combining artifact completeness and trend-consistency checks",
+      "required": false,
+      "type": "float"
+    },
+    "gradient_norm": {
+      "aggregation": [
+        "final",
+        "min"
+      ],
+      "required": false,
+      "type": "float"
+    },
+    "hessian_eigenvalues": {
+      "aggregation": [
+        "top",
+        "bottom_positive",
+        "condition_proxy"
+      ],
+      "required": false,
+      "type": "array[float]"
+    },
+    "loss": {
+      "aggregation": [
+        "min",
+        "median",
+        "final",
+        "trajectory"
+      ],
+      "description": "Total PINN objective; component losses are recorded independently.",
+      "required": true,
+      "type": "float"
+    },
+    "loss_components": {
+      "aggregation": [
+        "component_min",
+        "component_final"
+      ],
+      "description": "Named residual/initial/boundary/data terms before summing total loss.",
+      "fields": [
+        "residual",
+        "initial",
+        "boundary",
+        "data"
+      ],
+      "required": true,
+      "type": "object"
+    },
+    "precision": {
+      "description": "Auxiliary evidence-contract metric retained for benchmark schema compatibility.",
+      "required": false,
+      "type": "float"
+    },
+    "return": {
+      "description": "Auxiliary evidence-contract metric; not a primary PINN paper metric.",
+      "required": false,
+      "type": "float"
+    },
+    "spectral_density": {
+      "aggregation": [
+        "per_problem",
+        "per_component"
+      ],
+      "fields": [
+        "bins",
+        "density",
+        "operator",
+        "loss_component"
+      ],
+      "required": false,
+      "type": "object"
+    },
+    "training_time": {
+      "aggregation": [
+        "sum",
+        "per_iteration"
+      ],
+      "required": false,
+      "type": "float",
+      "unit": "seconds"
+    }
+  },
+  "mode": "runtime_smoke",
+  "note": "dry-run contract readiness schema; not real experiment results",
+  "paper_evidence_matrix": {
+    "artifact_inventory": [
+      "results/metrics.json",
+      "results/loss_curves.json",
+      "results/experiment_index.json",
+      "results/experiment_registry.json",
+      "results/artifact_manifest.json",
+      "results/config_resolved.json",
+      "results/readiness.json",
+      "results/evaluation_result.json",
+      "results/loss_trace.json",
+      "results/method_registry.json",
+      "results/optimizer_comparison_metrics.json"
+    ],
+    "obligation_matrix": [
+      "pinn_core",
+      "optimizer_suite",
+      "experiment_reporting",
+      "theory_algorithms",
+      "repo_surface"
+    ],
+    "owned_unit_ids": [
+      "Section 2.1 PINNs",
+      "Section 2.2 problem registry and optimization budget",
+      "Figure 1 wave PDE optimizer trajectory",
+      "Figure 2 final L2RE vs final loss",
+      "Figure 3 Hessian and preconditioned Hessian spectrum",
+      "Figure 4 NNCG and GD after Adam+L-BFGS",
+      "Figure 5 absolute-error switch-point maps",
+      "Figure 6 failure/constant-solution diagnostics",
+      "Figure 7 component Hessian spectrum",
+      "Figure 8 tuned Adam/L-BFGS/Adam+L-BFGS comparison",
+      "Figure 9 L-BFGS search-direction loss slices",
+      "Figure 10 condition number vs residual points",
+      "Table 1 tuned optimizer losses and L2RE",
+      "Table 2 NNCG vs GD fine-tuning",
+      "Table 3 per-iteration timing"
+    ]
+  },
+  "paper_title": "Challenges in Training PINNs: A Loss Landscape Perspective",
+  "required_metrics_json_fields": [
+    "problem",
+    "optimizer",
+    "width",
+    "seed",
+    "iteration",
+    "loss",
+    "L2RE"
+  ],
+  "trend_obligations": [
+    {
+      "artifact_ids": [
+        "figure_1",
+        "figure_2",
+        "figure_4",
+        "figure_8",
+        "table_1",
+        "table_2"
+      ],
+      "name": "baseline_outperformance",
+      "note": "",
+      "polarity": "positive",
+      "statement": "proposed method should be compared against explicit baselines"
+    },
+    {
+      "artifact_ids": [
+        "figure_8",
+        "figure_10"
+      ],
+      "name": "positive_parameter_improves",
+      "note": "",
+      "polarity": "positive",
+      "statement": "nonzero/positive parameter values should preserve the reported improvement trend"
+    },
+    {
+      "artifact_ids": [
+        "figure_1"
+      ],
+      "name": "wave_trajectory_improves",
+      "note": "",
+      "polarity": "positive",
+      "statement": "NNCG after Adam+L-BFGS further improves wave PDE trajectory"
+    }
+  ]
+}

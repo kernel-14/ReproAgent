@@ -1,0 +1,11 @@
+{
+  "allow_download": false,
+  "model_name": "unitary/unbiased-toxic-roberta",
+  "scores": [
+    0.30000000000000004,
+    0.0,
+    0.30000000000000004,
+    0.02
+  ],
+  "status": "fallback_lexical"
+}

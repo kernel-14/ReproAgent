@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stay-on-topic-cfg-repro"
+version = "0.1.0"
+description = "Runnable reproduction code for Stay on topic with Classifier-Free Guidance."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "PaperBench Reproduction Agent" }]
+dependencies = [
+  "numpy>=1.23",
+  "PyYAML>=6.0"
+]
+
+[project.optional-dependencies]
+models = [
+  "torch>=2.0",
+  "transformers>=4.36",
+  "accelerate>=0.25"
+]
+benchmarks = [
+  "datasets>=2.16",
+  "evaluate>=0.4",
+  "lm-eval>=0.4.2",
+  "human-eval>=1.0"
+]
+analysis = [
+  "scipy>=1.10",
+  "pandas>=1.5",
+  "statsmodels>=0.14",
+  "matplotlib>=3.7"
+]
+dev = ["pytest>=7.0"]
+full = ["stay-on-topic-cfg-repro[models,benchmarks,analysis,dev]"]
+
+[project.scripts]
+stay-on-topic-cfg = "main:main"
+run-stay-on-topic-cfg = "scripts.run_experiments:main"
+
+[tool.setuptools]
+py-modules = ["main"]
+packages = ["stay_on_topic_cfg", "scripts"]
+

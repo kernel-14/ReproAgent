@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" role="img" aria-label="Figure 4: activation_shift">
+  <rect width="100%" height="100%" fill="white"/>
+  <text x="320" y="26" text-anchor="middle" font-family="sans-serif" font-size="16">Figure 4: activation_shift</text>
+  <line x1="52" y1="348" x2="588" y2="348" stroke="black"/>
+  <line x1="52" y1="52" x2="52" y2="348" stroke="black"/>
+  <text x="320" y="388" text-anchor="middle" font-family="sans-serif" font-size="12">condition / parameter</text>
+  <text x="16" y="200" transform="rotate(-90 16,200)" text-anchor="middle" font-family="sans-serif" font-size="12">activation_shift</text>
+  <polyline points="52.00,76.26 52.00,65.86 119.00,52.00 186.00,57.46 588.00,348.00" fill="none" stroke="#1f77b4" stroke-width="2"/>
+  <circle cx="52.00" cy="76.26" r="4" fill="#1f77b4"><title>x=0, y=0.6319</title></circle>
+<circle cx="52.00" cy="65.86" r="4" fill="#1f77b4"><title>x=0, y=0.6561</title></circle>
+<circle cx="119.00" cy="52.00" r="4" fill="#1f77b4"><title>x=0.5, y=0.6884</title></circle>
+<circle cx="186.00" cy="57.46" r="4" fill="#1f77b4"><title>x=1, y=0.6757</title></circle>
+<circle cx="588.00" cy="348.00" r="4" fill="#1f77b4"><title>x=4, y=0</title></circle>
+</svg>

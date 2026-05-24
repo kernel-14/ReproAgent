@@ -1,0 +1,917 @@
+# configs/default.yaml
+# BBox-Adapter: Default Experiment Configuration
+#
+# Paper: BBox-Adapter: Lightweight Adapting for Black-Box Large Language Models
+#
+# Reference grounding: paperbench_ref_006 readme.md
+# Reference grounding: paperbench_ref_006 research/readme_exp.md
+# Reference grounding: paperbench_ref_005 toxigen/alice.py
+# Reference grounding: paperbench_ref_002 src/models/qa/transformer_qa.py
+#
+# This file is the canonical default config consumed by scripts/run_experiment.py,
+# src/config/experiment_config.py, src/experiments/evaluation.py, and
+# src/reporting/artifacts.py.  Every named experiment, method selector, parameter
+# sweep, evidence-obligation matrix row, dataset registry entry, and artifact path
+# declared here is a machine-readable contract that downstream code must honour.
+
+# ===========================================================================
+# 0. Global execution defaults
+# ===========================================================================
+global:
+  seed: 42
+  mode: smoke               # smoke | train | eval | full
+  device: cpu               # cpu | cuda | auto
+  log_level: INFO
+  output_dir: results
+  artifact_dir: results
+  dry_run: false            # set true for smoke/schema artifacts only
+
+# ===========================================================================
+# 1. Environment / Task Registry
+#    Ids, aliases, setup metadata, and factory/config hooks for all black-box
+#    LLM environments evaluated in the paper.
+# ===========================================================================
+environment_registry:
+
+  gpt_3_5_turbo:
+    id: gpt_3_5_turbo
+    aliases: [gpt-3.5-turbo, chatgpt, openai_chat]
+    provider: openai
+    model_name: gpt-3.5-turbo
+    api_type: chat_completion
+    endpoint: https://api.openai.com/v1/chat/completions
+    context_window: 4096
+    black_box: true          # no parameter access, no token logprobs
+    supports_logprobs: false
+    factory_hook: src.utils.llm_client.OpenAIClient
+    description: >
+      Primary black-box LLM evaluated in the paper.  gpt-3.5-turbo is the
+      backbone for all main-results experiments (Table 2).  It is used both
+      as the adapted model and (in AI-feedback mode) as the judge.
+
+  davinci_002:
+    id: davinci_002
+    aliases: [text-davinci-002, davinci-002]
+    provider: openai
+    model_name: davinci-002
+    api_type: completion
+    endpoint: https://api.openai.com/v1/completions
+    context_window: 4097
+    black_box: true
+    supports_logprobs: false
+    factory_hook: src.utils.llm_client.OpenAIClient
+    description: >
+      Secondary black-box backbone for plug-and-play transfer evaluation
+      (Table 3).  The adapter trained on gpt-3.5-turbo is plugged into
+      davinci-002 at inference time without re-training.
+
+  mixtral_8x7b:
+    id: mixtral_8x7b
+    aliases: [Mixtral-8x7B-v0, mixtral, mixtral_moe]
+    provider: huggingface
+    model_name: mistralai/Mixtral-8x7B-Instruct-v0.1
+    api_type: text_generation
+    context_window: 32768
+    black_box: true
+    supports_logprobs: false
+    factory_hook: src.utils.llm_client.HuggingFaceClient
+    description: >
+      Open-weight black-box backbone for plug-and-play evaluation (Table 3).
+      Mixtral-8x7B-v0 (Mixture-of-Experts, 46.7 B total / 12.9 B active).
+      Adapter trained on gpt-3.5-turbo is transferred here zero-shot.
+
+  azure_openai:
+    id: azure_openai
+    aliases: [azure_sft, azure_openai_endpoint]
+    provider: azure
+    api_type: chat_completion
+    black_box: true
+    supports_logprobs: false
+    factory_hook: src.utils.llm_client.AzureOpenAIClient
+    description: >
+      Azure-hosted fine-tuned OpenAI model used as the SFT baseline (azure_sft)
+      in Tables 2 and 4.  Fine-tuned via the Azure OpenAI fine-tuning API.
+
+  roberta_large:
+    id: roberta_large
+    aliases: [roberta, roberta-large]
+    provider: huggingface
+    model_name: roberta-large
+    api_type: mlm
+    black_box: false
+    factory_hook: src.utils.llm_client.HuggingFaceClient
+    description: >
+      RoBERTa-large used as the MLM / grey-box baseline (Table 1 taxonomy).
+      Requires access to token-level probabilities but not model parameters.
+
+# ===========================================================================
+# 2. Dataset / Benchmark Registry
+#    Ids, setup metadata, and loader/config hooks for all five benchmarks.
+# ===========================================================================
+dataset_registry:
+
+  gsm8k:
+    id: gsm8k
+    aliases: [grade_school_math, gsm, math_reasoning]
+    hf_path: openai/gsm8k
+    hf_name: main
+    split_train: train
+    split_test: test
+    num_train: 7473
+    num_test: 1319
+    answer_type: numeric
+    answer_extractor: regex_boxed_or_last_number
+    loader_hook: src.data.gsm8k.load_gsm8k
+    metric: exact_match_numeric
+    default_feedback: ground_truth
+    config_file: configs/gsm8k_groundtruth.yaml
+    description: >
+      Grade-School Math 8K — 8-step multi-step math word problems requiring
+      arithmetic reasoning.  Ground-truth numeric answers enable exact-match
+      scoring without an LLM judge.
+    # reference_grounding: paperbench_ref_006 readme.md
+
+  strategyqa:
+    id: strategyqa
+    aliases: [strategy_qa, implicit_reasoning]
+    hf_path: wics/strategy-qa
+    split_train: train
+    split_test: test
+    num_train: 2290
+    num_test: 490
+    answer_type: boolean
+    answer_extractor: yes_no_extractor
+    loader_hook: src.data.strategyqa.load_strategyqa
+    metric: accuracy_binary
+    default_feedback: ai_feedback
+    config_file: configs/strategyqa_ai_feedback.yaml
+    description: >
+      StrategyQA — implicit multi-hop reasoning; binary Yes/No answers.
+      AI feedback used because ground-truth labels are withheld in the
+      public test split.
+    # reference_grounding: paperbench_ref_002 src/models/qa/transformer_qa.py
+
+  truthfulqa:
+    id: truthfulqa
+    aliases: [truthful_qa, tqa]
+    hf_path: truthful_qa
+    hf_name: multiple_choice
+    split_test: validation
+    num_test: 817
+    answer_type: multiple_choice
+    answer_extractor: mc_letter_extractor
+    loader_hook: src.data.truthfulqa.load_truthfulqa
+    metric: mc_accuracy
+    default_feedback: combined
+    config_file: configs/truthfulqa_combined.yaml
+    description: >
+      TruthfulQA — 817 questions testing whether models generate truthful
+      answers.  MC1 and MC2 accuracy metrics.  Combined feedback
+      (ground-truth + AI judge) used in online adaptation.
+    # reference_grounding: paperbench_ref_003 truthfulqa/models.py
+
+  scienceqa:
+    id: scienceqa
+    aliases: [science_qa, sci_qa]
+    hf_path: derek-thomas/ScienceQA
+    split_train: train
+    split_test: test
+    num_train: 12726
+    num_test: 4241
+    answer_type: multiple_choice
+    answer_extractor: mc_letter_extractor
+    loader_hook: src.data.scienceqa.load_scienceqa
+    metric: accuracy_mc
+    default_feedback: ground_truth
+    config_file: configs/scienceqa_groundtruth.yaml
+    description: >
+      ScienceQA — multi-modal science questions; text-only subset used
+      (questions with natural language context only).  Ground-truth letter
+      labels enable exact-match scoring.
+    # reference_grounding: paperbench_ref_006 research/readme_exp.md
+
+  toxigen:
+    id: toxigen
+    aliases: [tox, hate_speech, toxic_generation]
+    hf_path: skg/toxigen-data
+    split_train: train
+    split_test: test
+    num_train: 250000
+    num_test: 940
+    answer_type: generation
+    answer_extractor: raw_text
+    loader_hook: src.data.toxigen.load_toxigen
+    metric: toxicity_rate
+    secondary_metrics: [toxicity_probability, hate_speech_rate, tox_score]
+    default_feedback: ai_feedback
+    config_file: configs/toxigen_ai_feedback.yaml
+    description: >
+      ToxiGen — toxic/non-toxic text generation benchmark.
+      BBox-Adapter reduces toxicity using AI feedback from HateBERT
+      or GPT-3.5-turbo as judge.  Beam-search inference steered by
+      adapter scores (cf. paperbench_ref_005 toxigen/alice.py).
+    # reference_grounding: paperbench_ref_005 toxigen/alice.py
+
+# ===========================================================================
+# 3. Method / Baseline Selector Registry
+#    Complete set covering all methods mentioned in the paper.
+# ===========================================================================
+method_registry:
+
+  # ---------- Our method variants ----------
+  bbox_adapter:
+    id: bbox_adapter
+    aliases: [ours, BBox-ADAPTER, BBox-ADApter, BBOX-ADAPTER]
+    category: our_method
+    requires_lm_params: false
+    requires_logprobs: false
+    requires_retrieval: false
+    uses_small_adapter: true
+    adapter_module: src.models.bbox_adapter.BBoxAdapter
+    description: >
+      BBox-Adapter — energy-based adapter (BERT-based, 0.1B or 0.3B params)
+      trained with ranking NCE loss in an online adaptation framework.
+
+  energy_based_model:
+    id: energy_based_model
+    aliases: [ebm, energy_model]
+    category: our_method
+    requires_lm_params: false
+    requires_logprobs: false
+    uses_small_adapter: true
+    adapter_module: src.bbox_adapter.energy_model.EnergyModel
+    description: >
+      Energy-based reranker at the core of BBox-Adapter.  Assigns scalar
+      energy scores to (question, candidate-answer) pairs.
+
+  ranking_nce:
+    id: ranking_nce
+    aliases: [nce_loss, ranking_nce_loss]
+    category: our_method
+    loss_module: src.bbox_adapter.nce_loss.RankingNCELoss
+    description: >
+      Ranking noise-contrastive estimation loss used to train the energy
+      model.  Positive samples are correct answers; negative samples are
+      other model-generated candidates for the same question.
+
+  online_adaptation:
+    id: online_adaptation
+    aliases: [online_framework, iterative_adaptation]
+    category: our_method
+    trainer_module: src.bbox_adapter.online_adaptation.OnlineAdaptationTrainer
+    description: >
+      Iterative online adaptation framework.  Each iteration: (1) sample
+      candidates from the black-box LLM, (2) label positives/negatives via
+      feedback, (3) update adapter with ranking NCE loss.
+
+  single_step_inference:
+    id: single_step_inference
+    aliases: [single_step, one_shot_inference]
+    category: inference_variant
+    description: >
+      Inference with a single beam (beam_size=1).  Baseline comparison to
+      show the value of beam-based reranking.
+
+  full_step_inference:
+    id: full_step_inference
+    aliases: [full_step, beam_inference]
+    category: inference_variant
+    description: >
+      Full sentence-level beam search inference (beam_size=3 or 5).
+      BBox-Adapter scores each complete candidate answer to select the best.
+
+  ground_truth_feedback:
+    id: ground_truth_feedback
+    aliases: [gt_feedback, oracle_feedback]
+    category: feedback_variant
+    description: >
+      Feedback signal derived from gold labels.  Positive = answer matches
+      gold; negative = answer does not match.  Used for GSM8K and ScienceQA.
+
+  ai_feedback:
+    id: ai_feedback
+    aliases: [llm_feedback, gpt_judge]
+    category: feedback_variant
+    description: >
+      Feedback signal from an AI judge (GPT-3.5-turbo or HateBERT).
+      Used for StrategyQA and ToxiGen where gold labels are unavailable
+      or the reward is generation quality.
+
+  combined_feedback:
+    id: combined_feedback
+    aliases: [hybrid_feedback, combined]
+    category: feedback_variant
+    description: >
+      Combined ground-truth and AI feedback.  Used for TruthfulQA.
+
+  # ---------- Baselines ----------
+  chain_of_thought:
+    id: chain_of_thought
+    aliases: [cot, CoT, chain_of_thought_prompting]
+    category: baseline
+    requires_lm_params: false
+    requires_logprobs: false
+    uses_small_adapter: false
+    description: >
+      Standard chain-of-thought prompting (Wei et al., 2022).  Applied to
+      all experiments as the zero-cost baseline.
+    # reference_grounding: paperbench_ref_006 readme.md
+
+  oracle:
+    id: oracle
+    aliases: [upper_bound, oracle_selection]
+    category: baseline
+    description: >
+      Oracle upper bound — always selects the correct answer from the
+      candidate pool (if present).  Estimates gain from perfect reranking.
+
+  heuristic:
+    id: heuristic
+    aliases: [heuristic_reranker, length_heuristic]
+    category: baseline
+    description: >
+      Heuristic answer selection (e.g., majority vote, answer length) used
+      as a simple reranking baseline without a trained model.
+
+  roberta:
+    id: roberta
+    aliases: [roberta_baseline, roberta_reranker]
+    category: baseline
+    requires_lm_params: false
+    requires_logprobs: true
+    uses_small_adapter: true
+    description: >
+      RoBERTa-large fine-tuned as a discriminative reranker.  Grey-box
+      baseline that requires token-level log-probabilities.
+
+  fine_tuning:
+    id: fine_tuning
+    aliases: [full_ft, full_fine_tuning]
+    category: baseline
+    requires_lm_params: true
+    requires_logprobs: false
+    uses_small_adapter: false
+    description: >
+      Full supervised fine-tuning of the target LLM.  Requires white-box
+      parameter access; included for comparison in Table 1 / Table 4.
+
+  lora:
+    id: lora
+    aliases: [LoRA, low_rank_adaptation]
+    category: baseline
+    requires_lm_params: true
+    requires_logprobs: false
+    uses_small_adapter: true
+    description: >
+      LoRA — parameter-efficient fine-tuning via low-rank weight updates.
+      White-box method; used for cost comparison in Table 4.
+
+  sft_lora:
+    id: sft_lora
+    aliases: [sft_lora_baseline, supervised_lora]
+    category: baseline
+    requires_lm_params: true
+    requires_logprobs: false
+    uses_small_adapter: true
+    description: >
+      Supervised fine-tuning using LoRA adapters.  Compared against
+      BBox-Adapter in Table 2 and Table 4.
+
+  azure_sft:
+    id: azure_sft
+    aliases: [azure_fine_tuning, azure_sft_baseline]
+    category: baseline
+    requires_lm_params: false
+    requires_logprobs: false
+    uses_small_adapter: false
+    description: >
+      Azure OpenAI supervised fine-tuning — fine-tunes gpt-3.5-turbo via
+      Azure API.  Requires no parameter access but incurs high training cost.
+      Compared in Table 2 and Table 4.
+
+  mlm:
+    id: mlm
+    aliases: [masked_lm, bert_mlm]
+    category: baseline
+    requires_lm_params: false
+    requires_logprobs: true
+    uses_small_adapter: false
+    description: >
+      Masked language model reranking baseline.  Grey-box — uses output
+      token probabilities of a BERT-style model for scoring.
+
+  peft:
+    id: peft
+    aliases: [PEFT, parameter_efficient_ft, Parameter-Efficient Fine-Tuning]
+    category: baseline
+    requires_lm_params: true
+    requires_logprobs: false
+    uses_small_adapter: true
+    description: >
+      Generic parameter-efficient fine-tuning category (LoRA, prefix-tuning,
+      etc.).  Grouped in Table 1 taxonomy.
+
+# ===========================================================================
+# 4. Fixed Hyperparameters
+#    Exact anchors from the paper — must not be changed across experiments.
+# ===========================================================================
+fixed_hyperparameters:
+
+  # Batch size anchors (paper Table 4 cost comparison)
+  batch_size_128:
+    name: batch_size_128
+    value: 128
+    description: Default batch size for BBox-Adapter online training.
+
+  batch_size_64:
+    name: batch_size_64
+    value: 64
+    description: Reduced batch size variant for ablation study (Table 5).
+
+  # Adapter architecture
+  adapter_hidden_dim: 768          # BERT-base hidden size
+  adapter_num_layers: 12           # BERT-base transformer layers
+  max_seq_length: 512
+  dropout: 0.1
+
+  # Optimiser
+  optimizer: adamw
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  warmup_steps: 100
+  gradient_clip: 1.0
+
+  # NCE loss
+  nce_temperature: 1.0
+  nce_num_negatives: 7            # paper uses K=7 negatives per positive
+
+  # Online adaptation
+  num_candidates_per_query: 8     # N samples from LLM per question
+  online_eval_interval: 1         # evaluate after every iteration
+
+  # Inference
+  default_beam_size: 5
+  max_new_tokens: 512
+  top_p: 0.95
+
+# ===========================================================================
+# 5. Parameter Sweep Registry
+#    Bounded sweeps exactly as specified in the paper.
+# ===========================================================================
+parameter_sweeps:
+
+  beam_size_sweep:
+    parameter: beam_size
+    values: [1, 3, 5]
+    default: 5
+    description: >
+      Sentence-level beam search width.  beam_size=1 is single-step inference.
+      Paper evaluates 1, 3, 5 to show reranking benefit.
+    # reference_grounding: paperbench_ref_005 toxigen/alice.py (num_beams parameter)
+
+  iteration_count_sweep:
+    parameter: iteration_count
+    values: [0, 1, 2, 3, 4]
+    default: 4
+    description: >
+      Number of online adaptation iterations.  iteration=0 means zero-shot
+      (chain-of-thought only).  Paper evaluates 0–4 to show learning curves.
+
+  adapter_size_sweep:
+    parameter: adapter_size
+    values: [0.1, 0.3]          # in billions of parameters
+    default: 0.1
+    unit: B_params
+    description: >
+      Adapter model size.  0.1B ≈ BERT-base; 0.3B ≈ BERT-large / DeBERTa.
+      Paper reports best across both; ablation Table 5 reports each separately.
+
+  temperature_sweep:
+    parameter: temperature
+    values: [0.0, 0.3, 0.5, 0.7, 1.0]
+    default: 0.7
+    description: >
+      LLM decoding temperature for candidate sampling.  0.0 = greedy.
+      Swept to study diversity–quality trade-off in candidate pool.
+
+  batch_size_sweep:
+    parameter: batch_size
+    values: [64, 128]
+    default: 128
+    anchors: [batch_size_64, batch_size_128]
+    description: >
+      Adapter training batch size.  Paper ablation (Table 5) shows accuracy
+      and training cost for 64 vs 128.
+
+# ===========================================================================
+# 6. Evidence Obligation Matrix
+#    Each row binds an experiment / ablation to its environment, methods,
+#    parameters, trend, and artifact paths.
+# ===========================================================================
+evidence_obligation_matrix:
+
+  experiment_1_gsm8k:
+    id: experiment_1_gsm8k
+    name: "Experiment 1: GSM8K Main Results"
+    dataset: gsm8k
+    environments: [gpt_3_5_turbo]
+    methods: [bbox_adapter, chain_of_thought, azure_sft, sft_lora]
+    feedback: ground_truth
+    parameters:
+      batch_size: 128               # anchor: batch_size_128
+      beam_size: 5
+      adapter_size: [0.1, 0.3]
+      iteration_count: 4
+    metrics: [accuracy, training_cost, inference_cost]
+    expected_trend: >
+      BBox-Adapter achieves higher accuracy than chain_of_thought and lower
+      training cost than azure_sft and sft_lora while matching or exceeding
+      their accuracy (Table 2, Table 4).
+    artifact_paths:
+      - results/main_comparison/metrics.json
+      - results/cost_analysis/metrics.json
+    config_file: configs/gsm8k_groundtruth.yaml
+    # reference_grounding: paperbench_ref_006 readme.md
+
+  experiment_2_strategyqa:
+    id: experiment_2_strategyqa
+    name: "Experiment 2: StrategyQA Main Results"
+    dataset: strategyqa
+    environments: [gpt_3_5_turbo]
+    methods: [bbox_adapter, chain_of_thought, roberta, lora, sft_lora, azure_sft, mlm]
+    feedback: ai_feedback
+    parameters:
+      batch_size: 128
+      beam_size: 5
+      adapter_size: [0.1, 0.3]
+      iteration_count: 4
+    metrics: [accuracy, training_cost, inference_cost, api_cost]
+    expected_trend: >
+      BBox-Adapter outperforms all baselines on accuracy while maintaining
+      competitive training and inference costs (Table 2).
+    artifact_paths:
+      - results/main_comparison/metrics.json
+      - results/cost_analysis/metrics.json
+    config_file: configs/strategyqa_ai_feedback.yaml
+    # reference_grounding: paperbench_ref_002 src/models/qa/transformer_qa.py
+
+  experiment_3_truthfulqa:
+    id: experiment_3_truthfulqa
+    name: "Experiment 3: TruthfulQA Main Results"
+    dataset: truthfulqa
+    environments: [gpt_3_5_turbo]
+    methods: [bbox_adapter, chain_of_thought, roberta, lora, sft_lora, azure_sft, mlm]
+    feedback: combined
+    parameters:
+      batch_size: 128
+      beam_size: 5
+      adapter_size: [0.1, 0.3]
+      iteration_count: 4
+    metrics: [accuracy, mc1_accuracy, mc2_accuracy, training_cost, inference_cost]
+    expected_trend: >
+      BBox-Adapter improves MC1/MC2 accuracy on TruthfulQA relative to the
+      CoT baseline and is competitive with white-box fine-tuning approaches
+      at much lower cost.
+    artifact_paths:
+      - results/main_comparison/metrics.json
+      - results/cost_analysis/metrics.json
+    config_file: configs/truthfulqa_combined.yaml
+
+  experiment_4_scienceqa:
+    id: experiment_4_scienceqa
+    name: "Experiment 4: ScienceQA Main Results"
+    dataset: scienceqa
+    environments: [gpt_3_5_turbo]
+    methods: [bbox_adapter, chain_of_thought, roberta, lora, sft_lora, azure_sft, mlm]
+    feedback: ground_truth
+    parameters:
+      batch_size: 128
+      beam_size: 5
+      adapter_size: [0.1, 0.3]
+      iteration_count: 4
+    metrics: [accuracy, training_cost, inference_cost]
+    expected_trend: >
+      BBox-Adapter achieves state-of-the-art accuracy among black-box methods
+      and is competitive with white-box fine-tuning methods (Table 2).
+    artifact_paths:
+      - results/main_comparison/metrics.json
+      - results/cost_analysis/metrics.json
+    config_file: configs/scienceqa_groundtruth.yaml
+
+  experiment_5_toxigen:
+    id: experiment_5_toxigen
+    name: "Experiment 5: ToxiGen Toxicity Reduction"
+    dataset: toxigen
+    environments: [gpt_3_5_turbo]
+    methods: [bbox_adapter, chain_of_thought]
+    feedback: ai_feedback
+    parameters:
+      batch_size: 128
+      beam_size: 5
+      adapter_size: [0.1, 0.3]
+      iteration_count: 4
+    metrics: [toxicity, toxicity_probability, hate_speech_rate, tox_score]
+    expected_trend: >
+      BBox-Adapter significantly reduces toxicity rate and toxicity probability
+      compared to the base black-box LLM without task-specific fine-tuning.
+      (Table 2, ToxiGen rows.)
+    artifact_paths:
+      - results/toxigen/metrics.json
+    config_file: configs/toxigen_ai_feedback.yaml
+    # reference_grounding: paperbench_ref_005 toxigen/alice.py
+
+  ablation_1_adapter_size:
+    id: ablation_1_adapter_size
+    name: "Ablation 1: Adapter Size (0.1B vs 0.3B)"
+    datasets: [gsm8k, strategyqa, truthfulqa, scienceqa, toxigen]
+    environments: [gpt_3_5_turbo]
+    methods: [bbox_adapter]
+    sweep: adapter_size_sweep
+    parameters:
+      batch_size: 128
+      beam_size: 5
+      iteration_count: 4
+    metrics: [accuracy]
+    expected_trend: >
+      Larger adapter (0.3B) provides modest improvement over smaller (0.1B);
+      both outperform baselines, demonstrating robustness to adapter size.
+    artifact_paths:
+      - results/ablation/metrics.json
+
+  ablation_2_batch_size:
+    id: ablation_2_batch_size
+    name: "Ablation 2: Batch Size (64 vs 128)"
+    datasets: [gsm8k, strategyqa]
+    environments: [gpt_3_5_turbo]
+    methods: [bbox_adapter]
+    sweep: batch_size_sweep
+    parameters:
+      adapter_size: 0.1
+      beam_size: 5
+      iteration_count: 4
+    metrics: [accuracy, training_cost]
+    expected_trend: >
+      Batch size 128 provides the best accuracy/cost trade-off.  Batch size 64
+      reduces memory and training cost at a small accuracy penalty.
+    artifact_paths:
+      - results/ablation/metrics.json
+
+  cost_analysis:
+    id: cost_analysis
+    name: "Cost Analysis: Training and Inference"
+    datasets: [gsm8k, strategyqa]
+    environments: [gpt_3_5_turbo, azure_openai]
+    methods: [bbox_adapter, azure_sft, sft_lora, chain_of_thought]
+    parameters:
+      batch_size: 128
+      adapter_size: 0.1
+      iteration_count: 4
+    metrics:
+      - training_cost         # USD for fine-tuning / API calls
+      - inference_cost        # USD per query
+      - api_cost              # cumulative OpenAI/Azure API spend
+      - memory_usage          # peak CPU/GPU RAM (GB)
+      - gpu_memory            # peak VRAM (GB)
+    expected_trend: >
+      BBox-Adapter has significantly lower training cost than azure_sft and
+      sft_lora while achieving comparable or better accuracy.  Inference cost
+      is similar to chain-of-thought (no extra LLM calls).
+    artifact_paths:
+      - results/cost_analysis/metrics.json
+
+  plug_and_play_transfer:
+    id: plug_and_play_transfer
+    name: "Table 3: Plug-and-Play Transfer (davinci-002, Mixtral-8x7B)"
+    datasets: [gsm8k, strategyqa, truthfulqa, scienceqa]
+    environments: [davinci_002, mixtral_8x7b]
+    methods: [bbox_adapter]
+    parameters:
+      adapter_trained_on: gpt_3_5_turbo
+      batch_size: 128
+      adapter_size: 0.1
+      beam_size: 5
+      iteration_count: 4
+    metrics: [accuracy]
+    expected_trend: >
+      An adapter trained on gpt-3.5-turbo generalises to davinci-002 and
+      Mixtral-8x7B without re-training, achieving improvements over CoT
+      baseline on those models (Table 3).
+    artifact_paths:
+      - results/main_comparison/metrics.json
+
+# ===========================================================================
+# 7. Protocol Matrix
+#    Links named experiment runs to their environment, methods, measurements,
+#    and artifact paths.
+# ===========================================================================
+protocol_matrix:
+
+  main_comparison:
+    id: main_comparison
+    description: >
+      Full main-results comparison (Table 2) across five datasets.
+      Covers experiments 1–5 above.
+    experiments:
+      - experiment_1_gsm8k
+      - experiment_2_strategyqa
+      - experiment_3_truthfulqa
+      - experiment_4_scienceqa
+      - experiment_5_toxigen
+    environments: [gpt_3_5_turbo]
+    methods:
+      - bbox_adapter
+      - chain_of_thought
+      - oracle
+      - heuristic
+      - roberta
+      - fine_tuning
+      - lora
+      - sft_lora
+      - azure_sft
+      - mlm
+    metrics: [accuracy, training_cost, inference_cost]
+    artifact_path: results/main_comparison/metrics.json
+    table_reference: "Table 2"
+
+  ablation_adapter_size:
+    id: ablation_adapter_size
+    description: Ablation over adapter model size (0.1B vs 0.3B).
+    experiments: [ablation_1_adapter_size]
+    sweep: adapter_size_sweep
+    methods: [bbox_adapter]
+    metrics: [accuracy]
+    artifact_path: results/ablation/metrics.json
+    table_reference: "Table 5 (adapter size rows)"
+
+  ablation_batch_size:
+    id: ablation_batch_size
+    description: Ablation over training batch size (64 vs 128).
+    experiments: [ablation_2_batch_size]
+    sweep: batch_size_sweep
+    methods: [bbox_adapter]
+    metrics: [accuracy, training_cost]
+    artifact_path: results/ablation/metrics.json
+    table_reference: "Table 5 (batch size rows)"
+
+  cost_efficiency:
+    id: cost_efficiency
+    description: >
+      Cost-efficiency analysis comparing BBox-Adapter to fine-tuning
+      baselines (Table 4).
+    experiments: [cost_analysis]
+    environments: [gpt_3_5_turbo, azure_openai]
+    methods: [bbox_adapter, azure_sft, sft_lora, chain_of_thought]
+    metrics: [training_cost, inference_cost, api_cost, memory_usage, gpu_memory]
+    artifact_path: results/cost_analysis/metrics.json
+    table_reference: "Table 4"
+
+  toxicity_reduction:
+    id: toxicity_reduction
+    description: ToxiGen toxicity reduction protocol.
+    experiments: [experiment_5_toxigen]
+    environments: [gpt_3_5_turbo]
+    methods: [bbox_adapter, chain_of_thought]
+    metrics: [toxicity, toxicity_probability, hate_speech_rate, tox_score]
+    artifact_path: results/toxigen/metrics.json
+    table_reference: "Table 2 (ToxiGen rows)"
+
+  plug_and_play:
+    id: plug_and_play
+    description: >
+      Plug-and-play cross-model transfer (Table 3).
+      Adapter trained on gpt-3.5-turbo; tested on davinci-002 and Mixtral-8x7B.
+    experiments: [plug_and_play_transfer]
+    environments: [davinci_002, mixtral_8x7b]
+    methods: [bbox_adapter]
+    metrics: [accuracy]
+    artifact_path: results/main_comparison/metrics.json
+    table_reference: "Table 3"
+
+# ===========================================================================
+# 8. Artifact Contract
+#    Canonical output paths produced by experiments and expected by
+#    downstream validation.
+# ===========================================================================
+artifact_contract:
+  paths:
+    - results/main_comparison/metrics.json
+    - results/ablation/metrics.json
+    - results/cost_analysis/metrics.json
+    - results/toxigen/metrics.json
+    - results/evidence_contract_matrix.json
+    - results/experiment_registry.json
+    - readiness.json
+    - evaluation_result.json
+  schema_version: "1.0"
+  label: >
+    Smoke/dry-run artifacts are labelled "dry_run": true and must not be
+    interpreted as real experiment results.  Full experiment outputs set
+    "dry_run": false.
+
+# ===========================================================================
+# 9. Adapter Model Configurations
+#    0.1B and 0.3B adapter size presets.
+# ===========================================================================
+adapter_configs:
+
+  adapter_0_1b:
+    id: adapter_0_1b
+    size_label: "0.1B"
+    size_params: 0.1e9
+    backbone: microsoft/deberta-v3-base
+    hidden_dim: 768
+    num_layers: 12
+    num_attention_heads: 12
+    intermediate_dim: 3072
+    max_position_embeddings: 512
+    vocab_size: 30522
+    description: "BERT-base sized adapter (~110M parameters)."
+
+  adapter_0_3b:
+    id: adapter_0_3b
+    size_label: "0.3B"
+    size_params: 0.3e9
+    backbone: microsoft/deberta-v3-large
+    hidden_dim: 1024
+    num_layers: 24
+    num_attention_heads: 16
+    intermediate_dim: 4096
+    max_position_embeddings: 512
+    vocab_size: 30522
+    description: "BERT-large sized adapter (~340M parameters)."
+
+# ===========================================================================
+# 10. Inference Configuration
+#     Sentence-level beam search parameters.
+#     reference_grounding: paperbench_ref_005 toxigen/alice.py
+# ===========================================================================
+inference:
+  # Default beam search config (cf. toxigen/alice.py beam_search signature)
+  beam_size: 5              # sweep: [1, 3, 5]
+  max_length: 512
+  length_penalty: 1.0
+  end_token: "\n"
+  vocab_size: 50257         # GPT-2/3 vocab for token-level fallback
+  early_stopping: false
+  # reference_grounding: paperbench_ref_005 toxigen/alice.py (num_beams, max_length, length_penalty)
+
+  # Candidate sampling
+  num_candidates: 8
+  temperature: 1.0
+  top_p: 0.95
+  top_k: 0
+
+# ===========================================================================
+# 11. Training Configuration
+# ===========================================================================
+training:
+  batch_size: 128             # anchor: batch_size_128
+  batch_size_small: 64        # anchor: batch_size_64
+  num_iterations: 4           # online adaptation iterations (sweep: 0-4)
+  learning_rate: 2.0e-5
+  optimizer: adamw
+  weight_decay: 0.01
+  warmup_steps: 100
+  gradient_clip: 1.0
+  nce_temperature: 1.0
+  num_negatives: 7
+  save_every_n_iterations: 1
+  eval_every_n_iterations: 1
+  checkpoint_dir: checkpoints
+
+# ===========================================================================
+# 12. Evaluation Configuration
+# ===========================================================================
+evaluation:
+  metrics:
+    qa_accuracy: true
+    mc1_accuracy: true
+    mc2_accuracy: true
+    toxicity_rate: true
+    toxicity_probability: true
+    hate_speech_rate: true
+    training_cost_usd: true
+    inference_cost_usd: true
+    api_cost_usd: true
+    memory_gb: true
+    gpu_memory_gb: true
+  standard_deviation: true     # report mean ± std across runs
+  num_seeds: 3                 # seeds for std computation
+  seeds: [42, 123, 456]
+
+# ===========================================================================
+# 13. Logging / Reporting
+# ===========================================================================
+logging:
+  level: INFO
+  log_to_file: true
+  log_file: logs/training.log
+  artifact_log: results/online_adaptation_log.json
+  curve_log: results/positive_negative_curves.json
+
+reporting:
+  write_json: true
+  write_csv: false
+  write_figures: false        # enable for full mode
+  figure_dir: figures
+  table_format: paper         # paper | csv | markdown

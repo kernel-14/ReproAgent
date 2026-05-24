@@ -1,0 +1,217 @@
+# reference_grounding: paperbench_ref_001 url_benchmark/d4rl_benchmark.py
+# reference_grounding: paperbench_ref_001 url_benchmark/agent/ddpg.py
+# reference_grounding: paperbench_ref_001 url_benchmark/pretrain.py
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fre-repro"
+version = "0.1.0"
+description = "Reproduction code for Unsupervised Zero-Shot Reinforcement Learning via Functional Reward Encodings."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+  { name = "PaperBench Reproduction Agent" }
+]
+keywords = [
+  "reinforcement-learning",
+  "offline-rl",
+  "zero-shot",
+  "functional-reward-encodings",
+  "reward-free-rl",
+  "representation-learning"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+dependencies = [
+  "numpy>=1.23",
+  "PyYAML>=6.0"
+]
+
+[project.optional-dependencies]
+training = [
+  "torch>=2.0"
+]
+simulators = [
+  "gymnasium>=0.29",
+  "mujoco>=2.3",
+  "minari>=0.4"
+]
+d4rl = [
+  "gymnasium>=0.29",
+  "mujoco>=2.3"
+]
+plotting = [
+  "matplotlib>=3.7",
+  "pandas>=1.5"
+]
+analysis = [
+  "scikit-learn>=1.2",
+  "pandas>=1.5"
+]
+dev = [
+  "pytest>=7.4",
+  "ruff>=0.1.0"
+]
+full = [
+  "fre-repro[training,simulators,plotting,analysis,dev]"
+]
+
+[project.urls]
+Homepage = "https://github.com/paperbench-repro/fre-repro"
+Repository = "https://github.com/paperbench-repro/fre-repro"
+
+[project.scripts]
+fre-repro = "main:main"
+run-fre-experiments = "main:main"
+
+[tool.setuptools]
+py-modules = ["main"]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["fre_repro*", "src*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json", "*.md"]
+"configs" = ["*.yaml"]
+
+[tool.paperbench_repro]
+paper = "Unsupervised Zero-Shot Reinforcement Learning via Functional Reward Encodings"
+package = "fre_repro"
+canonical_entrypoint = "scripts/run_fre_experiments.py"
+console_entrypoint = "fre-repro"
+default_mode = "runtime_smoke"
+full_mode = "full"
+artifact_env_var = "PAPERBENCH_REPRO_ARTIFACT_DIR"
+lazy_optional_dependencies = true
+external_environment_dependencies_are_lazy = true
+external_simulator_dependencies_are_lazy = true
+code_generation_must_not_run_full_training = true
+blacklisted_repositories = ["https://github.com/kvfrans/fre"]
+
+[tool.paperbench_repro.method_contract]
+input = "offline dataset of unlabeled transitions"
+output = "reward function eta -> latent z -> policy pi(a|s,z)"
+encoder_interface = "encoder.encode(reward_function, offline_batch)"
+supports_k_encoder_state_sampling = true
+supports_discrete_reward_embedding = true
+supports_latent_conditioned_policy = true
+supports_offline_training_loop = true
+supports_artifact_writer = true
+supports_cli_or_callable_main = true
+core_contribution_hypothesis = "FRE learns a latent representation of sampled reward functions from unlabeled offline transitions and conditions a policy pi(a|s,z) for zero-shot downstream control."
+decisive_comparison = "FRE versus reward-free and goal-conditioned baselines on held-out task rewards."
+decisive_metric = "zero-shot normalized return and success rate"
+stop_pruning_rationale = "Default execution is bounded runtime smoke that validates real config, data, reward prior, encoder, policy adapter, training-loop, evaluation, and artifact surfaces; exhaustive training, simulator runs, and large sweeps require explicit full mode."
+
+[tool.paperbench_repro.implementation_surfaces]
+config = "fre_repro.configs"
+data_pipeline = "fre_repro.data"
+reward_function_sampler = "fre_repro.reward_priors"
+state_reward_pair_encoder = "fre_repro.models"
+policy_conditioning_adapter = "fre_repro.models"
+offline_training_loop = "fre_repro.algorithms"
+artifact_writer = "fre_repro.artifacts"
+evaluation = "fre_repro.evaluation"
+baselines = "fre_repro.baselines"
+entrypoint = "scripts/run_fre_experiments.py"
+callable_main = "main:main"
+
+[tool.paperbench_repro.reference_grounding]
+d4rl_replay_buffer_builder = "paperbench_ref_001 url_benchmark/d4rl_benchmark.py"
+ddpg_agent_config_intent = "paperbench_ref_001 url_benchmark/agent/ddpg.py"
+checkpoint_loading_intent = "paperbench_ref_001 url_benchmark/pretrain.py"
+
+[tool.paperbench_repro.readiness_checks]
+runtime_smoke_command = "python scripts/run_fre_experiments.py --mode runtime_smoke"
+docker_validate_command = "python scripts/run_fre_experiments.py --mode docker_validate"
+minimal_imports = [
+  "fre_repro",
+  "fre_repro.configs",
+  "fre_repro.data",
+  "fre_repro.reward_priors",
+  "fre_repro.models",
+  "fre_repro.algorithms",
+  "fre_repro.evaluation",
+  "fre_repro.artifacts"
+]
+optional_imports_checked_lazily = [
+  "torch",
+  "gymnasium",
+  "mujoco",
+  "minari",
+  "matplotlib",
+  "pandas",
+  "sklearn"
+]
+smoke_artifacts = [
+  "readiness.json",
+  "evaluation_result.json"
+]
+
+[tool.paperbench_repro.artifacts]
+metrics = "results/metrics.json"
+encoder_checkpoint = "results/checkpoints/fre_encoder.pt"
+reward_prior_config = "results/reward_prior_config.json"
+policy_checkpoint = "results/checkpoints/fre_policy.pt"
+zero_shot_transfer_figure = "results/fig3_zero_shot_transfer.png"
+eval_summary = "results/eval_summary.json"
+benchmark_table = "results/benchmark_table.json"
+benchmark_summary_csv = "results/benchmark_summary.csv"
+scaling_figure = "results/fig5_scaling.png"
+domain_knowledge_figure = "results/fig6_domain_knowledge.png"
+dataset_registry = "results/dataset_registry.json"
+data_manifest = "results/data_manifest.json"
+environment_registry = "results/environment_registry.json"
+scope_report = "results/scope_report.json"
+experiment_registry = "results/experiment_registry.json"
+artifact_manifest = "results/artifact_manifest.json"
+summary_table = "results/tables/summary.csv"
+method_registry = "results/method_registry.json"
+
+[tool.paperbench_repro.protocol.default]
+mode = "runtime_smoke"
+bounded = true
+uses_fixture_when_dataset_missing = true
+writes_readiness_manifests = true
+writes_paper_visible_metrics_only_when_measured = true
+max_encoder_states = 16
+max_reward_functions = 4
+max_train_steps = 8
+max_eval_episodes = 2
+seed = 0
+
+[tool.paperbench_repro.protocol.full]
+mode = "full"
+bounded = false
+requires_explicit_selection = true
+requires_training_extra = true
+requires_dataset_or_simulator = true
+writes_paper_visible_metrics_only_when_measured = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+python_files = ["test_*.py", "*_test.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]

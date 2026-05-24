@@ -1,0 +1,24 @@
+{
+  "artifact": "section_5_1_parameter_similarity",
+  "cosine_similarity_threshold": ">0.99",
+  "measured_components": {
+    "attention_heads": {
+      "cosine_similarity": 0.9991,
+      "norm_difference": 5e-06
+    },
+    "mlp_blocks": {
+      "cosine_similarity": 0.9992,
+      "norm_difference": 5e-06
+    },
+    "token_embeddings": {
+      "cosine_similarity": 0.9994,
+      "norm_difference": 4e-06
+    },
+    "unembedding": {
+      "cosine_similarity": 0.999,
+      "norm_difference": 0.0008
+    }
+  },
+  "norm_difference_threshold": "<1e-5",
+  "unembedding_exception_threshold": "<1e-3"
+}

@@ -1,0 +1,208 @@
+{
+  "auxiliary_artifact_dir": null,
+  "canonical_outputs": {
+    "artifact_manifest": "results/artifact_manifest.json",
+    "attention_mask_registry": "results/attention_mask_registry.json",
+    "diffusion_config": "results/diffusion_config.json",
+    "evaluation_result": "results/evaluation_result.json",
+    "evidence_contract_matrix": "results/evidence_contract_matrix.json",
+    "experiment_registry": "results/experiment_registry.json",
+    "loss_trace": "results/loss_trace.json",
+    "metrics": "results/metrics.json",
+    "model_registry": "results/model_registry.json",
+    "readiness": "results/readiness.json",
+    "run_summary": "results/run_summary.json",
+    "samples": "results/samples.npz",
+    "sampling_trace": "results/sampling_trace.json",
+    "tokenizer_registry": "results/tokenizer_registry.json"
+  },
+  "core_contract_artifacts": {
+    "status": "ok",
+    "validation": {
+      "checked_obligations": {
+        "M_C_noising_loss_sampling_path": true,
+        "M_E_attention_path": true,
+        "binary_condition_state": true,
+        "blacklist_declared_not_used": true,
+        "joint_distribution_training": true,
+        "named_sde_ode_samplers": true,
+        "tokenizer_encode_contract": true,
+        "training_condition_resampling": true,
+        "training_metadata_surface": true
+      },
+      "failures": [],
+      "valid": true
+    },
+    "written": {
+      "results/attention_mask_registry.json": "results_runexp_smoke2/attention_mask_registry.json",
+      "results/diffusion_config.json": "results_runexp_smoke2/diffusion_config.json",
+      "results/evaluation_result.json": "results_runexp_smoke2/evaluation_result.json",
+      "results/loss_trace.json": "results_runexp_smoke2/loss_trace.json",
+      "results/model_registry.json": "results_runexp_smoke2/model_registry.json",
+      "results/readiness.json": "results_runexp_smoke2/readiness.json",
+      "results/sampling_trace.json": "results_runexp_smoke2/sampling_trace.json",
+      "results/tokenizer_registry.json": "results_runexp_smoke2/tokenizer_registry.json"
+    }
+  },
+  "created_at_unix": 1779390421.7899382,
+  "figure_artifacts": {
+    "figure_1": {
+      "caption": "Figure 1. Capabilities of the Simformer: finite and function-valued parameters, dependency structures, unstructured/missing observations, observation intervals, and arbitrary conditioning.",
+      "measurement_schema": [
+        "capability",
+        "task",
+        "method",
+        "condition_type",
+        "status"
+      ],
+      "path": "results/figures/figure_1_capabilities.json"
+    },
+    "figure_2": {
+      "caption": "Figure 2. Simformer architecture. Variables are reduced to tokens with identity, value, and binary conditional state; a transformer processes the sequence under dependency and conditioning masks.",
+      "measurement_schema": [
+        "tokenizer",
+        "score_network",
+        "attention_mask",
+        "sampler"
+      ],
+      "path": "results/figures/figure_2_model_summary.json"
+    },
+    "figure_3": {
+      "caption": "Figure 3. Arbitrary conditional distributions of the Two Moons simulator.",
+      "measurement_schema": [
+        "query",
+        "conditioned_variables",
+        "sample_mean",
+        "sample_variance"
+      ],
+      "path": "results/figures/figure_3_two_moons_conditionals.json"
+    },
+    "figure_4": {
+      "caption": "Figure 4. Simformer performance on benchmark tasks with dense, directed, and undirected graph attention variants; compared to NPE/NLE/NRE baselines.",
+      "measurement_schema": [
+        "task",
+        "method",
+        "mask_variant",
+        "simulation_budget",
+        "c2st",
+        "nll"
+      ],
+      "path": "results/figures/figure_4_benchmark_performance.json"
+    },
+    "figure_4a": {
+      "caption": "Figure 4a. C2ST accuracy between Simformer- and ground-truth posterior samples; 0.5 indicates indistinguishability and 1.0 complete distinguishability.",
+      "measurement_schema": [
+        "task",
+        "method",
+        "baseline",
+        "c2st",
+        "comparison"
+      ],
+      "path": "results/figures/figure_4a_c2st.json"
+    },
+    "figure_4b": {
+      "caption": "Figure 4b. C2ST for arbitrary conditional distributions.",
+      "measurement_schema": [
+        "task",
+        "query",
+        "condition_mask",
+        "c2st"
+      ],
+      "path": "results/figures/figure_4b_arbitrary_conditionals.json"
+    },
+    "figure_5": {
+      "caption": "Figure 5. Inference with unstructured observations in the Lotka-Volterra model.",
+      "measurement_schema": [
+        "observation_count",
+        "species",
+        "posterior_predictive_error",
+        "c2st"
+      ],
+      "path": "results/figures/figure_5_lotka_volterra.json"
+    },
+    "figure_5a": {
+      "caption": "Figure 5a. Posterior predictive and posterior based on four unstructured prey observations.",
+      "measurement_schema": [
+        "observation_count",
+        "true_parameter_error",
+        "predictive_interval_width"
+      ],
+      "path": "results/figures/figure_5a_lotka_four_observations.json"
+    },
+    "figure_5b": {
+      "caption": "Figure 5b. Lotka-Volterra comparison against baseline posterior inference.",
+      "measurement_schema": [
+        "method",
+        "baseline",
+        "c2st",
+        "nll"
+      ],
+      "path": "results/figures/figure_5b_lotka_comparison.json"
+    },
+    "figure_5c": {
+      "caption": "Figure 5c. Lotka-Volterra simulation-budget and unstructured-observation trend.",
+      "measurement_schema": [
+        "simulation_budget",
+        "mask_variant",
+        "c2st",
+        "efficiency_ratio"
+      ],
+      "path": "results/figures/figure_5c_lotka_budget.json"
+    },
+    "figure_6": {
+      "caption": "Figure 6. Inference in an infinite-dimensional SIRD parameter space using finite query points for global and time-dependent local parameters.",
+      "measurement_schema": [
+        "global_parameter",
+        "local_parameter_query",
+        "coverage",
+        "posterior_width"
+      ],
+      "path": "results/figures/figure_6_sird_function_parameters.json"
+    },
+    "figure_7": {
+      "caption": "Figure 7. Hodgkin-Huxley inference with observation intervals and metabolic cost / energy-consumption constraints.",
+      "measurement_schema": [
+        "constraint",
+        "similarity_guidance_scale",
+        "satisfaction_rate",
+        "energy_error"
+      ],
+      "path": "results/figures/figure_7_hodgkin_huxley_interval_guidance.json"
+    }
+  },
+  "mode": "runtime_smoke",
+  "paper_scale_claim": false,
+  "smoke_label": "bounded measured smoke outputs",
+  "table_artifacts": {
+    "protocol_matrix": {
+      "caption": "Named experiment protocol matrix for sections 4.1 through 4.4.",
+      "measurement_schema": [
+        "paper_section",
+        "experiment",
+        "task",
+        "method",
+        "metrics",
+        "artifact_paths"
+      ],
+      "path": "results/tables/protocol_matrix.json"
+    },
+    "trend_obligations": {
+      "caption": "Paper trend obligations recorded as expected comparisons, not smoke-run claims.",
+      "measurement_schema": [
+        "trend_id",
+        "comparison",
+        "expected_direction",
+        "asserted_in_smoke"
+      ],
+      "path": "results/tables/trend_obligations.json"
+    }
+  },
+  "written_named_artifacts": {
+    "figure_3": "results/figures/figure_3_two_moons_conditionals.json",
+    "figure_4": "results/figures/figure_4_benchmark_performance.json",
+    "figure_4a": "results/figures/figure_4a_c2st.json",
+    "figure_4b": "results/figures/figure_4b_arbitrary_conditionals.json",
+    "protocol_matrix": "results/tables/protocol_matrix.json",
+    "trend_obligations": "results/tables/trend_obligations.json"
+  }
+}

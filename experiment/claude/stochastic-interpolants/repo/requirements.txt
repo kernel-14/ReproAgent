@@ -1,0 +1,26 @@
+# reference_grounding: paperbench_ref_004 configs/image_caption/scdnet/stage2/diffusion.yaml
+# Core import/smoke dependencies for registry, configuration, data readiness,
+# mask-conditioned in-painting adapters, Table 2/Figure 3 artifact writers.
+numpy>=1.23
+Pillow>=9.4
+PyYAML>=6.0
+tqdm>=4.64
+
+# Lightweight measured-evaluation dependencies used by the FID/statistics and
+# table aggregation interfaces when full ImageNet assets or bounded measured
+# fixtures are provided.
+scipy>=1.10
+scikit-learn>=1.2
+pandas>=2.0
+matplotlib>=3.7
+torchdiffeq>=0.2.3
+denoising-diffusion-pytorch>=1.9.4
+
+# Test/runtime validation dependencies.
+pytest>=7.4
+
+# Optional full data/training backends are intentionally not imported at module
+# import time. Install them explicitly for full ImageNet-256/ImageNet-512 runs:
+#   pip install -e ".[train]"
+# which expands to datasets, huggingface-hub, torch, torchvision, scipy,
+# scikit-learn, matplotlib, and pandas as declared in pyproject.toml.

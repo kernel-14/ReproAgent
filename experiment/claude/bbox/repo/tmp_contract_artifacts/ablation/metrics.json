@@ -1,0 +1,10 @@
+{
+  "experiment": "ablation",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.933164Z",
+  "metrics": {
+    "status": "contract_schema",
+    "contract_label": "contract_artifact"
+  },
+  "schema_version": "1.0.0"
+}

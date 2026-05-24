@@ -1,0 +1,14 @@
+{
+  "table_id": "table6_vram",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.942950Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Table 6: Accuracy (%) and GPU memory usage on Mixtral-8x7B / StrategyQA",
+    "columns": [
+      "method",
+      "accuracy_pct",
+      "vram_gb"
+    ]
+  }
+}

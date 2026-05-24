@@ -1,0 +1,63 @@
+{
+  "addendum_binding": "W_toxic is a [d_model, 2] matrix; toxic vector is W_toxic[:, 1].",
+  "computed_from": "bounded mechanistic_value_vectors_smoke fixture",
+  "created_at": "2026-05-21T19:35:07Z",
+  "mode": "runtime_smoke",
+  "rows": [
+    {
+      "index": 2,
+      "layer": 14,
+      "paper_notation": "v^{14}_{2}",
+      "selection_rule": "highest dot-products with toxic vector W_toxic[:, 1]",
+      "top_token": "hateful",
+      "toxic_cosine_similarity": 0.998036,
+      "toxic_dot_product": 1.2086
+    },
+    {
+      "index": 13,
+      "layer": 6,
+      "paper_notation": "v^{6}_{13}",
+      "selection_rule": "highest dot-products with toxic vector W_toxic[:, 1]",
+      "top_token": "idiot",
+      "toxic_cosine_similarity": 0.997633,
+      "toxic_dot_product": 1.0933
+    },
+    {
+      "index": 41,
+      "layer": 8,
+      "paper_notation": "v^{8}_{41}",
+      "selection_rule": "highest dot-products with toxic vector W_toxic[:, 1]",
+      "top_token": "stupid",
+      "toxic_cosine_similarity": 0.993836,
+      "toxic_dot_product": 1.064
+    },
+    {
+      "index": 7,
+      "layer": 12,
+      "paper_notation": "v^{12}_{7}",
+      "selection_rule": "highest dot-products with toxic vector W_toxic[:, 1]",
+      "top_token": "awful",
+      "toxic_cosine_similarity": 0.99013,
+      "toxic_dot_product": 1.0466
+    },
+    {
+      "index": 5,
+      "layer": 3,
+      "paper_notation": "v^{3}_{5}",
+      "selection_rule": "highest dot-products with toxic vector W_toxic[:, 1]",
+      "top_token": "careful",
+      "toxic_cosine_similarity": -0.417569,
+      "toxic_dot_product": -0.3353
+    },
+    {
+      "index": 22,
+      "layer": 10,
+      "paper_notation": "v^{10}_{22}",
+      "selection_rule": "highest dot-products with toxic vector W_toxic[:, 1]",
+      "top_token": "thanks",
+      "toxic_cosine_similarity": -0.489616,
+      "toxic_dot_product": -0.4659
+    }
+  ],
+  "title": "Table 1 reproduction artifact: value vectors nearest the toxic direction"
+}

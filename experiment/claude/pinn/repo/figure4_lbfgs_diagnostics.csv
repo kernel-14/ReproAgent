@@ -1,0 +1,5 @@
+problem,method,iteration,loss,gradient_norm,dry_run
+convection,NNCG after Adam+L-BFGS,1,0.08,0.1,True
+convection,GD after Adam+L-BFGS,1,0.95,1.2,True
+wave,NNCG after Adam+L-BFGS,1,0.12,0.22,True
+wave,GD after Adam+L-BFGS,1,0.9,1.1,True

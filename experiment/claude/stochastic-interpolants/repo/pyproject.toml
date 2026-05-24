@@ -1,0 +1,291 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stochastic-interpolants-couplings"
+version = "0.1.0"
+description = "Reproduction code for Stochastic Interpolants with Data-Dependent Couplings."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "PaperBench Reproduction" }
+]
+keywords = [
+  "stochastic-interpolants",
+  "data-dependent-couplings",
+  "inpainting",
+  "super-resolution",
+  "imagenet",
+  "fid"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Image Processing"
+]
+
+# Lightweight runtime dependencies are intentionally separated from optional
+# ImageNet/FID/training dependencies so import smoke tests do not require heavy
+# external vision stacks.
+dependencies = [
+  "numpy>=1.23",
+  "Pillow>=9.4",
+  "PyYAML>=6.0",
+  "tqdm>=4.64"
+]
+
+[project.optional-dependencies]
+# reference_grounding: paperbench_ref_004 configs/image_caption/scdnet/stage2/diffusion.yaml
+# The reference uses explicit dataset/dataloader/evaluation configuration
+# blocks; this package keeps those heavy data/training dependencies optional
+# while the repository entrypoints expose the same configured routes.
+data = [
+  "datasets>=2.18",
+  "huggingface-hub>=0.20"
+]
+torch = [
+  "torch>=2.0",
+  "torchvision>=0.15"
+]
+fid = [
+  "scipy>=1.10",
+  "scikit-learn>=1.2"
+]
+viz = [
+  "matplotlib>=3.7",
+  "pandas>=2.0"
+]
+train = [
+  "stochastic-interpolants-couplings[torch,data,fid,viz]",
+  "torchdiffeq>=0.2.3",
+  "denoising-diffusion-pytorch>=1.9.4"
+]
+test = [
+  "pytest>=7.4",
+  "pytest-cov>=4.1"
+]
+dev = [
+  "stochastic-interpolants-couplings[train,test]",
+  "ruff>=0.4"
+]
+
+[project.urls]
+Repository = "https://example.invalid/paperbench/stochastic-interpolants-couplings"
+Paper = "https://proceedings.mlr.press/v235/"
+
+[project.scripts]
+coupled-si = "main:main"
+coupled-si-smoke = "main:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+py-modules = [
+  "fid_experiment_table_task",
+  "experiment_and_512x512_image",
+  "table_mode_and_must",
+  "measurement_table_reproduction",
+  "coupling_dependent_data"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["stochastic_interpolants_couplings*"]
+
+[tool.setuptools.package-data]
+stochastic_interpolants_couplings = ["py.typed"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+addopts = [
+  "-ra",
+  "--strict-markers",
+  "--strict-config"
+]
+markers = [
+  "smoke: bounded execution of the canonical implementation route",
+  "full: full data/model evaluation requiring explicit datasets and checkpoints",
+  "inpainting: ImageNet in-painting protocol tests",
+  "super_resolution: ImageNet super-resolution protocol tests",
+  "fid: FID metric and aggregation tests"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.paperbench_repro]
+paper = "Stochastic Interpolants with Data-Dependent Couplings"
+canonical_entry_surface = "scripts/run_coupled_si.py"
+canonical_command = "python scripts/run_coupled_si.py"
+artifact_dir_env = "PAPERBENCH_REPRO_ARTIFACT_DIR"
+blacklisted_repositories = ["https://github.com/interpolants/couplings"]
+default_mode = "runtime_smoke"
+full_mode_requires_explicit_flag = true
+reference_grounding = [
+  "paperbench_ref_004 configs/image_caption/scdnet/stage2/3_rl_inf_train.sh",
+  "paperbench_ref_004 xmodaler/datasets/README.md",
+  "paperbench_ref_004 xmodaler/engine/defaults.py",
+  "paperbench_ref_004 configs/image_caption/scdnet/stage2/diffusion.yaml"
+]
+
+[tool.paperbench_repro.routes]
+# reference_grounding: paperbench_ref_004 configs/image_caption/scdnet/stage2/3_rl_inf_train.sh
+# The reference exposes explicit config-file, weights, dataloader, and output-dir
+# command wiring. The canonical route here keeps that intent as package-level
+# executable command metadata while the implementation lives in scripts/main.
+runtime_smoke = "python scripts/run_coupled_si.py --mode runtime_smoke"
+docker_validate = "python scripts/run_coupled_si.py --mode docker_validate"
+inpainting_table_2 = "python scripts/run_coupled_si.py --task inpainting --artifact table_2 --mode evaluate"
+inpainting_figure_3_256 = "python scripts/run_coupled_si.py --task inpainting --resolution 256 --artifact figure_3 --mode evaluate"
+inpainting_figure_3_512 = "python scripts/run_coupled_si.py --task inpainting --resolution 512 --artifact figure_3 --mode evaluate"
+super_resolution_table_3 = "python scripts/run_coupled_si.py --task super_resolution --artifact table_3 --mode evaluate"
+
+[tool.paperbench_repro.dependencies]
+core = ["numpy", "Pillow", "PyYAML", "tqdm"]
+optional_data = ["datasets", "huggingface-hub"]
+optional_training = ["torch", "torchvision"]
+optional_metrics = ["scipy", "scikit-learn"]
+optional_visualization = ["matplotlib", "pandas"]
+
+[tool.paperbench_repro.dataset_registry.imagenet]
+aliases = ["imagenet", "imagenet_1k", "imagenet-1k"]
+loader = "stochastic_interpolants_couplings.data:load_dataset"
+factory = "stochastic_interpolants_couplings.data:make_data"
+readiness_check = "stochastic_interpolants_couplings.data:check_data_available"
+resolutions = [256, 512]
+splits = ["train", "validation"]
+lazy_external_dependency = "datasets"
+trust_remote_code = true
+consumed_by = ["4.1 In-painting", "4.2 Super-resolution on Imagenet", "FID for Inpainting Task"]
+
+[tool.paperbench_repro.dataset_registry.imagenet_c]
+aliases = ["imagenet_c", "imagenet-c"]
+loader = "stochastic_interpolants_couplings.data:load_dataset"
+factory = "stochastic_interpolants_couplings.data:make_data"
+readiness_check = "stochastic_interpolants_couplings.data:check_data_available"
+resolutions = [256, 512]
+splits = ["validation"]
+lazy_external_dependency = "datasets"
+consumed_by = ["readiness", "robustness_manifest"]
+
+[tool.paperbench_repro.environment_registry.imagenet]
+factory = "stochastic_interpolants_couplings.config:make_environment"
+readiness_check = "stochastic_interpolants_couplings.config:check_environment_ready"
+tasks = ["in-painting task", "conditional image generation task", "image super-resolution"]
+datasets = ["imagenet", "imagenet_1k", "imagenet_c"]
+resolutions = ["ImageNet-256x256", "ImageNet-512x512"]
+
+[tool.paperbench_repro.experiment_registry.inpainting_256]
+name = "4.1 In-painting"
+task = "inpainting"
+dataset = "imagenet"
+environment = "imagenet"
+resolution = 256
+channels = 3
+mask_tiles = 64
+mask_probability = 0.3
+optional_class_labels = true
+couplings = ["independent_gaussian", "data_dependent"]
+metric = "fid"
+artifacts = ["Table 2", "Figure 3"]
+
+[tool.paperbench_repro.experiment_registry.inpainting_512]
+name = "Figure 3: Image inpainting: ImageNet-512x512"
+task = "inpainting"
+dataset = "imagenet"
+environment = "imagenet"
+resolution = 512
+channels = 3
+mask_tiles = 64
+mask_probability = 0.3
+optional_class_labels = true
+couplings = ["data_dependent"]
+metric = "fid"
+artifacts = ["Figure 3"]
+
+[tool.paperbench_repro.experiment_registry.table_2]
+name = "Table 2: FID for Inpainting Task"
+task = "inpainting"
+dataset = "imagenet"
+environment = "imagenet"
+resolution = 256
+metric = "fid"
+comparison = ["independent Gaussian coupling baseline", "data-dependent coupling"]
+writer = "stochastic_interpolants_couplings.artifacts:write_table_2_artifact"
+route = "fid_experiment_table_task:run_table_2_route"
+
+[tool.paperbench_repro.experiment_registry.figure_3]
+name = "Figure 3: Image inpainting: ImageNet-256x256 and ImageNet-512x512"
+task = "inpainting"
+dataset = "imagenet"
+environment = "imagenet"
+resolutions = [256, 512]
+column_families = ["masked images", "in-filled model samples", "original images"]
+writer = "stochastic_interpolants_couplings.artifacts:write_figure_3_artifact"
+route = "experiment_and_512x512_image:run_figure_3_route"
+
+[tool.paperbench_repro.method_registry.independent_gaussian]
+name = "rho_0 is a Gaussian with independent coupling to rho_1"
+factory = "stochastic_interpolants_couplings.couplings:build_coupling"
+selector = "independent_gaussian"
+tasks = ["inpainting", "super_resolution"]
+metrics = ["fid"]
+
+[tool.paperbench_repro.method_registry.data_dependent]
+name = "data-dependent coupling for in-painting"
+factory = "stochastic_interpolants_couplings.couplings:build_coupling"
+selector = "data_dependent"
+tasks = ["inpainting", "super_resolution"]
+metrics = ["fid"]
+
+[tool.paperbench_repro.method_registry.ours]
+name = "ours"
+factory = "stochastic_interpolants_couplings.models:build_velocity_model"
+selector = "stochastic_interpolant_conditional_model"
+tasks = ["inpainting", "super_resolution"]
+
+[tool.paperbench_repro.method_registry.resnet]
+name = "resnet"
+factory = "stochastic_interpolants_couplings.models:build_velocity_model"
+selector = "resnet_adapter"
+tasks = ["baseline_adapter"]
+
+[tool.paperbench_repro.method_registry.ddpm]
+name = "ddpm"
+factory = "stochastic_interpolants_couplings.models:build_velocity_model"
+selector = "ddpm_adapter"
+tasks = ["baseline_adapter"]
+
+[tool.paperbench_repro.metric_registry.fid]
+name = "fid"
+formula = "stochastic_interpolants_couplings.evaluation:compute_fidelity_score"
+aggregation = "stochastic_interpolants_couplings.evaluation:aggregate_fidelity_score"
+artifact_writer = "stochastic_interpolants_couplings.artifacts:write_fidelity_score_artifact"
+consumed_by = ["Table 2", "Table 3", "result_table"]
+
+[tool.paperbench_repro.artifacts]
+dataset_registry = "results/dataset_registry.json"
+data_manifest = "results/data_manifest.json"
+environment_registry = "results/environment_registry.json"
+scope_report = "results/scope_report.json"
+experiment_registry = "results/experiment_registry.json"
+artifact_manifest = "results/artifact_manifest.json"
+summary = "results/tables/summary.csv"
+model_registry = "results/model_registry.json"
+table_2 = "results/tables/table_2.csv"
+figure_3 = "results/inpainting/sample_grid.png"
+readiness = "readiness.json"
+evaluation_result = "evaluation_result.json"

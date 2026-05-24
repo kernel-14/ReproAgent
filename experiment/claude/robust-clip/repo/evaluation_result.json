@@ -1,0 +1,13 @@
+{
+  "_artifact_type": "evaluation_schema",
+  "_note": "Contract validation only, not real evaluation",
+  "status": "schema_validated",
+  "model": "fare",
+  "datasets": [
+    "imagenet"
+  ],
+  "metrics": {
+    "clean_accuracy": 0.0,
+    "adversarial_accuracy": 0.0
+  }
+}

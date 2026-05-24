@@ -1,0 +1,11 @@
+{
+  "figure_id": "figure4_case_study",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.944867Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Figure 4: Case study of BBox-ADAPTER on GSM8K. Top-3 candidates shown for visualization.",
+    "dataset": "gsm8k",
+    "display_top_k": 3
+  }
+}

@@ -1,0 +1,301 @@
+# configs/ppo_baseline.yaml
+# PPO Baseline Configuration for SAPG Reproduction
+# reference_grounding: wp_016 configs/ppo_baseline.yaml
+#
+# Paper evidence contract: Complete method/baseline selector set includes
+# ours, sapg, ppo, pbt, pql, ddpg
+#
+# This configuration implements standard PPO as a baseline for comparison with SAPG.
+# PPO uses a single policy across all environments (no split/aggregate mechanism).
+
+# Method selector - paper evidence contract priority methods
+method: ppo  # Options: ours, sapg, ppo, pbt, pql, ddpg, baseline, Ours, OURS, COEF=0, PPO, PBT, PQL
+
+# Environment/Task configuration - paper-derived task registry
+environment:
+  task_id: ShadowHandOver  # Options: ShadowHandOver, ShadowHandCatchUnderarm, ShadowHandCatchAbreast, 
+                           # ShadowHandReOrientation, AllegroHandReOrientation, AllegroKuka, 
+                           # harder_AllegroKuka, Throw, Regrasping, Reorientation
+  difficulty: hard  # Options: easy, hard, medium
+  num_envs: 24576  # Total parallel environments (N in paper)
+  environment_type: isaacgym  # Options: isaacgym, mujoco, pybullet
+  
+  # Task-specific settings
+  max_episode_length: 1000
+  reset_on_success: false
+  curriculum_enabled: false
+
+# PPO-specific configuration (single-policy baseline)
+ppo:
+  num_policies: 1  # Single policy for standard PPO (vs M=6 for SAPG/DexPBT/PBT)
+  envs_per_policy: 24576  # All N environments for single policy
+  
+  # PPO hyperparameters from paper
+  clip_range: 0.2  # PPO clipping parameter epsilon
+  value_clip_range: 0.2  # Value function clipping
+  entropy_coefficient: 0.01  # Entropy bonus coefficient
+  value_loss_coefficient: 0.5  # Value loss weight
+  max_grad_norm: 0.5  # Gradient clipping
+  
+  # GAE parameters
+  gae_lambda: 0.95  # GAE lambda for advantage estimation
+  gamma: 0.99  # Discount factor
+  
+  # Update configuration
+  n_epochs: 5  # Number of epochs per update
+  normalize_advantage: true  # Normalize advantages
+  use_gae: true  # Use Generalized Advantage Estimation
+
+# Network architecture - paper evidence contract
+network:
+  architecture: mlp  # Options: mlp, cnn, lstm
+  
+  # Binding addendum clarification for Figure 8:
+  # Two-layer network with same size, ReLU activation, Adam optimizer with PyTorch defaults
+  hidden_sizes: [256, 256]  # Two layers of same size (Figure 8 experiments)
+  activation: relu  # ReLU activation function
+  
+  # Policy network
+  policy_network:
+    type: gaussian  # Gaussian policy for continuous control
+    log_std_init: 0.0  # Initial log standard deviation
+    ortho_init: true  # Orthogonal initialization
+  
+  # Value network
+  value_network:
+    shared_backbone: false  # PPO typically uses separate networks
+    ortho_init: true
+
+# Training configuration
+training:
+  total_timesteps: 10_000_000  # Total training timesteps
+  n_steps: 16  # Paper PPO rollout: collect 16 steps per environment before every update
+  batch_size: 512  # Minibatch size for updates (paper evidence contract: batch_size sweep)
+  learning_rate: 3.0e-4  # Adam learning rate (PyTorch default from addendum)
+  
+  # Optimizer settings (binding addendum: Adam with PyTorch defaults)
+  optimizer: adam
+  adam_epsilon: 1.0e-8  # PyTorch default
+  adam_betas: [0.9, 0.999]  # PyTorch default
+  weight_decay: 0.0
+  
+  # Learning rate schedule
+  lr_schedule: linear  # Options: constant, linear, exponential
+  lr_schedule_end_factor: 0.1  # Final LR multiplier for linear schedule
+  
+  # Checkpointing
+  save_frequency: 100_000  # Save checkpoint every N timesteps
+  checkpoint_dir: results/checkpoints/ppo_baseline
+
+# Evaluation configuration
+evaluation:
+  eval_frequency: 50_000  # Evaluate every N timesteps
+  n_eval_episodes: 100  # Number of episodes per evaluation
+  deterministic: true  # Use deterministic policy for evaluation
+  
+  # Metrics (paper evidence contract)
+  metrics:
+    - success_rate  # Binary success indicator
+    - episode_reward  # Cumulative reward
+    - episode_length  # Episode length
+    - consecutive_successes  # For curriculum tasks
+
+# Baseline registry and comparison surfaces
+baseline_registry:
+  name: ppo
+  aliases: [PPO, baseline, standard_ppo]
+  category: on_policy_single_policy
+  description: "Standard PPO baseline with single policy across all environments"
+  
+  # Comparison surfaces for baseline evaluation
+  comparison_methods: [sapg, pbt, pql, ddpg]  # Methods to compare against
+  comparison_metrics: [success_rate, episode_reward]
+  comparison_tasks: [ShadowHandOver, AllegroKukaThrow, AllegroKukaRegrasping,
+                     AllegroKukaReorientation, ShadowHandReOrientation, AllegroHandReOrientation]
+
+# Sweep configuration - paper evidence contract: batch_size sweep
+sweep:
+  enabled: true  # Figure 2 PPO batch-size sweep
+  parameter: batch_size  # Parameter to sweep
+  values: [1500, 3125, 6250, 12500, 25000, 50000, 100000]  # Figure 2 values
+  tasks: [ShadowHandOver, AllegroKukaThrow]
+  
+  # Alternative sweep parameters
+  # parameter: n_steps
+  # values: [512, 1024, 2048, 4096]
+  
+  # parameter: learning_rate
+  # values: [1.0e-4, 3.0e-4, 1.0e-3]
+
+# Logging configuration
+logging:
+  log_dir: results/logs/ppo_baseline
+  tensorboard: true
+  wandb: false
+  log_frequency: 1000  # Log every N timesteps
+  
+  # Metrics to log
+  log_metrics:
+    - policy_loss
+    - value_loss
+    - entropy_loss
+    - approx_kl
+    - clip_fraction
+    - explained_variance
+    - learning_rate
+
+# Artifact generation - paper evidence contract
+artifacts:
+  output_dir: results
+  
+  # Declared artifact paths
+  metrics_path: results/metrics.json
+  baseline_registry_path: results/baseline_registry.json
+  comparison_table_path: results/tables/baseline_comparison.csv
+  
+  # Additional artifacts
+  training_curves_path: results/figures/ppo_training_curves.png
+  evaluation_results_path: results/evaluation_result.json
+  readiness_manifest_path: results/readiness.json
+
+# Dry-run and smoke test configuration
+dry_run:
+  enabled: false  # Set to true for smoke testing
+  max_timesteps: 10000  # Limit timesteps in dry-run mode
+  max_episodes: 10  # Limit episodes in dry-run mode
+  skip_evaluation: false  # Skip expensive evaluation in dry-run
+  
+  # Dry-run artifact generation
+  generate_schema_artifacts: true  # Create schema/contract artifacts
+  label_as_dry_run: true  # Label outputs as dry-run artifacts
+
+# Runtime mode configuration
+runtime:
+  mode: train  # Options: train, evaluate, compare, runtime_smoke, docker_validate
+  device: cuda  # Options: cuda, cpu, auto
+  num_workers: 4  # Number of data loading workers
+  seed: 42  # Random seed for reproducibility
+
+# Paper-derived task registry entries
+task_registry:
+  # Hard difficulty tasks (paper Table 1)
+  - task_id: ShadowHandOver
+    aliases: [Shadow Hand, ShadowHand]
+    difficulty: hard
+    environment_type: isaacgym
+    metric_type: success_rate
+    
+  - task_id: ShadowHandCatchUnderarm
+    aliases: [Catch Underarm]
+    difficulty: hard
+    environment_type: isaacgym
+    metric_type: success_rate
+    
+  - task_id: ShadowHandCatchAbreast
+    aliases: [Catch Abreast]
+    difficulty: hard
+    environment_type: isaacgym
+    metric_type: success_rate
+  
+  # Easy difficulty tasks
+  - task_id: ShadowHandReOrientation
+    aliases: [Reorientation, Shadow Hand Reorientation]
+    difficulty: easy
+    environment_type: isaacgym
+    metric_type: success_rate
+    
+  - task_id: AllegroHandReOrientation
+    aliases: [Allegro Kuka Reorientation, AllegroKuka]
+    difficulty: easy
+    environment_type: isaacgym
+    metric_type: success_rate
+  
+  # Additional tasks from paper
+  - task_id: AllegroKuka
+    aliases: [Allegro Kuka]
+    difficulty: medium
+    environment_type: isaacgym
+    metric_type: success_rate
+    
+  - task_id: harder_AllegroKuka
+    aliases: [harder AllegroKuka]
+    difficulty: hard
+    environment_type: isaacgym
+    metric_type: success_rate
+    
+  - task_id: Throw
+    aliases: []
+    difficulty: medium
+    environment_type: isaacgym
+    metric_type: success_rate
+    
+  - task_id: Regrasping
+    aliases: []
+    difficulty: medium
+    environment_type: isaacgym
+    metric_type: success_rate
+
+# Method/baseline selector registry - paper evidence contract
+method_registry:
+  ppo:
+    name: Proximal Policy Optimization
+    aliases: [PPO, baseline, standard_ppo]
+    category: on_policy_single_policy
+    implementation: src.algorithms.ppo.PPO
+    
+  sapg:
+    name: Split and Aggregate Policy Gradients
+    aliases: [SAPG, ours, Ours, OURS]
+    category: on_policy_multi_policy
+    implementation: src.algorithms.sapg.SAPG
+    
+  pbt:
+    name: Population Based Training
+    aliases: [PBT]
+    category: evolutionary
+    implementation: src.algorithms.pbt.PBT
+    
+  pql:
+    name: Policy Quality Learning
+    aliases: [PQL]
+    category: off_policy
+    implementation: src.algorithms.pql.PQL
+    
+  ddpg:
+    name: Deep Deterministic Policy Gradient
+    aliases: [DDPG]
+    category: off_policy
+    implementation: src.algorithms.ddpg.DDPG
+
+# Experimental setup - paper evidence contract
+experimental_setup:
+  protocol: Monte Carlo  # Monte Carlo evaluation protocol from paper
+  num_seeds: 5  # Number of random seeds for statistical significance
+  confidence_interval: 0.95  # 95% confidence intervals
+  
+  # Comparison protocol
+  comparison_baseline: ppo  # This config IS the baseline
+  comparison_tasks: [ShadowHandOver, ShadowHandCatchUnderarm, ShadowHandCatchAbreast]
+  comparison_metrics: [success_rate, episode_reward]
+  
+  # Statistical testing
+  significance_test: t_test  # Options: t_test, mann_whitney, bootstrap
+  multiple_comparison_correction: bonferroni  # Options: bonferroni, holm, fdr
+
+# Ablation configuration - paper evidence contract
+ablations:
+  # COEF=0 ablation (no off-policy aggregation, equivalent to independent PPO)
+  coef_zero:
+    enabled: false
+    description: "SAPG with aggregation_coefficient=0 (equivalent to PPO)"
+    config_override:
+      method: sapg
+      sapg.aggregation_coefficient: 0.0
+  
+  # Symmetric aggregation ablation (Figure 6)
+  symmetric_aggregation:
+    enabled: false
+    description: "SAPG without designated leader, symmetric off-policy updates"
+    config_override:
+      method: sapg
+      sapg.leader_update_frequency: 0  # No designated leader

@@ -1,0 +1,209 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "bbox-adapter"
+version = "0.1.0"
+description = "BBox-Adapter: Lightweight Adapting for Black-Box Large Language Models"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "BBox-Adapter Authors" },
+]
+keywords = [
+    "large-language-models",
+    "black-box-adaptation",
+    "energy-based-models",
+    "noise-contrastive-estimation",
+    "qa-benchmarks",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# ---------------------------------------------------------------------------
+# Lightweight core dependencies (always required, no GPU/simulator needed)
+# reference_grounding: paperbench_ref_006 readme.md
+# reference_grounding: paperbench_ref_002 src/models/qa/transformer_qa.py
+# ---------------------------------------------------------------------------
+dependencies = [
+    # Config and data handling
+    "pyyaml>=6.0",
+    "omegaconf>=2.3.0",
+    "jsonlines>=3.1.0",
+
+    # HTTP / API clients (black-box LLM interface)
+    # reference_grounding: paperbench_ref_005 toxigen/alice.py
+    "requests>=2.31.0",
+    "httpx>=0.25.0",
+    "tenacity>=8.2.0",
+    "tiktoken>=0.5.0",
+
+    # Lightweight ML utilities
+    "numpy>=1.24.0",
+    "scipy>=1.11.0",
+    "scikit-learn>=1.3.0",
+
+    # Evaluation / data
+    "datasets>=2.14.0",
+    "evaluate>=0.4.0",
+    "rouge-score>=0.1.2",
+    "nltk>=3.8.1",
+
+    # Logging / progress
+    "tqdm>=4.66.0",
+    "rich>=13.5.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+# ---------------------------------------------------------------------------
+# Training dependencies — heavy; loaded lazily inside training modules
+# Declare separately so static import smoke does not require GPU environment.
+# reference_grounding: paperbench_ref_002 src/models/qa/transformer_qa.py
+# ---------------------------------------------------------------------------
+train = [
+    "torch>=2.0.0",
+    "transformers>=4.35.0",
+    "accelerate>=0.24.0",
+    "sentencepiece>=0.1.99",
+    "protobuf>=4.24.0",
+]
+
+# ---------------------------------------------------------------------------
+# OpenAI / Azure API client — optional so the repo is importable without it
+# reference_grounding: paperbench_ref_006 research/readme_exp.md
+# ---------------------------------------------------------------------------
+openai = [
+    "openai>=1.3.0",
+]
+
+# ---------------------------------------------------------------------------
+# Hugging Face inference server (Mixtral-8x7B local/remote)
+# reference_grounding: paperbench_ref_006 readme.md
+# ---------------------------------------------------------------------------
+hf_inference = [
+    "huggingface-hub>=0.19.0",
+    "text-generation>=0.6.0",
+]
+
+# ---------------------------------------------------------------------------
+# Reporting and visualisation — lazy-imported in src/reporting/plotting.py
+# ---------------------------------------------------------------------------
+reporting = [
+    "matplotlib>=3.7.0",
+    "seaborn>=0.13.0",
+    "pandas>=2.1.0",
+    "tabulate>=0.9.0",
+]
+
+# ---------------------------------------------------------------------------
+# All optional extras combined (useful for CI / full reproduction)
+# ---------------------------------------------------------------------------
+all = [
+    "bbox-adapter[train,openai,hf_inference,reporting]",
+]
+
+# ---------------------------------------------------------------------------
+# Development and testing extras
+# ---------------------------------------------------------------------------
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.9.0",
+    "isort>=5.12.0",
+    "flake8>=6.1.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.4.0",
+    "bbox-adapter[all]",
+]
+
+[project.scripts]
+bbox-adapter-train   = "scripts.train_adapter:main"
+bbox-adapter-eval    = "scripts.evaluate:main"
+bbox-adapter-run     = "scripts.run_experiment:main"
+
+[tool.setuptools]
+package-dir = { "" = "." }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "scripts*", "configs*"]
+exclude = ["tests*", "docs*"]
+
+[tool.setuptools.package-data]
+"configs" = ["*.yaml"]
+"src"     = ["py.typed"]
+
+# ---------------------------------------------------------------------------
+# Pytest configuration
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths   = ["tests"]
+addopts     = "-v --tb=short"
+python_files  = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "smoke: quick smoke / dry-run tests (no GPU, no API keys)",
+    "integration: tests that need external APIs or large data",
+    "train: tests that require GPU and model weights",
+]
+
+# ---------------------------------------------------------------------------
+# Black formatter
+# ---------------------------------------------------------------------------
+[tool.black]
+line-length    = 100
+target-version = ["py39", "py310", "py311"]
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+# ---------------------------------------------------------------------------
+# isort
+# ---------------------------------------------------------------------------
+[tool.isort]
+profile         = "black"
+line_length     = 100
+known_first_party = ["src", "scripts"]
+
+# ---------------------------------------------------------------------------
+# mypy
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version         = "3.9"
+warn_return_any        = true
+warn_unused_configs    = true
+ignore_missing_imports = true
+exclude                = ["build", "dist", ".venv"]
+
+# ---------------------------------------------------------------------------
+# Coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source  = ["src"]
+omit    = ["*/tests/*", "*/scripts/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "pass",
+]

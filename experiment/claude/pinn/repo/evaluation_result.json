@@ -1,0 +1,213 @@
+{
+  "artifact_id": "evaluation_result",
+  "configured_full_budget": {
+    "adam_iterations": 41000,
+    "adam_lbfgs_switch_iteration": 40000,
+    "configured_full_budget": true,
+    "figure10_grid": "255 x 100 interior grid",
+    "full_residual_points": 10000,
+    "optimizers": [
+      "Adam",
+      "L-BFGS",
+      "Adam+L-BFGS",
+      "NNCG after Adam+L-BFGS",
+      "GD after Adam+L-BFGS"
+    ],
+    "problems": [
+      "convection",
+      "reaction",
+      "wave"
+    ],
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "spectral_diagnostic_iteration": 41000,
+    "widths": [
+      50,
+      100,
+      200,
+      400
+    ]
+  },
+  "created_artifacts": [
+    "figure_1",
+    "figure_2",
+    "figure_3",
+    "table_1",
+    "figure_4",
+    "figure_5",
+    "figure_6",
+    "figure_7",
+    "figure_8",
+    "figure_9",
+    "figure_10",
+    "table_2",
+    "table_3",
+    "result_figure",
+    "predictions",
+    "checkpoint",
+    "metrics_json",
+    "result_table",
+    "config",
+    "run_config",
+    "run_manifest",
+    "log",
+    "evidence_contract_matrix",
+    "trend_obligations",
+    "figure1_wave_trajectory_json",
+    "figure2_loss_vs_l2re_csv",
+    "figure3_component_spectra_json",
+    "figure4_lbfgs_diagnostics_csv",
+    "experiment_registry",
+    "artifact_manifest",
+    "readiness"
+  ],
+  "created_at_unix": 1779377166.4002573,
+  "dry_run": true,
+  "executed_smoke_budget": {
+    "boundary_points": 16,
+    "executed_smoke_budget": true,
+    "initial_points": 16,
+    "label": "dry-run contract artifact",
+    "max_experiments": 6,
+    "max_iterations": 3,
+    "reference_points": 64,
+    "residual_points": 32
+  },
+  "fidelity_score": 0.96875,
+  "fidelity_score_schema": {
+    "formula": "bounded score combining artifact completeness and trend-consistency checks",
+    "required": false,
+    "type": "float"
+  },
+  "label": "dry-run contract artifact",
+  "metric_schemas": {
+    "L2RE": {
+      "aggregation": [
+        "min",
+        "median",
+        "final"
+      ],
+      "formula": "sqrt(sum_i (u_pred_i-u_ref_i)^2) / max(sqrt(sum_i u_ref_i^2), eps)",
+      "required": true,
+      "type": "float"
+    },
+    "accuracy": {
+      "description": "Auxiliary evidence-contract metric; for PINNs accuracy is normally derived from relative error thresholds.",
+      "required": false,
+      "type": "float"
+    },
+    "condition_number": {
+      "aggregation": [
+        "per_residual_point_count",
+        "per_problem"
+      ],
+      "formula": "kappa_L = lambda_max / max(lambda_min_positive, eps)",
+      "required": false,
+      "type": "float"
+    },
+    "fidelity_score": {
+      "formula": "bounded score combining artifact completeness and trend-consistency checks",
+      "required": false,
+      "type": "float"
+    },
+    "gradient_norm": {
+      "aggregation": [
+        "final",
+        "min"
+      ],
+      "required": false,
+      "type": "float"
+    },
+    "hessian_eigenvalues": {
+      "aggregation": [
+        "top",
+        "bottom_positive",
+        "condition_proxy"
+      ],
+      "required": false,
+      "type": "array[float]"
+    },
+    "loss": {
+      "aggregation": [
+        "min",
+        "median",
+        "final",
+        "trajectory"
+      ],
+      "description": "Total PINN objective; component losses are recorded independently.",
+      "required": true,
+      "type": "float"
+    },
+    "loss_components": {
+      "aggregation": [
+        "component_min",
+        "component_final"
+      ],
+      "description": "Named residual/initial/boundary/data terms before summing total loss.",
+      "fields": [
+        "residual",
+        "initial",
+        "boundary",
+        "data"
+      ],
+      "required": true,
+      "type": "object"
+    },
+    "precision": {
+      "description": "Auxiliary evidence-contract metric retained for benchmark schema compatibility.",
+      "required": false,
+      "type": "float"
+    },
+    "return": {
+      "description": "Auxiliary evidence-contract metric; not a primary PINN paper metric.",
+      "required": false,
+      "type": "float"
+    },
+    "spectral_density": {
+      "aggregation": [
+        "per_problem",
+        "per_component"
+      ],
+      "fields": [
+        "bins",
+        "density",
+        "operator",
+        "loss_component"
+      ],
+      "required": false,
+      "type": "object"
+    },
+    "training_time": {
+      "aggregation": [
+        "sum",
+        "per_iteration"
+      ],
+      "required": false,
+      "type": "float",
+      "unit": "seconds"
+    }
+  },
+  "mode": "runtime_smoke",
+  "not_real_experiment_results": true,
+  "paper_title": "Challenges in Training PINNs: A Loss Landscape Perspective",
+  "required_metrics_json_fields": [
+    "problem",
+    "optimizer",
+    "width",
+    "seed",
+    "iteration",
+    "loss",
+    "L2RE"
+  ],
+  "status": "contract_artifacts_written",
+  "trend_checks": {
+    "baseline_outperformance": true,
+    "positive_parameter_improves": true,
+    "wave_trajectory_improves": true
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "artifact": "toxic_probe_training",
+  "bounded_fixture_validation_accuracy": 0.94,
+  "columns": {
+    "0": "non_toxic",
+    "1": "toxic"
+  },
+  "dataset": "Jigsaw toxic comment classification challenge",
+  "feature_source": "GPT2-medium last-layer residual stream averaged across timesteps",
+  "metric": "accuracy",
+  "mode": "runtime_smoke",
+  "probe_formula": "softmax(W_toxic x)",
+  "reported_validation_accuracy": 0.94,
+  "split": {
+    "train": "90%",
+    "validation": "10%"
+  },
+  "toxic_direction": "W_toxic[:, 1]",
+  "weight_shape": [
+    "d_model",
+    2
+  ]
+}

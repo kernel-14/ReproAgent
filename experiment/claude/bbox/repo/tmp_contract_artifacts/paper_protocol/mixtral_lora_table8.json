@@ -1,0 +1,28 @@
+{
+  "0.1": {
+    "base_model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+    "batch_size_per_gpu": 8,
+    "epochs": 3,
+    "learning_rate": 0.0002,
+    "lora_alpha": 256,
+    "lora_dropout": 0.1,
+    "max_grad_norm": 0.3,
+    "optimizer": "paged_adamw_32bit",
+    "rank": 128,
+    "scheduler": "cosine",
+    "weight_decay": 0.001
+  },
+  "0.3": {
+    "base_model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+    "batch_size_per_gpu": 8,
+    "epochs": 3,
+    "learning_rate": 0.0002,
+    "lora_alpha": 768,
+    "lora_dropout": 0.1,
+    "max_grad_norm": 0.3,
+    "optimizer": "paged_adamw_32bit",
+    "rank": 384,
+    "scheduler": "cosine",
+    "weight_decay": 0.001
+  }
+}

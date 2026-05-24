@@ -1,0 +1,449 @@
+# Sequential Neural Posterior Score Estimation (SNPSE) - Default Configuration
+# Reference grounding: paperbench_ref_001 l5pc/docs/config.md
+#
+# Paper: Sequential Neural Score Estimation: Likelihood-Free Inference with
+#        Conditional Score Based Diffusion Models
+#
+# This config exposes:
+# - Complete method/baseline selector set: NPSE, TSNPSE, SNPSE-A/B/C, NPE, SNPE-A/B/C, NLE, NRE
+# - Paper-derived dataset/benchmark registry: two_moons, slcp, lotka_volterra
+# - Environment/task registry: Truncated SNPSE, numerical experiments, SBI tasks
+# - Parameter sweeps: learning_rate=1e-4, optimizer=Adam
+# - SDE configurations: VE SDE, VP SDE
+
+# Execution mode configuration
+mode: runtime_smoke  # runtime_smoke, docker_validate, train, evaluate, full
+
+# Output paths
+output:
+  base_dir: results
+  metrics_path: results/metrics.json
+  posterior_samples_path: results/posterior_samples.npz
+  benchmark_metrics_path: results/benchmark_metrics.csv
+  figures_dir: results/figures
+  simulated_data_dir: simulated_data
+  readiness_path: results/readiness.json
+  evaluation_result_path: results/evaluation_result.json
+
+# Dataset/Benchmark Registry
+# Reference grounding: paperbench_ref_001 sbi/sbi/inference/abc/abc_base.py
+# Paper evidence contract: explicitly register dataset/benchmark aliases for two_moons, slcp, lotka_volterra
+datasets:
+  two_moons:
+    name: "Two Moons"
+    alias: ["two_moons", "bimodal"]
+    dim_theta: 2
+    dim_x: 2
+    paper_figure: "Figure 1"
+    description: "Bimodal 2D posterior visualization benchmark"
+    simulation_budget: [1000, 10000, 100000]
+    prior:
+      type: "uniform"
+      low: [-5.0, -5.0]
+      high: [5.0, 5.0]
+    task_type: "Simulation-Based Inference"
+    difficulty: "easy"
+    
+  slcp:
+    name: "Simple Likelihood Complex Posterior"
+    alias: ["slcp", "slcp_5d_8d"]
+    dim_theta: 5
+    dim_x: 8
+    paper_figure: "Figure 2, Figure 3, Figure 6"
+    description: "5D parameters to 8D observations benchmark"
+    simulation_budget: [1000, 10000, 100000]
+    prior:
+      type: "uniform"
+      low: [-3.0, -3.0, -3.0, -3.0, -3.0]
+      high: [3.0, 3.0, 3.0, 3.0, 3.0]
+    task_type: "Simulation-Based Inference"
+    difficulty: "medium"
+    
+  lotka_volterra:
+    name: "Lotka Volterra"
+    alias: ["lotka_volterra", "lotka", "ecological_dynamics"]
+    dim_theta: 4
+    dim_x: 18  # Time series flattened
+    paper_figure: "Figure 4, Figure 7"
+    description: "Ecological dynamics: predator-prey ODEs"
+    simulation_budget: [1000, 10000, 100000]
+    prior:
+      type: "log_uniform"
+      low: [-5.0, -5.0, -5.0, -5.0]
+      high: [2.0, 2.0, 2.0, 2.0]
+    task_type: "Simulation-Based Inference"
+    difficulty: "challenging"
+    two_most_challenging: true
+    
+  gaussian_linear:
+    name: "Gaussian Linear"
+    alias: ["gaussian_linear", "gaussian"]
+    dim_theta: 10
+    dim_x: 10
+    description: "Linear Gaussian benchmark for sanity checks"
+    simulation_budget: [1000, 10000]
+    prior:
+      type: "gaussian"
+      mean: 0.0
+      std: 1.0
+    task_type: "Simulation-Based Inference"
+    difficulty: "easy"
+
+  gaussian_linear_uniform:
+    name: "Gaussian Linear Uniform"
+    alias: ["gaussian_linear_uniform", "glu"]
+    dim_theta: 10
+    dim_x: 10
+    description: "Appendix E.1 linear Gaussian task with uniform prior"
+    simulation_budget: [1000, 10000, 100000]
+    prior:
+      type: "uniform"
+      low: [-1.0]
+      high: [1.0]
+    task_type: "Simulation-Based Inference"
+    difficulty: "easy"
+
+  bernoulli_glm:
+    name: "Bernoulli GLM"
+    alias: ["bernoulli_glm", "glm"]
+    dim_theta: 10
+    dim_x: 10
+    description: "Appendix E.1 logistic Bernoulli GLM task"
+    simulation_budget: [1000, 10000, 100000]
+    prior:
+      type: "uniform"
+      low: [-2.0]
+      high: [2.0]
+    task_type: "Simulation-Based Inference"
+    difficulty: "medium"
+
+  sir:
+    name: "SIR"
+    alias: ["sir", "epidemiology"]
+    dim_theta: 2
+    dim_x: 60
+    description: "Appendix E.1 SIR epidemiological simulator"
+    simulation_budget: [1000, 10000, 100000]
+    task_type: "Simulation-Based Inference"
+    difficulty: "medium"
+
+  neuroscience:
+    name: "Neuroscience"
+    alias: ["neuroscience", "pyloric", "l5pc"]
+    dim_theta: 8
+    dim_x: 15
+    description: "Realistic neuroscience benchmark problem"
+    simulation_budget: [1000, 10000]
+    task_type: "Simulation-Based Inference"
+    difficulty: "hard"
+
+# Method Registry
+# Reference grounding: paperbench_ref_001 sbi/sbi/inference/snpe/snpe_a.py
+# Paper evidence contract: complete method/baseline selector includes ours, npe, nle, nre, baseline, adapter, fine_tuning
+methods:
+  NPSE:
+    name: "Neural Posterior Score Estimation"
+    alias: ["npse", "ours", "base"]
+    sequential: false
+    paper_section: "Section 3"
+    description: "Base score-based diffusion posterior estimation"
+    algorithm: "Algorithm 1 (single round)"
+    implementation_class: "src.methods.methods.NPSE"
+    
+  TSNPSE:
+    name: "Truncated Sequential Neural Posterior Score Estimation"
+    alias: ["tsnpse", "truncated_snpse", "truncated", "ours"]
+    sequential: true
+    paper_section: "Section 4.1, Algorithm 1"
+    description: "Sequential score estimation with trajectory truncation"
+    algorithm: "Algorithm 1"
+    implementation_class: "src.methods.methods.TSNPSE"
+    truncation_time: 0.1
+    
+  SNPSE-A:
+    name: "Sequential NPSE Variant A"
+    alias: ["snpse_a", "snpse-a"]
+    sequential: true
+    paper_section: "Section 4.2"
+    description: "Sequential proposal from previous round's posterior"
+    algorithm: "Section 4.2"
+    implementation_class: "src.methods.baselines.SNPSE_A"
+    
+  SNPSE-B:
+    name: "Sequential NPSE Variant B"
+    alias: ["snpse_b", "snpse-b"]
+    sequential: true
+    paper_section: "Section 4.2"
+    description: "Sequential with mixed proposal distribution"
+    algorithm: "Section 4.2"
+    implementation_class: "src.methods.baselines.SNPSE_B"
+    
+  SNPSE-C:
+    name: "Sequential NPSE Variant C"
+    alias: ["snpse_c", "snpse-c"]
+    sequential: true
+    paper_section: "Section 4.2"
+    description: "Sequential with importance weighting"
+    algorithm: "Section 4.2"
+    implementation_class: "src.methods.baselines.SNPSE_C"
+    
+  NPE:
+    name: "Neural Posterior Estimation"
+    alias: ["npe", "baseline"]
+    sequential: false
+    paper_section: "Section 5 (Baselines)"
+    description: "Flow-based posterior estimation baseline"
+    implementation_class: "src.methods.baselines.NPE"
+    
+  SNPE-A:
+    name: "Sequential Neural Posterior Estimation A"
+    alias: ["snpe_a", "snpe-a", "baseline"]
+    sequential: true
+    paper_section: "Section 5 (Baselines)"
+    description: "Sequential NPE with rejection sampling"
+    implementation_class: "src.methods.baselines.SNPE_A"
+    
+  SNPE-B:
+    name: "Sequential Neural Posterior Estimation B"
+    alias: ["snpe_b", "snpe-b", "baseline"]
+    sequential: true
+    paper_section: "Section 5 (Baselines)"
+    description: "Sequential NPE with proposal from previous round"
+    implementation_class: "src.methods.baselines.SNPE_B"
+    
+  SNPE-C:
+    name: "Sequential Neural Posterior Estimation C"
+    alias: ["snpe_c", "snpe-c", "baseline"]
+    sequential: true
+    paper_section: "Section 5 (Baselines)"
+    description: "Sequential NPE with atomic proposal"
+    implementation_class: "src.methods.baselines.SNPE_C"
+    
+  NLE:
+    name: "Neural Likelihood Estimation"
+    alias: ["nle", "baseline"]
+    sequential: false
+    paper_section: "Section 5 (Baselines)"
+    description: "Likelihood-based inference baseline"
+    implementation_class: "src.methods.baselines.NLE"
+    
+  NRE:
+    name: "Neural Ratio Estimation"
+    alias: ["nre", "baseline"]
+    sequential: false
+    paper_section: "Section 5 (Baselines)"
+    description: "Ratio-based inference baseline"
+    implementation_class: "src.methods.baselines.NRE"
+
+# Training Configuration
+# Paper evidence contract: expose bounded sweep/config entries for learning_rate, optimizer
+training:
+  learning_rate: 1.0e-4  # 10^-4 from paper
+  optimizer: "Adam"
+  batch_size: 50
+  num_epochs: 3000
+  num_epochs_smoke: 2  # For runtime_smoke mode
+  validation_fraction: 0.15
+  early_stopping_patience: 1000
+  gradient_clip: 1.0
+  weight_decay: 0.0
+  
+  # Sequential training configuration (TSNPSE, SNPSE-A/B/C)
+  num_rounds: 5
+  num_rounds_smoke: 2
+  simulations_per_round: 10000
+  simulations_per_round_smoke: 100
+  batch_size_schedule:
+    non_sequential_budget_1000_or_10000: 50
+    sequential_budget_1000_or_10000: 200
+    any_budget_100000: 500
+  
+  # Checkpointing
+  save_checkpoints: true
+  checkpoint_dir: checkpoints
+  checkpoint_frequency: 10
+
+# Score Network Architecture Configuration
+# Reference grounding: paperbench_ref_001 sbi/sbi/neural_nets/embedding_nets.py
+model:
+  score_network:
+    type: "MLP"
+    hidden_dims: [256, 256, 256]
+    activation: "silu"
+    dropout: 0.0
+    layer_norm: true
+    
+  time_embedding:
+    type: "sinusoidal"
+    embedding_dim: 128
+    max_period: 10000
+    
+  conditioning_network:
+    type: "MLP"
+    hidden_dims: [128, 128]
+    activation: "silu"
+    
+# Diffusion Process Configuration
+# Paper evidence contract: environment/task registry includes VE SDE, VP SDE
+diffusion:
+  sde_type: "VE"  # VE SDE (Variance Exploding) or VP (Variance Preserving)
+  
+  # VE SDE configuration (default)
+  ve_sde:
+    sigma_min: 0.05
+    sigma_max: 50.0
+    num_scales: 1000
+    beta_schedule: "geometric"
+    
+  # VP SDE configuration
+  vp_sde:
+    beta_min: 0.1
+    beta_max: 11.0
+    num_steps: 1000
+    beta_schedule: "linear"
+    
+  # Sampling configuration
+  sampling:
+    method: "probability_flow_ode"  # RK45 probability-flow ODE sampler
+    num_steps: 1000
+    num_steps_smoke: 10
+    snr: 0.16  # Signal-to-noise ratio for Langevin dynamics
+    corrector_steps: 1
+    denoise: true
+    
+  # Truncation for TSNPSE (Algorithm 1)
+  truncation:
+    enabled: true
+    time_threshold: 0.1  # tau from paper
+    adaptive: false
+
+# Evaluation Configuration
+evaluation:
+  num_posterior_samples: 10000
+  num_posterior_samples_smoke: 100
+  num_observation_samples: 100
+  num_observation_samples_smoke: 10
+  
+  # Metrics
+  metrics:
+    - "c2st"  # Classifier Two-Sample Test
+    - "mmd"   # Maximum Mean Discrepancy
+    - "log_prob"  # Log probability
+    - "coverage"  # Credible interval coverage
+    - "runtime"
+  
+  # C2ST configuration
+  c2st:
+    num_folds: 5
+    classifier_hidden_dims: [128, 128]
+    classifier_epochs: 100
+    classifier_epochs_smoke: 10
+    
+  # Reference posterior (for benchmarks with known ground truth)
+  reference:
+    method: "rejection_abc"  # For ground truth estimation
+    num_samples: 100000
+    num_samples_smoke: 1000
+
+# Experiment Protocols
+# Paper evidence contract: environment/task registry for numerical experiments, benchmark results
+experiments:
+  numerical_experiments:
+    name: "Numerical Experiments"
+    paper_section: "Section 5"
+    description: "Benchmark results on SBI tasks"
+    datasets: ["two_moons", "slcp", "lotka_volterra", "gaussian_linear", "gaussian_mixture", "gaussian_linear_uniform", "bernoulli_glm", "sir", "neuroscience"]
+    methods: ["NPSE", "TSNPSE", "SNPSE-A", "SNPSE-B", "SNPSE-C", "NPE", "SNPE-C"]
+    num_runs: 10
+    num_runs_smoke: 1
+    
+  ablation_study:
+    name: "Ablation Study"
+    paper_section: "Section 5.3"
+    description: "Truncation threshold sensitivity analysis"
+    dataset: "slcp"
+    method: "TSNPSE"
+    truncation_times: [0.0, 0.05, 0.1, 0.2, 0.5, 1.0]
+    num_runs: 5
+    num_runs_smoke: 1
+    
+  sequential_comparison:
+    name: "Sequential vs Single Round"
+    paper_section: "Section 5.1"
+    description: "Comparison of sequential methods"
+    dataset: "lotka_volterra"
+    methods: ["NPSE", "TSNPSE", "SNPSE-A", "SNPSE-B", "SNPSE-C"]
+    simulation_budgets: [1000, 5000, 10000, 50000, 100000]
+    simulation_budgets_smoke: [100, 500]
+    
+  baseline_comparison:
+    name: "Baseline Comparison"
+    paper_section: "Section 5.2"
+    description: "TSNPSE vs NPE/NLE/NRE baselines"
+    datasets: ["two_moons", "slcp", "lotka_volterra", "gaussian_linear", "gaussian_mixture", "gaussian_linear_uniform", "bernoulli_glm", "sir", "neuroscience"]
+    methods: ["TSNPSE", "NPE", "SNPE-C", "NLE", "NRE"]
+    num_runs: 10
+    num_runs_smoke: 1
+
+# Environment/Task Registry
+# Paper evidence contract: expose environment/task registry entries with ids, aliases, setup metadata
+environments:
+  truncated_snpse:
+    name: "Truncated SNPSE"
+    paper_algorithm: "Algorithm 1"
+    description: "Sequential score estimation with trajectory truncation"
+    task_type: "Simulation-Based Inference"
+    method: "TSNPSE"
+    
+  benchmark_results:
+    name: "Benchmark Results"
+    paper_section: "Section 5, Figures 2-4"
+    description: "SBI benchmark evaluation suite"
+    tasks: ["two_moons", "slcp", "lotka_volterra"]
+    
+  real_world_neuroscience:
+    name: "Real-world Neuroscience Problem"
+    paper_section: "Section 5.4, Figure 7"
+    description: "Layer 5 pyramidal cell parameter inference"
+    dataset: "lotka_volterra"  # Proxy for neuroscience application
+    difficulty: "challenging"
+
+# Artifact Generation
+artifacts:
+  save_posterior_samples: true
+  save_metrics: true
+  save_figures: true
+  save_checkpoints: true
+  
+  figures:
+    - "posterior_plots"  # Figure 1 reproduction
+    - "c2st_vs_budget"   # Figure 2 reproduction
+    - "sequential_rounds"  # Figure 3 reproduction
+    - "lotka_volterra_posterior"  # Figure 4 reproduction
+    - "ablation_truncation"  # Figure 6 reproduction
+    
+  tables:
+    - "benchmark_metrics"  # Table 1 reproduction
+    - "runtime_comparison"
+    - "method_comparison"
+
+# Logging and Debugging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_dir: "logs"
+  tensorboard: true
+  wandb: false  # Set to true to enable Weights & Biases logging
+  
+# Random seeds for reproducibility
+seed:
+  global_seed: 42
+  train_seed: 42
+  eval_seed: 123
+  data_seed: 456
+
+# Computational resources
+compute:
+  device: "cuda"  # cuda, cpu, or auto
+  num_workers: 4
+  pin_memory: true
+  mixed_precision: false

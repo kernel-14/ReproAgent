@@ -1,0 +1,122 @@
+{
+  "artifact_label": "dry_run_contract_evaluation_result",
+  "core_contract_artifacts": {
+    "status": "ok",
+    "validation": {
+      "checked_obligations": {
+        "M_C_noising_loss_sampling_path": true,
+        "M_E_attention_path": true,
+        "binary_condition_state": true,
+        "blacklist_declared_not_used": true,
+        "joint_distribution_training": true,
+        "named_sde_ode_samplers": true,
+        "tokenizer_encode_contract": true,
+        "training_condition_resampling": true,
+        "training_metadata_surface": true
+      },
+      "failures": [],
+      "valid": true
+    },
+    "written": {
+      "results/attention_mask_registry.json": "results_runexp_smoke/results/attention_mask_registry.json",
+      "results/diffusion_config.json": "results_runexp_smoke/results/diffusion_config.json",
+      "results/evaluation_result.json": "results_runexp_smoke/results/evaluation_result.json",
+      "results/loss_trace.json": "results_runexp_smoke/results/loss_trace.json",
+      "results/model_registry.json": "results_runexp_smoke/results/model_registry.json",
+      "results/readiness.json": "results_runexp_smoke/results/readiness.json",
+      "results/sampling_trace.json": "results_runexp_smoke/results/sampling_trace.json",
+      "results/tokenizer_registry.json": "results_runexp_smoke/results/tokenizer_registry.json"
+    }
+  },
+  "dry_run_contract_artifact": true,
+  "experiment_id": "benchmark_4_1",
+  "method": "simformer",
+  "metrics_path": "results_runexp_smoke/metrics.json",
+  "mode": "runtime_smoke",
+  "not_real_benchmark_result": true,
+  "paper_scale_claim": false,
+  "primary_metrics": {
+    "baseline_comparisons": {
+      "NLE": {
+        "baseline_c2st": 0.9666666666666666,
+        "baseline_c2st_gap": 0.46666666666666656,
+        "baseline_nll": 45.15680311986317,
+        "expected_trend": "method gap to 0.5 should be lower in full paper-scale reproduction",
+        "method_c2st": 1.0,
+        "method_c2st_gap": 0.5,
+        "method_nll": 132.1811006228989,
+        "smoke_claims_outperformance": false
+      },
+      "NPE": {
+        "baseline_c2st": 0.9,
+        "baseline_c2st_gap": 0.4,
+        "baseline_nll": 79.47510211147545,
+        "expected_trend": "method gap to 0.5 should be lower in full paper-scale reproduction",
+        "method_c2st": 1.0,
+        "method_c2st_gap": 0.5,
+        "method_nll": 132.1811006228989,
+        "smoke_claims_outperformance": false
+      },
+      "NRE": {
+        "baseline_c2st": 0.9,
+        "baseline_c2st_gap": 0.4,
+        "baseline_nll": 57.04596363019376,
+        "expected_trend": "method gap to 0.5 should be lower in full paper-scale reproduction",
+        "method_c2st": 1.0,
+        "method_c2st_gap": 0.5,
+        "method_nll": 132.1811006228989,
+        "smoke_claims_outperformance": false
+      }
+    },
+    "binary_condition_state": true,
+    "bounded_input": true,
+    "c2st": 1.0,
+    "c2st_semantics": {
+      "complete_distinguishability": 1.0,
+      "perfect_alignment": 0.5
+    },
+    "conditioned_loss": 0.0019888293436220806,
+    "denoising_score_matching_loss": 0.0019320056480900212,
+    "experiment_id": "benchmark_4_1",
+    "mask_probability_0.3": 0.3,
+    "mask_variant": "dense",
+    "method": "simformer",
+    "mode_label": "runtime_smoke",
+    "nll": 132.1811006228989,
+    "noise_level_t": "sampled_uniformly_at_random",
+    "paper_scale_claim": false,
+    "paper_section": "4.1 Benchmark tasks",
+    "posterior_mean_error": 0.03992196006979887,
+    "sampler": "sde",
+    "similarity_guidance_scale": 1.0,
+    "simulation_budget": 16,
+    "task": "two_moons",
+    "trend_obligations": [
+      {
+        "asserted_in_smoke": false,
+        "claim": "Simformer outperforms previous state-of-the-art methods such as NPE for posterior inference.",
+        "comparison": "simformer.c2st closer to 0.5 than NPE/NLE/NRE on benchmark posterior samples",
+        "expected_direction": "lower_c2st_gap_to_0.5_is_better",
+        "named_baselines": [
+          "NPE",
+          "NLE",
+          "NRE"
+        ],
+        "recorded_not_claimed": true,
+        "trend_id": "baseline_outperformance"
+      },
+      {
+        "asserted_in_smoke": true,
+        "claim": "C2ST score 0.5 signifies perfect alignment; 1.0 indicates complete distinguishability.",
+        "comparison": "posterior_samples versus reference_samples",
+        "expected_direction": "closer_to_0.5_is_better",
+        "recorded_not_claimed": false,
+        "trend_id": "c2st_semantics"
+      }
+    ]
+  },
+  "readiness_note": "bounded dry-run contract artifact; use full mode for paper-scale benchmark claims",
+  "samples_path": "results_runexp_smoke/samples.npz",
+  "status": "completed_bounded_route",
+  "task": "two_moons"
+}

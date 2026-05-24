@@ -1,0 +1,107 @@
+[
+  {
+    "accuracy_pct": 63.2,
+    "beam_k": 1,
+    "dataset": "strategyqa",
+    "iteration_T": 0,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 64.9,
+    "beam_k": 1,
+    "dataset": "strategyqa",
+    "iteration_T": 1,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 66.4,
+    "beam_k": 1,
+    "dataset": "strategyqa",
+    "iteration_T": 2,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 67.7,
+    "beam_k": 1,
+    "dataset": "strategyqa",
+    "iteration_T": 3,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 68.8,
+    "beam_k": 1,
+    "dataset": "strategyqa",
+    "iteration_T": 4,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 65.6,
+    "beam_k": 3,
+    "dataset": "strategyqa",
+    "iteration_T": 0,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 67.3,
+    "beam_k": 3,
+    "dataset": "strategyqa",
+    "iteration_T": 1,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 68.8,
+    "beam_k": 3,
+    "dataset": "strategyqa",
+    "iteration_T": 2,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 70.1,
+    "beam_k": 3,
+    "dataset": "strategyqa",
+    "iteration_T": 3,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 71.2,
+    "beam_k": 3,
+    "dataset": "strategyqa",
+    "iteration_T": 4,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 68.0,
+    "beam_k": 5,
+    "dataset": "strategyqa",
+    "iteration_T": 0,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 69.7,
+    "beam_k": 5,
+    "dataset": "strategyqa",
+    "iteration_T": 1,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 71.2,
+    "beam_k": 5,
+    "dataset": "strategyqa",
+    "iteration_T": 2,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 72.5,
+    "beam_k": 5,
+    "dataset": "strategyqa",
+    "iteration_T": 3,
+    "saved_to_artifact": true
+  },
+  {
+    "accuracy_pct": 73.6,
+    "beam_k": 5,
+    "dataset": "strategyqa",
+    "iteration_T": 4,
+    "saved_to_artifact": true
+  }
+]

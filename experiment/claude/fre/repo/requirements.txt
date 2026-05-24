@@ -1,0 +1,40 @@
+# FRE reproduction runtime requirements
+# Paper: Unsupervised Zero-Shot Reinforcement Learning via Functional Reward Encodings
+#
+# Core dependencies are intentionally lightweight so that repository import,
+# registry construction, task sampling, baseline-adapter wiring, metric
+# aggregation, and smoke artifact writing work in minimal environments.
+#
+# reference_grounding: paperbench_ref_001 controllable_agent/test_url_benchmark.py
+# reference_grounding: paperbench_ref_001 controllable_agent/test_executor.py
+# reference_grounding: paperbench_ref_001 url_benchmark/d4rl_benchmark.py
+
+numpy>=1.23,<3.0
+PyYAML>=6.0,<7.0
+typing-extensions>=4.8
+packaging>=23.0
+tqdm>=4.64
+
+# Optional evaluation / artifact conveniences.
+# The codebase must lazy-import these; they are not required for import smoke.
+pandas>=1.5,<3.0
+matplotlib>=3.6,<4.0
+
+# Optional full training / offline-RL dependencies.
+# Install only for explicit full-mode FRE, FB, SF, CRL, AntMaze, Kitchen, or
+# ExORL evaluation routes; project modules must not import these at top level.
+# torch>=2.0
+# gymnasium>=0.29
+# gym>=0.26
+# d4rl @ git+https://github.com/Farama-Foundation/D4RL.git
+# mujoco>=2.3
+# dm-control>=1.0
+# h5py>=3.8
+# scikit-learn>=1.2
+# stable-baselines3>=2.0
+# hydra-core>=1.3
+# wandb>=0.15
+
+# Optional development / validation tools.
+# pytest>=7.0
+# ruff>=0.1

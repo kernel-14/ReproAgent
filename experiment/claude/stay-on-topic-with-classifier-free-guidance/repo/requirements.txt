@@ -1,0 +1,18 @@
+numpy>=1.23
+PyYAML>=6.0
+
+# Optional full reproduction dependencies. Modules lazy-import these only when
+# full benchmark/model routes are requested.
+# torch>=2.0
+# transformers>=4.36
+# accelerate>=0.25
+# datasets>=2.16
+# evaluate>=0.4
+# lm-eval>=0.4.2
+# human-eval>=1.0
+# scipy>=1.10
+# pandas>=1.5
+# statsmodels>=0.14
+# matplotlib>=3.7
+# pytest>=7.0
+

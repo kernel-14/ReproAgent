@@ -1,0 +1,1007 @@
+schema_version: "1.0"
+project:
+  name: "stochastic-interpolants-couplings"
+  paper: "Stochastic Interpolants with Data-Dependent Couplings"
+  canonical_entrypoint: "scripts/run_coupled_si.py"
+  default_mode: "runtime_smoke"
+  full_mode_requires_explicit_flag: true
+  artifact_dir_env: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  blacklisted_repositories:
+    - "https://github.com/interpolants/couplings"
+  scope_constraints:
+    standalone_implementation: true
+    no_blacklisted_repository_dependency: true
+    smoke_is_bounded_execution_of_real_routes: true
+    full_training_and_evaluation_available: true
+    pruning_rationale: "Default execution is bounded for cost, while the same data, coupling, interpolant, model, training, sampling, metric, and artifact routes scale to full ImageNet runs when mode=full is selected."
+
+runtime:
+  seed: 1234
+  device: "cpu"
+  deterministic: true
+  output_dir: "results"
+  checkpoint_dir: "checkpoints"
+  modes:
+    runtime_smoke:
+      max_train_steps: 2
+      max_eval_batches: 1
+      max_samples: 2
+      use_smoke_fixture: true
+      writes_readiness_artifacts: true
+      paper_visible_outputs_require_measured_route: true
+    bounded:
+      max_train_steps: 20
+      max_eval_batches: 4
+      max_samples: 16
+      use_smoke_fixture: false
+      paper_visible_outputs_require_measured_route: true
+    full:
+      max_train_steps: null
+      max_eval_batches: null
+      max_samples: 50000
+      use_smoke_fixture: false
+      paper_visible_outputs_require_measured_route: true
+
+artifacts:
+  readiness: "results/readiness.json"
+  evaluation_result: "results/evaluation_result.json"
+  dataset_registry: "results/dataset_registry.json"
+  data_manifest: "results/data_manifest.json"
+  environment_registry: "results/environment_registry.json"
+  scope_report: "results/scope_report.json"
+  experiment_registry: "results/experiment_registry.json"
+  artifact_manifest: "results/artifact_manifest.json"
+  metrics: "results/metrics.json"
+  method_registry: "results/method_registry.json"
+  ablation_registry: "results/ablation_registry.json"
+  config_resolved: "results/config_resolved.json"
+  sensitivity_report: "results/sensitivity_report.json"
+  training_trace: "results/training_trace.json"
+  train_log_jsonl: "results/train_log.jsonl"
+  checkpoint: "checkpoints/model.pt"
+  samples_dir: "results/samples"
+  examples_dir: "results/examples"
+  figure_1: "results/figures/figure_1.png"
+  figure_2: "results/figures/figure_2.png"
+  figure_3: "results/figures/figure_3.png"
+  figure_4: "results/figures/figure_4.png"
+  figure_6: "results/figures/figure_6.png"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+
+callable_artifact_writers:
+  dataset_registry: "stochastic_interpolants_couplings.artifacts.write_dataset_registry_artifact"
+  metrics: "stochastic_interpolants_couplings.artifacts.write_metrics_artifact"
+  data_manifest: "stochastic_interpolants_couplings.artifacts.write_data_manifest_artifact"
+  method_registry: "stochastic_interpolants_couplings.artifacts.write_method_registry_artifact"
+  ablation_registry: "stochastic_interpolants_couplings.artifacts.write_ablation_registry_artifact"
+  resolved_config: "stochastic_interpolants_couplings.artifacts.write_config_resolved_artifact"
+  sensitivity_report: "stochastic_interpolants_couplings.artifacts.write_sensitivity_report_artifact"
+  training_trace: "stochastic_interpolants_couplings.artifacts.write_training_trace_artifact"
+  table_2: "fid_experiment_table_task.write_table_2_artifact"
+  figure_3: "experiment_and_512x512_image.write_figure_3_artifact"
+
+paper_evidence_matrix:
+  - id: "sec3_core_interpolants"
+    section: "3 Stochastic interpolants with couplings"
+    objects:
+      - "rho_0"
+      - "rho_1"
+      - "rho(x_0,x_1)"
+      - "I_t"
+      - "alpha_t"
+      - "beta_t"
+    implementation:
+      config_paths:
+        - "interpolant"
+        - "coupling"
+        - "training.algorithm_1"
+      callable_paths:
+        - "stochastic_interpolants_couplings.interpolants.InterpolantCoefficients"
+        - "stochastic_interpolants_couplings.interpolants.interpolant_state"
+        - "stochastic_interpolants_couplings.couplings.build_coupling"
+      artifact_writers:
+        - "stochastic_interpolants_couplings.artifacts.write_config_resolved_artifact"
+  - id: "sec3_2_data_dependent_couplings"
+    section: "3.2 Designing data-dependent couplings"
+    objects:
+      - "rho_0(x_0 | x_1)"
+      - "data-dependent coupling"
+      - "conditional base sampler"
+    implementation:
+      config_paths:
+        - "coupling.types.data_dependent"
+        - "tasks.inpainting.conditioning"
+        - "tasks.super_resolution.conditioning"
+      callable_paths:
+        - "stochastic_interpolants_couplings.couplings.DataDependentCoupling.sample_x0_given_x1"
+        - "stochastic_interpolants_couplings.couplings.InpaintingCoupling.sample_x0_given_x1"
+        - "stochastic_interpolants_couplings.couplings.SuperResolutionCoupling.sample_x0_given_x1"
+      artifact_writers:
+        - "stochastic_interpolants_couplings.artifacts.write_method_registry_artifact"
+  - id: "sec3_3_algorithm_1_transport_cost"
+    section: "3.3 Reducing transport costs via coupling"
+    objects:
+      - "Algorithm 1 Training"
+      - "x_1 ~ rho_1"
+      - "zeta ~ N(0,I_d)"
+      - "t ~ U(0,1)"
+      - "transport cost diagnostics"
+      - "hat L_b"
+    implementation:
+      config_paths:
+        - "training"
+        - "metrics.transport_cost"
+      callable_paths:
+        - "stochastic_interpolants_couplings.training.train_experiment"
+        - "stochastic_interpolants_couplings.training.train_one_step"
+        - "stochastic_interpolants_couplings.interpolants.velocity_objective"
+      artifact_writers:
+        - "stochastic_interpolants_couplings.artifacts.write_training_trace_artifact"
+  - id: "sec3_4_learning_sampling"
+    section: "3.4 Learning and Sampling"
+    objects:
+      - "empirical approximation hat L_b"
+      - "minibatch n_b"
+      - "z_i ~ N(0,I_d)"
+      - "t_i ~ U([0,1])"
+      - "ODE sampler"
+      - "SDE sampler"
+    implementation:
+      config_paths:
+        - "sampling.ode"
+        - "sampling.sde"
+      callable_paths:
+        - "stochastic_interpolants_couplings.sampling.sample_ode"
+        - "stochastic_interpolants_couplings.sampling.sample_sde"
+        - "stochastic_interpolants_couplings.evaluation.evaluate_predictions"
+      artifact_writers:
+        - "stochastic_interpolants_couplings.artifacts.write_metrics_artifact"
+  - id: "sec4_1_inpainting"
+    section: "4.1 In-painting"
+    objects:
+      - "x_1 in R^{C x W x H}"
+      - "xi in {0,1}^{C x W x H}"
+      - "mask_tiles_64"
+      - "mask_probability_0.3"
+      - "optional class labels"
+      - "ImageNet-256x256"
+      - "ImageNet-512x512"
+    implementation:
+      config_paths:
+        - "tasks.inpainting"
+      callable_paths:
+        - "stochastic_interpolants_couplings.couplings.make_inpainting_mask"
+        - "stochastic_interpolants_couplings.data.build_task_batch"
+        - "fid_experiment_table_task.run_table_2_route"
+        - "experiment_and_512x512_image.run_figure_3_route"
+      artifact_writers:
+        - "fid_experiment_table_task.write_table_2_artifact"
+        - "experiment_and_512x512_image.write_figure_3_artifact"
+  - id: "sec4_2_super_resolution"
+    section: "4.2 Super-resolution on Imagenet"
+    objects:
+      - "high-resolution x_1"
+      - "low-resolution image condition"
+      - "64x64 to 256x256"
+      - "256x256 to 512x512"
+      - "FID comparison"
+    implementation:
+      config_paths:
+        - "tasks.super_resolution"
+      callable_paths:
+        - "stochastic_interpolants_couplings.couplings.make_low_resolution_condition"
+        - "stochastic_interpolants_couplings.evaluation.evaluate_superresolution"
+      artifact_writers:
+        - "stochastic_interpolants_couplings.artifacts.write_metrics_artifact"
+
+datasets:
+  reference_grounding: "paperbench_ref_004 xmodaler/datasets/README.md"
+  # Dataset wrappers are selected by config, with full downloads kept lazy.
+  default_train: "imagenet_1k"
+  default_val: "imagenet_1k"
+  default_test: "imagenet_1k"
+  data_root: "${DATA_ROOT:-data/imagenet}"
+  smoke_fixture_root: "data/smoke"
+  registry:
+    imagenet:
+      id: "imagenet"
+      canonical_id: "imagenet_1k"
+      aliases:
+        - "ImageNet"
+        - "ImageNet。"
+        - "imagenet"
+        - "imagenet-1k"
+      loader: "stochastic_interpolants_couplings.data.load_dataset"
+      factory: "stochastic_interpolants_couplings.data.make_data"
+      prepare_validate: "stochastic_interpolants_couplings.data.prepare_data"
+      readiness_check: "stochastic_interpolants_couplings.data.check_data_available"
+      external_backend:
+        kind: "huggingface_datasets"
+        dataset_name: "imagenet-1k"
+        trust_remote_code: true
+        lazy_import: "datasets.load_dataset"
+      splits:
+        train: "train"
+        validation: "validation"
+      preprocessing:
+        callable: "stochastic_interpolants_couplings.data.preprocess_image_tensor"
+        normalize_range: [-1.0, 1.0]
+      consumed_by:
+        - "4.1 In-painting"
+        - "4.2 Super-resolution on Imagenet"
+        - "Table 2: FID for Inpainting Task"
+        - "Figure 3: Image inpainting: ImageNet-256x256 and ImageNet-512x512"
+    imagenet_1k:
+      id: "imagenet_1k"
+      canonical_id: "imagenet_1k"
+      aliases:
+        - "imagenet_1k"
+        - "imagenet-1k"
+        - "ImageNet-1K"
+      loader: "stochastic_interpolants_couplings.data.load_dataset"
+      factory: "stochastic_interpolants_couplings.data.make_data"
+      prepare_validate: "stochastic_interpolants_couplings.data.prepare_data"
+      readiness_check: "stochastic_interpolants_couplings.data.check_data_available"
+      external_backend:
+        kind: "huggingface_datasets"
+        dataset_name: "imagenet-1k"
+        trust_remote_code: true
+        lazy_import: "datasets.load_dataset"
+      splits:
+        train: "train"
+        validation: "validation"
+      preprocessing:
+        callable: "stochastic_interpolants_couplings.data.preprocess_image_tensor"
+        normalize_range: [-1.0, 1.0]
+      consumed_by:
+        - "4.1 In-painting"
+        - "4.2 Super-resolution on Imagenet"
+    imagenet_c:
+      id: "imagenet_c"
+      canonical_id: "imagenet_c"
+      aliases:
+        - "imagenet_c"
+        - "imagenet-c"
+        - "ImageNet-C"
+      loader: "stochastic_interpolants_couplings.data.load_dataset"
+      factory: "stochastic_interpolants_couplings.data.make_data"
+      prepare_validate: "stochastic_interpolants_couplings.data.prepare_data"
+      readiness_check: "stochastic_interpolants_couplings.data.check_data_available"
+      external_backend:
+        kind: "local_or_huggingface"
+        dataset_name: "imagenet-c"
+        trust_remote_code: true
+        lazy_import: "datasets.load_dataset"
+      splits:
+        validation: "validation"
+      preprocessing:
+        callable: "stochastic_interpolants_couplings.data.preprocess_image_tensor"
+        normalize_range: [-1.0, 1.0]
+      consumed_by:
+        - "readiness"
+        - "robustness_optional"
+
+environments:
+  reference_grounding: "paperbench_ref_004 README.md"
+  registry:
+    imagenet:
+      id: "imagenet"
+      aliases:
+        - "represent full"
+        - "is determined"
+        - "low-resolution image"
+        - "perform various downstream"
+        - "ImageNet"
+        - "conditional image generation task"
+      setup_metadata:
+        dataset_ids:
+          - "imagenet"
+          - "imagenet_1k"
+          - "imagenet_c"
+        default_resolution: 256
+        external_data_required_for_full: true
+        smoke_fixture_available: true
+      availability_check: "stochastic_interpolants_couplings.data.check_data_available"
+      make_environment: "stochastic_interpolants_couplings.config.make_environment"
+      runnable_config_hooks:
+        - "stochastic_interpolants_couplings.data.resolve_data_root"
+        - "stochastic_interpolants_couplings.data.make_data"
+    imagenet_256x256:
+      id: "ImageNet-256x256"
+      aliases:
+        - "imagenet_256"
+        - "ImageNet-256x256"
+      parent: "imagenet"
+      setup_metadata:
+        channels: 3
+        width: 256
+        height: 256
+      availability_check: "stochastic_interpolants_couplings.data.check_data_available"
+    imagenet_512x512:
+      id: "ImageNet-512x512"
+      aliases:
+        - "imagenet_512"
+        - "ImageNet-512x512"
+      parent: "imagenet"
+      setup_metadata:
+        channels: 3
+        width: 512
+        height: 512
+      availability_check: "stochastic_interpolants_couplings.data.check_data_available"
+
+interpolant:
+  coefficient_family: "linear"
+  # I_t = alpha_t x0 + beta_t x1; dI_t/dt = dot_alpha_t x0 + dot_beta_t x1
+  alpha_t:
+    name: "alpha_t"
+    formula: "1 - t"
+    derivative_formula: "-1"
+    callable: "stochastic_interpolants_couplings.interpolants.alpha_linear"
+    derivative_callable: "stochastic_interpolants_couplings.interpolants.dalpha_linear"
+    default: "linear_decreasing"
+  beta_t:
+    name: "beta_t"
+    formula: "t"
+    derivative_formula: "1"
+    callable: "stochastic_interpolants_couplings.interpolants.beta_linear"
+    derivative_callable: "stochastic_interpolants_couplings.interpolants.dbeta_linear"
+    default: "linear_increasing"
+  state:
+    formula: "I_t = alpha_t * x0 + beta_t * x1"
+    derivative_formula: "dot_I_t = dot_alpha_t * x0 + dot_beta_t * x1"
+    callable: "stochastic_interpolants_couplings.interpolants.interpolant_state"
+  objectives:
+    velocity_field:
+      id: "hat_L_b"
+      formula: "mean(|hat_b_t(I_t, condition)|^2 - 2 * dot_I_t dot hat_b_t(I_t, condition))"
+      callable: "stochastic_interpolants_couplings.interpolants.velocity_objective"
+      model_call: "hat_b_t(I_t, t, condition)"
+    score_related:
+      id: "score_matching_related"
+      formula: "mean(|hat_s_t(I_t, condition)|^2 + 2 * div_or_noise_target dot hat_s_t(I_t, condition))"
+      callable: "stochastic_interpolants_couplings.interpolants.score_objective"
+      enabled_default: false
+
+sampling_sources:
+  x_1:
+    distribution: "rho_1"
+    source: "dataset batch from configured ImageNet task"
+    callable: "stochastic_interpolants_couplings.data.build_task_batch"
+  zeta:
+    distribution: "N(0, I_d)"
+    aliases:
+      - "z"
+      - "zeta"
+    callable: "stochastic_interpolants_couplings.couplings.sample_standard_normal_like"
+  t:
+    distribution: "U(0,1)"
+    callable: "stochastic_interpolants_couplings.interpolants.sample_uniform_time"
+
+coupling:
+  default: "data_dependent"
+  sigma: 1.0
+  condition_injection: "task_supplied"
+  types:
+    independent_gaussian:
+      id: "independent_gaussian"
+      display_name: "Uncoupled Interpolant (Baseline)"
+      aliases:
+        - "independent Gaussian coupling"
+        - "rho_0 is a Gaussian with independent coupling to rho_1"
+        - "Gaussian rho_0 with independent coupling to rho_1"
+        - "baseline where rho0 is Gaussian with independent coupling to rho1"
+      rho_0_given_x1:
+        formula: "x0 = zeta, zeta ~ N(0,I_d), independent of x1"
+        callable: "stochastic_interpolants_couplings.couplings.IndependentGaussianCoupling.sample_x0_given_x1"
+      factory: "stochastic_interpolants_couplings.couplings.build_coupling"
+      baseline: true
+      used_for:
+        - "Table 2: FID for Inpainting Task"
+        - "4.2 Super-resolution on Imagenet"
+    data_dependent:
+      id: "data_dependent"
+      display_name: "Dependent Coupling (Ours)"
+      aliases:
+        - "data-dependent coupling"
+        - "conditional rho_0(x_0 | x_1)"
+        - "ours"
+        - "stochastic interpolants with data-dependent couplings"
+      rho_0_given_x1:
+        formula: "x0 = m(x1, condition) + sigma * zeta"
+        callable: "stochastic_interpolants_couplings.couplings.DataDependentCoupling.sample_x0_given_x1"
+      factory: "stochastic_interpolants_couplings.couplings.build_coupling"
+      baseline: false
+      used_for:
+        - "Table 2: FID for Inpainting Task"
+        - "4.2 Super-resolution on Imagenet"
+    inpainting_data_dependent:
+      id: "inpainting_data_dependent"
+      parent: "data_dependent"
+      rho_0_given_x1:
+        formula: "x0 = xi * x1 + (1 - xi) * zeta"
+        callable: "stochastic_interpolants_couplings.couplings.InpaintingCoupling.sample_x0_given_x1"
+      conditioning_callable: "stochastic_interpolants_couplings.couplings.make_inpainting_mask"
+    super_resolution_data_dependent:
+      id: "super_resolution_data_dependent"
+      parent: "data_dependent"
+      rho_0_given_x1:
+        formula: "x0 = upsample(downsample(x1)) + sigma * zeta"
+        callable: "stochastic_interpolants_couplings.couplings.SuperResolutionCoupling.sample_x0_given_x1"
+      conditioning_callable: "stochastic_interpolants_couplings.couplings.make_low_resolution_condition"
+
+model:
+  default: "velocity_unet"
+  factory: "stochastic_interpolants_couplings.models.build_velocity_model"
+  velocity_model_call: "hat_b_t(I_t, t, condition)"
+  input_channels: 3
+  condition_channels: "auto_from_task"
+  hidden_channels: 32
+  num_res_blocks: 2
+  time_embedding_dim: 64
+  class_labels:
+    enabled: false
+    num_classes: 1000
+    optional_injection: true
+  count_parameters: "stochastic_interpolants_couplings.models.count_parameters"
+  registry:
+    velocity_unet:
+      id: "velocity_unet"
+      aliases:
+        - "velocity field model hat_b_t(I_t)"
+        - "hat_b"
+      class: "stochastic_interpolants_couplings.models.VelocityUNet"
+      conditioning_adapter: "stochastic_interpolants_couplings.models.ConditioningAdapter"
+    resnet:
+      id: "resnet"
+      aliases:
+        - "resnet"
+      factory: "stochastic_interpolants_couplings.models.build_velocity_model"
+      adapter_variant: "residual_velocity_adapter"
+      baseline: true
+    ddpm:
+      id: "ddpm"
+      aliases:
+        - "ddpm"
+        - "diffusion_model"
+      factory: "stochastic_interpolants_couplings.models.build_velocity_model"
+      adapter_variant: "diffusion_velocity_adapter"
+      baseline: true
+
+training:
+  reference_grounding: "paperbench_ref_004 xmodaler/engine/defaults.py"
+  # Reference standard trainer pattern is adapted as an executable Algorithm 1 route:
+  # construct dataset/model/optimizer from config, iterate batches, log structured metrics.
+  entrypoint: "stochastic_interpolants_couplings.training.train_experiment"
+  algorithm_1:
+    name: "Algorithm 1 Training"
+    steps:
+      - "Draw x_1^i ~ rho_1(x_1)"
+      - "Draw zeta_i ~ N(0,I_d)"
+      - "Draw t_i ~ U(0,1)"
+      - "Compute x_0^i = m(x_1^i) + sigma * zeta_i"
+      - "Compute I_t_i = alpha_t_i * x_0^i + beta_t_i * x_1^i"
+      - "Call velocity model hat_b_t_i(I_t_i, condition)"
+      - "Compute empirical loss hat_L_b"
+      - "Take optimizer step"
+  batch_size: 32
+  batch_size_anchor: "batch_size_32"
+  optimizer:
+    name: "Adam"
+    lr: 0.0002
+    betas: [0.9, 0.999]
+    weight_decay: 0.0
+  scheduler:
+    name: "cosine"
+    warmup_steps: 1000
+  max_steps: 1000000
+  log_every: 10
+  checkpoint_every: 10000
+  metrics:
+    - "hat_L_b"
+    - "transport_cost"
+    - "sampling_success_rate"
+  callables:
+    build_optimizer: "stochastic_interpolants_couplings.training.build_optimizer"
+    build_scheduler: "stochastic_interpolants_couplings.training.build_scheduler"
+    train_one_step: "stochastic_interpolants_couplings.training.train_one_step"
+    save_checkpoint: "stochastic_interpolants_couplings.training.save_checkpoint"
+    load_checkpoint: "stochastic_interpolants_couplings.training.load_checkpoint"
+
+sampling:
+  default: "ode"
+  num_steps: 32
+  seed: 1234
+  ode:
+    id: "ode"
+    display_name: "ODE sampler"
+    formula: "dX_t = hat_b_t(X_t, condition) dt"
+    callable: "stochastic_interpolants_couplings.sampling.sample_ode"
+    integrator: "forward_euler"
+    distinct_route_required: true
+  sde:
+    id: "sde"
+    display_name: "SDE sampler"
+    formula: "dX_t = hat_b_t(X_t, condition) dt + gamma(t) dW_t"
+    callable: "stochastic_interpolants_couplings.sampling.sample_sde"
+    integrator: "euler_maruyama"
+    distinct_route_required: true
+    diffusion_gamma: 0.0
+
+tasks:
+  inpainting:
+    id: "4.1 In-painting"
+    aliases:
+      - "inpainting"
+      - "in-painting task"
+      - "conditional image generation task"
+    dataset: "imagenet_1k"
+    environment_ids:
+      - "ImageNet-256x256"
+      - "ImageNet-512x512"
+    task_factory: "stochastic_interpolants_couplings.config.make_task"
+    data_factory: "stochastic_interpolants_couplings.data.build_task_batch"
+    coupling_default: "inpainting_data_dependent"
+    baseline_coupling: "independent_gaussian"
+    conditioning:
+      type: "binary_mask_visible_pixels"
+      xi_shape: ["C", "W", "H"]
+      xi_values: [0, 1]
+      mask_tiles: 64
+      mask_tiles_anchor: "mask_tiles_64"
+      mask_probability: 0.3
+      mask_probability_anchor: "mask_probability_0.3"
+      pre_specified_mask: true
+      same_value_all_channels_at_spatial_location: true
+      optional_class_labels: true
+      mask_callable: "stochastic_interpolants_couplings.couplings.make_inpainting_mask"
+    resolutions:
+      - channels: 3
+        width: 256
+        height: 256
+        id: "ImageNet-256x256"
+      - channels: 3
+        width: 512
+        height: 512
+        id: "ImageNet-512x512"
+    artifacts:
+      - "Table 2"
+      - "Figure 3"
+  super_resolution:
+    id: "4.2 Super-resolution on Imagenet"
+    aliases:
+      - "super_resolution"
+      - "image super-resolution"
+      - "low-resolution image"
+      - "same-content higher-resolution generation"
+    dataset: "imagenet_1k"
+    environment_ids:
+      - "ImageNet-256x256"
+      - "ImageNet-512x512"
+    task_factory: "stochastic_interpolants_couplings.config.make_task"
+    data_factory: "stochastic_interpolants_couplings.data.build_task_batch"
+    coupling_default: "super_resolution_data_dependent"
+    baseline_coupling: "independent_gaussian"
+    conditioning:
+      type: "low_resolution_image"
+      low_resolution_callable: "stochastic_interpolants_couplings.couplings.make_low_resolution_condition"
+      downsample_mode: "bicubic"
+      upsample_mode: "bicubic"
+      optional_class_labels: true
+    scales:
+      - id: "64x64_to_256x256"
+        low_resolution: 64
+        high_resolution: 256
+        channels: 3
+      - id: "256x256_to_512x512"
+        low_resolution: 256
+        high_resolution: 512
+        channels: 3
+    artifacts:
+      - "Table 3"
+      - "Figure 4"
+      - "Figure 6"
+
+methods:
+  registry:
+    ours:
+      id: "ours"
+      display_name: "Dependent Coupling (Ours)"
+      aliases:
+        - "ours"
+        - "stochastic interpolants"
+        - "data-dependent couplings"
+      coupling_type: "data_dependent"
+      model: "velocity_unet"
+      factory: "stochastic_interpolants_couplings.config.make_method"
+      training_route: "stochastic_interpolants_couplings.training.train_experiment"
+      evaluation_route: "stochastic_interpolants_couplings.evaluation.evaluate_experiment"
+      sampling_routes:
+        ode: "stochastic_interpolants_couplings.sampling.sample_ode"
+        sde: "stochastic_interpolants_couplings.sampling.sample_sde"
+      metrics:
+        - "fid"
+        - "transport_cost"
+        - "hat_L_b"
+    resnet:
+      id: "resnet"
+      display_name: "ResNet velocity baseline"
+      aliases:
+        - "resnet"
+      coupling_type: "independent_gaussian"
+      model: "resnet"
+      factory: "stochastic_interpolants_couplings.config.make_method"
+      baseline: true
+      metrics:
+        - "fid"
+    ddpm:
+      id: "ddpm"
+      display_name: "DDPM / diffusion model baseline"
+      aliases:
+        - "ddpm"
+        - "diffusion_model"
+      coupling_type: "independent_gaussian"
+      model: "ddpm"
+      factory: "stochastic_interpolants_couplings.config.make_method"
+      baseline: true
+      metrics:
+        - "fid"
+    diffusion_model:
+      id: "diffusion_model"
+      display_name: "Diffusion model baseline"
+      aliases:
+        - "diffusion_model"
+        - "ddpm"
+      coupling_type: "independent_gaussian"
+      model: "ddpm"
+      factory: "stochastic_interpolants_couplings.config.make_method"
+      baseline: true
+      metrics:
+        - "fid"
+
+baselines:
+  registry:
+    independent_gaussian_coupling:
+      id: "independent_gaussian_coupling"
+      display_name: "Uncoupled Interpolant (Baseline)"
+      aliases:
+        - "rho_0 is a Gaussian with independent coupling to rho_1"
+        - "Gaussian rho_0 with independent coupling to rho_1"
+        - "baseline where rho0 is Gaussian with independent coupling to rho1"
+      coupling_type: "independent_gaussian"
+      factory: "stochastic_interpolants_couplings.couplings.build_coupling"
+      compared_in:
+        - "Table 2: FID for Inpainting Task"
+        - "4.2 Super-resolution on Imagenet"
+    ddpm:
+      id: "ddpm"
+      display_name: "DDPM baseline"
+      model: "ddpm"
+      factory: "stochastic_interpolants_couplings.config.make_method"
+    resnet:
+      id: "resnet"
+      display_name: "ResNet baseline"
+      model: "resnet"
+      factory: "stochastic_interpolants_couplings.config.make_method"
+
+metrics:
+  reference_grounding: "paperbench_ref_004 xmodaler/engine/defaults.py"
+  registry:
+    fid:
+      id: "fid"
+      display_name: "FID"
+      aliases:
+        - "FID"
+        - "FID-50k"
+        - "FID for Inpainting Task"
+        - "FID for super-resolution"
+      formula: "||mu_real - mu_fake||_2^2 + Tr(Sigma_real + Sigma_fake - 2 * sqrt(Sigma_real * Sigma_fake))"
+      compute: "stochastic_interpolants_couplings.metrics.compute_fidelity_score"
+      aggregate: "stochastic_interpolants_couplings.metrics.aggregate_fidelity_score"
+      writer: "stochastic_interpolants_couplings.metrics.write_fidelity_score_artifact"
+      lower_is_better: true
+      consumed_by:
+        - "Table 2: FID for Inpainting Task"
+        - "4.2 Super-resolution on Imagenet"
+    transport_cost:
+      id: "transport_cost"
+      formula: "mean(||x1 - x0||_2^2)"
+      compute: "stochastic_interpolants_couplings.metrics.compute_transport_cost"
+      aggregate: "stochastic_interpolants_couplings.metrics.aggregate_transport_cost"
+      lower_is_better: true
+      trend_assertion: "data-dependent coupling should reduce or improve transport-related behavior compared with independent Gaussian coupling"
+    hat_L_b:
+      id: "hat_L_b"
+      formula: "mean(|hat_b|^2 - 2 * dot_I_t dot hat_b)"
+      compute: "stochastic_interpolants_couplings.interpolants.velocity_objective"
+      aggregate: "stochastic_interpolants_couplings.metrics.aggregate_loss"
+      lower_is_better: true
+    sampling_success_rate:
+      id: "sampling_success_rate"
+      formula: "successful_sampling_batches / attempted_sampling_batches"
+      compute: "stochastic_interpolants_couplings.metrics.compute_sampling_success_rate"
+      aggregate: "stochastic_interpolants_couplings.metrics.aggregate_success_rate"
+      higher_is_better: true
+    accuracy:
+      id: "accuracy"
+      compute: "stochastic_interpolants_couplings.metrics.compute_accuracy"
+      aggregate: "stochastic_interpolants_couplings.metrics.aggregate_accuracy"
+    fidelity_score:
+      id: "fidelity_score"
+      compute: "stochastic_interpolants_couplings.metrics.compute_fidelity_score"
+      aggregate: "stochastic_interpolants_couplings.metrics.aggregate_fidelity_score"
+    f1:
+      id: "f1"
+      compute: "stochastic_interpolants_couplings.metrics.compute_f1"
+      aggregate: "stochastic_interpolants_couplings.metrics.aggregate_f1"
+
+evaluation:
+  entrypoint: "stochastic_interpolants_couplings.evaluation.evaluate_predictions"
+  evaluate_predictions: "stochastic_interpolants_couplings.evaluation.evaluate_predictions"
+  evaluate_experiment: "stochastic_interpolants_couplings.evaluation.evaluate_experiment"
+  evaluate_inpainting: "stochastic_interpolants_couplings.evaluation.evaluate_inpainting"
+  evaluate_superresolution: "stochastic_interpolants_couplings.evaluation.evaluate_superresolution"
+  pairwise_metric_runner: "stochastic_interpolants_couplings.evaluation.evaluate_pairwise"
+  summary: "stochastic_interpolants_couplings.evaluation.summarize_metrics"
+  require_checkpoint_for_full: true
+  require_data_root_for_full: true
+  data_route_calls:
+    - "stochastic_interpolants_couplings.data.resolve_data_root"
+    - "stochastic_interpolants_couplings.data.check_data_available"
+    - "stochastic_interpolants_couplings.data.make_data"
+    - "stochastic_interpolants_couplings.data.build_dataloader"
+    - "stochastic_interpolants_couplings.data.build_task_batch"
+    - "stochastic_interpolants_couplings.data.preprocess_image_tensor"
+
+sweeps:
+  registry:
+    alpha_t:
+      values:
+        - "linear_decreasing"
+      resolver: "stochastic_interpolants_couplings.config.resolve_alpha_defaults"
+      callable_values: "stochastic_interpolants_couplings.config.alpha_values"
+    beta_t:
+      values:
+        - "linear_increasing"
+      resolver: "stochastic_interpolants_couplings.config.resolve_beta_defaults"
+      callable_values: "stochastic_interpolants_couplings.config.beta_values"
+    batch_size_n_b:
+      values: [32]
+      default: 32
+      anchor: "batch_size_32"
+      resolver: "stochastic_interpolants_couplings.config.resolve_batch_size_defaults"
+      callable_values: "stochastic_interpolants_couplings.config.batch_size_values"
+    gamma:
+      values: [0, 1]
+      default: 0
+      resolver: "stochastic_interpolants_couplings.config.resolve_gamma_defaults"
+      callable_values: "stochastic_interpolants_couplings.config.gamma_values"
+    similarity_guidance_scale:
+      values: [0, 1]
+      default: 0
+      resolver: "stochastic_interpolants_couplings.config.resolve_similarity_guidance_defaults"
+    sampler_type:
+      values:
+        - "ode"
+        - "sde"
+      default: "ode"
+    coupling_type:
+      values:
+        - "independent_gaussian"
+        - "data_dependent"
+      default: "data_dependent"
+    task:
+      values:
+        - "inpainting"
+        - "super_resolution"
+      default: "inpainting"
+    image_shape:
+      channels: [3]
+      width: [256, 512]
+      height: [256, 512]
+    mask:
+      xi_values: [0, 1]
+      mask_tiles: [64]
+      mask_probability: [0.3]
+    optional_class_labels:
+      values: [false, true]
+      default: false
+
+fixed_hyperparameters:
+  batch_size_32: 32
+  mask_tiles_64: 64
+  mask_probability_0.3: 0.3
+
+experiment_protocols:
+  reference_grounding: "paperbench_ref_004 xmodaler/engine/defaults.py"
+  matrix:
+    - id: "core_stochastic_interpolants_dry_run"
+      display_name: "core stochastic interpolants dry-run"
+      task: "core"
+      environment: "imagenet"
+      dataset: "imagenet_1k"
+      method: "ours"
+      coupling_type: "data_dependent"
+      sampler_type: "ode"
+      metrics:
+        - "hat_L_b"
+        - "transport_cost"
+        - "sampling_success_rate"
+      train_route: "stochastic_interpolants_couplings.training.train_experiment"
+      evaluation_route: "stochastic_interpolants_couplings.evaluation.evaluate_experiment"
+      artifact_writers:
+        - "stochastic_interpolants_couplings.artifacts.write_training_trace_artifact"
+        - "stochastic_interpolants_couplings.artifacts.write_metrics_artifact"
+    - id: "inpainting_dry_run"
+      display_name: "4.1 In-painting dry-run"
+      task: "inpainting"
+      environment: "ImageNet-256x256"
+      dataset: "imagenet_1k"
+      method: "ours"
+      coupling_type: "inpainting_data_dependent"
+      sampler_type: "ode"
+      metrics:
+        - "fid"
+        - "transport_cost"
+      train_route: "stochastic_interpolants_couplings.training.train_experiment"
+      evaluation_route: "stochastic_interpolants_couplings.evaluation.evaluate_inpainting"
+      artifact_writers:
+        - "fid_experiment_table_task.write_table_2_artifact"
+        - "experiment_and_512x512_image.write_figure_3_artifact"
+    - id: "super_resolution_dry_run"
+      display_name: "4.2 Super-resolution on Imagenet dry-run"
+      task: "super_resolution"
+      environment: "ImageNet-256x256"
+      dataset: "imagenet_1k"
+      method: "ours"
+      coupling_type: "super_resolution_data_dependent"
+      sampler_type: "ode"
+      metrics:
+        - "fid"
+        - "transport_cost"
+      train_route: "stochastic_interpolants_couplings.training.train_experiment"
+      evaluation_route: "stochastic_interpolants_couplings.evaluation.evaluate_superresolution"
+      artifact_writers:
+        - "stochastic_interpolants_couplings.artifacts.write_metrics_artifact"
+    - id: "table_2_fid_reporting_protocol"
+      display_name: "Table 2: FID for Inpainting Task"
+      table_name: "Table 2"
+      task: "inpainting"
+      environment: "ImageNet-256x256"
+      dataset: "imagenet_1k"
+      methods:
+        - "independent_gaussian_coupling"
+        - "ours"
+      coupling_columns:
+        - "independent_gaussian"
+        - "data_dependent"
+      metric: "fid"
+      route: "fid_experiment_table_task.run_table_2_route"
+      writer: "fid_experiment_table_task.write_table_2_artifact"
+      output: "results/tables/table_2.csv"
+      paper_reference_values:
+        uncoupled_interpolant_baseline_fid50k: 1.35
+        dependent_coupling_ours_fid50k: 1.13
+      measured_values_required_for_claim: true
+    - id: "figure_3_visualization_protocol"
+      display_name: "Figure 3: Image inpainting: ImageNet-256x256 and ImageNet-512x512"
+      figure_name: "Figure 3"
+      task: "inpainting"
+      environments:
+        - "ImageNet-256x256"
+        - "ImageNet-512x512"
+      dataset: "imagenet_1k"
+      method: "ours"
+      route: "experiment_and_512x512_image.run_figure_3_route"
+      writer: "experiment_and_512x512_image.write_figure_3_artifact"
+      output: "results/figures/figure_3.png"
+      columns:
+        - "masked images"
+        - "in-filled model samples"
+        - "original images"
+      measured_values_required_for_claim: true
+    - id: "super_resolution_fid_protocol"
+      display_name: "4.2 Super-resolution on Imagenet"
+      task: "super_resolution"
+      environment: "ImageNet-256x256"
+      dataset: "imagenet_1k"
+      methods:
+        - "independent_gaussian_coupling"
+        - "ours"
+        - "ddpm"
+        - "resnet"
+      metric: "fid"
+      route: "stochastic_interpolants_couplings.evaluation.evaluate_superresolution"
+      writer: "stochastic_interpolants_couplings.artifacts.write_metrics_artifact"
+      output: "results/tables/table_3.csv"
+      measured_values_required_for_claim: true
+
+result_trends:
+  - id: "dependent_coupling_transport_improvement"
+    assertion: "数据依赖耦合应降低或改善相对于独立Gaussian coupling的transport相关行为"
+    metric: "transport_cost"
+    compare:
+      proposed: "data_dependent"
+      baseline: "independent_gaussian"
+    decision_rule: "lower transport_cost or lower FID for proposed route supports trend"
+    report_writer: "stochastic_interpolants_couplings.artifacts.write_sensitivity_report_artifact"
+  - id: "inpainting_fid_comparison"
+    assertion: "data-dependent coupling is compared against independent Gaussian coupling under FID for in-painting"
+    metric: "fid"
+    compare:
+      proposed: "Dependent Coupling (Ours)"
+      baseline: "Uncoupled Interpolant (Baseline)"
+    artifact: "results/tables/table_2.csv"
+  - id: "super_resolution_fid_comparison"
+    assertion: "data-dependent coupling is evaluated against independent Gaussian coupling for ImageNet super-resolution"
+    metric: "fid"
+    compare:
+      proposed: "Dependent Coupling (Ours)"
+      baseline: "Gaussian rho_0 with independent coupling to rho_1"
+    artifact: "results/tables/table_3.csv"
+
+resolved_config_contract:
+  writer: "stochastic_interpolants_couplings.artifacts.write_config_resolved_artifact"
+  output: "results/config_resolved.json"
+  include:
+    - "project"
+    - "runtime"
+    - "datasets"
+    - "environments"
+    - "interpolant"
+    - "coupling"
+    - "model"
+    - "training"
+    - "sampling"
+    - "tasks"
+    - "methods"
+    - "baselines"
+    - "metrics"
+    - "sweeps"
+    - "experiment_protocols"
+  required_runtime_calls:
+    - "stochastic_interpolants_couplings.config.load_experiment_config"
+    - "stochastic_interpolants_couplings.config.make_method"
+    - "stochastic_interpolants_couplings.training.train_experiment"
+    - "stochastic_interpolants_couplings.evaluation.evaluate_predictions"
+
+canonical_route:
+  command: "python scripts/run_coupled_si.py --config configs/default.yaml --mode runtime_smoke"
+  full_command: "python scripts/run_coupled_si.py --config configs/default.yaml --mode full"
+  stage_sequence:
+    - "setup_or_config"
+    - "core_method"
+    - "evaluation"
+  route_calls:
+    setup_or_config:
+      - "stochastic_interpolants_couplings.config.load_experiment_config"
+      - "stochastic_interpolants_couplings.artifacts.write_config_resolved_artifact"
+      - "stochastic_interpolants_couplings.artifacts.write_dataset_registry_artifact"
+      - "stochastic_interpolants_couplings.artifacts.write_data_manifest_artifact"
+      - "stochastic_interpolants_couplings.artifacts.write_method_registry_artifact"
+      - "stochastic_interpolants_couplings.artifacts.write_ablation_registry_artifact"
+    core_method:
+      - "stochastic_interpolants_couplings.data.make_data"
+      - "stochastic_interpolants_couplings.couplings.build_coupling"
+      - "stochastic_interpolants_couplings.models.build_velocity_model"
+      - "stochastic_interpolants_couplings.training.train_experiment"
+      - "stochastic_interpolants_couplings.sampling.sample_ode"
+      - "stochastic_interpolants_couplings.sampling.sample_sde"
+    evaluation:
+      - "stochastic_interpolants_couplings.evaluation.evaluate_predictions"
+      - "fid_experiment_table_task.run_table_2_route"
+      - "fid_experiment_table_task.write_table_2_artifact"
+      - "experiment_and_512x512_image.run_figure_3_route"
+      - "experiment_and_512x512_image.write_figure_3_artifact"
+      - "stochastic_interpolants_couplings.artifacts.write_metrics_artifact"
+      - "stochastic_interpolants_couplings.artifacts.write_sensitivity_report_artifact"
+
+review_closure:
+  dataset_prepare_validate_path: "stochastic_interpolants_couplings.data.prepare_data"
+  benchmark_registry_matrix: "datasets.registry + experiment_protocols.matrix"
+  model_loader_factory_path: "stochastic_interpolants_couplings.models.build_velocity_model"
+  metric_formula_aggregation_path: "metrics.registry.fid"
+  artifact_writer_path: "callable_artifact_writers"
+  hyperparameter_config_path: "sweeps.registry + fixed_hyperparameters"
+  training_or_finetuning_loop_path: "stochastic_interpolants_couplings.training.train_experiment"
+  evaluation_loop_path: "stochastic_interpolants_couplings.evaluation.evaluate_experiment"

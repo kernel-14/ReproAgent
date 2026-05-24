@@ -1,0 +1,195 @@
+{
+  "bounded_default_strengths": [
+    0.0,
+    0.5,
+    1.0
+  ],
+  "decision_value": "Covers dataset, metric, experiment, table, figure, and bounded intervention runtime contracts.",
+  "experiment_id": "main_comparison_interventions",
+  "methods": [
+    "pretrained",
+    "dpo",
+    "dpo_plus_toxicity_vector_intervention"
+  ],
+  "mode": "runtime_smoke",
+  "paper": "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity",
+  "rows": [
+    {
+      "artifact_id": "figure_1",
+      "bounded_default": true,
+      "decisive_metric": "toxicity_rate",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Positive intervention parameter values should preserve the reported toxicity-improvement trend.",
+      "output_path": "results/figures/figure_1.svg",
+      "route": "run_figure_1_route",
+      "stop_rule_or_pruning_rationale": "Expose all paper-visible strengths; execute bounded strengths unless mode=full.",
+      "trend_id": "positive_parameter_improves"
+    },
+    {
+      "artifact_id": "table_3",
+      "bounded_default": true,
+      "decisive_metric": "accuracy,f1,toxicity_rate",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "DPO and vector interventions reduce toxicity while preserving metric bookkeeping.",
+      "output_path": "results/tables/table_3.csv",
+      "route": "run_table_3_route",
+      "stop_rule_or_pruning_rationale": "Stop at paper-specified main comparison and bounded fixture/default sample.",
+      "trend_id": "main_comparison"
+    },
+    {
+      "artifact_id": "table_1",
+      "bounded_default": true,
+      "decisive_metric": "artifact_provenance",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Table 1 artifact route is connected to measured predictions or vector bookkeeping.",
+      "output_path": "results/tables/table_1.csv",
+      "route": "run_table_1_route",
+      "stop_rule_or_pruning_rationale": "Route writes bounded measured rows; paper-scale execution requires full mode.",
+      "trend_id": "table_1_reproduction"
+    },
+    {
+      "artifact_id": "table_2",
+      "bounded_default": true,
+      "decisive_metric": "artifact_provenance",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Table 2 artifact route is connected to measured predictions or vector bookkeeping.",
+      "output_path": "results/tables/table_2.csv",
+      "route": "run_table_2_route",
+      "stop_rule_or_pruning_rationale": "Route writes bounded measured rows; paper-scale execution requires full mode.",
+      "trend_id": "table_2_reproduction"
+    },
+    {
+      "artifact_id": "table_6",
+      "bounded_default": true,
+      "decisive_metric": "artifact_provenance",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Table 6 artifact route is connected to measured predictions or vector bookkeeping.",
+      "output_path": "results/tables/table_6.csv",
+      "route": "run_table_6_route",
+      "stop_rule_or_pruning_rationale": "Route writes bounded measured rows; paper-scale execution requires full mode.",
+      "trend_id": "table_6_reproduction"
+    },
+    {
+      "artifact_id": "table_7",
+      "bounded_default": true,
+      "decisive_metric": "artifact_provenance",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Table 7 artifact route is connected to measured predictions or vector bookkeeping.",
+      "output_path": "results/tables/table_7.csv",
+      "route": "run_table_7_route",
+      "stop_rule_or_pruning_rationale": "Route writes bounded measured rows; paper-scale execution requires full mode.",
+      "trend_id": "table_7_reproduction"
+    },
+    {
+      "artifact_id": "figure_2",
+      "bounded_default": true,
+      "decisive_metric": "toxicity_rate_or_activation_shift",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Figure 2 route remains executable for the paper-visible trend.",
+      "output_path": "results/figures/figure_2.svg",
+      "route": "run_figure_2_route",
+      "stop_rule_or_pruning_rationale": "Register and execute bounded trend points; omit exhaustive sweeps unless mode=full.",
+      "trend_id": "figure_2_trend"
+    },
+    {
+      "artifact_id": "figure_3",
+      "bounded_default": true,
+      "decisive_metric": "toxicity_rate_or_activation_shift",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Figure 3 route remains executable for the paper-visible trend.",
+      "output_path": "results/figures/figure_3.svg",
+      "route": "run_figure_3_route",
+      "stop_rule_or_pruning_rationale": "Register and execute bounded trend points; omit exhaustive sweeps unless mode=full.",
+      "trend_id": "figure_3_trend"
+    },
+    {
+      "artifact_id": "figure_4",
+      "bounded_default": true,
+      "decisive_metric": "toxicity_rate_or_activation_shift",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Figure 4 route remains executable for the paper-visible trend.",
+      "output_path": "results/figures/figure_4.svg",
+      "route": "run_figure_4_route",
+      "stop_rule_or_pruning_rationale": "Register and execute bounded trend points; omit exhaustive sweeps unless mode=full.",
+      "trend_id": "figure_4_trend"
+    },
+    {
+      "artifact_id": "figure_5",
+      "bounded_default": true,
+      "decisive_metric": "toxicity_rate_or_activation_shift",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Figure 5 route remains executable for the paper-visible trend.",
+      "output_path": "results/figures/figure_5.svg",
+      "route": "run_figure_5_route",
+      "stop_rule_or_pruning_rationale": "Register and execute bounded trend points; omit exhaustive sweeps unless mode=full.",
+      "trend_id": "figure_5_trend"
+    },
+    {
+      "artifact_id": "figure_6",
+      "bounded_default": true,
+      "decisive_metric": "toxicity_rate_or_activation_shift",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Figure 6 route remains executable for the paper-visible trend.",
+      "output_path": "results/figures/figure_6.svg",
+      "route": "run_figure_6_route",
+      "stop_rule_or_pruning_rationale": "Register and execute bounded trend points; omit exhaustive sweeps unless mode=full.",
+      "trend_id": "figure_6_trend"
+    },
+    {
+      "artifact_id": "figure_7",
+      "bounded_default": true,
+      "decisive_metric": "toxicity_rate_or_activation_shift",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Figure 7 route remains executable for the paper-visible trend.",
+      "output_path": "results/figures/figure_7.svg",
+      "route": "run_figure_7_route",
+      "stop_rule_or_pruning_rationale": "Register and execute bounded trend points; omit exhaustive sweeps unless mode=full.",
+      "trend_id": "figure_7_trend"
+    },
+    {
+      "artifact_id": "figure_8",
+      "bounded_default": true,
+      "decisive_metric": "toxicity_rate_or_activation_shift",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Figure 8 route remains executable for the paper-visible trend.",
+      "output_path": "results/figures/figure_8.svg",
+      "route": "run_figure_8_route",
+      "stop_rule_or_pruning_rationale": "Register and execute bounded trend points; omit exhaustive sweeps unless mode=full.",
+      "trend_id": "figure_8_trend"
+    },
+    {
+      "artifact_id": "figure_9",
+      "bounded_default": false,
+      "decisive_metric": "toxicity_rate_or_activation_shift",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Figure 9 route remains executable for the paper-visible trend.",
+      "output_path": "results/figures/figure_9.svg",
+      "route": "run_figure_9_route",
+      "stop_rule_or_pruning_rationale": "Register and execute bounded trend points; omit exhaustive sweeps unless mode=full.",
+      "trend_id": "figure_9_trend"
+    },
+    {
+      "artifact_id": "figure_10",
+      "bounded_default": false,
+      "decisive_metric": "toxicity_rate_or_activation_shift",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Figure 10 route remains executable for the paper-visible trend.",
+      "output_path": "results/figures/figure_10.svg",
+      "route": "run_figure_10_route",
+      "stop_rule_or_pruning_rationale": "Register and execute bounded trend points; omit exhaustive sweeps unless mode=full.",
+      "trend_id": "figure_10_trend"
+    },
+    {
+      "artifact_id": "figure_11",
+      "bounded_default": false,
+      "decisive_metric": "toxicity_rate_or_activation_shift",
+      "full_mode_required_for_exhaustive_sweep": true,
+      "hypothesis": "Figure 11 route remains executable for the paper-visible trend.",
+      "output_path": "results/figures/figure_11.svg",
+      "route": "run_figure_11_route",
+      "stop_rule_or_pruning_rationale": "Register and execute bounded trend points; omit exhaustive sweeps unless mode=full.",
+      "trend_id": "figure_11_trend"
+    }
+  ],
+  "schema_version": "1.0"
+}

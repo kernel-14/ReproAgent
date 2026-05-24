@@ -1,0 +1,54 @@
+{
+  "created_at": "2026-05-21T19:35:11Z",
+  "paper": "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity",
+  "schema_version": "1.0",
+  "training_trace": [
+    {
+      "accuracy": 0.6666666666666666,
+      "epoch": 1,
+      "examples": 12,
+      "loss": 0.5787037856339075,
+      "route": "interventions_binary_toxicity_probe"
+    },
+    {
+      "accuracy": 0.8333333333333334,
+      "epoch": 2,
+      "examples": 12,
+      "loss": 0.451739688105896,
+      "route": "interventions_binary_toxicity_probe"
+    },
+    {
+      "accuracy": 0.8333333333333334,
+      "epoch": 3,
+      "examples": 12,
+      "loss": 0.41271118898840164,
+      "route": "interventions_binary_toxicity_probe"
+    },
+    {
+      "accuracy": 0.8333333333333334,
+      "epoch": 4,
+      "examples": 12,
+      "loss": 0.3866889288499667,
+      "route": "interventions_binary_toxicity_probe"
+    },
+    {
+      "bias": -1.234905583346527,
+      "epoch": "final",
+      "learned_terms": [
+        "the",
+        "a",
+        "article",
+        "while",
+        "civil",
+        "describes",
+        "public",
+        "project",
+        "and",
+        "talk",
+        "page",
+        "records"
+      ],
+      "route": "interventions_binary_toxicity_probe"
+    }
+  ]
+}

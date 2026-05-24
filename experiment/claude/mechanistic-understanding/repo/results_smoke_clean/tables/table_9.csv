@@ -1,0 +1,6 @@
+artifact,hyperparameter,value,provenance
+table_9,step_size,0.4,paper_pplm_hyperparameter_route
+table_9,temperature,1,paper_pplm_hyperparameter_route
+table_9,top_k,10,paper_pplm_hyperparameter_route
+table_9,num_iterations,50,paper_pplm_hyperparameter_route
+table_9,similarity_guidance_scale,"9,1,10",paper_pplm_hyperparameter_route

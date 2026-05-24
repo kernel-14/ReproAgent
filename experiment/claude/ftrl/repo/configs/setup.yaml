@@ -1,0 +1,729 @@
+# configs/setup.yaml
+# Paper: Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem
+# reference_grounding: paperbench_ref_001 README.md
+# reference_grounding: paperbench_ref_001 eval.py
+# reference_grounding: paperbench_ref_001 envs.py
+#
+# This file is the canonical configuration contract for the reproduction repository.
+# It binds environments, methods, hyperparameters, parameter sweeps, artifact paths,
+# and experiment protocol matrix rows to the paper's evidence obligations.
+#
+# NOTE: This repository does NOT use the blacklisted repository
+#       https://github.com/BartekCupial/finetuning-RL-as-CL
+#
+# Canonical entrypoint: python scripts/run_experiments.py --config configs/setup.yaml
+# Smoke/dry-run:        python scripts/run_experiments.py --mode runtime_smoke --config configs/setup.yaml
+
+# ---------------------------------------------------------------------------
+# Execution mode
+# ---------------------------------------------------------------------------
+mode: runtime_smoke   # Options: runtime_smoke | dry_run | train | eval | report | full
+output_dir: results
+log_level: INFO
+
+# ---------------------------------------------------------------------------
+# Scope constraints (addendum / paper obligations)
+# ---------------------------------------------------------------------------
+scope_constraints:
+  default_mode_is_smoke: true
+  full_training_requires_explicit_mode: true
+  mock_backend_allowed_for_smoke: true
+  real_adapter_interface_must_exist: true
+  em_formula_pluggable: true   # EM formula details to be filled from full paper.md
+  figure_4_not_required: true  # Addendum: Figure 4 is not required to be reproduced
+  nld_aa_dataset_url: "https://github.com/dungeonsdatasubmission/dungeonsdata-neurips2022"
+  nle_install_url: "https://github.com/facebookresearch/nle"
+  fisher_matrix_batches: 10000  # Addendum: 10000 batches from NLD-AA for Fisher matrix
+
+# ---------------------------------------------------------------------------
+# Seeds and budget
+# ---------------------------------------------------------------------------
+seeds: [0, 1, 2, 3, 4]
+smoke_budget:
+  train_steps: 10
+  eval_episodes: 2
+  max_seconds: 10
+full_training_budget:
+  nethack_steps: 5_000_000
+  montezuma_steps: 10_000_000
+  robotic_sequence_steps: 1_000_000
+  toy_steps: 50_000
+evaluation_budget:
+  eval_episodes: 200
+  robotic_sequence_seeds: 20   # Paper: at least 20 seeds for Meta-World
+
+# ---------------------------------------------------------------------------
+# Environment registry
+# Section 3 Experimental setup
+# ---------------------------------------------------------------------------
+environments:
+  nethack:
+    id: nethack
+    aliases: [nethack_human_monk, nle, nethack_learning_environment]
+    paper_section: "B.1. NetHack"
+    description: >
+      NetHack Learning Environment (Küttler et al., 2020). Highly complex terminal
+      roguelike game. Procedurally generated dungeon crawling. NLE is scalable,
+      stochastic, rich, and challenging. Action space: 120 discrete actions.
+      Setting used in paper: Human Monk.
+    factory_module: ftrl_repro.envs
+    factory_fn: make_envs
+    env_id: NetHackScore-v0
+    character: mon-hum-neu-mal
+    observation_keys: [glyphs, blstats, message, tty_chars, tty_colors]
+    action_space_size: 120
+    reward: score
+    metrics:
+      - episode_return
+      - maximum_dungeon_level
+      - turns
+      - FAR_performance
+      - Close_performance
+    far_close_semantics:
+      close: "dungeon levels reachable from start without prior knowledge"
+      far: "deeper dungeon levels requiring pre-trained navigation capability"
+      forgetting_type: imperfect_cloning_gap
+    pretrained_policy: pi_star_nethack
+    availability: optional_heavy   # requires nle>=0.9
+    smoke_fixture: toy_mdp
+    paper_role: main_environment_section_4
+
+  montezuma:
+    id: montezuma
+    aliases: [montezuma_revenge, MontezumaRevengeNoFrameskip-v4, atari_montezuma]
+    paper_section: "Section 3 / B.2. Montezuma's Revenge"
+    description: >
+      Montezuma's Revenge Atari environment. Observation: 84x84 grayscale frames
+      (history_size=4). Discrete action space. FAR states = Room 7 and beyond,
+      requiring pre-trained navigation. State coverage gap drives forgetting.
+    factory_module: ftrl_repro.envs
+    factory_fn: make_envs
+    env_id: MontezumaRevengeNoFrameskip-v4
+    observation_shape: [4, 84, 84]
+    sticky_action: true
+    sticky_action_prob: 0.25
+    frame_skip: 4
+    metrics:
+      - episode_return
+      - success_rate
+      - FAR_performance
+      - Close_performance
+    far_close_semantics:
+      close: "Room 0 and early rooms reachable from start"
+      far: "Room 7 and beyond requiring pre-trained key/rope skills"
+      forgetting_type: state_coverage_gap
+    pretrained_policy: pi_star_montezuma
+    availability: optional_heavy   # requires ale-py, gymnasium[atari]
+    smoke_fixture: toy_mdp
+    paper_role: main_environment_section_4
+
+  robotic_sequence:
+    id: robotic_sequence
+    aliases: [robotics, meta_world, RoboticSequence, robotic_seq]
+    paper_section: "B.3. Meta World"
+    description: >
+      RoboticSequence built on Meta-World. Sequential multi-task robotic manipulation.
+      Policy and Q-value: MLP (4 hidden layers, 256 neurons each). Algorithm: SAC.
+      Observation: robot configuration + stage ID one-hot. Pre-trained on last two
+      stages (peg-unplug-side and push-wall) until 100% success rate.
+      At least 20 seeds, 90% confidence intervals.
+    factory_module: ftrl_repro.envs
+    factory_fn: make_envs
+    algorithm: sac
+    policy_arch: mlp
+    policy_hidden_layers: 4
+    policy_hidden_size: 256
+    stages:
+      - peg-unplug-side
+      - push-wall
+    pretrained_stages: [peg-unplug-side, push-wall]
+    pretrained_success_rate: 1.0
+    observation_includes_stage_id: true
+    metrics:
+      - success_rate
+      - stage_success_rate
+      - episode_return
+      - FAR_performance
+      - Close_performance
+    far_close_semantics:
+      close: "new task stages not seen during pre-training"
+      far: "peg-unplug-side and push-wall stages from pre-training"
+      forgetting_type: state_coverage_gap
+    pretrained_policy: pi_star_robotic
+    availability: optional_heavy   # requires gymnasium + metaworld
+    smoke_fixture: toy_mdp
+    paper_role: main_environment_section_4
+    dataset_id: robotics
+
+  two_state_mdp:
+    id: two_state_mdp
+    aliases: [toy_mdp, two_state_mdps, appendix_a_toy]
+    paper_section: "Appendix A / Figure 9"
+    description: >
+      Two-state MDP toy example from Appendix A / Figure 9. Illustrates forgetting
+      mechanism analytically. Each arrow depicts a transition; annotation encodes
+      reward and transition probability. Used to show policy value function v_0(theta)
+      for two parameterization and reward variants.
+    factory_module: ftrl_repro.toy_tasks
+    factory_fn: make_toy_tasks
+    states: [s0, s1]
+    actions: [a0, a1]
+    metrics:
+      - episode_return
+      - FAR_performance
+      - Close_performance
+      - forgetting_gap
+    far_close_semantics:
+      close: "s0 - frequently visited starting state"
+      far: "s1 - infrequently visited state requiring pre-trained capability"
+      forgetting_type: state_coverage_gap
+    availability: always
+    paper_role: toy_diagnostic_appendix_a
+
+  apple_retrieval:
+    id: apple_retrieval
+    aliases: [AppleRetrieval, apple_grid, appendix_a_apple]
+    paper_section: "Appendix A / Figure 10"
+    description: >
+      AppleRetrieval grid-world toy environment from Appendix A. Agent must navigate
+      from house to apple (distance M). Forgetting becomes more problematic as M
+      increases. Illustrates state coverage gap and imperfect cloning gap intuitively.
+    factory_module: ftrl_repro.toy_tasks
+    factory_fn: make_toy_tasks
+    grid_size: 10
+    apple_distance_M: 5
+    metrics:
+      - episode_return
+      - success_rate
+      - FAR_performance
+      - Close_performance
+      - forgetting_gap
+    far_close_semantics:
+      close: "house vicinity - frequently visited"
+      far: "apple location - requires pre-trained navigation"
+      forgetting_type: state_coverage_gap
+    availability: always
+    paper_role: toy_diagnostic_appendix_a
+
+# ---------------------------------------------------------------------------
+# Dataset / benchmark registry
+# ---------------------------------------------------------------------------
+datasets:
+  robotics:
+    id: robotics
+    aliases: [meta_world_dataset, robotic_sequence_data]
+    description: >
+      Meta-World robotics benchmark dataset used for RoboticSequence experiments.
+      Observation: robot configuration + stage one-hot. Tasks: peg-unplug-side,
+      push-wall, and additional stages.
+    loader_module: ftrl_repro.envs
+    loader_fn: make_envs
+    availability: optional_heavy
+    smoke_fixture: synthetic_rollouts
+    paper_section: "B.3. Meta World"
+
+  nld_aa:
+    id: nld_aa
+    aliases: [nethack_dataset, dungeonsdata, nle_dataset]
+    description: >
+      NLD-AA dataset for NetHack. Used to compute Fisher diagonal matrix (10000 batches).
+      Download: https://github.com/dungeonsdatasubmission/dungeonsdata-neurips2022
+      After installing NLE, load nld folders once to create local sqlite3 database.
+    loader_module: ftrl_repro.envs
+    loader_fn: make_envs
+    fisher_batches: 10000
+    availability: optional_heavy
+    smoke_fixture: synthetic_rollouts
+    paper_section: "B.1. NetHack"
+
+# ---------------------------------------------------------------------------
+# Method / baseline registry
+# Section 3 / Section 4 Main result
+# ---------------------------------------------------------------------------
+methods:
+  scratch:
+    id: scratch
+    aliases: [training_from_scratch, from_scratch]
+    description: >
+      Training from scratch baseline. Random or new policy initialization.
+      Trained on target task only with RL loss. Same training protocol as fine-tuning.
+    adapter_module: ftrl_repro.retention
+    adapter_fn: build_retention
+    method_key: scratch
+    paper_section: "Section 3"
+    is_baseline: true
+
+  vanilla_finetune:
+    id: vanilla_finetune
+    aliases: [vanilla_fine_tuning, finetune, fine_tuning]
+    description: >
+      Vanilla fine-tuning baseline. Initialize from pre-trained policy pi_*.
+      Train with target task RL loss only. No knowledge retention.
+      Paper finding: often fails to leverage pre-trained knowledge.
+    adapter_module: ftrl_repro.retention
+    adapter_fn: build_retention
+    method_key: vanilla_finetune
+    paper_section: "Section 3"
+    is_baseline: true
+    trend: "vanilla fine-tuning often fails to leverage pre-trained knowledge"
+
+  finetune_bc:
+    id: finetune_bc
+    aliases: [bc, Fine-tuning_BC, ft_bc, finetune_plus_bc]
+    description: >
+      Fine-tuning + BC (Behavioral Cloning). Combines RL loss with BC loss on S_BC.
+      S_BC: states visited by pre-trained policy pi_*. BC loss: KL divergence between
+      current policy and pi_* action distribution on S_BC buffer.
+      BC loss coefficient is configurable.
+    adapter_module: ftrl_repro.retention
+    adapter_fn: build_retention
+    method_key: finetune_bc
+    paper_section: "Section 2 / Section 4"
+    is_baseline: false
+    is_knowledge_retention: true
+    trend: "knowledge retention methods mitigate forgetting"
+
+  finetune_ewc:
+    id: finetune_ewc
+    aliases: [ewc, Fine-tuning_EWC, ft_ewc, finetune_plus_ewc]
+    description: >
+      Fine-tuning + EWC (Elastic Weight Consolidation). Adds EWC penalty to RL loss.
+      Penalty: sum_i F_i * (theta_pre_i - theta_i)^2 where F is diagonal Fisher matrix
+      computed from NLD-AA (10000 batches) and theta_* is pre-trained parameter snapshot.
+    adapter_module: ftrl_repro.retention
+    adapter_fn: build_retention
+    method_key: finetune_ewc
+    paper_section: "Section 2 / Section 4"
+    is_baseline: false
+    is_knowledge_retention: true
+    trend: "knowledge retention methods mitigate forgetting"
+
+  finetune_em:
+    id: finetune_em
+    aliases: [em, Fine-tuning_EM, ft_em, finetune_plus_em, episodic_memory]
+    description: >
+      Fine-tuning + EM (Episodic Memory). Protects 10% of SAC replay buffer as old
+      samples from pre-training. Old samples are not overwritten during fine-tuning.
+      EM weight and update frequency are configurable. Formula details pluggable
+      from full paper.md.
+    adapter_module: ftrl_repro.replay
+    adapter_fn: build_replay
+    method_key: finetune_em
+    paper_section: "Section 2 / Section 4"
+    is_baseline: false
+    is_knowledge_retention: true
+    em_protected_fraction: 0.10
+    trend: "knowledge retention methods mitigate forgetting"
+
+  # Additional method/baseline selectors required by paper evidence contract
+  ours:
+    id: ours
+    aliases: [scaled_bc_finetune_ks, finetune_ks, knowledge_sharing]
+    description: >
+      Ours / scaled-BC + fine-tuning + KS. The proposed knowledge retention method
+      combining scaled BC loss with knowledge sharing. Surpasses prior SOTA on NetHack
+      by 2x (10K vs 5K points).
+    adapter_module: ftrl_repro.retention
+    adapter_fn: build_retention
+    method_key: ours
+    paper_section: "Section 4"
+    is_baseline: false
+    is_knowledge_retention: true
+
+  ppo:
+    id: ppo
+    aliases: [ppo_baseline, proximal_policy_optimization]
+    description: >
+      PPO-style on-policy training baseline. Used for NetHack and Montezuma experiments.
+    adapter_module: ftrl_repro.algorithms
+    adapter_fn: build_algorithms
+    method_key: ppo
+    paper_section: "Section 3"
+    is_baseline: true
+
+  sac:
+    id: sac
+    aliases: [sac_baseline, soft_actor_critic]
+    description: >
+      SAC (Soft Actor-Critic) off-policy training. Used for RoboticSequence experiments.
+      Reference: Haarnoja et al., 2018a.
+    adapter_module: ftrl_repro.algorithms
+    adapter_fn: build_algorithms
+    method_key: sac
+    paper_section: "Section 3 / B.3"
+    is_baseline: true
+
+  oracle:
+    id: oracle
+    aliases: [oracle_baseline, upper_bound]
+    description: >
+      Oracle baseline. Policy with access to both pre-training and fine-tuning data.
+      Represents upper bound performance.
+    adapter_module: ftrl_repro.algorithms
+    adapter_fn: build_algorithms
+    method_key: oracle
+    paper_section: "Section 4"
+    is_baseline: true
+
+  nle:
+    id: nle
+    aliases: [nle_baseline, nethack_learning_env_baseline]
+    description: >
+      NLE baseline. Prior state-of-the-art on NetHack (Tuyls et al., 2023, ~5K points).
+      Used as comparison target for Section 4 NetHack results.
+    adapter_module: ftrl_repro.algorithms
+    adapter_fn: build_algorithms
+    method_key: nle
+    paper_section: "Section 4"
+    is_baseline: true
+
+  pbt:
+    id: pbt
+    aliases: [population_based_training]
+    description: >
+      PBT (Population-Based Training) variant. Included in method selector set
+      per paper evidence contract.
+    adapter_module: ftrl_repro.algorithms
+    adapter_fn: build_algorithms
+    method_key: pbt
+    paper_section: "Supplemental"
+    is_baseline: true
+
+  pql:
+    id: pql
+    aliases: [prioritized_queue_learning]
+    description: >
+      PQL (Prioritized Queue Learning) off-policy variant. Included in method
+      selector set per paper evidence contract.
+    adapter_module: ftrl_repro.algorithms
+    adapter_fn: build_algorithms
+    method_key: pql
+    paper_section: "Supplemental"
+    is_baseline: true
+
+# ---------------------------------------------------------------------------
+# Hyperparameters and parameter sweeps
+# Fixed anchors: batch_size_128
+# ---------------------------------------------------------------------------
+hyperparameters:
+  # Fixed anchor: batch_size_128 (paper evidence contract)
+  batch_size: 128   # batch_size_128 - exact paper anchor
+  batch_size_128: 128  # alias for explicit reference
+
+  learning_rate: 1.0e-4
+  gamma: 0.99
+  lam: 0.95
+  ent_coef: 0.01
+  clip_grad_norm: 0.5
+  epoch: 3
+
+  # BC method parameters
+  bc_loss_coefficient: 1.0
+  s_bc_buffer_size: 10000
+
+  # EWC method parameters
+  ewc_regularization_coefficient: 1.0
+  ewc_fisher_sample_batches: 10000   # Addendum: 10000 batches from NLD-AA
+  ewc_fisher_damping: 1.0e-4
+
+  # EM method parameters
+  em_weight: 1.0
+  em_protected_fraction: 0.10   # 10% of replay buffer protected
+  em_update_frequency: 1
+
+  # RoboticSequence SAC parameters
+  sac_hidden_layers: 4
+  sac_hidden_size: 256
+
+parameter_sweeps:
+  batch_size:
+    values: [64, 128, 256]
+    default: 128   # batch_size_128 anchor
+    paper_anchor: batch_size_128
+
+  shot_count:
+    values: [1, 5, 10, 20]
+    default: 10
+    description: "Number of demonstration shots for BC buffer initialization"
+
+  bc_loss_coefficient:
+    values: [0.1, 0.5, 1.0, 2.0]
+    default: 1.0
+
+  ewc_regularization_coefficient:
+    values: [0.1, 1.0, 10.0, 100.0]
+    default: 1.0
+
+  em_weight:
+    values: [0.1, 0.5, 1.0]
+    default: 1.0
+
+  seed_list:
+    values: [0, 1, 2, 3, 4]
+    default: [0, 1, 2]
+    full_mode: [0, 1, 2, 3, 4]
+
+# ---------------------------------------------------------------------------
+# Close/FAR state partition configuration
+# Section 2 / Section 5 Analysis
+# ---------------------------------------------------------------------------
+close_far_partition:
+  nethack:
+    close_definition: "dungeon levels 1-3 reachable from start"
+    far_definition: "dungeon levels 4+ requiring pre-trained navigation"
+    partition_fn: nethack_level_partition
+    metrics: [maximum_dungeon_level, turns, FAR_performance, Close_performance]
+
+  montezuma:
+    close_definition: "rooms 0-3 reachable from start"
+    far_definition: "room 7 and beyond (FAR states)"
+    partition_fn: montezuma_room_partition
+    metrics: [success_rate, FAR_performance, Close_performance]
+
+  robotic_sequence:
+    close_definition: "new task stages not in pre-training"
+    far_definition: "peg-unplug-side and push-wall (pre-trained stages)"
+    partition_fn: robotic_stage_partition
+    metrics: [stage_success_rate, FAR_performance, Close_performance]
+
+  toy_mdp:
+    close_definition: "s0 - starting state"
+    far_definition: "s1 - requires pre-trained policy"
+    partition_fn: toy_state_partition
+    metrics: [episode_return, FAR_performance, Close_performance]
+
+s_bc_subset:
+  description: "States visited by pre-trained policy pi_* used for BC buffer"
+  collection_method: rollout_from_pretrained
+  buffer_size: 10000
+  store_action_distribution: true
+
+robotic_sequence_stage_identifiers:
+  - peg-unplug-side
+  - push-wall
+  pretrained_stages: [peg-unplug-side, push-wall]
+  pretrained_success_rate: 1.0
+
+# ---------------------------------------------------------------------------
+# Protocol matrix: named experiments -> environments, methods, measurements, artifacts
+# Section 3 Experimental setup | Section 4 Main result | Section 5 Analysis | Appendix A
+# ---------------------------------------------------------------------------
+protocol_matrix:
+
+  section_3_experimental_setup:
+    id: section_3_experimental_setup
+    paper_section: "Section 3"
+    description: "Experimental setup: three environments, baselines, knowledge retention methods"
+    environments: [nethack, montezuma, robotic_sequence]
+    methods: [scratch, vanilla_finetune, finetune_bc, finetune_ewc, finetune_em, ours]
+    measurements: [episode_return, success_rate, FAR_performance, Close_performance]
+    artifact_paths:
+      - results/metrics.json
+      - results/config_resolved.json
+      - results/run_manifest.json
+
+  section_4_main_result:
+    id: section_4_main_result
+    paper_section: "Section 4"
+    description: >
+      Main result: knowledge retention mitigates forgetting of pre-trained capabilities.
+      Three environments x five method categories comparison.
+      Trend: vanilla fine-tuning often fails; knowledge retention methods fix this.
+    environments: [nethack, montezuma, robotic_sequence]
+    methods: [scratch, vanilla_finetune, finetune_bc, finetune_ewc, finetune_em, ours, nle]
+    measurements:
+      - episode_return
+      - success_rate
+      - stage_success_rate
+      - FAR_performance
+      - Close_performance
+      - forgetting_gap
+      - final_performance
+    artifact_paths:
+      - results/metrics.json
+      - results/summary.csv
+      - results/main_results.csv
+      - results/main_results_table.json
+      - results/tables/table_1.csv
+      - results/figures/figure_3.png
+      - results/figures/figure_3a.png
+      - results/figures/figure_3b.png
+      - results/figures/figure_3c.png
+      - results/figures/figure_9.png
+    trend_assertions:
+      - "vanilla fine-tuning often fails to leverage pre-trained knowledge"
+      - "knowledge retention methods mitigate forgetting without hard-coding benchmark scores"
+      - "knowledge retention methods unlock the potential of the pre-trained model"
+
+  section_5_analysis:
+    id: section_5_analysis
+    paper_section: "Section 5"
+    description: >
+      Analysis: forgetting of pre-trained capabilities hinders RL fine-tuning.
+      FAR/CLOSE diagnostics, NetHack density plots, RoboticSequence stage success rates.
+    environments: [nethack, montezuma, robotic_sequence]
+    methods: [vanilla_finetune, finetune_bc, finetune_ewc, finetune_em, ours, scratch]
+    measurements:
+      - FAR_performance
+      - Close_performance
+      - maximum_dungeon_level
+      - turns
+      - stage_success_rate
+      - forgetting_gap
+    artifact_paths:
+      - results/forgetting_analysis.json
+      - results/forgetting_analysis_timeseries.csv
+      - results/figure4_nethack_density_data.csv
+      - results/figure7_robotic_sequence_stage_success.csv
+      - results/plots/forgetting_analysis.png
+      - results/plots/robotic_sequence_stage_success.png
+      - results/figures/figure_4.png
+      - results/figures/figure_5.png
+      - results/figures/figure_6.png
+      - results/figures/figure_7.png
+      - results/figures/figure_8.png
+    trend_assertions:
+      - "standard fine-tuning does not exhibit positive transfer of the knowledge of the last two stages"
+      - "BC, EM, and EWC maintain or to a certain degree regain performance"
+
+  appendix_a_toy_examples:
+    id: appendix_a_toy_examples
+    paper_section: "Appendix A"
+    description: >
+      Toy examples: Two-state MDPs and AppleRetrieval. Illustrate forgetting mechanism
+      analytically. Show state coverage gap and imperfect cloning gap.
+    environments: [two_state_mdp, apple_retrieval]
+    methods: [scratch, vanilla_finetune, finetune_bc, finetune_ewc, finetune_em]
+    measurements:
+      - episode_return
+      - FAR_performance
+      - Close_performance
+      - forgetting_gap
+    artifact_paths:
+      - results/toy_diagnostics.json
+      - results/em_metrics.json
+      - results/toy_config_resolved.json
+      - results/figures/figure_9.png
+      - results/figures/figure_12.png
+    trend_assertions:
+      - "toy environments illustrate forgetting of pre-trained capabilities"
+      - "state coverage gap can cause deterioration of prior knowledge"
+
+  environment_setup:
+    id: environment_setup
+    paper_section: "Section 3"
+    description: "Environment initialization, pretrained policy loading, FAR/CLOSE partition setup"
+    environments: [nethack, montezuma, robotic_sequence, two_state_mdp, apple_retrieval]
+    methods: [scratch, vanilla_finetune]
+    measurements: [FAR_performance, Close_performance]
+    artifact_paths:
+      - results/environment_registry.json
+      - results/environment_manifest.json
+      - results/state_region_metrics.json
+
+  state_coverage_gap_diagnostics:
+    id: state_coverage_gap_diagnostics
+    paper_section: "Section 2 / Section 5"
+    description: >
+      State coverage gap diagnostics. Close/FAR partition evaluation.
+      Pre-trained policy pi_* evaluation on FAR states.
+    environments: [nethack, montezuma, robotic_sequence, two_state_mdp, apple_retrieval]
+    methods: [vanilla_finetune, finetune_bc, finetune_ewc, finetune_em, ours]
+    measurements: [FAR_performance, Close_performance, forgetting_gap]
+    artifact_paths:
+      - results/state_region_metrics.json
+      - results/forgetting_analysis.json
+
+  baseline_training:
+    id: baseline_training
+    paper_section: "Section 3"
+    description: "Baseline training: scratch and vanilla fine-tuning with same protocol"
+    environments: [nethack, montezuma, robotic_sequence]
+    methods: [scratch, vanilla_finetune]
+    measurements: [episode_return, success_rate, stage_success_rate]
+    artifact_paths:
+      - results/baseline_metrics.json
+      - results/training_curves.json
+
+  fine_tuning:
+    id: fine_tuning
+    paper_section: "Section 3 / Section 4"
+    description: "Fine-tuning from pre-trained policy pi_* with knowledge retention methods"
+    environments: [nethack, montezuma, robotic_sequence]
+    methods: [vanilla_finetune, finetune_bc, finetune_ewc, finetune_em, ours]
+    measurements: [episode_return, success_rate, FAR_performance, Close_performance]
+    artifact_paths:
+      - results/metrics.json
+      - results/training_curves.json
+      - checkpoints/policy_latest.pt
+
+  forgetting_mitigation:
+    id: forgetting_mitigation
+    paper_section: "Section 4 / Section 5"
+    description: "Knowledge retention methods mitigating forgetting of pre-trained capabilities"
+    environments: [nethack, montezuma, robotic_sequence]
+    methods: [finetune_bc, finetune_ewc, finetune_em, ours]
+    measurements: [FAR_performance, Close_performance, forgetting_gap, final_performance]
+    artifact_paths:
+      - results/metrics.json
+      - results/forgetting_analysis.json
+
+  main_results:
+    id: main_results
+    paper_section: "Section 4"
+    description: "Main results table and figures for paper Section 4"
+    environments: [nethack, montezuma, robotic_sequence]
+    methods: [scratch, vanilla_finetune, finetune_bc, finetune_ewc, finetune_em, ours, nle]
+    measurements: [episode_return, success_rate, stage_success_rate, forgetting_gap]
+    artifact_paths:
+      - results/metrics.json
+      - results/main_results.csv
+      - results/tables/table_1.csv
+      - results/figures/figure_3.png
+      - results/figures/figure_3a.png
+      - results/figures/figure_3b.png
+      - results/figures/figure_3c.png
+
+# ---------------------------------------------------------------------------
+# Global artifact manifest
+# All paper-visible figures and tables must appear here
+# ---------------------------------------------------------------------------
+artifact_manifest:
+  # Core result artifacts
+  - path: results/metrics.json
+    kind: metrics
+    owner: wp_surface
+    description: "Main metrics JSON: episode_return, success_rate, stage_success_rate per env/method/seed"
+
+  - path: results/run_manifest.json
+    kind: run_manifest
+    owner: wp_surface
+    description: "Run manifest: experiment configuration, timestamps, mode"
+
+  - path: results/config_resolved.json
+    kind: config_resolved
+    owner: wp_surface
+    description: "Resolved configuration artifact for reproducibility"
+
+  - path: results/reproduction_inventory.json
+    kind: reproduction_inventory
+    owner: wp_surface
+    description: "Reproduction inventory: environments, methods, seeds, artifacts covered"
+
+  - path: results/artifact_manifest.json
+    kind: artifact_manifest
+    owner: wp_surface
+    description: "Artifact manifest: all declared output paths and their status"
+
+  - path: results/summary.csv
+    kind: summary_table
+    owner: wp_surface
+    description: "Summary CSV: aggregated metrics across environments and methods"
+
+  # Section 4 Main result figures and tables
+  - path: results/figures/figure_3.png
+    kind: figure
+    paper_ref: "Figure 3"
+    owner: wp_main_eval
+    description: "Figure 3: Performance on NetHack, Montezuma's Revenge, RoboticSequence"
+    environments: [nethack, montezuma, robotic_sequence]

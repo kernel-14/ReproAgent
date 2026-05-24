@@ -1,0 +1,10 @@
+{
+  "figure_id": "figure8_learning_curve_gsm8k",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.945540Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Figure 8: Learning curves for training BBox-ADAPTER on GSM8K.",
+    "dataset": "gsm8k"
+  }
+}

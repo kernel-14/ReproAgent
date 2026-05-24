@@ -1,0 +1,10 @@
+{
+  "experiment": "main_comparison",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.932728Z",
+  "metrics": {
+    "status": "contract_schema",
+    "contract_label": "contract_artifact"
+  },
+  "schema_version": "1.0.0"
+}

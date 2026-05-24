@@ -1,0 +1,842 @@
+schema_version: "1.0"
+config_id: "wp_core_interpolants"
+task_id: "task_021"
+work_package_id: "wp_core_interpolants"
+paper: "Stochastic Interpolants with Data-Dependent Couplings"
+
+reference_grounding:
+  - "paperbench_ref_004 xmodaler/datasets/README.md"
+  - "paperbench_ref_004 xmodaler/engine/defaults.py"
+  - "paperbench_ref_004 xmodaler/engine/hooks.py"
+  - "paperbench_ref_004 configs/image_caption/scdnet/stage2/diffusion.yaml"
+  - "paperbench_ref_004 README.md"
+
+hypothesis: "A data-dependent conditional base distribution rho_0(x_0 | x_1, condition) for stochastic interpolants reduces transport cost relative to an independent Gaussian coupling while preserving the same alpha_t, beta_t, Algorithm-1 training objective, and named ODE/SDE sampling routes."
+decision_value: "The decisive core comparison is ours:data_dependent_coupling versus independent_gaussian on the same rho_1 samples, zeta~N(0,I_d), t~U(0,1), gamma in {0,1}, minibatch objective, sampler, and FID/transport-cost metrics."
+stop_rule_or_pruning_rationale: "Run the paper-specified core stochastic-interpolant, in-painting, and super-resolution routes with bounded default inputs. Execute only the decisive gamma={0,1} coupling sweep by default; require mode=full for unbounded ImageNet-scale training or exhaustive ablations."
+
+canonical_route:
+  entry_surface: "scripts/run_coupled_si.py"
+  example_invocation: "python scripts/run_coupled_si.py --config configs/wp_core_interpolants.yaml"
+  smoke_invocation: "python scripts/run_coupled_si.py --mode runtime_smoke --config configs/wp_core_interpolants.yaml"
+  full_invocation: "python scripts/run_coupled_si.py --mode full --config configs/wp_core_interpolants.yaml"
+  stage_sequence:
+    - setup_or_config
+    - data_pipeline
+    - dataset_load_prepare_validate
+    - coupling_selection
+    - stochastic_interpolant_training
+    - named_ode_sampling
+    - named_sde_sampling
+    - evaluation
+    - artifact_writing
+  calls_symbols:
+    - run_experiment
+    - load_dataset
+    - select_method
+    - compute_metrics
+    - run_training_loop
+    - compute_training_objective
+    - run_evaluation
+    - aggregate_metrics
+    - write_named_result_artifacts
+    - write_dataset_registry_artifact
+    - write_metrics_artifact
+    - write_data_manifest_artifact
+
+execution_policy:
+  default_mode: "runtime_smoke"
+  safe_default: true
+  full_mode_requires_explicit_flag: true
+  random_seed: 7
+  artifact_root_env: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  artifact_root_default: "results"
+  bounded_default_route:
+    train_steps: 48
+    eval_samples: 32
+    sampler_steps: 16
+    max_dataset_items: 64
+  full_route:
+    train_steps: 400000
+    eval_samples: 50000
+    sampler_steps: 128
+    max_dataset_items: null
+  readiness_artifacts:
+    - "readiness.json"
+    - "evaluation_result.json"
+
+fixed_hyperparameter_anchors:
+  batch_size_32: 32
+  mask_tiles_64: 64
+  mask_probability_0.3: 0.3
+
+data_pipeline:
+  reference_grounding: "paperbench_ref_004 xmodaler/datasets/README.md"
+  dataset_config_keys:
+    train: "DATASETS.TRAIN"
+    val: "DATASETS.VAL"
+    test: "DATASETS.TEST"
+  distributions:
+    rho_1:
+      id: "imagenet_target_data_distribution"
+      description: "Samples target images x_1 from the task dataset distribution."
+      sampler_callable: "load_dataset"
+      sample_symbol: "x_1"
+      validation:
+        required_record_keys:
+          - "image"
+          - "label"
+          - "condition"
+        image_tensor_layout: "C,H,W"
+    gaussian_noise:
+      id: "standard_normal_noise"
+      description: "Samples zeta or z from N(0,I_d) for Algorithm 1 and SDE sampling."
+      sampler_callable: "standard_normal"
+      sample_symbols:
+        - "zeta"
+        - "z"
+      mean: 0.0
+      covariance: "I_d"
+    time_uniform:
+      id: "uniform_time"
+      description: "Samples t from U(0,1) for stochastic-interpolant training."
+      sampler_callable: "uniform_time"
+      sample_symbol: "t"
+      low: 0.0
+      high: 1.0
+  datasets:
+    imagenet:
+      id: "imagenet"
+      aliases:
+        - "ImageNet"
+        - "imagenet_1k"
+        - "imagenet-1k"
+      loader_callable: "load_dataset"
+      validation_callable: "validate_dataset_manifest"
+      split_keys:
+        train: "train"
+        validation: "validation"
+        test: "validation"
+      setup_metadata:
+        source: "local_or_huggingface"
+        hf_dataset: "imagenet-1k"
+        trust_remote_code: true
+        expected_resolution:
+          - 256
+          - 256
+        target_distribution: "rho_1"
+      bounded_runtime:
+        max_items: 64
+        resize:
+          - 3
+          - 64
+          - 64
+      full_runtime:
+        max_items: null
+        resize:
+          - 3
+          - 256
+          - 256
+      artifact_writer: "write_data_manifest_artifact"
+    imagenet_1k:
+      id: "imagenet_1k"
+      aliases:
+        - "imagenet"
+        - "imagenet-1k"
+      loader_callable: "load_dataset"
+      validation_callable: "validate_dataset_manifest"
+      setup_metadata:
+        source: "local_or_huggingface"
+        hf_dataset: "imagenet-1k"
+        trust_remote_code: true
+        target_distribution: "rho_1"
+      bounded_runtime:
+        max_items: 64
+      artifact_writer: "write_data_manifest_artifact"
+    imagenet_c:
+      id: "imagenet_c"
+      aliases:
+        - "ImageNet-C"
+        - "imagenet-corruptions"
+      loader_callable: "load_dataset"
+      validation_callable: "validate_dataset_manifest"
+      setup_metadata:
+        source: "local_or_huggingface"
+        benchmark_role: "robustness_validation"
+        target_distribution: "rho_1_corrupted"
+      bounded_runtime:
+        max_items: 64
+      artifact_writer: "write_data_manifest_artifact"
+
+tasks:
+  core_stochastic_interpolants:
+    id: "core_stochastic_interpolants"
+    aliases:
+      - "stochastic interpolants"
+      - "transport equation"
+      - "quadratic objective functions"
+    task_factory_callable: "build_core_interpolant_task"
+    dataset_id: "imagenet"
+    condition_adapter: "identity_condition"
+    availability_check: "check_core_runtime_available"
+    runnable_config_hook: "run_experiment"
+  conditional_image_generation:
+    id: "conditional_image_generation"
+    aliases:
+      - "conditional image generation task"
+      - "perform various downstream"
+    task_factory_callable: "build_conditional_generation_task"
+    dataset_id: "imagenet"
+    condition_adapter: "conditional_input_adapter"
+    availability_check: "check_image_runtime_available"
+    runnable_config_hook: "run_experiment"
+  inpainting:
+    id: "inpainting"
+    aliases:
+      - "in-painting task"
+      - "in-painting"
+      - "ImageNet inpainting"
+    task_factory_callable: "build_inpainting_task"
+    dataset_id: "imagenet"
+    condition_adapter: "mask_condition_adapter"
+    availability_check: "check_image_runtime_available"
+    runnable_config_hook: "run_experiment"
+    condition_fields:
+      x_1_shape: "C,W,H"
+      mask_symbol: "xi"
+      mask_values: "{0,1}^{C,W,H}"
+      class_labels: true
+      pre_specified_mask: true
+      mask_tiles: 64
+      mask_probability: 0.3
+  super_resolution:
+    id: "super_resolution"
+    aliases:
+      - "image super-resolution"
+      - "low-resolution image"
+      - "low-resolution"
+      - "represent full"
+    task_factory_callable: "build_super_resolution_task"
+    dataset_id: "imagenet"
+    condition_adapter: "low_resolution_condition_adapter"
+    availability_check: "check_image_runtime_available"
+    runnable_config_hook: "run_experiment"
+    condition_fields:
+      low_resolution_scale: 4
+      class_labels: true
+
+interpolant:
+  id: "stochastic_interpolant_with_couplings"
+  implementation_module: "stochastic_interpolants_couplings.interpolants"
+  coefficient_interface:
+    alpha_t:
+      name: "alpha_t"
+      schedule: "linear"
+      callable: "alpha_t"
+      formula: "alpha(t)=1-t"
+      boundary_values:
+        alpha_0: 1.0
+        alpha_1: 0.0
+    beta_t:
+      name: "beta_t"
+      schedule: "linear"
+      callable: "beta_t"
+      formula: "beta(t)=t"
+      boundary_values:
+        beta_0: 0.0
+        beta_1: 1.0
+    d_alpha_t:
+      name: "d_alpha_t"
+      callable: "d_alpha_t"
+      formula: "d/dt alpha(t)=-1"
+    d_beta_t:
+      name: "d_beta_t"
+      callable: "d_beta_t"
+      formula: "d/dt beta(t)=1"
+  state:
+    I_t:
+      callable: "interpolate_state"
+      formula: "I_t = alpha_t * x_0 + beta_t * x_1"
+      inputs:
+        - "x_0"
+        - "x_1"
+        - "t"
+        - "alpha_t"
+        - "beta_t"
+    time_derivative:
+      callable: "interpolant_time_derivative"
+      formula: "dI_t/dt = dot_alpha_t * x_0 + dot_beta_t * x_1"
+      inputs:
+        - "x_0"
+        - "x_1"
+        - "t"
+  gamma_sweep:
+    id: "bounded_gamma_sweep"
+    values:
+      - 0
+      - 1
+    default: 1
+    parameter_role: "stochasticity_or_score_weight"
+    selector_callable: "select_gamma_variant"
+
+couplings:
+  implementation_module: "stochastic_interpolants_couplings.couplings"
+  selector_callable: "select_coupling"
+  default: "data_dependent"
+  baseline: "independent_gaussian"
+  available:
+    independent_gaussian:
+      id: "independent_gaussian"
+      aliases:
+        - "independent Gaussian coupling"
+        - "rho_0 independent"
+      factory_callable: "make_independent_gaussian_coupling"
+      rho_0_sampler_callable: "sample_standard_gaussian_base"
+      coupling_density_symbol: "rho(x_0,x_1)=rho_0(x_0)rho_1(x_1)"
+      inputs:
+        - "x_1"
+        - "zeta"
+      output: "x_0"
+      transport_cost_metric: "transport_cost"
+      baseline_or_ablation: true
+    data_dependent:
+      id: "data_dependent"
+      aliases:
+        - "data-dependent coupling"
+        - "conditional rho_0(x_0 | x_1)"
+        - "data-dependent couplings"
+      factory_callable: "make_data_dependent_coupling"
+      rho_0_sampler_callable: "sample_conditional_base"
+      conditional_density_symbol: "rho_0(x_0 | x_1, condition)"
+      coupling_density_symbol: "rho(x_0,x_1)=rho_0(x_0 | x_1, condition)rho_1(x_1)"
+      inputs:
+        - "x_1"
+        - "condition"
+        - "zeta"
+      output: "x_0"
+      constraint: "x_0 is sampled from a conditional base distribution determined by x_1 and the task condition, not by ordinary noise concatenation."
+      transport_cost_metric: "transport_cost"
+      baseline_or_ablation: false
+
+methods:
+  reference_grounding: "paperbench_ref_004 configs/image_caption/scdnet/stage2/diffusion.yaml"
+  selector_callable: "select_method"
+  default: "ours"
+  required_selector_set:
+    - "ours"
+    - "resnet"
+    - "ddpm"
+    - "diffusion_model"
+  available:
+    ours:
+      id: "ours"
+      aliases:
+        - "stochastic interpolants"
+        - "data-dependent couplings"
+        - "Algorithm 1 Training"
+        - "velocity model hat_b"
+      factory_callable: "build_stochastic_interpolant_method"
+      coupling: "data_dependent"
+      velocity_model_callable: "hat_b"
+      training_objective_callable: "compute_training_objective"
+      sampler_ids:
+        - "ode_sampler"
+        - "sde_sampler"
+      metric_functions:
+        - "transport_cost"
+        - "fid"
+        - "objective_mse"
+    resnet:
+      id: "resnet"
+      aliases:
+        - "resnet baseline"
+      factory_callable: "build_resnet_condition_baseline"
+      coupling: "independent_gaussian"
+      velocity_model_callable: "hat_b"
+      sampler_ids:
+        - "ode_sampler"
+      metric_functions:
+        - "fid"
+        - "transport_cost"
+    ddpm:
+      id: "ddpm"
+      aliases:
+        - "DDPM baseline"
+      factory_callable: "build_ddpm_baseline"
+      coupling: "independent_gaussian"
+      sampler_ids:
+        - "sde_sampler"
+      metric_functions:
+        - "fid"
+    diffusion_model:
+      id: "diffusion_model"
+      aliases:
+        - "diffusion model"
+        - "diffusion_model baseline"
+      factory_callable: "build_diffusion_model_baseline"
+      coupling: "independent_gaussian"
+      sampler_ids:
+        - "sde_sampler"
+      metric_functions:
+        - "fid"
+
+model:
+  implementation_module: "stochastic_interpolants_couplings.models"
+  velocity_model:
+    id: "hat_b"
+    callable: "build_velocity_model"
+    prediction_symbol: "hat_b(I_t,t,condition)"
+    input_fields:
+      - "I_t"
+      - "t"
+      - "condition"
+      - "class_label"
+    output_field: "velocity"
+  conditional_adapters:
+    identity_condition:
+      callable: "identity_condition_adapter"
+      output_fields:
+        - "condition"
+    mask_condition_adapter:
+      callable: "mask_condition_adapter"
+      output_fields:
+        - "masked_image"
+        - "xi"
+        - "class_label"
+    low_resolution_condition_adapter:
+      callable: "low_resolution_condition_adapter"
+      output_fields:
+        - "low_resolution_image"
+        - "class_label"
+
+training:
+  reference_grounding: "paperbench_ref_004 xmodaler/engine/defaults.py"
+  implementation_module: "stochastic_interpolants_couplings.training"
+  loop_callable: "run_training_loop"
+  algorithm: "Algorithm 1 Training"
+  optimizer:
+    name: "adam"
+    learning_rate: 0.0002
+    betas:
+      - 0.9
+      - 0.999
+    weight_decay: 0.0
+  minibatch:
+    n_b: 32
+    batch_size: 32
+    batch_size_anchor: "batch_size_32"
+  algorithm_steps:
+    - step_id: "sample_x1"
+      description: "Sample x_1 from rho_1 using load_dataset."
+      callable: "load_dataset"
+      output: "x_1"
+    - step_id: "sample_zeta"
+      description: "Sample zeta from N(0,I_d)."
+      callable: "standard_normal"
+      output: "zeta"
+    - step_id: "sample_t"
+      description: "Sample t from U([0,1])."
+      callable: "uniform_time"
+      output: "t"
+    - step_id: "sample_x0"
+      description: "Sample x_0 from selected rho_0, either independent Gaussian or conditional rho_0(x_0 | x_1, condition)."
+      callable: "select_coupling"
+      output: "x_0"
+    - step_id: "compute_interpolant"
+      description: "Compute I_t=alpha_t*x_0+beta_t*x_1."
+      callable: "interpolate_state"
+      output: "I_t"
+    - step_id: "compute_target"
+      description: "Compute dI_t/dt=dot_alpha_t*x_0+dot_beta_t*x_1."
+      callable: "interpolant_time_derivative"
+      output: "target_velocity"
+    - step_id: "call_velocity_model"
+      description: "Evaluate velocity model hat_b(I_t,t,condition)."
+      callable: "hat_b"
+      output: "predicted_velocity"
+    - step_id: "objective"
+      description: "Compute empirical approximation hat L_b over minibatch."
+      callable: "compute_training_objective"
+      output: "loss"
+  objective:
+    id: "empirical_hat_L_b"
+    callable: "compute_training_objective"
+    formula: "hat L_b = (1/n_b) sum_i ||hat_b(I_{t_i},t_i,condition_i) - dI_{t_i}/dt||_2^2"
+    target: "dI_t/dt"
+    diagnostics:
+      - "transport_cost"
+      - "objective_mse"
+      - "coupling_name"
+      - "gamma"
+  bounded_defaults:
+    train_steps: 48
+    checkpoint_every: 24
+  full_defaults:
+    train_steps: 400000
+    checkpoint_every: 10000
+
+samplers:
+  implementation_module: "stochastic_interpolants_couplings.interpolants"
+  selector_callable: "select_sampler"
+  required_named_paths:
+    - "ode_sampler"
+    - "sde_sampler"
+  default: "ode_sampler"
+  ode_sampler:
+    id: "ode_sampler"
+    aliases:
+      - "ODE sampler"
+      - "transport equation"
+    callable: "sample_with_ode"
+    equation: "dX_t = hat_b(X_t,t,condition) dt"
+    start_distribution: "rho_0"
+    end_distribution: "rho_1"
+    default_steps: 16
+    full_steps: 128
+    merge_with_sde: false
+  sde_sampler:
+    id: "sde_sampler"
+    aliases:
+      - "SDE sampler"
+      - "stochastic sampler"
+    callable: "sample_with_sde"
+    equation: "dX_t = [hat_b(X_t,t,condition)+gamma*score_term(X_t,t,condition)]dt + sqrt(2*gamma)dW_t"
+    start_distribution: "rho_0"
+    end_distribution: "rho_1"
+    default_steps: 16
+    full_steps: 128
+    noise_scale: 0.08
+    gamma_values:
+      - 0
+      - 1
+    merge_with_ode: false
+
+metrics:
+  implementation_module: "stochastic_interpolants_couplings.evaluation"
+  compute_callable: "compute_metrics"
+  aggregate_callable: "aggregate_metrics"
+  formulas:
+    transport_cost:
+      id: "transport_cost"
+      callable: "transport_cost"
+      formula: "E[||x_1 - x_0||_2^2]"
+      aggregation: "mean"
+      required_for:
+        - "core_stochastic_interpolants"
+        - "inpainting"
+        - "super_resolution"
+    objective_mse:
+      id: "objective_mse"
+      callable: "objective_mse"
+      formula: "E[||hat_b(I_t,t,condition)-dI_t/dt||_2^2]"
+      aggregation: "mean"
+    fid:
+      id: "fid"
+      callable: "fid"
+      formula: "||mu_r-mu_g||_2^2 + Tr(Sigma_r + Sigma_g - 2*(Sigma_r Sigma_g)^{1/2})"
+      aggregation: "single_dataset_score"
+      required_for:
+        - "Table 2: FID for Inpainting Task"
+        - "4.2 Super-resolution on Imagenet"
+    mask_consistency:
+      id: "mask_consistency"
+      callable: "mask_consistency"
+      formula: "mean(|(1-xi)*generated - (1-xi)*condition|)"
+      aggregation: "mean"
+    low_resolution_consistency:
+      id: "low_resolution_consistency"
+      callable: "low_resolution_consistency"
+      formula: "mean(|downsample(generated)-low_resolution_image|)"
+      aggregation: "mean"
+
+artifacts:
+  writer_module: "stochastic_interpolants_couplings.artifacts"
+  output_root_env: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  output_root_default: "results"
+  declared_runtime_artifacts:
+    dataset_registry:
+      path: "results/dataset_registry.json"
+      writer_callable: "write_dataset_registry_artifact"
+    metrics:
+      path: "results/metrics.json"
+      writer_callable: "write_metrics_artifact"
+    data_manifest:
+      path: "results/data_manifest.json"
+      writer_callable: "write_data_manifest_artifact"
+    method_registry:
+      path: "results/method_registry.json"
+      writer_callable: "write_method_registry_artifact"
+    ablation_registry:
+      path: "results/ablation_registry.json"
+      writer_callable: "write_ablation_registry_artifact"
+    config_resolved:
+      path: "results/config_resolved.json"
+      writer_callable: "write_config_resolved_artifact"
+  named_result_artifacts:
+    table_2_fid_inpainting:
+      path: "results/table_2_fid_inpainting.json"
+      writer_callable: "write_named_result_artifacts"
+      paper_visible: true
+      table_name: "Table 2: FID for Inpainting Task"
+      required_columns:
+        - "task"
+        - "method"
+        - "coupling"
+        - "sampler"
+        - "gamma"
+        - "fid"
+        - "transport_cost"
+    figure_3_inpainting:
+      path: "results/figure_3_inpainting"
+      writer_callable: "write_named_result_artifacts"
+      paper_visible: true
+      figure_name: "Figure 3: Image inpainting: ImageNet-256x256 and ImageNet-512x512"
+      resolutions:
+        - "256x256"
+        - "512x512"
+      column_semantics:
+        - "masked_input"
+        - "generated_sample"
+        - "ground_truth"
+    super_resolution_fid:
+      path: "results/super_resolution_fid.json"
+      writer_callable: "write_named_result_artifacts"
+      paper_visible: true
+      table_name: "4.2 Super-resolution on Imagenet"
+      required_columns:
+        - "task"
+        - "method"
+        - "coupling"
+        - "sampler"
+        - "gamma"
+        - "fid"
+
+baseline_or_ablation:
+  registry_writer: "write_ablation_registry_artifact"
+  decisive_comparisons:
+    - id: "data_dependent_vs_independent_gaussian"
+      task_ids:
+        - "core_stochastic_interpolants"
+        - "inpainting"
+        - "super_resolution"
+      methods:
+        treatment: "ours"
+        baseline: "ddpm"
+      coupling_values:
+        treatment: "data_dependent"
+        baseline: "independent_gaussian"
+      metrics:
+        - "transport_cost"
+        - "fid"
+      gamma_values:
+        - 0
+        - 1
+  variants:
+    - id: "gamma_0"
+      selector_callable: "select_gamma_variant"
+      gamma: 0
+    - id: "gamma_1"
+      selector_callable: "select_gamma_variant"
+      gamma: 1
+    - id: "independent_gaussian_coupling"
+      selector_callable: "select_coupling"
+      coupling: "independent_gaussian"
+    - id: "data_dependent_coupling"
+      selector_callable: "select_coupling"
+      coupling: "data_dependent"
+
+protocol_matrix:
+  - id: "section_3_core_interpolant_api"
+    name: "第3节 Stochastic interpolants with couplings -> rho_0、rho_1、rho(x_0,x_1)、I_t、alpha_t、beta_t -> 核心插值过程与耦合API"
+    task_id: "core_stochastic_interpolants"
+    dataset_id: "imagenet"
+    method_selector: "ours"
+    coupling_selector: "data_dependent"
+    sampler_ids:
+      - "ode_sampler"
+      - "sde_sampler"
+    training_callable: "run_training_loop"
+    objective_callable: "compute_training_objective"
+    metric_functions:
+      - "transport_cost"
+      - "objective_mse"
+    artifact_writers:
+      - "write_method_registry_artifact"
+      - "write_metrics_artifact"
+  - id: "section_3_2_data_dependent_coupling"
+    name: "第3.2节 Designing data-dependent couplings -> rho_0(x_0 | x_1)、data-dependent coupling -> 条件基分布采样器与耦合约束接口"
+    task_id: "core_stochastic_interpolants"
+    dataset_id: "imagenet"
+    method_selector: "ours"
+    coupling_selector: "data_dependent"
+    required_callable: "sample_conditional_base"
+    metric_functions:
+      - "transport_cost"
+    artifact_writers:
+      - "write_ablation_registry_artifact"
+  - id: "section_3_3_transport_cost_training"
+    name: "第3.3节 Reducing transport costs via coupling -> Algorithm 1 Training、transport costs -> 训练循环与可记录的transport-cost诊断"
+    task_id: "core_stochastic_interpolants"
+    dataset_id: "imagenet"
+    method_selector: "ours"
+    coupling_selector:
+      - "data_dependent"
+      - "independent_gaussian"
+    training_callable: "run_training_loop"
+    metric_functions:
+      - "transport_cost"
+      - "objective_mse"
+    artifact_writers:
+      - "write_metrics_artifact"
+      - "write_ablation_registry_artifact"
+  - id: "section_3_4_learning_and_sampling"
+    name: "第3.4节 Learning and Sampling -> empirical approximation hat L_b、minibatch n_b、z_i~N(0,I_d)、t_i~U([0,1]) -> minibatch训练目标与采样入口"
+    task_id: "core_stochastic_interpolants"
+    dataset_id: "imagenet"
+    method_selector: "ours"
+    training_callable: "run_training_loop"
+    objective_callable: "compute_training_objective"
+    sampler_ids:
+      - "ode_sampler"
+      - "sde_sampler"
+    artifact_writers:
+      - "write_metrics_artifact"
+  - id: "section_4_1_inpainting"
+    name: "4.1 In-painting"
+    task_id: "inpainting"
+    dataset_id: "imagenet"
+    method_selector:
+      - "ours"
+      - "resnet"
+      - "ddpm"
+      - "diffusion_model"
+    coupling_selector:
+      - "data_dependent"
+      - "independent_gaussian"
+    metric_functions:
+      - "fid"
+      - "mask_consistency"
+      - "transport_cost"
+    artifact_writers:
+      - "write_named_result_artifacts"
+      - "write_metrics_artifact"
+  - id: "table_2_fid_reporting_protocol"
+    name: "Table 2: FID for Inpainting Task"
+    task_id: "inpainting"
+    dataset_id: "imagenet"
+    method_selector:
+      - "ours"
+      - "resnet"
+      - "ddpm"
+      - "diffusion_model"
+    coupling_selector:
+      - "data_dependent"
+      - "independent_gaussian"
+    metric_functions:
+      - "fid"
+      - "transport_cost"
+    artifact_writers:
+      - "write_named_result_artifacts"
+    artifact_key: "table_2_fid_inpainting"
+  - id: "figure_3_visualization_protocol"
+    name: "Figure 3: Image inpainting: ImageNet-256x256 and ImageNet-512x512"
+    task_id: "inpainting"
+    dataset_id: "imagenet"
+    method_selector: "ours"
+    coupling_selector: "data_dependent"
+    sampler_ids:
+      - "ode_sampler"
+      - "sde_sampler"
+    artifact_writers:
+      - "write_named_result_artifacts"
+    artifact_key: "figure_3_inpainting"
+  - id: "section_4_2_super_resolution"
+    name: "4.2 Super-resolution on Imagenet"
+    task_id: "super_resolution"
+    dataset_id: "imagenet"
+    method_selector:
+      - "ours"
+      - "ddpm"
+      - "diffusion_model"
+    coupling_selector:
+      - "data_dependent"
+      - "independent_gaussian"
+    metric_functions:
+      - "fid"
+      - "low_resolution_consistency"
+      - "transport_cost"
+    artifact_writers:
+      - "write_named_result_artifacts"
+      - "write_metrics_artifact"
+    artifact_key: "super_resolution_fid"
+  - id: "core_stochastic_interpolants_dry_run"
+    name: "core stochastic interpolants dry-run"
+    task_id: "core_stochastic_interpolants"
+    dataset_id: "imagenet"
+    mode: "runtime_smoke"
+    method_selector: "ours"
+    coupling_selector: "data_dependent"
+    sampler_ids:
+      - "ode_sampler"
+      - "sde_sampler"
+    metric_functions:
+      - "transport_cost"
+      - "objective_mse"
+    artifact_writers:
+      - "write_dataset_registry_artifact"
+      - "write_data_manifest_artifact"
+      - "write_method_registry_artifact"
+      - "write_metrics_artifact"
+      - "write_config_resolved_artifact"
+  - id: "inpainting_dry_run"
+    name: "4.1 In-painting dry-run"
+    task_id: "inpainting"
+    dataset_id: "imagenet"
+    mode: "runtime_smoke"
+    method_selector: "ours"
+    coupling_selector: "data_dependent"
+    metric_functions:
+      - "fid"
+      - "mask_consistency"
+    artifact_writers:
+      - "write_metrics_artifact"
+  - id: "super_resolution_dry_run"
+    name: "4.2 Super-resolution on Imagenet dry-run"
+    task_id: "super_resolution"
+    dataset_id: "imagenet"
+    mode: "runtime_smoke"
+    method_selector: "ours"
+    coupling_selector: "data_dependent"
+    metric_functions:
+      - "fid"
+      - "low_resolution_consistency"
+    artifact_writers:
+      - "write_metrics_artifact"
+
+tests:
+  smoke_command: "python scripts/run_coupled_si.py --mode runtime_smoke --config configs/wp_core_interpolants.yaml"
+  expected_importable_modules:
+    - "stochastic_interpolants_couplings.config"
+    - "stochastic_interpolants_couplings.data"
+    - "stochastic_interpolants_couplings.couplings"
+    - "stochastic_interpolants_couplings.interpolants"
+    - "stochastic_interpolants_couplings.models"
+    - "stochastic_interpolants_couplings.training"
+    - "stochastic_interpolants_couplings.evaluation"
+    - "stochastic_interpolants_couplings.artifacts"
+  required_config_assertions:
+    - "alpha_t and beta_t coefficient interfaces are present."
+    - "rho_1, zeta/z~N(0,I_d), and t~U(0,1) sampling routes are configured."
+    - "independent_gaussian and data_dependent couplings are selectable."
+    - "I_t, dI_t/dt, hat_b, and empirical hat L_b objective are configured."
+    - "ode_sampler and sde_sampler are separate named routes."
+    - "methods include ours, resnet, ddpm, diffusion_model."
+    - "gamma sweep includes 0 and 1."
+    - "batch_size_32, mask_tiles_64, and mask_probability_0.3 anchors are preserved."
+  expected_artifacts:
+    - "results/dataset_registry.json"
+    - "results/metrics.json"
+    - "results/data_manifest.json"
+    - "results/method_registry.json"
+    - "results/ablation_registry.json"
+    - "results/config_resolved.json"

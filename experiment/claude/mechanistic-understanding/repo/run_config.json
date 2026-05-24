@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "paper_id": "mechanistic-understanding",
+  "paper_title": "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity",
+  "default_command": "python scripts/run_reproduction.py --mode runtime_smoke",
+  "validation_commands": [
+    "python scripts/run_reproduction.py --mode runtime_smoke",
+    "python scripts/run_reproduction.py --mode docker_validate",
+    "python -m pytest -q tests/test_interfaces.py"
+  ],
+  "active_route": {
+    "entrypoint": "scripts/run_reproduction.py",
+    "data": "dpo_toxicity.data",
+    "training": "dpo_toxicity.dpo_training",
+    "evaluation": "dpo_toxicity.evaluation",
+    "interventions": "dpo_toxicity.interventions",
+    "reporting": "dpo_toxicity.reporting"
+  },
+  "runtime_modes": {
+    "runtime_smoke": "Bounded deterministic execution through the same data, training, evaluation, intervention, and artifact writer surfaces.",
+    "docker_validate": "Bounded validation route for container/import checks.",
+    "full": "Lazy full-data/full-model route; downloads and long training are opt-in."
+  },
+  "paper_visible_artifacts": [
+    "config_resolved.json",
+    "sensitivity_report.json",
+    "tables/table_1.csv",
+    "tables/table_2.csv",
+    "tables/table_3.csv",
+    "tables/table_4.csv",
+    "tables/table_5.csv",
+    "tables/table_6.csv",
+    "tables/table_7.csv",
+    "tables/table_8.csv",
+    "tables/table_9.csv",
+    "figures/figure_1.svg",
+    "figures/figure_2.svg",
+    "figures/figure_3.svg",
+    "figures/figure_4.svg",
+    "figures/figure_5.svg",
+    "figures/figure_6.svg",
+    "figures/figure_7.svg",
+    "figures/figure_8.svg",
+    "figures/figure_9.svg",
+    "figures/figure_10.svg",
+    "figures/figure_11.svg"
+  ],
+  "blacklisted_repositories": [
+    "https://github.com/ajyl/dpo_toxic"
+  ]
+}

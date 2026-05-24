@@ -1,0 +1,881 @@
+schema_version: "1.0"
+config_id: "wwmf_experiments"
+paper_title: "What Will My Model Forget? Forecasting Forgotten Examples in Language Model Refinement"
+reference_grounding: "paper_evidence_matrix paper.md"
+blacklisted_repositories:
+  - "https://github.com/AuCson/icml-24-wwmf-temp"
+
+execution:
+  canonical_entrypoint: "scripts/run_wwmf.py"
+  default_mode: "runtime_smoke"
+  dry_run_default: true
+  full_mode_requires:
+    - "--mode full"
+    - "--no-dry-run"
+    - "real P3/SQuAD/GLUE assets"
+    - "real PTLM checkpoints or resolvable HuggingFace model ids"
+  artifact_root_env: "PAPERBENCH_REPRO_ARTIFACT_DIR"
+  default_artifact_root: "results"
+  smoke_contract:
+    description: "Bounded deterministic route that exercises dataset adapters, forecasting selectors, replay/refinement loops, metrics, cost counters, and artifact writers without downloading external assets or training PTLMs."
+    must_write:
+      - "results/readiness.json"
+      - "results/evaluation_result.json"
+      - "results/config_resolved.json"
+      - "results/metrics.json"
+      - "results/tables/forecasting.json"
+      - "results/tables/refinement.json"
+      - "results/tables/appendix.json"
+      - "results/tables/appendix_mend.json"
+      - "results/tables/learning_rate_sensitivity.json"
+      - "results/tables/flops.json"
+      - "results/sensitivity_report.json"
+      - "results/figures/figure_1.json"
+      - "results/figures/figure_2.json"
+      - "results/figures/figure_3.json"
+      - "results/figures/figure_4.json"
+    dry_run_label: "dry-run contract artifact; not a reproduced paper result"
+
+hypothesis:
+  core_contribution: "Forecasting upstream examples likely to be forgotten during language-model refinement and replaying them should reduce EM Drop Ratio relative to vanilla fine-tuning and random replay while preserving edit success."
+  decisive_comparison: "ours forecasted-forgotten replay vs random replay, vanilla fine-tuning, MIR, OCS, and ground-truth forgotten replay upper bound."
+  decisive_metric: "EM Drop % at matched Edit Success Rate, with forecasting F1/precision/recall and FLOP cost as supporting metrics."
+  appendix_boundary_checks: "MEND is registered only under LoRA fine-tuning; learning-rate sensitivity is bounded to FLAN-T5 Large Full FT at 1e-4, 1e-5, and 2e-6; FLOP comparison reuses forecasting cost counters for Representation, Trainable Logit, and Ground Truth."
+  stop_rule_or_pruning_rationale: "Run the paper-specified bounded protocol matrix only; avoid unbounded model-size sweeps, redundant seeds, or unrelated ablations unless full mode explicitly selects them."
+
+paper_addendum_constraints:
+  reference_grounding: "paper_addendum_constraints addendum.md"
+  dpt_forecasting_pool:
+    id: "dpt_hat"
+    notation: "\\hat{D}_{PT}"
+    rule: "Forecasting algorithms in Table 1 and Table 2 are evaluated on pretraining examples that the base model initially answers correctly, filtering out samples the model got wrong."
+  balanced_p3_train_sample:
+    source: "P3 training split / Public Pool of Prompts"
+    tasks: 36
+    examples_per_task: 100
+    total_examples: 3600
+    meaning_of_balanced: "equal number of examples per task"
+  table_8_flop_pool:
+    upstream_examples: 3600
+    online_examples: 1
+    setup: "FLAN-T5 Large, Full FT, one online learning example"
+
+artifacts:
+  reference_grounding: "paper_contract_experiment_artifact_protocol paper.md"
+  root: "results"
+  readiness: "results/readiness.json"
+  evaluation_result: "results/evaluation_result.json"
+  config_resolved: "results/config_resolved.json"
+  metrics: "results/metrics.json"
+  tables:
+    forecasting: "results/tables/forecasting.json"
+    refinement: "results/tables/refinement.json"
+    appendix: "results/tables/appendix.json"
+    appendix_mend: "results/tables/appendix_mend.json"
+    learning_rate_sensitivity: "results/tables/learning_rate_sensitivity.json"
+    flops: "results/tables/flops.json"
+  reports:
+    sensitivity: "results/sensitivity_report.json"
+  figures:
+    figure_1: "results/figures/figure_1.json"
+    figure_2: "results/figures/figure_2.json"
+    figure_3: "results/figures/figure_3.json"
+    figure_4: "results/figures/figure_4.json"
+  writer_contract:
+    module: "wwmf.artifacts"
+    factory: "write_contract_artifacts"
+    dry_run_schema_required: true
+    include_table_captions: true
+    include_metric_schema: true
+    include_protocol_matrix: true
+
+metric_schema:
+  reference_grounding: "paper_metric_protocol paper.md"
+  exact_match:
+    id: "exact_match"
+    aliases: ["EM", "Exact Match"]
+    implementation: "wwmf.metrics.exact_match"
+    formula: "1[prediction normalized equals target normalized]"
+  edit_success_rate:
+    id: "edit_success_rate"
+    aliases: ["Succ.", "Edit Success Rate"]
+    implementation: "wwmf.metrics.edit_success_rate"
+    formula: "100 * mean(EM_after_update on refined online examples)"
+    unit: "percent"
+  em_drop_percent:
+    id: "em_drop_percent"
+    aliases: ["EM Drop %", "EM Drop Ratio"]
+    implementation: "wwmf.metrics.em_drop_percent"
+    formula: "100 * (EM_before_on_DPT_hat - EM_after_on_DPT_hat) / max(EM_before_on_DPT_hat, epsilon)"
+    lower_is_better: true
+    unit: "percent"
+  accuracy:
+    id: "accuracy"
+    implementation: "wwmf.metrics.accuracy"
+  precision:
+    id: "precision"
+    implementation: "wwmf.metrics.precision"
+  recall:
+    id: "recall"
+    implementation: "wwmf.metrics.recall"
+  f1:
+    id: "f1"
+    aliases: ["F1-score"]
+    implementation: "wwmf.metrics.f1"
+  flop_count:
+    id: "flop_count"
+    implementation: "wwmf.forecasting.ForecastingCostCounter"
+    aggregation: ["total_flops", "relative_to_ground_truth", "examples_scored", "online_examples"]
+
+environment_registry:
+  reference_grounding: "paper_contract_sweep_hyperparameter_protocol paper.md"
+  p3_test:
+    id: "p3_test"
+    aliases: ["P3-Test", "Public Pool", "Public Pool of Prompts"]
+    factory: "src.environment_registry.build_environment"
+    dataset_id: "p3"
+    setup_metadata:
+      role: "D_R and D_R^Test refinement/evaluation tasks"
+      format: "sequence-to-sequence generation"
+      split_registry: "p3_test_splits"
+      exact_match_metric: true
+  p3_train:
+    id: "p3_train"
+    aliases: ["P3-Train", "D_PT", "upstream pretraining data"]
+    factory: "src.environment_registry.build_environment"
+    dataset_id: "p3"
+    setup_metadata:
+      role: "upstream pretraining memory pool"
+      tasks: 36
+      examples_per_task: 100
+      balanced_sampling: true
+      filtered_pool_for_forecasting: "dpt_hat"
+  squad:
+    id: "squad"
+    aliases: ["SQuAD", "squad"]
+    factory: "src.environment_registry.build_environment"
+    dataset_id: "squad"
+    setup_metadata:
+      role: "question-answering refinement/evaluation task"
+      format: "extractive QA converted to seq2seq answer generation"
+  glue:
+    id: "glue"
+    aliases: ["GLUE", "glue"]
+    factory: "src.environment_registry.build_environment"
+    dataset_id: "glue"
+    setup_metadata:
+      role: "classification-style tasks formatted as seq2seq prompts"
+  evaluation_setup:
+    id: "evaluation_setup"
+    aliases: ["Evaluation Setup", "Model Refinement", "Exact Match"]
+    factory: "src.environment_registry.build_environment"
+    setup_metadata:
+      primary_metric: "exact_match"
+      refinement_metric: "edit_success_rate"
+      forgetting_metric: "em_drop_percent"
+
+dataset_registry:
+  reference_grounding: "paper_addendum_constraints addendum.md"
+  p3:
+    id: "p3"
+    aliases: ["P3", "Public Pool of Prompts"]
+    loader: "wwmf.data.load_p3_protocol"
+    adapter: "wwmf.data.P3ProtocolAdapter"
+    splits:
+      train_memory: "p3_train"
+      test_refinement: "p3_test"
+    schema:
+      fields: ["example_id", "task_id", "input", "target", "split", "initial_em"]
+      dpt_filter: "initial_em == 1 for \\hat{D}_{PT}"
+  squad:
+    id: "squad"
+    aliases: ["SQuAD"]
+    loader: "wwmf.data.load_squad_protocol"
+    adapter: "wwmf.data.SQuADProtocolAdapter"
+    schema:
+      fields: ["example_id", "question", "context", "answers", "input", "target"]
+  glue:
+    id: "glue"
+    aliases: ["GLUE"]
+    loader: "wwmf.data.load_glue_protocol"
+    adapter: "wwmf.data.GLUEProtocolAdapter"
+    schema:
+      fields: ["example_id", "task_id", "sentence_a", "sentence_b", "label", "input", "target"]
+
+p3_test_splits:
+  reference_grounding: "paper_named_experiment_protocols paper.md"
+  in_domain:
+    id: "p3_test_id"
+    description: "P3-Test tasks treated as in-domain for Table 2."
+    task_source: "configured by dataset adapter from paper task list when assets are present"
+    dry_run_task_ids: ["p3_id_paraphrase", "p3_id_qa"]
+  out_of_domain:
+    id: "p3_test_ood"
+    description: "P3-Test tasks held out for out-of-domain forecasting evaluation in Table 2."
+    task_source: "configured by dataset adapter from paper task list when assets are present"
+    dry_run_task_ids: ["p3_ood_sentiment", "p3_ood_nli"]
+
+models:
+  reference_grounding: "paper_contract_sweep_hyperparameter_protocol paper.md"
+  t5:
+    id: "t5"
+    aliases: ["T5", "Base PTLMs"]
+    family: "encoder_decoder"
+    factory: "wwmf.models.load_model"
+  bart0_large:
+    id: "bart0_large"
+    aliases: ["BART0", "BART0 Large"]
+    family: "encoder_decoder"
+    parameter_count: "400M"
+    factory: "wwmf.models.load_model"
+    hf_model_id: "facebook/bart-large"
+    dry_run_model: true
+  flan_t5_large:
+    id: "flan_t5_large"
+    aliases: ["FLAN-T5", "FLAN-T5 Large"]
+    family: "encoder_decoder"
+    parameter_count: "780M"
+    factory: "wwmf.models.load_model"
+    hf_model_id: "google/flan-t5-large"
+    dry_run_model: true
+  flan_t5_3b:
+    id: "flan_t5_3b"
+    aliases: ["FLAN-T5 3B"]
+    family: "encoder_decoder"
+    parameter_count: "3B"
+    factory: "wwmf.models.load_model"
+    hf_model_id: "google/flan-t5-xl"
+    dry_run_model: true
+
+method_registry:
+  reference_grounding: "paper_evidence_matrix paper.md"
+  required_selector_set:
+    - "ours"
+    - "t5"
+    - "fine_tuning"
+    - "lora"
+    - "ground_truth_feedback"
+  forecasting:
+    ours:
+      id: "ours"
+      aliases: ["Representation", "Rep", "black-box representation-based", "forecasted-forgotten replay"]
+      class_path: "wwmf.forecasting.RepresentationForecastingMethod"
+      selector: "representation"
+      score_direction: "higher_for_more_likely_forgotten"
+      supports_black_box: true
+      cost_counter: "representation"
+      replay_selector: "forecasted_forgotten"
+      default_parameters:
+        gamma: 1.0
+        similarity_guidance_scale: 1
+        per_sample_selection: "lowest_score_or_top_k_by_budget"
+    trainable_logit:
+      id: "trainable_logit"
+      aliases: ["Trainable Logit", "trainable logit-based"]
+      class_path: "wwmf.forecasting.TrainableLogitForecastingMethod"
+      selector: "trainable_logit"
+      requires_training_loop: true
+      cost_counter: "trainable_logit"
+      default_parameters:
+        objective: "binary_forgotten_label_prediction"
+        calibration: "class_weighted_f1"
+    fixed_logit:
+      id: "fixed_logit"
+      aliases: ["Fixed Logit", "threshold-based", "Thres", "frequency-threshold"]
+      class_path: "wwmf.forecasting.FixedLogitForecastingMethod"
+      selector: "fixed_logit"
+      uses_pool: "dpt_hat"
+      default_parameters:
+        threshold_source: "frequency_of_forgetting"
+    ground_truth:
+      id: "ground_truth_feedback"
+      aliases: ["Ground Truth", "ground-truth forgotten replay", "oracle"]
+      class_path: "wwmf.forecasting.GroundTruthForgettingMethod"
+      selector: "ground_truth_feedback"
+      requires_updated_model_inference: true
+      cost_counter: "ground_truth"
+      role: "upper_bound_not_deployable_forecaster"
+  refinement:
+    fine_tuning:
+      id: "fine_tuning"
+      aliases: ["Vanilla FT", "Full FT", "model refinement"]
+      class_path: "wwmf.refinement.FineTuningRefinement"
+      selector: "fine_tuning"
+      update_scope: "full_model"
+    head:
+      id: "head"
+      aliases: ["Head", "LM head"]
+      class_path: "wwmf.refinement.HeadOnlyRefinement"
+      selector: "head"
+      update_scope: "lm_head"
+    lora:
+      id: "lora"
+      aliases: ["LoRA", "low-rank parameter updates"]
+      class_path: "wwmf.refinement.LoRARefinement"
+      selector: "lora"
+      update_scope: "low_rank_adapters"
+  replay:
+    vanilla_ft:
+      id: "vanilla_ft"
+      aliases: ["Vanilla FT"]
+      class_path: "wwmf.replay.VanillaReplayPolicy"
+      selector: "none"
+    random_replay:
+      id: "random_replay"
+      aliases: ["Random Replay"]
+      class_path: "wwmf.replay.RandomReplayPolicy"
+      selector: "random"
+      default_parameters:
+        minibatches: 3
+        steps: 30
+        cadence: "one replay minibatch per 10 refinement steps"
+    forecasted_forgotten_replay:
+      id: "forecasted_forgotten_replay"
+      aliases: ["Forecasted Forgotten Replay", "ours replay"]
+      class_path: "wwmf.replay.ForecastedForgottenReplayPolicy"
+      selector: "forecasted"
+      forecast_method_default: "ours"
+    ground_truth_forgotten_replay:
+      id: "ground_truth_forgotten_replay"
+      aliases: ["Ground Truth Forgotten Replay"]
+      class_path: "wwmf.replay.GroundTruthReplayPolicy"
+      selector: "ground_truth_feedback"
+    mir:
+      id: "mir"
+      aliases: ["MIR", "Maximally Interfered Retrieval"]
+      class_path: "wwmf.replay.MIRReplayPolicy"
+      selector: "mir"
+    ocs:
+      id: "ocs"
+      aliases: ["OCS"]
+      class_path: "wwmf.replay.OCSReplayPolicy"
+      selector: "ocs"
+  non_replay:
+    mend_lora:
+      reference_grounding: "paper_semantic_chunk_022_training_loss_objective_comparison_to_non_replay_comparison_to_non paper.md"
+      id: "mend_lora"
+      aliases: ["MEND"]
+      class_path: "src.methods.baselines.MENDLoRAAdapter"
+      selector: "mend"
+      allowed_refinement_scope_only: "lora"
+      prohibited_scopes: ["full_model", "lm_head"]
+      comparison_table: "table_6_mend"
+      supports_forgetting_objective_ablation: true
+      default_parameters:
+        meta_model: "gradient_editor"
+        base_refinement: "lora"
+        single_error_setup: true
+        objective: "edit_success_plus_forgetting_mitigation"
+      ablations:
+        with_forgetting_objective:
+          id: "mend_lora_with_forgetting_objective"
+          objective: "edit_success_plus_forgetting_mitigation"
+        without_forgetting_objective:
+          id: "mend_lora_without_forgetting_objective"
+          objective: "edit_success_only"
+
+sweeps:
+  reference_grounding: "paper_contract_sweep_hyperparameter_protocol paper.md"
+  learning_rate:
+    id: "learning_rate"
+    bounded: true
+    values: [0.0001, 0.00001, 0.000002]
+    exact_row_names: ["1e-4", "1e-5", "2e-6"]
+    default: 0.00001
+    default_row_name: "1e-5"
+    applies_to:
+      model: "flan_t5_large"
+      refinement: "fine_tuning"
+      update_scope: "full_model"
+      protocol: "continual_model_refinement"
+      artifact: "results/tables/learning_rate_sensitivity.json"
+  gamma:
+    id: "gamma"
+    bounded: true
+    values: [0.25, 0.5, 1.0, 2.0]
+    default: 1.0
+    applies_to:
+      methods: ["ours", "representation"]
+      artifact: "results/sensitivity_report.json"
+  similarity_guidance_scale:
+    id: "similarity_guidance_scale"
+    bounded: true
+    values: [1, 10]
+    default: 1
+    applies_to:
+      methods: ["ours", "representation"]
+      trend_obligation: "positive_parameter_improves"
+  per_sample_lowest_score_selection:
+    id: "per_sample_lowest_score_selection"
+    bounded: true
+    values: ["lowest_score", "top_k_by_replay_budget"]
+    default: "lowest_score"
+    applies_to:
+      methods: ["ours", "trainable_logit", "fixed_logit"]
+
+training_loop:
+  module: "src.experiments.training"
+  function: "run_protocol"
+  default_limits:
+    dry_run_max_upstream_examples: 12
+    dry_run_max_refinement_examples: 4
+    dry_run_max_steps: 3
+    full_default_steps: 30
+  refinement_defaults:
+    batch_size: 1
+    replay_minibatches: 3
+    replay_cadence_steps: 10
+    optimizer: "adamw"
+    learning_rate: 0.00001
+  forecast_training_defaults:
+    trainable_logit:
+      max_epochs_dry_run: 1
+      max_epochs_full: 5
+      loss: "weighted_binary_cross_entropy"
+      validation_metric: "f1"
+    representation:
+      fit_required: false
+      representation_source: "encoder_last_hidden_state_or_dry_run_features"
+    fixed_logit:
+      fit_required: false
+      threshold_source: "historical_forgetting_frequency"
+
+evaluation:
+  module: "src.experiments.training"
+  function: "evaluate_protocol"
+  per_sample_bookkeeping:
+    enabled: true
+    fields:
+      - "online_example_id"
+      - "upstream_example_id"
+      - "em_before"
+      - "em_after"
+      - "forgotten_label"
+      - "forecast_score"
+      - "forecast_prediction"
+      - "replay_selected"
+      - "method_id"
+      - "cost_flops"
+  metric_outputs:
+    aggregate_path: "results/metrics.json"
+    table_paths:
+      - "results/tables/forecasting.json"
+      - "results/tables/refinement.json"
+      - "results/tables/appendix.json"
+      - "results/tables/appendix_mend.json"
+      - "results/tables/learning_rate_sensitivity.json"
+      - "results/tables/flops.json"
+
+reporting:
+  module: "src.reporting.plotting"
+  table_writer: "wwmf.artifacts.write_json_table"
+  figure_writer: "wwmf.artifacts.write_json_figure"
+  dry_run_label_required: true
+  captions:
+    figure_1: "Intriguing patterns of example forgetting while correcting prediction errors in FLAN-T5. Fixing errors in a question related to public relations can flip the prediction on an example from the paraphrase detection task; human textual similarity alone is insufficient to interpret forgetting."
+    figure_2: "Transfer of logit changes of first output tokens on an upstream pretraining example when fixing prediction errors of an online learning example."
+    figure_3: "F1, Precision, and Recall of representation-based, threshold-based, and trainable logit-based forecasting models averaged up to a given time step during continual LM refinement."
+    figure_4: "F1, Precision, and Recall of representation-based forecasting models averaged up to a given time step under different learning rates."
+    table_1: "Average F1-score of forecasting example forgetting when fixing one error in D_R^Test at a time."
+    table_2: "In-domain and out-of-domain performance of forgetting forecasting methods on BART0."
+    table_3: "Edit success rate and EM Drop % of model refinement while sequentially fixing errors in D_R^Test."
+    table_4: "Exact Match Drop ratio (%) when separately fixing single errors in D_R^Test."
+    table_5: "Computational complexity of forecasting methods and obtaining ground truth forgetting when fine-tuning LM head or the full model."
+    table_6: "Comparison of edit success rate and EM Drop % between replay-based model refinement and MEND on FLAN-T5 Large with LoRA fine-tuning when fixing a single error."
+    table_7: "EM scores of base LMs on upstream pretraining data before performing updates."
+    table_8: "Number of FLOPs when forecasting forgotten examples among 3,600 upstream pretraining examples given one online learning example."
+    table_9: "Edit success rate and EM Drop Ratio (%) under different learning rates in continual model refinement with Full FT on FLAN-T5 Large."
+    table_10: "EM Drop Ratio (%) when replaying random examples while fixing single errors or continually fixing multiple errors."
+    table_11: "Performance on validation splits of upstream pretraining tasks in the same setup as Table 3."
+    table_12: "F1 scores of forecasting methods in longer streams on FLAN-T5 Large with accumulated predictions from earlier time steps."
+
+table_contracts:
+  table_6_mend:
+    reference_grounding: "paper_semantic_chunk_022_training_loss_objective_comparison_to_non_replay_comparison_to_non paper.md"
+    artifact: "results/tables/appendix_mend.json"
+    setup:
+      model: "flan_t5_large"
+      refinement: "lora"
+      online_setup: "single_error"
+      mend_scope_constraint: "LoRA only"
+    row_methods:
+      - "Vanilla FT"
+      - "Forecasted Forgotten Replay"
+      - "Ground Truth Forgotten Replay"
+      - "MEND"
+      - "MEND without forgetting objective"
+    columns:
+      - "Succ."
+      - "EM Drop %"
+    metric_ids:
+      - "edit_success_rate"
+      - "em_drop_percent"
+    ablation_required: true
+  table_8_flops:
+    reference_grounding: "paper_semantic_chunk_024_evaluation_metrics_floating_point_operation_counts_floating_point_operation paper.md"
+    artifact: "results/tables/flops.json"
+    setup:
+      model: "flan_t5_large"
+      refinement: "fine_tuning"
+      update_scope: "full_model"
+      upstream_examples: 3600
+      online_examples: 1
+    row_methods:
+      - "Representation"
+      - "Trainable Logit"
+      - "Ground Truth"
+    columns:
+      - "FLOPs"
+      - "Relative to Ground Truth"
+    cost_counter: "wwmf.forecasting.ForecastingCostCounter"
+  table_9_learning_rate_sensitivity:
+    reference_grounding: "paper_contract_sweep_hyperparameter_protocol paper.md"
+    artifact: "results/tables/learning_rate_sensitivity.json"
+    setup:
+      model: "flan_t5_large"
+      refinement: "fine_tuning"
+      update_scope: "full_model"
+      protocol: "continual_model_refinement"
+    row_names:
+      - "1e-4"
+      - "1e-5"
+      - "2e-6"
+    learning_rate_values:
+      "1e-4": 0.0001
+      "1e-5": 0.00001
+      "2e-6": 0.000002
+    columns:
+      - "Succ."
+      - "EM Drop %"
+    default_learning_rate_row: "1e-5"
+
+protocol_matrix:
+  reference_grounding: "paper_named_experiment_protocols paper.md"
+  forecasting_forgotten_examples:
+    id: "forecasting_forgotten_examples"
+    aliases: ["Forecasting forgotten examples", "Sec. 5.1 forecasting performance"]
+    hypothesis: "Interaction-aware forecasting methods outperform frequency-threshold baselines for predicting forgotten examples."
+    environment: ["p3_train", "p3_test"]
+    dataset_pool: "dpt_hat"
+    models: ["bart0_large", "flan_t5_large", "flan_t5_3b"]
+    methods: ["ours", "trainable_logit", "fixed_logit", "ground_truth_feedback"]
+    measurements: ["precision", "recall", "f1", "flop_count"]
+    artifacts:
+      - "results/tables/forecasting.json"
+      - "results/figures/figure_3.json"
+    runtime_route: "forecasting"
+    full_mode_callables:
+      table1_runner: "wwmf.paper_protocol:run_table1_protocols"
+      prepare_bart0: "wwmf.paper_protocol:create_bart0_large_dr_from_recross_p3_test"
+      prepare_flan_t5: "wwmf.paper_protocol:create_flan_t5_dr_from_mmlu_validation"
+      dpt_hat_builder: "wwmf.paper_protocol:create_dpt_hat_dpt_with_base_model_predictions"
+      finetune_per_example: "wwmf.full_protocol:fine_tune_per_example"
+      forgetting_matrix: "wwmf.paper_protocol:compute_ground_truth_z_ij_test_for_refined_models"
+      algorithm2_trainable_logit: "wwmf.paper_protocol:algorithm2_trainable_logit_predict_all_pairs"
+      algorithm3_encoder_h: "wwmf.paper_protocol:train_encoding_function_h_algorithm3"
+      algorithm4_representation: "wwmf.paper_protocol:algorithm4_representation_predict_all_pairs"
+      frequency_threshold: "wwmf.full_protocol:FrequencyThresholdForecaster"
+  out_of_domain_evaluation:
+    id: "out_of_domain_evaluation"
+    aliases: ["Out-of-domain evaluation", "Out-of-domain evaluation of Sec. 5.1"]
+    hypothesis: "Forgetting forecasting should retain value on P3-Test out-of-domain splits."
+    environment: ["p3_test"]
+    split_registry: "p3_test_splits"
+    models: ["bart0_large"]
+    methods: ["ours", "trainable_logit", "fixed_logit"]
+    measurements: ["precision", "recall", "f1"]
+    artifacts:
+      - "results/tables/forecasting.json"
+    table_ids: ["table_2"]
+    runtime_route: "forecasting"
+    full_mode_callables:
+      recross_loader: "wwmf.full_protocol:load_recross_p3_test_for_bart0"
+      bart0_dr_builder: "wwmf.paper_protocol:create_bart0_large_dr_from_recross_p3_test"
+      bart0_runner: "wwmf.paper_protocol:run_table1_protocols"
+  improving_model_refinement_by_forecasting_forgetting:
+    id: "improving_model_refinement_by_forecasting_forgetting"
+    aliases: ["Improving model refinement by forecasting forgetting"]
+    hypothesis: "Forecasted-forgotten replay reduces EM Drop % compared with vanilla FT and random replay while maintaining edit success."
+    environment: ["p3_train", "p3_test"]
+    models: ["flan_t5_large", "flan_t5_3b", "bart0_large"]
+    refinement_methods: ["fine_tuning", "lora", "head"]
+    replay_methods:
+      - "vanilla_ft"
+      - "random_replay"
+      - "forecasted_forgotten_replay"
+      - "ground_truth_forgotten_replay"
+      - "mir"
+      - "ocs"
+    measurements: ["edit_success_rate", "em_drop_percent", "exact_match"]
+    artifacts:
+      - "results/tables/refinement.json"
+      - "results/tables/appendix.json"
+    table_ids: ["table_3", "table_4", "table_10", "table_11"]
+    runtime_route: "refinement"
+    full_mode_callables:
+      dpt_loader: "wwmf.full_protocol:load_p3_dpt_training_split"
+      hat_dpt_builder: "wwmf.full_protocol:create_hat_dpt"
+      dr_builder: "wwmf.full_protocol:create_dr_from_model_errors"
+      per_example_finetune: "wwmf.full_protocol:fine_tune_per_example"
+      forgetting_labels: "wwmf.paper_protocol:compute_ground_truth_z_ij_test_for_refined_models"
+      average_em_drop_ratio: "wwmf.paper_protocol:compute_average_exact_match_drop_ratio_across_refined_models"
+      forecast_guided_replay: "wwmf.paper_protocol:forecast_guided_replay_refinement"
+      ground_truth_replay: "wwmf.paper_protocol:ground_truth_replay_refinement"
+      section_5_2_sequential_error_fixing: "wwmf.paper_protocol:sequential_error_fixing_section_52"
+  comparison_to_non_replay_model_refinement_methods:
+    reference_grounding: "paper_semantic_chunk_022_training_loss_objective_comparison_to_non_replay_comparison_to_non paper.md"
+    id: "comparison_to_non_replay_model_refinement_methods"
+    aliases: ["Comparison to non-replay model refinement methods", "MEND comparison"]
+    hypothesis: "MEND may reduce EM Drop under LoRA editing but must be compared against replay methods on edit success."
+    environment: ["p3_train", "p3_test"]
+    model: "flan_t5_large"
+    required_refinement: "lora"
+    methods:
+      - "vanilla_ft"
+      - "forecasted_forgotten_replay"
+      - "ground_truth_forgotten_replay"
+      - "mend_lora"
+    ablations:
+      - "mend_lora_with_forgetting_objective"
+      - "mend_lora_without_forgetting_objective"
+    measurements: ["edit_success_rate", "em_drop_percent"]
+    artifacts:
+      - "results/tables/appendix_mend.json"
+      - "results/tables/appendix.json"
+    table_ids: ["table_6"]
+    runtime_route: "appendix_mend"
+    constraints:
+      mend_lora_only: true
+      reject_if_refinement_not_lora: true
+  flop_count_comparison:
+    reference_grounding: "paper_semantic_chunk_024_evaluation_metrics_floating_point_operation_counts_floating_point_operation paper.md"
+    id: "flop_count_comparison"
+    aliases: ["FLOP count comparison", "Floating Point Operation Counts of Forecasting Methods"]
+    hypothesis: "Representation and trainable-logit forecasting require substantially fewer FLOPs than ground-truth forgetting."
+    environment: ["p3_train", "p3_test"]
+    model: "flan_t5_large"
+    refinement: "fine_tuning"
+    update_scope: "full_model"
+    methods:
+      - "ours"
+      - "trainable_logit"
+      - "ground_truth_feedback"
+    method_row_names:
+      ours: "Representation"
+      trainable_logit: "Trainable Logit"
+      ground_truth_feedback: "Ground Truth"
+    measurements: ["flop_count"]
+    artifacts:
+      - "results/tables/flops.json"
+      - "results/metrics.json"
+    table_ids: ["table_8"]
+    runtime_route: "flops"
+  learning_rate_sensitivity_for_continual_model_refinement:
+    reference_grounding: "paper_contract_sweep_hyperparameter_protocol paper.md"
+    id: "learning_rate_sensitivity_for_continual_model_refinement"
+    aliases: ["Learning-rate sensitivity for continual model refinement"]
+    hypothesis: "The paper default learning rate 1e-5 is the central operating point; sensitivity is bounded to 1e-4, 1e-5, and 2e-6."
+    environment: ["p3_train", "p3_test"]
+    model: "flan_t5_large"
+    refinement: "fine_tuning"
+    update_scope: "full_model"
+    sweep: "learning_rate"
+    learning_rate_rows:
+      - row_name: "1e-4"
+        value: 0.0001
+      - row_name: "1e-5"
+        value: 0.00001
+      - row_name: "2e-6"
+        value: 0.000002
+    measurements: ["edit_success_rate", "em_drop_percent", "precision", "recall", "f1"]
+    artifacts:
+      - "results/tables/learning_rate_sensitivity.json"
+      - "results/sensitivity_report.json"
+      - "results/figures/figure_4.json"
+    table_ids: ["table_9"]
+    runtime_route: "learning_rate_sensitivity"
+    full_mode_callables:
+      mmlu_loader: "wwmf.full_protocol:load_mmlu_validation_for_flan_t5"
+      flan_t5_dr_builder: "wwmf.paper_protocol:create_flan_t5_dr_from_mmlu_validation"
+      flan_t5_runner: "wwmf.paper_protocol:run_table1_protocols"
+  forecasting_forgotten_examples_formulation:
+    id: "forecasting_forgotten_examples_formulation"
+    aliases: ["Forecasting Forgotten Examples formulation"]
+    environment: ["p3_train", "p3_test"]
+    model: "flan_t5_large"
+    methods: ["ours", "trainable_logit", "fixed_logit", "ground_truth_feedback"]
+    measurements: ["exact_match", "f1"]
+    artifacts:
+      - "results/figures/figure_1.json"
+      - "results/figures/figure_2.json"
+    runtime_route: "formulation"
+  training_and_evaluation_setup:
+    id: "training_and_evaluation_setup"
+    aliases: ["Training and evaluation setup"]
+    environment: ["evaluation_setup", "p3_train", "p3_test", "squad", "glue"]
+    models: ["bart0_large", "flan_t5_large", "flan_t5_3b", "t5"]
+    methods: ["fine_tuning", "lora", "head"]
+    measurements: ["exact_match"]
+    artifacts:
+      - "results/config_resolved.json"
+      - "results/tables/appendix.json"
+    table_ids: ["table_7"]
+    runtime_route: "setup"
+
+artifact_obligation_matrix:
+  - obligation: "命名实验协议 -> config registry"
+    implemented_by: "protocol_matrix"
+    artifact: "results/config_resolved.json"
+  - obligation: "指标与成本聚合 -> results/metrics.json"
+    implemented_by: "evaluation.metric_outputs.aggregate_path"
+    artifact: "results/metrics.json"
+  - obligation: "Table 2 forecasting OOD"
+    implemented_by: "protocol_matrix.out_of_domain_evaluation"
+    artifact: "results/tables/forecasting.json"
+  - obligation: "Table 3 refinement replay"
+    implemented_by: "protocol_matrix.improving_model_refinement_by_forecasting_forgetting"
+    artifact: "results/tables/refinement.json"
+  - obligation: "Table 4 single-error EM Drop"
+    implemented_by: "protocol_matrix.improving_model_refinement_by_forecasting_forgetting"
+    artifact: "results/tables/appendix.json"
+  - obligation: "Table 5 computational complexity"
+    implemented_by: "protocol_matrix.flop_count_comparison"
+    artifact: "results/tables/forecasting.json"
+  - obligation: "Table 6 MEND comparison"
+    implemented_by: "protocol_matrix.comparison_to_non_replay_model_refinement_methods"
+    artifact: "results/tables/appendix_mend.json"
+  - obligation: "Table 7 base LM EM scores"
+    implemented_by: "protocol_matrix.training_and_evaluation_setup"
+    artifact: "results/tables/appendix.json"
+  - obligation: "Table 8 FLOP counts"
+    implemented_by: "protocol_matrix.flop_count_comparison"
+    artifact: "results/tables/flops.json"
+  - obligation: "Table 9 learning-rate sensitivity"
+    implemented_by: "protocol_matrix.learning_rate_sensitivity_for_continual_model_refinement"
+    artifact: "results/tables/learning_rate_sensitivity.json"
+  - obligation: "Table 10 random replay ablation"
+    implemented_by: "protocol_matrix.improving_model_refinement_by_forecasting_forgetting"
+    artifact: "results/tables/appendix.json"
+  - obligation: "Table 11 upstream validation performance"
+    implemented_by: "protocol_matrix.improving_model_refinement_by_forecasting_forgetting"
+    artifact: "results/tables/appendix.json"
+  - obligation: "Table 12 longer streams"
+    implemented_by: "protocol_matrix.forecasting_forgotten_examples"
+    artifact: "results/tables/forecasting.json"
+  - obligation: "Figure 1 forgetting example"
+    implemented_by: "protocol_matrix.forecasting_forgotten_examples_formulation"
+    artifact: "results/figures/figure_1.json"
+  - obligation: "Figure 2 logit-transfer pattern"
+    implemented_by: "protocol_matrix.forecasting_forgotten_examples_formulation"
+    artifact: "results/figures/figure_2.json"
+  - obligation: "Figure 3 continual forecasting metrics"
+    implemented_by: "protocol_matrix.forecasting_forgotten_examples"
+    artifact: "results/figures/figure_3.json"
+  - obligation: "Figure 4 learning-rate sensitivity curves"
+    implemented_by: "protocol_matrix.learning_rate_sensitivity_for_continual_model_refinement"
+    artifact: "results/figures/figure_4.json"
+
+trend_obligations:
+  reference_grounding: "paper_evidence_matrix paper.md"
+  baseline_outperformance:
+    id: "baseline_outperformance"
+    comparison:
+      primary_method: "ours"
+      baselines: ["fixed_logit", "random_replay", "vanilla_ft"]
+      expected_direction:
+        f1: "higher"
+        em_drop_percent: "lower"
+      reporting_artifacts:
+        - "results/tables/forecasting.json"
+        - "results/tables/refinement.json"
+        - "results/metrics.json"
+    assertion_module: "src.trend_assertions"
+    assertion_function: "assert_baseline_outperformance_when_real_results"
+    dry_run_behavior: "record schema and comparison fields only"
+  positive_parameter_improves:
+    id: "positive_parameter_improves"
+    parameters:
+      - "gamma"
+      - "similarity_guidance_scale"
+    required_values:
+      similarity_guidance_scale: [1, 10]
+    expected_direction:
+      f1: "non_decreasing_for_selected_positive_guidance_when_supported"
+    reporting_artifacts:
+      - "results/sensitivity_report.json"
+    assertion_module: "src.trend_assertions"
+    assertion_function: "assert_positive_parameter_improves_when_real_results"
+    dry_run_behavior: "record bounded sweep rows only"
+
+default_runtime_selection:
+  mode: "runtime_smoke"
+  protocols:
+    - "training_and_evaluation_setup"
+    - "forecasting_forgotten_examples_formulation"
+    - "forecasting_forgotten_examples"
+    - "out_of_domain_evaluation"
+    - "improving_model_refinement_by_forecasting_forgetting"
+    - "comparison_to_non_replay_model_refinement_methods"
+    - "flop_count_comparison"
+    - "learning_rate_sensitivity_for_continual_model_refinement"
+  models:
+    - "flan_t5_large"
+  methods:
+    forecasting:
+      - "ours"
+      - "trainable_logit"
+      - "fixed_logit"
+      - "ground_truth_feedback"
+    refinement:
+      - "fine_tuning"
+      - "lora"
+    replay:
+      - "vanilla_ft"
+      - "random_replay"
+      - "forecasted_forgotten_replay"
+      - "ground_truth_forgotten_replay"
+    appendix:
+      - "mend_lora"
+  dry_run_limits:
+    upstream_examples: 12
+    refinement_examples: 4
+    learning_rate_rows: ["1e-4", "1e-5", "2e-6"]
+    similarity_guidance_scale: [1, 10]
+    gamma: [1.0]
+  all_declared_artifacts_must_be_materialized: true
+
+full_runtime_selection:
+  mode: "full"
+  dry_run: false
+  full_protocol_entrypoint: "wwmf.paper_protocol.run_all_paper_protocols"
+  rubric_facing_protocol_module: "wwmf.paper_protocol"
+  protocols_selectable:
+    - "forecasting_forgotten_examples"
+    - "out_of_domain_evaluation"
+    - "improving_model_refinement_by_forecasting_forgetting"
+    - "comparison_to_non_replay_model_refinement_methods"
+    - "flop_count_comparison"
+    - "learning_rate_sensitivity_for_continual_model_refinement"
+  full_table_writers:
+    - "wwmf.full_protocol.write_table_1"
+    - "wwmf.full_protocol.write_table_2"
+    - "wwmf.full_protocol.write_table_3"
+    - "wwmf.full_protocol.write_table_4"
+    - "wwmf.full_protocol.write_figure_3"
+  requires_explicit_protocol: true
+  data_validation_required: true
+  checkpoint_validation_required: true
+
+tests_contract:
+  smoke_tests:
+    - "tests/test_protocol_smoke.py"
+    - "tests/test_contracts.py"
+  expected_config_checks:
+    - "MEND comparison is registered only for LoRA fine-tuning"
+    - "MEND has with/without forgetting objective ablation"
+    - "learning_rate sweep row names are exactly 1e-4, 1e-5, 2e-6"
+    - "Table 9 columns are exactly Succ. and EM Drop %"
+    - "FLOP comparison rows include Representation, Trainable Logit, Ground Truth"
+    - "required method selectors include ours, t5, fine_tuning, lora, ground_truth_feedback"
+    - "similarity_guidance_scale values include 1 and 10"
+    - "dry-run route writes readiness.json and evaluation_result.json"

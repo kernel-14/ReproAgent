@@ -1,0 +1,707 @@
+# configs/datasets.yaml
+# BBox-Adapter: Dataset Registry and Experiment Protocol Configuration
+#
+# Paper: BBox-Adapter: Lightweight Adapting for Black-Box Large Language Models
+#
+# Reference grounding: paperbench_ref_002 src/models/qa/transformer_qa.py
+# Reference grounding: paperbench_ref_005 toxigen/alice.py
+# Reference grounding: paperbench_ref_006 readme.md
+# Reference grounding: paperbench_ref_006 research/readme_exp.md
+#
+# This file is the canonical dataset registry consumed by:
+#   - src/datasets/registry.py
+#   - src/config/experiment_config.py
+#   - src/experiments/evaluation.py
+#   - scripts/run_experiment.py
+#
+# It materializes:
+#   1. Dataset/benchmark registry (gsm8k, strategyqa, truthfulqa, scienceqa, toxigen)
+#   2. Environment/task registry (black-box LLM environments)
+#   3. Method/baseline selector registry (all paper methods)
+#   4. Parameter sweep registry (beam_size, iteration_count, adapter_size, batch_size)
+#   5. Evidence obligation matrix (experiments 1-5, ablations 1-2, cost analysis)
+#   6. Protocol matrix (named experiments -> environments, methods, metrics, artifacts)
+#   7. Artifact path contracts
+
+# ===========================================================================
+# 1. Dataset / Benchmark Registry
+#    reference_grounding: paperbench_ref_002 src/models/qa/transformer_qa.py
+#    reference_grounding: paperbench_ref_006 readme.md
+#
+#    The transformer_qa forward signature (question_with_context, context_span,
+#    yes_no_span, answer_span, metadata) informs the QA interface contract:
+#    each dataset exposes question, context, answer_span, and yes_no fields
+#    where applicable, matching the AllenNLP-style QA protocol.
+# ===========================================================================
+dataset_registry:
+
+  gsm8k:
+    id: gsm8k
+    aliases: [grade_school_math, gsm, math_reasoning, GSM8K]
+    hf_path: openai/gsm8k
+    hf_name: main
+    split_train: train
+    split_test: test
+    num_train: 7473
+    num_test: 1319
+    answer_type: numeric
+    answer_extractor: regex_boxed_or_last_number
+    loader_hook: src.data.gsm8k.load_gsm8k
+    metric: exact_match_numeric
+    feedback_modes: [ground_truth, ai_feedback, combined]
+    default_feedback_mode: ground_truth
+    cot_prompt: true
+    description: >
+      Grade School Math benchmark (Cobbe et al., 2021). 8.5K linguistically diverse
+      grade school math word problems requiring multi-step reasoning. Used in
+      Experiment 1 (Table 2, Table 3, Table 4) and plug-and-play evaluation (Table 3).
+    paper_table_refs: [Table2, Table3, Table4]
+    # QA interface contract (adapted from paperbench_ref_002 transformer_qa.py):
+    #   question_with_context: question text (no separate context for GSM8K)
+    #   answer_span: numeric answer extracted from solution
+    #   yes_no_span: null (not applicable)
+    #   metadata: question_id, gold_answer, chain_of_thought
+    qa_interface:
+      question_field: question
+      context_field: null
+      answer_field: answer
+      yes_no_field: null
+      metadata_fields: [question_id, gold_answer, chain_of_thought]
+
+  strategyqa:
+    id: strategyqa
+    aliases: [strategy_qa, StrategyQA, implicit_reasoning]
+    hf_path: wics/strategy-qa
+    hf_name: null
+    split_train: train
+    split_test: test
+    num_train: 2290
+    num_test: 490
+    answer_type: binary
+    answer_extractor: yes_no_classifier
+    loader_hook: src.data.strategyqa.load_strategyqa
+    metric: exact_match_binary
+    feedback_modes: [ai_feedback, ground_truth, combined]
+    default_feedback_mode: ai_feedback
+    cot_prompt: true
+    description: >
+      StrategyQA (Geva et al., 2021). Binary yes/no questions requiring implicit
+      multi-hop reasoning over world knowledge. Used in Experiment 2 (Table 2,
+      Table 3, Table 4, Table 5, Table 6). AI feedback mode is default because
+      ground-truth labels are not always accessible during online training.
+    paper_table_refs: [Table2, Table3, Table4, Table5, Table6]
+    # QA interface contract (adapted from paperbench_ref_002 transformer_qa.py):
+    #   question_with_context: question text
+    #   yes_no_span: binary label (yes=1, no=0)
+    #   answer_span: null (binary classification, not span extraction)
+    #   metadata: question_id, facts, decomposition
+    qa_interface:
+      question_field: question
+      context_field: facts
+      answer_field: answer
+      yes_no_field: answer
+      metadata_fields: [question_id, facts, decomposition]
+
+  truthfulqa:
+    id: truthfulqa
+    aliases: [truthful_qa, TruthfulQA, truthfulness]
+    hf_path: truthful_qa
+    hf_name: multiple_choice
+    split_train: validation
+    split_test: validation
+    num_train: 817
+    num_test: 817
+    answer_type: multiple_choice
+    answer_extractor: mc_log_prob_or_classifier
+    loader_hook: src.data.truthfulqa.load_truthfulqa
+    metric: mc_accuracy
+    feedback_modes: [combined, ground_truth, ai_feedback]
+    default_feedback_mode: combined
+    cot_prompt: true
+    description: >
+      TruthfulQA (Lin et al., 2022). 817 questions testing whether LLMs generate
+      truthful answers. Multiple-choice format. Used in Experiment 3 (Table 2,
+      Table 3). Combined feedback (ground-truth + AI) is default.
+      MC evaluation protocol: max/diff/scores-true/scores-false lprob columns
+      (adapted from TruthfulQA MC_calcs protocol).
+    paper_table_refs: [Table2, Table3]
+    # QA interface contract (adapted from paperbench_ref_002 transformer_qa.py):
+    #   question_with_context: question text
+    #   answer_span: selected MC option index
+    #   yes_no_span: null
+    #   metadata: mc1_targets, mc2_targets, category
+    qa_interface:
+      question_field: question
+      context_field: null
+      answer_field: mc1_targets
+      yes_no_field: null
+      metadata_fields: [mc1_targets, mc2_targets, category]
+    mc_eval:
+      scores_true_col: scores-true
+      scores_false_col: scores-false
+      max_col: max
+      diff_col: diff
+
+  scienceqa:
+    id: scienceqa
+    aliases: [science_qa, ScienceQA, science_reasoning]
+    hf_path: derek-thomas/ScienceQA
+    hf_name: null
+    split_train: train
+    split_test: test
+    num_train: 12726
+    num_test: 4241
+    answer_type: multiple_choice
+    answer_extractor: option_letter_classifier
+    loader_hook: src.data.scienceqa.load_scienceqa
+    metric: exact_match_mc
+    feedback_modes: [ground_truth, ai_feedback, combined]
+    default_feedback_mode: ground_truth
+    cot_prompt: true
+    description: >
+      ScienceQA (Lu et al., 2022). Multi-modal science QA benchmark with 21K
+      multimodal multiple-choice questions. Text-only subset used. Used in
+      Experiment 4 (Table 2, Table 3). Ground-truth feedback: positive set =
+      candidates selecting correct choice (A/B/C/D/E).
+    paper_table_refs: [Table2, Table3]
+    qa_interface:
+      question_field: question
+      context_field: hint
+      answer_field: answer
+      yes_no_field: null
+      metadata_fields: [choices, subject, topic, category, skill]
+
+  toxigen:
+    id: toxigen
+    aliases: [ToxiGen, toxicity_generation, hate_speech]
+    hf_path: skg/toxigen-data
+    hf_name: annotated
+    split_train: train
+    split_test: test
+    num_train: 8960
+    num_test: 940
+    answer_type: generation
+    answer_extractor: toxicity_classifier
+    loader_hook: src.data.toxigen.load_toxigen
+    metric: toxicity_probability
+    feedback_modes: [ai_feedback, ground_truth]
+    default_feedback_mode: ai_feedback
+    cot_prompt: false
+    description: >
+      ToxiGen (Hartvigsen et al., 2022). Large-scale machine-generated dataset of
+      toxic and benign statements about 13 minority groups. Used in Experiment 5
+      (Table 7) for toxicity reduction evaluation. BBox-Adapter reduces toxicity
+      probability vs base model.
+      Beam search protocol adapted from paperbench_ref_005 toxigen/alice.py:
+        beam_search(prompt, language_model, classifier, mode, device,
+                    end_token, weights, num_beams, vocab_size, max_length,
+                    length_penalty) — sentence-level beam search with toxicity
+        classifier steering. BBox-Adapter replaces the classifier with the
+        energy-based adapter scoring function.
+    paper_table_refs: [Table7]
+    # reference_grounding: paperbench_ref_005 toxigen/alice.py
+    beam_search_config:
+      end_token: "\n"
+      weights: [0.5, 0.5]
+      num_beams: 10
+      vocab_size: 100
+      max_length: 30
+      length_penalty: 1.0
+    qa_interface:
+      question_field: prompt
+      context_field: null
+      answer_field: generation
+      yes_no_field: null
+      metadata_fields: [target_group, toxicity_score, annotator_labels]
+
+# ===========================================================================
+# 2. Environment / Task Registry (Black-Box LLM Environments)
+#    reference_grounding: paperbench_ref_006 readme.md
+#
+#    Chain-of-thought hub (paperbench_ref_006) benchmarks gpt-3.5-turbo and
+#    text-davinci-003 on GSM8K and MMLU, confirming that CoT prompting is the
+#    standard evaluation protocol for all black-box LLM environments below.
+# ===========================================================================
+environment_registry:
+
+  gpt_3_5_turbo:
+    id: gpt_3_5_turbo
+    aliases: [gpt-3.5-turbo, chatgpt, openai_chat, gpt35]
+    provider: openai
+    model_name: gpt-3.5-turbo
+    api_type: chat_completion
+    endpoint: https://api.openai.com/v1/chat/completions
+    black_box: true
+    access_level: black_box        # no parameters, no token probs
+    cot_prompt: true
+    primary_target: true           # main adaptation target in paper
+    paper_role: main_results       # Table 2 primary model
+    cost_per_1k_tokens_input: 0.0015
+    cost_per_1k_tokens_output: 0.002
+    description: >
+      GPT-3.5-turbo (OpenAI). Primary black-box LLM target for BBox-Adapter
+      adaptation. All main results (Table 2) use this model. CoT prompting
+      applied per chain-of-thought-hub protocol (paperbench_ref_006).
+
+  davinci_002:
+    id: davinci_002
+    aliases: [text-davinci-002, davinci002, openai_davinci]
+    provider: openai
+    model_name: text-davinci-002
+    api_type: completion
+    endpoint: https://api.openai.com/v1/completions
+    black_box: true
+    access_level: black_box
+    cot_prompt: true
+    primary_target: false
+    paper_role: plug_and_play      # Table 3 plug-and-play target
+    cost_per_1k_tokens_input: 0.002
+    cost_per_1k_tokens_output: 0.002
+    description: >
+      text-davinci-002 (OpenAI). Used in plug-and-play evaluation (Table 3)
+      where BBox-Adapter tuned on gpt-3.5-turbo is applied without retraining.
+
+  mixtral_8x7b:
+    id: mixtral_8x7b
+    aliases: [Mixtral-8x7B-v0, mixtral, mistral_moe, Mixtral-8x7B-Instruct-v0.1]
+    provider: huggingface
+    model_name: mistralai/Mixtral-8x7B-Instruct-v0.1
+    api_type: text_generation
+    endpoint: https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1
+    black_box: true
+    access_level: black_box
+    cot_prompt: true
+    primary_target: false
+    paper_role: plug_and_play      # Table 3 plug-and-play target
+    description: >
+      Mixtral-8x7B-v0 (Mistral AI). Open-source MoE model used in plug-and-play
+      evaluation (Table 3). BBox-Adapter tuned on gpt-3.5-turbo is applied
+      without retraining, demonstrating cross-model transferability.
+
+  azure_openai:
+    id: azure_openai
+    aliases: [azure_sft, azure_openai_endpoint, azure_gpt35]
+    provider: azure
+    model_name: gpt-35-turbo
+    api_type: azure_chat_completion
+    endpoint: https://{resource}.openai.azure.com/
+    black_box: true
+    access_level: grey_box         # Azure SFT has fine-tuning access
+    cot_prompt: true
+    primary_target: false
+    paper_role: baseline_sft       # azure_sft baseline in Table 2, Table 4
+    description: >
+      Azure OpenAI endpoint with supervised fine-tuning capability. Used as
+      azure_sft baseline in Table 2 and cost comparison Table 4. Represents
+      grey-box adaptation with SFT access but no parameter inspection.
+
+# ===========================================================================
+# 3. Method / Baseline Selector Registry
+#    All paper methods and baselines must be registered here.
+#    reference_grounding: paperbench_ref_006 readme.md
+# ===========================================================================
+method_registry:
+
+  # --- BBox-Adapter (Ours) ---
+  ours:
+    id: ours
+    aliases: [BBox-ADAPTER, bbox_adapter, BBox-ADApter, BBOX-ADAPTER, our_method]
+    category: ours
+    description: >
+      BBox-Adapter: energy-based adapter model (~0.1B-0.3B params) trained via
+      ranking NCE loss with online positive/negative sampling. No access to LLM
+      parameters or token probabilities.
+    module: src.models.bbox_adapter.BBoxAdapter
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+  bbox_adapter:
+    id: bbox_adapter
+    aliases: [BBox-ADAPTER, bbox-adapter, BBOX_ADAPTER]
+    category: ours
+    description: Alias for ours / BBox-Adapter method.
+    module: src.models.bbox_adapter.BBoxAdapter
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+  # --- Chain-of-Thought Baseline ---
+  chain_of_thought:
+    id: chain_of_thought
+    aliases: [CoT, cot, chain_of_thought_prompting, wei2022]
+    category: baseline_prompting
+    description: >
+      Chain-of-thought prompting (Wei et al., 2022). Standard CoT baseline
+      applied to all black-box LLMs. Reference: paperbench_ref_006 readme.md
+      confirms CoT is the standard evaluation protocol.
+    module: src.methods.baselines.ChainOfThoughtBaseline
+    requires_adapter: false
+    requires_llm_params: false
+    requires_token_probs: false
+
+  # --- Oracle Baseline ---
+  oracle:
+    id: oracle
+    aliases: [oracle_upper_bound, gold_oracle]
+    category: baseline_oracle
+    description: >
+      Oracle upper bound: selects the correct answer from candidate set using
+      ground-truth labels. Represents theoretical maximum performance.
+    module: src.methods.baselines.OracleBaseline
+    requires_adapter: false
+    requires_llm_params: false
+    requires_token_probs: false
+
+  # --- Heuristic Baseline ---
+  heuristic:
+    id: heuristic
+    aliases: [heuristic_selection, majority_vote, self_consistency]
+    category: baseline_heuristic
+    description: >
+      Heuristic candidate selection (e.g., majority voting / self-consistency).
+      No adapter model required.
+    module: src.methods.baselines.HeuristicBaseline
+    requires_adapter: false
+    requires_llm_params: false
+    requires_token_probs: false
+
+  # --- RoBERTa Baseline ---
+  roberta:
+    id: roberta
+    aliases: [RoBERTa, roberta_classifier, roberta_reranker]
+    category: baseline_discriminative
+    description: >
+      RoBERTa-based discriminative reranker. Uses RoBERTa to score and select
+      among LLM-generated candidates. Grey-box adaptation baseline.
+    module: src.methods.baselines.RoBERTaBaseline
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+  # --- Fine-Tuning Baselines ---
+  fine_tuning:
+    id: fine_tuning
+    aliases: [full_fine_tuning, sft, supervised_fine_tuning]
+    category: baseline_finetuning
+    description: >
+      Full supervised fine-tuning of the LLM. White-box baseline requiring
+      full parameter access.
+    module: src.methods.baselines.FineTuningBaseline
+    requires_adapter: false
+    requires_llm_params: true
+    requires_token_probs: true
+
+  lora:
+    id: lora
+    aliases: [LoRA, low_rank_adaptation, peft_lora]
+    category: baseline_peft
+    description: >
+      LoRA (Hu et al., 2022). Parameter-efficient fine-tuning via low-rank
+      decomposition. White-box PEFT baseline.
+    module: src.methods.baselines.LoRABaseline
+    requires_adapter: true
+    requires_llm_params: true
+    requires_token_probs: false
+
+  sft_lora:
+    id: sft_lora
+    aliases: [SFT-LoRA, sft_with_lora, supervised_lora]
+    category: baseline_peft
+    description: >
+      Supervised fine-tuning with LoRA. PEFT baseline combining SFT data with
+      LoRA parameter efficiency. Used in Table 2 and Table 4 comparisons.
+    module: src.methods.baselines.SFTLoRABaseline
+    requires_adapter: true
+    requires_llm_params: true
+    requires_token_probs: false
+
+  azure_sft:
+    id: azure_sft
+    aliases: [AzureSFT, azure_fine_tuning, azure_supervised_ft]
+    category: baseline_sft
+    description: >
+      Azure OpenAI supervised fine-tuning. Grey-box baseline using Azure SFT
+      API. Used in Table 2 (main results) and Table 4 (cost comparison).
+    module: src.methods.baselines.AzureSFTBaseline
+    requires_adapter: false
+    requires_llm_params: false
+    requires_token_probs: false
+
+  mlm:
+    id: mlm
+    aliases: [MLM, masked_language_model, mlm_adapter]
+    category: baseline_mlm
+    description: >
+      Masked language model adapter baseline. Uses MLM-style training for
+      adapter optimization. Comparison baseline for energy-based approach.
+    module: src.methods.baselines.MLMBaseline
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+  # --- BBox-Adapter Variants ---
+  ranking_nce:
+    id: ranking_nce
+    aliases: [RankingNCE, nce_ranking, ranking_nce_loss]
+    category: ours_variant
+    description: >
+      BBox-Adapter with ranking NCE loss only (no online adaptation).
+      Ablation variant isolating the NCE loss contribution.
+    module: src.models.bbox_adapter.BBoxAdapterRankingNCE
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+  online_adaptation:
+    id: online_adaptation
+    aliases: [OnlineAdaptation, online_bbox_adapter, iterative_adaptation]
+    category: ours_variant
+    description: >
+      BBox-Adapter with full online adaptation framework. Iteratively samples
+      from previous inferences and updates the adapter. Core paper method.
+    module: src.models.bbox_adapter.BBoxAdapterOnline
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+  single_step_inference:
+    id: single_step_inference
+    aliases: [SingleStep, single_step, one_step_inference]
+    category: ours_variant
+    description: >
+      BBox-Adapter inference with beam_size=1 (single candidate). Ablation
+      variant for beam search analysis.
+    module: src.models.bbox_adapter.BBoxAdapterSingleStep
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+  full_step_inference:
+    id: full_step_inference
+    aliases: [FullStep, full_step, multi_step_inference]
+    category: ours_variant
+    description: >
+      BBox-Adapter inference with full beam search (beam_size=5). Standard
+      inference mode for main results.
+    module: src.models.bbox_adapter.BBoxAdapterFullStep
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+  # --- Feedback Mode Variants ---
+  ground_truth_feedback:
+    id: ground_truth_feedback
+    aliases: [GT_feedback, ground_truth, gt_labels]
+    category: feedback_variant
+    description: >
+      BBox-Adapter trained with ground-truth labels as reward signal.
+      Positive set: candidates matching gold answer. Used for GSM8K, ScienceQA.
+    module: src.bbox_adapter.online_adaptation.GroundTruthFeedback
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+  ai_feedback:
+    id: ai_feedback
+    aliases: [AI_feedback, llm_feedback, judge_feedback]
+    category: feedback_variant
+    description: >
+      BBox-Adapter trained with AI judge feedback as reward signal.
+      A smaller LLM scores candidate answers when GT labels are unavailable.
+      Used for StrategyQA, ToxiGen.
+    module: src.bbox_adapter.online_adaptation.AIFeedback
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+  energy_based_model:
+    id: energy_based_model
+    aliases: [EBM, energy_model, ebm_adapter]
+    category: ours_component
+    description: >
+      Energy-based model component of BBox-Adapter. BERT-based model that
+      assigns energy scores to (question, candidate_answer) pairs.
+    module: src.bbox_adapter.energy_model.EnergyModel
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+  combined_feedback:
+    id: combined_feedback
+    aliases: [CombinedFeedback, combined, gt_plus_ai]
+    category: feedback_variant
+    description: >
+      BBox-Adapter trained with combined ground-truth and AI feedback.
+      Used for TruthfulQA where both signal types are available.
+    module: src.bbox_adapter.online_adaptation.CombinedFeedback
+    requires_adapter: true
+    requires_llm_params: false
+    requires_token_probs: false
+
+# ===========================================================================
+# 4. Parameter Sweep Registry
+#    All paper-specified bounded sweeps with exact anchor values.
+#    reference_grounding: paperbench_ref_005 toxigen/alice.py
+#    (beam_search num_beams parameter informs beam_size sweep design)
+# ===========================================================================
+sweep_registry:
+
+  beam_size:
+    id: beam_size
+    description: >
+      Number of candidate responses sampled from the black-box LLM per query.
+      Sentence-level beam search over LLM outputs, analogous to beam search
+      in paperbench_ref_005 toxigen/alice.py (num_beams parameter).
+    values: [1, 3, 5]
+    default: 5
+    paper_anchor: true
+    sweep_type: ablation
+    affects: [inference_cost, accuracy]
+
+  iteration_count:
+    id: iteration_count
+    description: >
+      Number of online adaptation iterations (rounds of sampling + adapter update).
+      iteration_count=0 corresponds to zero-shot / no adaptation baseline.
+    values: [0, 1, 2, 3, 4]
+    default: 4
+    paper_anchor: true
+    sweep_type: ablation
+    affects: [accuracy, training_cost]
+
+  adapter_size:
+    id: adapter_size
+    description: >
+      Number of parameters in the energy-based adapter model (in billions).
+      0.1B ≈ BERT-base, 0.3B ≈ BERT-large or similar.
+    values: [0.1, 0.3]
+    default: 0.1
+    paper_anchor: true
+    sweep_type: ablation
+    affects: [accuracy, memory_usage, training_cost]
+    unit: billion_parameters
+
+  temperature:
+    id: temperature
+    description: >
+      Sampling temperature for black-box LLM candidate generation.
+      Higher temperature increases diversity of candidate pool.
+    values: [0.0, 0.3, 0.7, 1.0]
+    default: 0.7
+    paper_anchor: false
+    sweep_type: sensitivity
+    affects: [candidate_diversity, accuracy]
+
+  batch_size:
+    id: batch_size
+    description: >
+      Training batch size for adapter NCE loss optimization.
+      Paper uses two fixed anchors: 64 and 128.
+    values: [64, 128]
+    default: 128
+    paper_anchor: true
+    sweep_type: ablation
+    affects: [training_cost, accuracy, gpu_memory]
+    # Fixed hyperparameter anchors (paper-exact):
+    batch_size_128: 128
+    batch_size_64: 64
+
+# ===========================================================================
+# 5. Evidence Obligation Matrix
+#    Binds experiments/ablations to environments, methods, parameters,
+#    expected trends, and artifact paths.
+#    reference_grounding: paperbench_ref_006 research/readme_exp.md
+# ===========================================================================
+evidence_obligation_matrix:
+
+  experiment_1_gsm8k:
+    id: experiment_1_gsm8k
+    name: "Experiment 1: GSM8K Main Results"
+    dataset: gsm8k
+    environment: gpt_3_5_turbo
+    methods: [ours, chain_of_thought, azure_sft, sft_lora]
+    feedback_mode: ground_truth
+    metrics: [accuracy, training_cost, inference_cost]
+    paper_table: Table2
+    expected_trend: >
+      BBox-Adapter (ours) achieves higher accuracy than chain_of_thought,
+      azure_sft, and sft_lora baselines on GSM8K while maintaining lower
+      or comparable training cost.
+    artifact_paths:
+      - results/main_comparison/metrics.json
+      - results/cost_analysis/metrics.json
+    parameters:
+      beam_size: 5
+      iteration_count: 4
+      adapter_size: [0.1, 0.3]
+      batch_size: 128
+
+  experiment_2_strategyqa:
+    id: experiment_2_strategyqa
+    name: "Experiment 2: StrategyQA Main Results"
+    dataset: strategyqa
+    environment: gpt_3_5_turbo
+    methods: [ours, chain_of_thought, oracle, heuristic, roberta, fine_tuning, lora, sft_lora, azure_sft, mlm]
+    feedback_mode: ai_feedback
+    metrics: [accuracy, training_cost, inference_cost, api_cost]
+    paper_table: Table2
+    expected_trend: >
+      BBox-Adapter achieves improvements over all baselines on StrategyQA
+      using AI feedback, demonstrating effectiveness without ground-truth labels.
+    artifact_paths:
+      - results/main_comparison/metrics.json
+      - results/cost_analysis/metrics.json
+    parameters:
+      beam_size: 5
+      iteration_count: 4
+      adapter_size: [0.1, 0.3]
+      batch_size: 128
+
+  experiment_3_truthfulqa:
+    id: experiment_3_truthfulqa
+    name: "Experiment 3: TruthfulQA Main Results"
+    dataset: truthfulqa
+    environment: gpt_3_5_turbo
+    methods: [ours, chain_of_thought, oracle, heuristic, roberta, fine_tuning, lora, sft_lora, azure_sft, mlm]
+    feedback_mode: combined
+    metrics: [accuracy, training_cost, inference_cost, api_cost]
+    paper_table: Table2
+    expected_trend: >
+      BBox-Adapter achieves improvements on TruthfulQA using combined feedback,
+      improving truthfulness of black-box LLM outputs.
+    artifact_paths:
+      - results/main_comparison/metrics.json
+      - results/cost_analysis/metrics.json
+    parameters:
+      beam_size: 5
+      iteration_count: 4
+      adapter_size: [0.1, 0.3]
+      batch_size: 128
+
+  experiment_4_scienceqa:
+    id: experiment_4_scienceqa
+    name: "Experiment 4: ScienceQA Main Results"
+    dataset: scienceqa
+    environment: gpt_3_5_turbo
+    methods: [ours, chain_of_thought, oracle, heuristic, roberta, fine_tuning, lora, sft_lora, azure_sft, mlm]
+    feedback_mode: ground_truth
+    metrics: [accuracy, training_cost, inference_cost, api_cost]
+    paper_table: Table2
+    expected_trend: >
+      BBox-Adapter achieves improvements on ScienceQA over all baselines
+      using ground-truth feedback for multi-choice science questions.
+    artifact_paths:
+      - results/main_comparison/metrics.json
+      - results/cost_analysis/metrics.json
+    parameters:
+      beam_size: 5
+      iteration_count: 4
+      adapter_size: [0.1, 0.3]
+      batch_size: 128
+
+  experiment_5_toxigen:
+    id: experiment_5_toxigen
+    name: "Experiment 5: ToxiGen Toxicity Reduction"
+    dataset: toxigen
+    environment: gpt_3_5_turbo

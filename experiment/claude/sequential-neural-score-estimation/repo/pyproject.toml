@@ -1,0 +1,124 @@
+# reference_grounding: paperbench_ref_001 l5pc/docs/config.md
+# reference_grounding: paperbench_ref_001 sbi/sbi/inference/abc/abc_base.py
+# reference_grounding: paperbench_ref_001 benchmark/benchmark/utils.py
+#
+# Sequential Neural Posterior Score Estimation (SNPSE) - Package Configuration
+#
+# Paper: Sequential Neural Score Estimation: Likelihood-Free Inference with
+#        Conditional Score Based Diffusion Models
+#
+# Method obligation: Declare lightweight core dependencies separately from optional
+# heavy simulator/training dependencies when possible.
+#
+# This configuration enables:
+# - Minimal smoke/dry-run execution with core dependencies only
+# - Full training with optional heavy dependencies (torch, etc.)
+# - Modular installation: core, train, metrics, viz, full, dev
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "snpse"
+version = "0.1.0"
+description = "Sequential Neural Posterior Score Estimation: Likelihood-Free Inference with Conditional Score Based Diffusion Models"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "PaperBench Reproduction", email = "paperbench@example.com"}
+]
+keywords = ["simulation-based inference", "score-based diffusion", "bayesian inference", "likelihood-free inference"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Core lightweight dependencies for basic execution and smoke tests
+# Reference grounding: paperbench_ref_001 benchmark/benchmark/utils.py
+dependencies = [
+    "numpy>=1.21.0",
+    "scipy>=1.7.0",
+    "pyyaml>=5.4.0",
+    "tqdm>=4.62.0",
+]
+
+[project.optional-dependencies]
+# Training dependencies - heavy neural network and optimization libraries
+# Reference grounding: paperbench_ref_001 sbi/sbi/inference/snpe/snpe_a.py
+train = [
+    "torch>=1.10.0",
+    "torchsde>=0.2.5",
+]
+
+# Metrics and evaluation dependencies
+# Required for C2ST metric computation (paper Section 5.3)
+metrics = [
+    "pandas>=1.3.0",
+    "scikit-learn>=1.0.0",
+]
+
+# Visualization dependencies - lazy imported in plotting modules
+# Required for Figure 1-8 reproduction artifacts
+viz = [
+    "matplotlib>=3.4.0",
+    "seaborn>=0.11.0",
+]
+
+# Full installation includes all optional dependencies
+full = [
+    "torch>=1.10.0",
+    "torchsde>=0.2.5",
+    "pandas>=1.3.0",
+    "scikit-learn>=1.0.0",
+    "matplotlib>=3.4.0",
+    "seaborn>=0.11.0",
+]
+
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=0.950",
+]
+
+[project.scripts]
+snpse = "main:main"
+
+[project.urls]
+Homepage = "https://github.com/paperbench/snpse"
+Repository = "https://github.com/paperbench/snpse"
+
+[tool.setuptools]
+packages = ["src", "src.data", "src.experiments", "src.methods", "src.reporting"]
+
+[tool.setuptools.package-data]
+src = ["*.yaml", "*.json"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310']
+include = '\.pyi?$'
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true

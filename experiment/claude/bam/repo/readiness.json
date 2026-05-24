@@ -1,0 +1,41 @@
+{
+  "artifact_manifest": "results/artifact_manifest.json",
+  "canonical_route": "python scripts/run_experiments.py --mode runtime_smoke",
+  "declared_runtime_artifacts": [
+    "results/loss_trace.json",
+    "results/bam_trace.json",
+    "results/bam_final_variational_params.npz",
+    "results/batch_statistics_trace.json",
+    "results/gaussian_sanity_metrics.json",
+    "results/method_registry.json",
+    "results/ablation_registry.json",
+    "results/synthetic_kl_metrics.json",
+    "results/synthetic_curves.json",
+    "results/baseline_traces.json",
+    "results/experiment_summary_report.json",
+    "results/readiness.json",
+    "results/evaluation_result.json",
+    "results/metrics.json",
+    "results/run_summary.json",
+    "results/config_echo.json",
+    "results/evidence_contract_matrix.json",
+    "results/experiment_registry.json",
+    "results/environment_registry.json",
+    "readiness.json",
+    "evaluation_result.json",
+    "results/figures/figure_5.png"
+  ],
+  "dry_run": true,
+  "exercised_surfaces": [
+    "data_pipeline",
+    "entrypoint",
+    "evaluation",
+    "baseline_or_ablation",
+    "artifact_writer",
+    "config",
+    "environment"
+  ],
+  "mode": "runtime_smoke",
+  "ready": true,
+  "schema_complete": true
+}

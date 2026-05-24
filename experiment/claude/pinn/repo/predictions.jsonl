@@ -1,0 +1,1 @@
+{"coordinates": [0.0, 0.0], "dry_run": true, "label": "dry-run contract artifact", "optimizer": "NNCG after Adam+L-BFGS", "paper_title": "Challenges in Training PINNs: A Loss Landscape Perspective", "prediction": 0.0, "problem": "wave", "reference": 0.0, "seed": 0, "width": 32}

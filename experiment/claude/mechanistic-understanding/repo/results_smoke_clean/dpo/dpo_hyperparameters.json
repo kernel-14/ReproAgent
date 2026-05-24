@@ -1,0 +1,10 @@
+{
+  "batch_size": 4,
+  "convergence_pairs": "approximately 6000 toxic/non-toxic pairs",
+  "dpo_beta": 0.1,
+  "learning_rate": 1e-06,
+  "max_gradient_norm": 10,
+  "optimizer": "RMSProp",
+  "train_validation_split": "90:10",
+  "validation_patience": 10
+}

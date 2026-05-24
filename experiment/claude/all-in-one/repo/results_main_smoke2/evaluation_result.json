@@ -1,0 +1,43 @@
+{
+  "core_contract_artifacts": {
+    "status": "ok",
+    "validation": {
+      "checked_obligations": {
+        "M_C_noising_loss_sampling_path": true,
+        "M_E_attention_path": true,
+        "binary_condition_state": true,
+        "blacklist_declared_not_used": true,
+        "joint_distribution_training": true,
+        "named_sde_ode_samplers": true,
+        "tokenizer_encode_contract": true,
+        "training_condition_resampling": true,
+        "training_metadata_surface": true
+      },
+      "failures": [],
+      "valid": true
+    },
+    "written": {
+      "results/attention_mask_registry.json": "results_main_smoke2/attention_mask_registry.json",
+      "results/diffusion_config.json": "results_main_smoke2/diffusion_config.json",
+      "results/evaluation_result.json": "results_main_smoke2/evaluation_result.json",
+      "results/loss_trace.json": "results_main_smoke2/loss_trace.json",
+      "results/model_registry.json": "results_main_smoke2/model_registry.json",
+      "results/readiness.json": "results_main_smoke2/readiness.json",
+      "results/sampling_trace.json": "results_main_smoke2/sampling_trace.json",
+      "results/tokenizer_registry.json": "results_main_smoke2/tokenizer_registry.json"
+    }
+  },
+  "figures": [
+    "fig. 3",
+    "fig. 4a",
+    "fig. 5a",
+    "fig. 5b",
+    "fig. 5c"
+  ],
+  "metrics_path": "results_main_smoke2/metrics.json",
+  "num_evaluations": 5,
+  "paper_scale_claim": false,
+  "result_scope": "bounded_smoke",
+  "samples_path": "results_main_smoke2/samples.npz",
+  "status": "ok"
+}

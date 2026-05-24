@@ -1,0 +1,409 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wwmf-paperbench-repro"
+version = "0.1.0"
+description = "PaperBench reproduction for What Will My Model Forget? Forecasting Forgotten Examples in Language Model Refinement."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "PaperBench Repro Agent" }
+]
+keywords = [
+  "language-model-refinement",
+  "catastrophic-forgetting",
+  "forecasting",
+  "replay",
+  "paperbench",
+  "reproducibility"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+dependencies = [
+  "PyYAML>=6.0",
+  "typing-extensions>=4.8"
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=7.4"
+]
+dev = [
+  "pytest>=7.4",
+  "ruff>=0.4",
+  "mypy>=1.8"
+]
+reporting = [
+  "matplotlib>=3.7",
+  "pandas>=2.0"
+]
+training = [
+  "numpy>=1.24",
+  "torch>=2.1",
+  "transformers>=4.38",
+  "datasets>=2.17",
+  "accelerate>=0.27",
+  "peft>=0.8",
+  "scikit-learn>=1.3"
+]
+full = [
+  "wwmf-paperbench-repro[test,reporting,training]"
+]
+
+[project.scripts]
+wwmf = "main:main"
+wwmf-run = "scripts.run_wwmf:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["wwmf*", "src*"]
+exclude = ["tests*", "results*", "assets*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+markers = [
+  "smoke: bounded repository wiring tests",
+  "contract: paper-derived protocol and artifact contract tests",
+  "optional_heavy: tests requiring optional training/reporting dependencies"
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = ["results", ".venv", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_configs = true
+exclude = ["results/", "build/", "dist/"]
+
+[tool.wwmf]
+paper_title = "What Will My Model Forget? Forecasting Forgotten Examples in Language Model Refinement"
+canonical_entrypoint = "scripts/run_wwmf.py"
+default_mode = "runtime_smoke"
+default_command = "python scripts/run_wwmf.py --mode runtime_smoke"
+docker_validate_command = "python scripts/run_wwmf.py --mode docker_validate"
+full_command = "python scripts/run_wwmf.py --mode full --no-dry-run"
+artifact_root_env = "PAPERBENCH_REPRO_ARTIFACT_DIR"
+default_artifact_root = "results"
+dry_run_label = "dry-run contract/readiness artifact; not a reproduced benchmark result"
+stop_pruning_rationale = "Stop at paper-specified appendix protocols, registry entries, artifact schemas, and bounded smoke validation; full PTLM training/evaluation requires explicit full mode."
+
+[tool.wwmf.hypothesis]
+core_contribution = "Forecasting examples likely to be forgotten during language-model refinement enables targeted replay that reduces EM Drop Ratio while preserving edit success."
+appendix_checks = "Appendix checks bound the main claim by comparing non-replay MEND, FLAN-T5 Large Full FT learning-rate sensitivity, and FLOP costs shared with the forecasting cost counter."
+
+[tool.wwmf.decision_value]
+decisive_comparison = "Forecasted forgotten replay and representation/logit forecasting costs versus random replay, ground-truth forgotten replay, and non-replay MEND under paper-specified setups."
+decisive_metrics = ["Edit Success Rate", "EM Drop Ratio", "EM Drop %", "F1", "Precision", "Recall", "FLOP"]
+bounded_default = "Smoke mode runs deterministic tiny protocol instances and writes every declared artifact path as schema/readiness output."
+
+[tool.wwmf.dependencies]
+lightweight_core = [
+  "PyYAML",
+  "typing-extensions"
+]
+optional_training = [
+  "numpy",
+  "torch",
+  "transformers",
+  "datasets",
+  "accelerate",
+  "peft",
+  "scikit-learn"
+]
+optional_reporting = [
+  "matplotlib",
+  "pandas"
+]
+dependency_policy = "Core imports must remain lightweight; optional model, dataset, GPU, and plotting libraries are loaded lazily inside training/evaluation/reporting functions."
+
+[tool.wwmf.artifacts]
+readiness = "results/readiness.json"
+evaluation_result = "results/evaluation_result.json"
+metrics = "results/metrics.json"
+config_resolved = "results/config_resolved.json"
+sensitivity_report = "results/sensitivity_report.json"
+
+[tool.wwmf.artifacts.tables]
+forecasting = "results/tables/forecasting.json"
+refinement = "results/tables/refinement.json"
+appendix = "results/tables/appendix.json"
+appendix_mend = "results/tables/appendix_mend.json"
+learning_rate_sensitivity = "results/tables/learning_rate_sensitivity.json"
+flops = "results/tables/flops.json"
+
+[tool.wwmf.artifacts.figures]
+figure_1 = "results/figures/figure_1.json"
+figure_2 = "results/figures/figure_2.json"
+figure_3 = "results/figures/figure_3.json"
+figure_4 = "results/figures/figure_4.json"
+
+[tool.wwmf.routes]
+runtime_smoke = [
+  "load_config",
+  "construct_tiny_dpt_protocol",
+  "run_forecasting_methods",
+  "run_refinement_replay_protocol",
+  "run_appendix_mend_protocol",
+  "run_learning_rate_sensitivity_protocol",
+  "aggregate_shared_flop_costs",
+  "write_all_contract_artifacts"
+]
+docker_validate = [
+  "load_config",
+  "validate_environment",
+  "run_runtime_smoke",
+  "write_readiness",
+  "write_evaluation_result"
+]
+full = [
+  "load_config",
+  "prepare_paper_datasets",
+  "load_ptlm_or_adapter",
+  "run_forecasting_training",
+  "run_refinement_training",
+  "run_appendix_checks",
+  "write_final_artifacts"
+]
+
+[tool.wwmf.paper_protocol]
+# reference_grounding: paper_contract_sweep_hyperparameter_protocol paper.md
+base_models = ["BART0 Large", "FLAN-T5 Large", "FLAN-T5 3B"]
+primary_appendix_model = "FLAN-T5 Large"
+primary_appendix_refinement = "Full FT"
+dpt_upstream_tasks = 36
+dpt_examples_per_task = 100
+balanced_dpt_sampling = true
+forecasting_evaluation_dataset = "hat_D_PT"
+per_sample_selection_rule = "rank examples by lowest forecasting score / highest predicted forgotten probability depending on method implementation"
+
+[tool.wwmf.paper_addendum_constraints]
+# reference_grounding: paper_addendum_constraints addendum.md
+status = "provided_clarifications_only_no_extra_paper_requirements"
+frequency_threshold_dataset_symbol = "hat_D_PT"
+frequency_threshold_dataset_note = "Use pre-training examples filtered to those the base model answered correctly when evaluating forecasting algorithms."
+dpt_sampling_note = "D_PT is a balanced sample of 100 examples per task over 36 P3 training-split tasks."
+t0_train_task_intersection_required = true
+no_additional_unprovided_addendum_constraints = true
+
+[tool.wwmf.appendix_checks]
+enabled = true
+work_package = "appendix_checks"
+artifact_paths = [
+  "results/tables/appendix_mend.json",
+  "results/tables/learning_rate_sensitivity.json",
+  "results/tables/flops.json",
+  "results/tables/appendix.json",
+  "results/config_resolved.json",
+  "results/sensitivity_report.json"
+]
+required_surfaces = [
+  "config",
+  "evaluation",
+  "artifact_writer",
+  "training_loop",
+  "tests",
+  "model_or_method",
+  "metric_formula",
+  "reporting"
+]
+
+[tool.wwmf.appendix_checks.table_6_mend]
+# reference_grounding: paper_semantic_chunk_022_training_loss_objective_comparison_to_non_replay_comparison_to_non paper.md
+artifact = "results/tables/appendix_mend.json"
+registered_only_under_setup = "LoRA fine-tuning"
+method = "MEND"
+adapter = "wwmf.refinement:MENDComparisonAdapter"
+training_loop = "src.experiments.training:run_appendix_mend_protocol"
+evaluation = "wwmf.metrics:evaluate_mend_comparison"
+artifact_writer = "wwmf.artifacts:write_appendix_mend_table"
+model_or_method_registry_key = "mend_lora_only"
+columns = ["Method", "Fine-tuning Setup", "Edit Success Rate", "EM Drop", "EM Drop Ratio", "Forgetting Objective"]
+required_config_fields = [
+  "lora_only",
+  "edit_success",
+  "em_drop",
+  "forgetting_objective_ablation"
+]
+trend_assertions = [
+  "MEND may reduce EM Drop relative to replay baselines",
+  "MEND edit success should be reported because model refinement success is the primary goal"
+]
+
+[tool.wwmf.appendix_checks.table_6_mend.default_config]
+lora_only = true
+full_lm_meta_model_training = false
+edit_success_metric = "exact_match_on_online_fix_examples"
+em_drop_metric = "em_before_minus_em_after_on_hat_D_PT"
+em_drop_ratio_metric = "100 * (EM_before - EM_after) / max(EM_before, epsilon)"
+forgetting_objective_ablation = true
+forgetting_objective_ablation_values = ["with_forgetting_objective", "without_forgetting_objective"]
+safe_default = "dry-run adapter evaluation only"
+
+[tool.wwmf.appendix_checks.table_8_flops]
+# reference_grounding: paper_semantic_chunk_024_evaluation_metrics_floating_point_operation_counts_floating_point_operation paper.md
+artifact = "results/tables/flops.json"
+artifact_writer = "wwmf.artifacts:write_flop_table"
+training_loop = "src.experiments.training:run_appendix_flop_protocol"
+metric_formula = "wwmf.forecasting:ForecastingCostCounter"
+shared_cost_counter = "wwmf.forecasting.ForecastingCostCounter"
+shared_cost_counter_required = true
+scenario = "single online learning example; full fine-tuning on FLAN-T5 Large; 100 examples per upstream task over 36 tasks"
+columns = ["Method", "training_cost", "inference_cost", "FLOP", "relative_to_ground_truth"]
+methods = ["Representation", "Trainable Logit", "Ground Truth"]
+required_cost_fields = ["training_cost", "inference_cost", "FLOP"]
+aggregation_interface = "wwmf.metrics:aggregate_appendix_costs"
+
+[[tool.wwmf.appendix_checks.table_8_flops.rows]]
+name = "Representation"
+forecasting_registry_key = "representation"
+cost_source = "shared_forecasting_cost_counter"
+
+[[tool.wwmf.appendix_checks.table_8_flops.rows]]
+name = "Trainable Logit"
+forecasting_registry_key = "trainable_logit"
+cost_source = "shared_forecasting_cost_counter"
+
+[[tool.wwmf.appendix_checks.table_8_flops.rows]]
+name = "Ground Truth"
+forecasting_registry_key = "ground_truth"
+cost_source = "shared_forecasting_cost_counter"
+
+[tool.wwmf.appendix_checks.table_9_learning_rate_sensitivity]
+# reference_grounding: paper_contract_sweep_hyperparameter_protocol paper.md
+artifact = "results/tables/learning_rate_sensitivity.json"
+artifact_writer = "wwmf.artifacts:write_learning_rate_sensitivity_table"
+training_loop = "src.experiments.training:run_learning_rate_sensitivity_protocol"
+evaluation = "wwmf.metrics:evaluate_learning_rate_sensitivity"
+model = "FLAN-T5 Large"
+refinement_setup = "Full FT"
+columns = ["Succ.", "EM Drop %"]
+row_names = ["1e-4", "1e-5", "2e-6"]
+learning_rates = [0.0001, 0.00001, 0.000002]
+learning_rate_labels = ["1e-4", "1e-5", "2e-6"]
+metric_formula_succ = "100 * successful_edits / max(total_edits, 1)"
+metric_formula_em_drop_percent = "100 * (EM_before - EM_after) / max(EM_before, epsilon)"
+safe_default = "dry-run schema plus deterministic tiny evaluation; no expensive FLAN-T5 training unless full mode is explicit"
+
+[[tool.wwmf.appendix_checks.learning_rate_sweep]]
+row_name = "1e-4"
+learning_rate = 0.0001
+model = "FLAN-T5 Large"
+refinement_setup = "Full FT"
+
+[[tool.wwmf.appendix_checks.learning_rate_sweep]]
+row_name = "1e-5"
+learning_rate = 0.00001
+model = "FLAN-T5 Large"
+refinement_setup = "Full FT"
+
+[[tool.wwmf.appendix_checks.learning_rate_sweep]]
+row_name = "2e-6"
+learning_rate = 0.000002
+model = "FLAN-T5 Large"
+refinement_setup = "Full FT"
+
+[tool.wwmf.method_registry.mend_lora_only]
+# reference_grounding: paper_semantic_chunk_022_training_loss_objective_comparison_to_non_replay_comparison_to_non paper.md
+method_family = "non_replay_model_refinement"
+method = "MEND"
+adapter = "wwmf.refinement:MENDComparisonAdapter"
+setup = "LoRA fine-tuning only"
+lora_only = true
+full_lm_meta_model_training_allowed = false
+supports_edit_success = true
+supports_em_drop = true
+supports_forgetting_objective_ablation = true
+default_objective_variant = "with_forgetting_objective"
+ablation_variants = ["with_forgetting_objective", "without_forgetting_objective"]
+optional_dependencies = ["torch", "transformers", "peft"]
+
+[tool.wwmf.method_registry.representation_forecaster]
+method_family = "forecasting"
+method = "Representation"
+adapter = "wwmf.forecasting:RepresentationForecaster"
+cost_counter = "wwmf.forecasting.ForecastingCostCounter"
+
+[tool.wwmf.method_registry.trainable_logit_forecaster]
+method_family = "forecasting"
+method = "Trainable Logit"
+adapter = "wwmf.forecasting:TrainableLogitForecaster"
+cost_counter = "wwmf.forecasting.ForecastingCostCounter"
+
+[tool.wwmf.method_registry.ground_truth_forgetting]
+method_family = "oracle"
+method = "Ground Truth"
+adapter = "wwmf.forecasting:GroundTruthForgettingOracle"
+cost_counter = "wwmf.forecasting.ForecastingCostCounter"
+
+[tool.wwmf.metric_schema]
+exact_match = "normalize_text(prediction) == normalize_text(target)"
+edit_success_rate = "successful_edits / max(total_edits, 1)"
+em_drop = "EM_before - EM_after"
+em_drop_ratio = "(EM_before - EM_after) / max(EM_before, epsilon)"
+em_drop_percent = "100 * (EM_before - EM_after) / max(EM_before, epsilon)"
+precision = "true_positive / max(predicted_positive, 1)"
+recall = "true_positive / max(actual_positive, 1)"
+f1 = "2 * precision * recall / max(precision + recall, epsilon)"
+training_cost = "sum(cost_counter.training_cost)"
+inference_cost = "sum(cost_counter.inference_cost)"
+flop = "training_cost + inference_cost"
+
+[tool.wwmf.contract_tests]
+required_commands = [
+  "python scripts/run_wwmf.py --mode runtime_smoke",
+  "python scripts/run_wwmf.py --mode docker_validate"
+]
+required_imports = [
+  "wwmf",
+  "wwmf.forecasting",
+  "wwmf.metrics",
+  "wwmf.artifacts",
+  "wwmf.refinement",
+  "src.experiments.training"
+]
+required_artifacts = [
+  "results/readiness.json",
+  "results/evaluation_result.json",
+  "results/metrics.json",
+  "results/tables/forecasting.json",
+  "results/tables/refinement.json",
+  "results/tables/appendix.json",
+  "results/tables/appendix_mend.json",
+  "results/tables/learning_rate_sensitivity.json",
+  "results/tables/flops.json",
+  "results/config_resolved.json",
+  "results/sensitivity_report.json"
+]
+required_appendix_rows = [
+  "MEND LoRA-only",
+  "1e-4",
+  "1e-5",
+  "2e-6",
+  "Representation",
+  "Trainable Logit",
+  "Ground Truth"
+]
+dry_run_artifacts_must_be_labelled = true
+optional_heavy_imports_must_be_lazy = true

@@ -1,0 +1,401 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paperbench-bam-repro"
+version = "0.1.0"
+description = "PaperBench reproduction for Batch and match: black-box variational inference with a score-based divergence."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "PaperBench Reproduction Agent" }
+]
+keywords = [
+  "variational-inference",
+  "black-box-variational-inference",
+  "score-matching",
+  "batch-and-match",
+  "paperbench",
+  "reproducibility"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Mathematics"
+]
+dependencies = [
+  "numpy>=1.24",
+  "PyYAML>=6.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "ruff>=0.4",
+  "mypy>=1.7"
+]
+plotting = [
+  "matplotlib>=3.7",
+  "pandas>=2.0"
+]
+jax = [
+  "jax>=0.4.20",
+  "jaxlib>=0.4.20"
+]
+posterior = [
+  "bridgestan>=2.5; platform_system != 'Windows'"
+]
+vision = [
+  "torch>=2.0",
+  "torchvision>=0.15"
+]
+full = [
+  "paperbench-bam-repro[dev,plotting,jax,posterior,vision]"
+]
+
+[project.urls]
+Homepage = "https://example.invalid/paperbench-bam-repro"
+Repository = "https://example.invalid/paperbench-bam-repro"
+Paper = "https://proceedings.mlr.press/"
+
+[project.scripts]
+bam-paperbench = "main:main"
+bam-run-experiments = "main:main"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["main"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+  "bam*",
+  "evaluation*",
+  "src*",
+  "protocols*"
+]
+exclude = [
+  "tests*",
+  "results*",
+  "assets*"
+]
+
+[tool.setuptools.package-data]
+"*" = [
+  "configs/*.yaml",
+  "configs/*.yml",
+  "configs/*.json",
+  "run_config.json"
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-q"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.paperbench_repro]
+paper_title = "Batch and match: black-box variational inference with a score-based divergence"
+canonical_entrypoint = "scripts/run_experiments.py"
+canonical_smoke_command = "python scripts/run_experiments.py --mode runtime_smoke"
+canonical_full_command = "python scripts/run_experiments.py --mode full"
+artifact_env_var = "PAPERBENCH_REPRO_ARTIFACT_DIR"
+blacklisted_repositories = ["https://github.com/modichirag/GSM-VI"]
+implementation_surfaces = [
+  "config",
+  "data_pipeline",
+  "target_distribution",
+  "evaluation",
+  "artifact_writer",
+  "training_loop",
+  "tests",
+  "baseline_or_ablation"
+]
+
+[tool.paperbench_repro.dependencies]
+lightweight_core = [
+  "numpy",
+  "PyYAML"
+]
+optional_heavy = [
+  "jax",
+  "jaxlib",
+  "bridgestan",
+  "torch",
+  "torchvision",
+  "matplotlib",
+  "pandas"
+]
+lazy_import_policy = "Optional accelerator, posterior, plotting, and vision packages must be imported only inside functions that need them."
+
+[tool.paperbench_repro.artifacts]
+runtime_outputs = [
+  "results/metrics.json",
+  "results/summary.csv",
+  "results/traces.jsonl",
+  "results/config.json",
+  "results/experiment_registry.json",
+  "results/artifact_manifest.json",
+  "results/run_summary.json",
+  "results/config_echo.json",
+  "results/evidence_contract_matrix.json",
+  "results/environment_registry.json",
+  "results/readiness.json",
+  "results/evaluation_result.json"
+]
+paper_visible_outputs_require_measured_route = true
+smoke_outputs_are_readiness_only = true
+
+[tool.paperbench_repro.experiment_protocol]
+reference_grounding = "paper:paper_named_experiment_protocols paper.md; paper:paper_addendum_constraints addendum.md; paper:paper_contract_sweep_hyperparameter_protocol paper.md"
+hypothesis = "Named experiment, sweep, dataset, method, and refinement protocols preserve the paper/addendum comparison surfaces for BaM without expanding into unbounded sweeps."
+decision_value = "The canonical runner can select paper Sections 5.1, 5.2, 5.3, Figure 5.3, and the CIFAR contract protocol; it can route ours to BaM, execute bounded lambda/epsilon sweeps, and audit per-sample lowest-score refinement."
+stop_rule_or_pruning_rationale = "Default runtime_smoke executes bounded instances of the real data, target, method, metric, and artifact paths; exhaustive learning-rate or dimensional sweeps require explicit full mode."
+named_protocols = [
+  "section_5_1_synthetic_targets",
+  "section_5_2_hierarchical_bayesian_models",
+  "section_5_3_deep_generative_models",
+  "figure_5_3",
+  "cifar_contract_protocol"
+]
+required_terms = [
+  "cifar",
+  "ours",
+  "accuracy",
+  "loss",
+  "mse",
+  "lambda",
+  "epsilon",
+  "100_iterations"
+]
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+artifact_writer_path = "evaluation.report:write_evaluation_artifacts"
+per_sample_refinement_rule = "protocols.per_sample_selection:per_sample_lowest_score_selection"
+per_sample_refinement_audit_fields = [
+  "sample_id",
+  "candidate_id",
+  "selected_candidate",
+  "selected_score",
+  "all_candidate_scores"
+]
+result_trend_assertion_policy = "sweep protocols preserve paper/addendum comparison surfaces without exploding package count; per-sample lowest score selection records selected candidate and score for auditability"
+
+[[tool.paperbench_repro.experiment_protocol.experiments]]
+id = "section_5_1_synthetic_targets"
+paper_section = "5.1"
+display_name = "Synthetically constructed target distributions"
+target_distribution_path = "bam.targets:make_synthetic_target"
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+training_loop_path = "bam.training_loop:run_variational_experiment"
+evaluation_path = "bam.evaluation:evaluate_variational_result"
+artifact_writer_path = "evaluation.report:write_evaluation_artifacts"
+methods = ["ours", "advi", "gsm"]
+datasets = ["synthetic_gaussian", "synthetic_nongaussian"]
+metrics = ["forward_kl", "reverse_kl", "loss", "mse"]
+bounded_smoke = true
+full_mode_required_for_complete_sweep = true
+reference_grounding = "paper:paper_named_experiment_protocols paper.md"
+
+[[tool.paperbench_repro.experiment_protocol.experiments]]
+id = "section_5_2_hierarchical_bayesian_models"
+paper_section = "5.2"
+display_name = "PosteriorDB hierarchical Bayesian posterior inference"
+target_distribution_path = "bam.targets:make_posterior_target"
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+training_loop_path = "bam.training_loop:run_variational_experiment"
+evaluation_path = "bam.evaluation:evaluate_variational_result"
+artifact_writer_path = "evaluation.report:write_evaluation_artifacts"
+methods = ["ours", "advi", "gsm"]
+datasets = ["posteriordb_ark", "posteriordb_eight_schools", "posteriordb_radon"]
+metrics = ["forward_kl", "reverse_kl", "loss", "mse", "wallclock_seconds"]
+bounded_smoke = true
+full_mode_required_for_bridgestan = true
+reference_grounding = "paper:paper_named_experiment_protocols paper.md; paper:paper_addendum_constraints addendum.md"
+
+[[tool.paperbench_repro.experiment_protocol.experiments]]
+id = "section_5_3_deep_generative_models"
+paper_section = "5.3"
+display_name = "Deep generative model latent posterior approximation"
+target_distribution_path = "bam.targets:make_deep_generative_target"
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+training_loop_path = "bam.training_loop:run_variational_experiment"
+evaluation_path = "bam.evaluation:evaluate_variational_result"
+artifact_writer_path = "evaluation.report:write_evaluation_artifacts"
+methods = ["ours", "advi", "gsm"]
+datasets = ["cifar"]
+metrics = ["accuracy", "loss", "mse", "score_divergence"]
+bounded_smoke = true
+full_mode_required_for_vision_backend = true
+reference_grounding = "paper:paper_named_experiment_protocols paper.md; paper:paper_addendum_constraints addendum.md"
+
+[[tool.paperbench_repro.experiment_protocol.experiments]]
+id = "figure_5_3"
+paper_section = "Figure 5.3"
+display_name = "Figure 5.3 comparison route"
+target_distribution_path = "bam.targets:make_deep_generative_target"
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+training_loop_path = "bam.training_loop:run_variational_experiment"
+evaluation_path = "evaluation.aggregation:aggregate_figure_5_3"
+artifact_writer_path = "evaluation.report:write_figure_5_3_artifact"
+methods = ["ours", "advi", "gsm"]
+datasets = ["cifar"]
+metrics = ["accuracy", "loss", "mse"]
+bounded_smoke = true
+full_mode_required_for_paper_figure = true
+reference_grounding = "paper:paper_named_experiment_protocols paper.md"
+
+[[tool.paperbench_repro.experiment_protocol.experiments]]
+id = "cifar_contract_protocol"
+paper_section = "addendum_contract"
+display_name = "CIFAR addendum/contract protocol"
+target_distribution_path = "bam.targets:make_cifar_latent_target"
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+training_loop_path = "bam.training_loop:run_variational_experiment"
+evaluation_path = "bam.evaluation:evaluate_cifar_protocol"
+artifact_writer_path = "evaluation.report:write_evaluation_artifacts"
+methods = ["ours"]
+datasets = ["cifar"]
+metrics = ["accuracy", "loss", "mse"]
+bounded_smoke = true
+full_mode_required_for_dataset_download = true
+reference_grounding = "paper:paper_addendum_constraints addendum.md"
+
+[tool.paperbench_repro.sweeps]
+reference_grounding = "paper:paper_contract_sweep_hyperparameter_protocol paper.md"
+bounded_by_default = true
+pruning_rationale = "Expose lambda, epsilon, learning_rate, batch_size, and iteration_count selectors as executable config defaults; smoke mode runs one decisive bounded combination and full mode may expand the paper/addendum comparison grid."
+
+[tool.paperbench_repro.sweeps.parameters]
+lambda = [0.01, 0.1, 1.0]
+epsilon = [0.000001, 0.0001, 0.01]
+learning_rate = [0.001, 0.01, 0.05]
+batch_size = [3, 4, 32]
+iteration_count = [100]
+
+[tool.paperbench_repro.fixed_hyperparameters]
+"100_iterations" = 100
+default_iterations = 100
+default_batch_size = 32
+figure_e_1_batch_size = 4
+figure_e_1_d4_batch_size = 3
+default_lambda = 0.1
+default_epsilon = 0.0001
+
+[tool.paperbench_repro.methods]
+reference_grounding = "paper:paper_contract_method_baseline_protocol paper.md"
+
+[tool.paperbench_repro.methods.ours]
+name = "ours"
+binds_to = "BaM"
+factory_path = "src.method_registry:get_method_factory"
+implementation_path = "src.algorithms.bam:run_bam"
+training_loop_path = "bam.training_loop:run_variational_experiment"
+variational_family = "full_covariance_gaussian"
+metrics = ["forward_kl", "reverse_kl", "loss", "mse", "score_divergence"]
+
+[tool.paperbench_repro.methods.bam]
+name = "BaM"
+factory_path = "src.algorithms.bam:run_bam"
+variational_family = "full_covariance_gaussian"
+requires_target_score = true
+
+[tool.paperbench_repro.methods.advi]
+name = "ADVI"
+factory_path = "src.algorithms.advi:run_advi"
+variational_family = "full_covariance_gaussian"
+baseline_or_ablation = true
+
+[tool.paperbench_repro.methods.gsm]
+name = "GSM"
+factory_path = "src.algorithms.gsm:run_gsm"
+variational_family = "full_covariance_gaussian"
+baseline_or_ablation = true
+blacklist_note = "Local independent implementation only; does not use https://github.com/modichirag/GSM-VI."
+
+[tool.paperbench_repro.methods.baseline]
+name = "baseline"
+selector_path = "src.method_registry:select_baseline_method"
+choices = ["advi", "gsm"]
+
+[tool.paperbench_repro.datasets]
+reference_grounding = "paper:paper_named_experiment_protocols paper.md; paper:paper_addendum_constraints addendum.md"
+
+[tool.paperbench_repro.datasets.synthetic_gaussian]
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+target_distribution_path = "bam.targets:make_gaussian_target"
+dimensions = [4, 16, 64, 256]
+smoke_dimensions = [4]
+
+[tool.paperbench_repro.datasets.synthetic_nongaussian]
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+target_distribution_path = "bam.targets:make_nongaussian_target"
+smoke_dimensions = [4]
+
+[tool.paperbench_repro.datasets.posteriordb_ark]
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+target_distribution_path = "bam.targets:make_posterior_target"
+dimension = 7
+optional_backend = "bridgestan"
+
+[tool.paperbench_repro.datasets.posteriordb_eight_schools]
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+target_distribution_path = "bam.targets:make_posterior_target"
+optional_backend = "bridgestan"
+
+[tool.paperbench_repro.datasets.posteriordb_radon]
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+target_distribution_path = "bam.targets:make_posterior_target"
+optional_backend = "bridgestan"
+
+[tool.paperbench_repro.datasets.cifar]
+name = "cifar"
+dataset_prepare_validate_path = "src.data.data:prepare_validate_dataset"
+target_distribution_path = "bam.targets:make_cifar_latent_target"
+metrics = ["accuracy", "loss", "mse"]
+optional_backend = "torchvision"
+smoke_uses_bounded_synthetic_fixture = true
+full_mode_required_for_download = true
+
+[tool.paperbench_repro.evaluation]
+metric_module = "evaluation.metrics"
+aggregation_module = "evaluation.aggregation"
+report_module = "evaluation.report"
+artifact_writer_path = "evaluation.report:write_evaluation_artifacts"
+metrics = [
+  "forward_kl",
+  "reverse_kl",
+  "accuracy",
+  "loss",
+  "mse",
+  "score_divergence",
+  "wallclock_seconds"
+]
+
+[tool.paperbench_repro.refinement]
+reference_grounding = "paper:paper_addendum_constraints addendum.md"
+rule_name = "per_sample_lowest_score_selection"
+callable_path = "protocols.per_sample_selection:per_sample_lowest_score_selection"
+audit_required = true
+audit_fields = [
+  "sample_id",
+  "candidate_id",
+  "selected_candidate",
+  "selected_score",
+  "all_candidate_scores"
+]

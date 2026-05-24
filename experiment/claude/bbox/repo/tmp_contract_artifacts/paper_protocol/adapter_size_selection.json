@@ -1,0 +1,8 @@
+{
+  "selected_adapter_size_b": 0.3,
+  "selection_rule": "max_validation_accuracy",
+  "validation_scores": {
+    "0.1": 67.1,
+    "0.3": 69.4
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "table_id": "table2_main_results",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.941867Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Table 2: Main results of adapting gpt-3.5-turbo",
+    "columns": [
+      "method",
+      "gsm8k",
+      "strategyqa",
+      "truthfulqa",
+      "scienceqa"
+    ],
+    "schema": {
+      "accuracy_pct": "float"
+    }
+  }
+}

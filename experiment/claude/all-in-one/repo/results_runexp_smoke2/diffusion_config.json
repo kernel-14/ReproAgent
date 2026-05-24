@@ -1,0 +1,74 @@
+{
+  "artifact_kind": "dry-run contract artifact",
+  "created_at": "2026-05-21T19:06:58Z",
+  "default_sampler_family": "sde",
+  "guided_samplers": {
+    "guided_conditional_ode": {
+      "base_sampler": "conditional_ode",
+      "conditional_on_mask": true,
+      "factory": "all_in_one_sbi.conditioning:GuidedDiffusionSampler",
+      "guidance_terms": [
+        "observation_interval",
+        "lower_upper_bounds",
+        "metabolic_energy_cost"
+      ],
+      "modifies_reverse_score": true,
+      "name": "guided_conditional_ode",
+      "trace_artifact": "results/sampling_trace.json"
+    },
+    "guided_conditional_sde": {
+      "base_sampler": "conditional_sde",
+      "conditional_on_mask": true,
+      "factory": "all_in_one_sbi.conditioning:GuidedDiffusionSampler",
+      "guidance_terms": [
+        "observation_interval",
+        "lower_upper_bounds",
+        "metabolic_energy_cost"
+      ],
+      "modifies_reverse_score": true,
+      "name": "guided_conditional_sde",
+      "trace_artifact": "results/sampling_trace.json"
+    }
+  },
+  "guided_samplers_modify_reverse_score": true,
+  "mode": "runtime_smoke",
+  "objectives": {
+    "masked_joint_score_matching": {
+      "artifact_path": "results/loss_trace.json",
+      "family": "score_based_diffusion",
+      "forward_noising_uses_condition_mask": true,
+      "loss_mask_uses_condition_mask": true,
+      "metric_formula": "loss = mean(((score_pred - score_target)^2) * (1 - M_C) * valid_variable_mask); conditioned variables are preserved in forward noising and excluded from target loss",
+      "name": "masked_joint_score_matching",
+      "score_target": "epsilon/noise or equivalent score for unconditioned target variables",
+      "time_sampling": "uniform t in diffusion interval for each batch item",
+      "trained_distribution": "joint simulator distribution p(theta, x)"
+    }
+  },
+  "ode_sampler_name": "conditional_ode",
+  "reference_grounding": [
+    "paperbench_ref_001 docs/how_to_guide/09_sampler_interface.ipynb",
+    "paperbench_ref_001 sbi/inference/posteriors/vector_field_posterior.py"
+  ],
+  "samplers": {
+    "conditional_ode": {
+      "conditional_on_mask": true,
+      "factory": "all_in_one_sbi.diffusion:ConditionalDiffusionSampler",
+      "family": "ode",
+      "name": "conditional_ode",
+      "supports_guidance": false,
+      "trace_artifact": "results/sampling_trace.json",
+      "uses_attention_mask": true
+    },
+    "conditional_sde": {
+      "conditional_on_mask": true,
+      "factory": "all_in_one_sbi.diffusion:ConditionalDiffusionSampler",
+      "family": "sde",
+      "name": "conditional_sde",
+      "supports_guidance": false,
+      "trace_artifact": "results/sampling_trace.json",
+      "uses_attention_mask": true
+    }
+  },
+  "sde_sampler_name": "conditional_sde"
+}

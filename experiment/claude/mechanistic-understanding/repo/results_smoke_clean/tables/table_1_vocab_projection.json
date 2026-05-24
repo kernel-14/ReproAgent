@@ -1,0 +1,26 @@
+{
+  "mode": "runtime_smoke",
+  "rows": [
+    {
+      "addendum_binding": "Table 1 top tokens are highest dot-products with the specified toxic vector.",
+      "projection_space": "GPT2-medium vocabulary unembedding",
+      "score_type": "dot_product",
+      "source_vector": "W_toxic[:, 1]",
+      "top_tokens": "token_17 token_42 token_103 token_256 token_511"
+    },
+    {
+      "addendum_binding": "Table 1 top tokens are highest dot-products with the specified toxic vector.",
+      "projection_space": "GPT2-medium vocabulary unembedding",
+      "score_type": "dot_product",
+      "source_vector": "MLP.v_770^19",
+      "top_tokens": "token_17 token_42 token_103 token_256 token_511"
+    },
+    {
+      "addendum_binding": "Table 1 top tokens are highest dot-products with the specified toxic vector.",
+      "projection_space": "GPT2-medium vocabulary unembedding",
+      "score_type": "dot_product",
+      "source_vector": "SVD.U_toxic[0]",
+      "top_tokens": "token_17 token_42 token_103 token_256 token_511"
+    }
+  ]
+}

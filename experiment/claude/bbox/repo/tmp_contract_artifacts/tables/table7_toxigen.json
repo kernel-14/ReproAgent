@@ -1,0 +1,14 @@
+{
+  "table_id": "table7_toxigen",
+  "label": "contract_artifact",
+  "timestamp": "2026-05-21T19:01:31.943252Z",
+  "schema_version": "1.0.0",
+  "data": {
+    "caption": "Table 7: Results adapting Mixtral-8x7B-v0.1 on ToxiGen (lower is better)",
+    "columns": [
+      "method",
+      "hate_speech_rate_pct",
+      "toxicity_probability"
+    ]
+  }
+}
