@@ -63,9 +63,9 @@ def _env_flag(name: str, *, default: bool = False) -> bool:
     return _reproagent_env(name, default=raw_default).lower() in {"1", "true", "yes"}
 
 
-def semantic_anchor_disabled() -> bool:
-    """Return whether paper-derived semantic anchors should be withheld from generation/repair."""
-    return _env_flag("PAPERBENCH_REPRO_DISABLE_SEMANTIC_ANCHOR", default=False)
+def implementation_requirements_disabled() -> bool:
+    """Return whether paper-derived implementation requirements should be withheld from generation/repair."""
+    return _env_flag("PAPERBENCH_REPRO_DISABLE_IMPLEMENTATION_REQUIREMENTS", default=False)
 
 
 def _reproagent_codex_model_provider() -> str | None:
@@ -127,7 +127,7 @@ class WorkflowRuntimeConfig:
     allow_stage_artifact_recovery_after_failure: bool = field(default_factory=lambda: _reproagent_env("PAPERBENCH_REPRO_ALLOW_STAGE_ARTIFACT_RECOVERY", default="0").lower() in {"1", "true", "yes"})
     architecture_fanout_enabled: bool = field(default_factory=lambda: _reproagent_env("PAPERBENCH_REPRO_ARCHITECTURE_FANOUT", default="0").lower() in {"1", "true", "yes"})
     package_file_planning_fanout_enabled: bool = field(default_factory=lambda: _reproagent_env("PAPERBENCH_REPRO_PACKAGE_FILE_FANOUT", default="0").lower() in {"1", "true", "yes"})
-    disable_semantic_anchor: bool = field(default_factory=semantic_anchor_disabled)
+    disable_implementation_requirements: bool = field(default_factory=implementation_requirements_disabled)
     repair_local_scope_max_files: int = field(default_factory=lambda: int(_reproagent_env("PAPERBENCH_REPRO_REPAIR_LOCAL_SCOPE_MAX_FILES", default="8")))
     repair_local_scope_max_work_packages: int = field(default_factory=lambda: int(_reproagent_env("PAPERBENCH_REPRO_REPAIR_LOCAL_SCOPE_MAX_WORK_PACKAGES", default="4")))
     repair_repo_wide_retry_threshold: int = field(default_factory=lambda: int(_reproagent_env("PAPERBENCH_REPRO_REPAIR_REPO_WIDE_RETRY_THRESHOLD", default="1")))

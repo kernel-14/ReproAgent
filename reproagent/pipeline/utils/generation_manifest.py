@@ -3,7 +3,7 @@
 import re
 from typing import Any
 
-from reproagent.pipeline.config import semantic_anchor_disabled
+from reproagent.pipeline.config import implementation_requirements_disabled
 from reproagent.pipeline.schemas import (
     ArchitectureOutput,
     PaperBenchReproState,
@@ -267,7 +267,7 @@ def _contract_item_names(contract: dict[str, object], category: str) -> list[str
 
 
 def _paper_claim_inventory_for_state(state: PaperBenchReproState) -> dict[str, list[str]]:
-    if semantic_anchor_disabled():
+    if implementation_requirements_disabled():
         return {}
     gate = dict(state.temp_data.get("prepare_quality_gate", {}) or {})
     unit_quality = dict(gate.get("unit_quality", {}) or {})
@@ -292,14 +292,14 @@ def _paper_claim_inventory_for_state(state: PaperBenchReproState) -> dict[str, l
 
 
 def _formula_algorithm_contract_for_state(state: PaperBenchReproState) -> dict[str, Any]:
-    if semantic_anchor_disabled():
+    if implementation_requirements_disabled():
         return {}
     evidence_contract = _paper_evidence_contract_payload_for_generation(state)
     return dict(evidence_contract.get("formula_algorithm_contract", {}) or {})
 
 
 def _paper_claim_closure_for_state(state: PaperBenchReproState) -> dict[str, Any]:
-    if semantic_anchor_disabled():
+    if implementation_requirements_disabled():
         return {
             "items": [],
             "count": 0,

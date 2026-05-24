@@ -366,7 +366,7 @@ def build_work_package_planning_prompt(context_json: str, language: str = "zh") 
             "Promote named experiments, environment/task inventories, baseline or method variants, benchmark measurements, prerequisite assets, parameter sweeps, expected result trends, and artifact coverage into inventories when they are present.",
             "When a unit or boundary requirement names paired mechanisms or alternatives such as ODE/SDE, train/eval, online/offline, actor/critic, or exact sampler/solver families, preserve each named mechanism explicitly in the relevant package goal, interface_contract, method_inventory, parameter_inventory, and method_obligations.",
             "Use stable inventory keys when applicable: `obligation_matrix`, `experiment_inventory`, `environment_inventory`, `method_inventory`, `policy_inventory`, `model_inventory`, `baseline_inventory`, `measurement_inventory`, `parameter_inventory`, `result_trend_inventory`, `refinement_inventory`, `artifact_inventory`, `result_artifact_inventory`, and `implementation_surface_inventory`.",
-            "Named experiment sections such as Experiment I/II/III, ablations, case studies, or result-table protocols should remain visible as semantic anchors in `experiment_inventory`.",
+            "Named experiment sections such as Experiment I/II/III, ablations, case studies, or result-table protocols should remain visible as implementation requirements in `experiment_inventory`.",
             "`obligation_matrix` should bind each paper/addendum-visible named experiment/ablation/sensitivity check to the relevant environments/tasks, methods/baselines, parameters, expected trend or decision claim, and result artifacts.",
             "Each method/evaluation/experiment package should state `hypothesis` and `decision_value`; put required implementation scope in `goal`, `interface_contract`, `method_obligations`, inventories, and `scope_boundary.preserve`.",
             "Group exhaustive paper tables into decision-bearing packages: core method mechanism, main baseline comparison, metric/claim validation, and required robustness or ablation checks. Represent repeated variants through inventories/config when they share one implementation path.",
@@ -1117,7 +1117,7 @@ def build_repair_plan_prompt(context_json: str, language: str = "zh") -> tuple[s
         language=language,
     )
     user = _build_structured_user_prompt(
-        instruction="Build a repo/problem-driven repair plan from the requirement anchor, current repo evaluation findings, and current validation failures.",
+        instruction="Build a repo/problem-driven repair plan from the implementation-requirement contract, current repo evaluation findings, and current validation failures.",
         schema_block="""{
   "summary": "brief repair strategy",
   "problem_list": ["one blocking repository problem"],
@@ -1131,7 +1131,7 @@ def build_repair_plan_prompt(context_json: str, language: str = "zh") -> tuple[s
   "round_budget": 30
 }""",
         rules=[
-            "Use the frozen requirement anchor as the stable semantic baseline for repair.",
+            "Use the frozen implementation-requirement contract as the stable task baseline for repair.",
             "If `runtime_first_blockers` is non-empty, prioritize the exact SyntaxError/ImportError/ModuleNotFoundError/entrypoint traceback first; semantic and artifact expansion waits until the repo starts.",
             "When there is no startup blocker, prioritize repo-level semantic alignment first, runnable closure second, and optional cleanup last.",
             "Use `recommended_surfaces` as a conservative recommendation, not as a mandatory allowlist.",
@@ -1166,7 +1166,7 @@ def build_repair_plan_review_prompt(context_json: str, language: str = "zh") -> 
   "round_budget": 30
 }""",
         rules=[
-            "Review the plan against the requirement anchor, current repo evaluation findings, and validation failure context.",
+            "Review the plan against the implementation-requirement contract, current repo evaluation findings, and validation failure context.",
             "If `runtime_first_blockers` is non-empty, reject or tighten plans that spread effort across broad semantic/artifact work before fixing the exact startup traceback.",
             "Tighten the repair surface instead of expanding it unless expansion is clearly necessary to fix the repo.",
             "Use `semantic_risks` and `runtime_risks` for the semantic and runtime invariants repair must preserve.",

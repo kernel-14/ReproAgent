@@ -17,7 +17,7 @@ try:
 except ImportError:
     LANGGRAPH_AVAILABLE = False
 
-from reproagent.pipeline.config import build_github_repo_config, get_codegen_config, get_workflow_config, semantic_anchor_disabled
+from reproagent.pipeline.config import build_github_repo_config, get_codegen_config, get_workflow_config, implementation_requirements_disabled
 from reproagent.pipeline.nodes import generate as generate_nodes
 from reproagent.pipeline.nodes import plan as plan_nodes
 from reproagent.pipeline.nodes import prepare as prepare_nodes
@@ -1562,8 +1562,8 @@ def _fallback_repair_plan_from_context(state: PaperBenchReproState, context: obj
 
 
 def _build_requirement_anchor(state: PaperBenchReproState) -> RequirementAnchor:
-    if semantic_anchor_disabled():
-        return RequirementAnchor(source="semantic_anchor_ablation")
+    if implementation_requirements_disabled():
+        return RequirementAnchor(source="implementation_requirement_ablation")
     requirements = list((state.boundary_requirements.boundary_requirements if state.boundary_requirements else []) or [])
     normalized_target = dict(state.temp_data.get("input_normalization", {}) or {})
     requirement_titles = [
@@ -1694,7 +1694,7 @@ def _build_repair_eval_report(state: PaperBenchReproState) -> RepairEvalReport:
     ) else "clean"
     return RepairEvalReport(
         summary=(
-            "Current repo is not yet ready for handoff; keep semantic alignment to the requirement anchor "
+            "Current repo is not yet ready for handoff; keep alignment to the implementation-requirement contract "
             "while closing runtime and integration failures."
         ),
         semantic_status="aligned" if not report.failure_categories else "drift_risk",
@@ -1975,7 +1975,7 @@ def _build_repair_review_payload(
 
 def _repair_plan_impl(state: PaperBenchReproState) -> PaperBenchReproState:
     logger.info("repair_plan - Building semantic repair plan from upstream context and current repo failures...")
-    if semantic_anchor_disabled():
+    if implementation_requirements_disabled():
         state.requirement_anchor = None
     elif state.requirement_anchor is None:
         state.requirement_anchor = _build_requirement_anchor(state)
@@ -2010,7 +2010,7 @@ def _repair_plan_impl(state: PaperBenchReproState) -> PaperBenchReproState:
         context = _build_repair_plan_context(state)
         limited_context = _limit_json_for_prompt(context)
         _write_stage_output(state, "repair_plan_context.json", limited_context)
-        if state.requirement_anchor is not None and not semantic_anchor_disabled():
+        if state.requirement_anchor is not None and not implementation_requirements_disabled():
             _write_stage_output(state, "requirement_anchor.json", state.requirement_anchor)
         if state.repair_eval_report is not None:
             _write_stage_output(state, "repair_eval_report.json", state.repair_eval_report)
@@ -2095,7 +2095,7 @@ def _repair_plan_impl(state: PaperBenchReproState) -> PaperBenchReproState:
         }
 
     def _write(result: dict[str, Any]) -> None:
-        if state.requirement_anchor is not None and not semantic_anchor_disabled():
+        if state.requirement_anchor is not None and not implementation_requirements_disabled():
             _write_stage_output(state, "requirement_anchor.json", state.requirement_anchor)
         if state.repair_eval_report is not None:
             _write_stage_output(state, "repair_eval_report.json", state.repair_eval_report)
@@ -2123,7 +2123,7 @@ def _repair_plan_impl(state: PaperBenchReproState) -> PaperBenchReproState:
         _load,
         _write,
     )
-    if state.requirement_anchor is not None and not semantic_anchor_disabled():
+    if state.requirement_anchor is not None and not implementation_requirements_disabled():
         _write_stage_output(state, "requirement_anchor.json", state.requirement_anchor)
     if state.repair_eval_report is not None:
         _write_stage_output(state, "repair_eval_report.json", state.repair_eval_report)
@@ -3574,7 +3574,7 @@ def repair_node(state: PaperBenchReproState) -> PaperBenchReproState:
         if round_id > round_budget:
             budget_exhausted = True
             break
-        if semantic_anchor_disabled():
+        if implementation_requirements_disabled():
             state.requirement_anchor = None
         elif state.requirement_anchor is None:
             state.requirement_anchor = _build_requirement_anchor(state)

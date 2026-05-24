@@ -7,7 +7,7 @@ import json
 import re
 from typing import Any, Callable
 
-from reproagent.pipeline.config import get_codegen_config, get_workflow_config, semantic_anchor_disabled
+from reproagent.pipeline.config import get_codegen_config, get_workflow_config, implementation_requirements_disabled
 from reproagent.pipeline.schemas import (
     EvaluationDecision,
     ExecutionResult,
@@ -309,7 +309,7 @@ def _semantic_handoff_contract_text(state: PaperBenchReproState) -> str:
 
 
 def _semantic_handoff_checksum_issues(state: PaperBenchReproState) -> list[str]:
-    if semantic_anchor_disabled():
+    if implementation_requirements_disabled():
         state.temp_data["semantic_handoff_checksum"] = {
             "disabled": True,
             "checked_tokens": [],

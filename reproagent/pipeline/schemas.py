@@ -1018,7 +1018,7 @@ class RepairEvalReport(BaseModel):
 
 
 class RequirementAnchor(BaseModel):
-    """Frozen semantic anchor reused across repair rounds."""
+    """Frozen implementation requirement reused across repair rounds."""
     source: str = "plan_boundary_requirements"
     summary: str = ""
     goal: str = ""

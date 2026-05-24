@@ -8,10 +8,12 @@ repository using validation feedback.
 The current release focuses on the core reproduction pipeline and two ablation
 entrypoints used in our experiments:
 
-- **Full ReproAgent**: semantic anchor on, reference-repository grounding on.
-- **w/o Semantic Anchor**: removes paper-derived semantic anchors from
-  generation and repair.
-- **w/o Reference Repo**: disables reference-repository cloning and grounding.
+- **Full ReproAgent**: implementation-requirement channel on,
+  reference-evidence channel on.
+- **w/o Implementation Requirements**: removes the paper-derived
+  implementation-requirement channel from generation and repair.
+- **w/o Reference Evidence**: disables reference-evidence source acquisition
+  and grounding.
 
 ## Overview
 
@@ -22,7 +24,7 @@ entrypoints used in our experiments:
 At a high level, ReproAgent is organized as four stages:
 
 1. **Prepare** extracts paper chunks, implementation units, datasets,
-   evaluation obligations, and candidate reference repositories.
+   evaluation obligations, and candidate reference-evidence sources.
 2. **Plan** converts the extracted units into work packages, contracts,
    architecture decisions, and file-level implementation tasks.
 3. **Generate** materializes a complete reproduction repository from the plan.
@@ -31,19 +33,21 @@ At a high level, ReproAgent is organized as four stages:
 
 The two main evidence mechanisms are:
 
-- **Semantic anchor**: a persistent paper-derived contract that keeps methods,
-  datasets, metrics, algorithms, formulas, and acceptance signals visible from
-  planning through repair.
-- **Reference repo grounding**: discovery and use of official or high-quality
-  reference repositories cited by, or relevant to, the paper.
+- **Implementation-requirement channel**: a persistent paper-derived contract
+  that keeps methods, datasets, metrics, algorithms, formulas, and acceptance
+  signals visible from planning through repair.
+- **Reference-evidence channel**: package-local content and structure evidence
+  recovered from official or high-quality repositories cited by, or relevant
+  to, the paper.
 
 ## Repository Layout
 
 ```text
 reproagent/                 Core Python package and pipeline implementation.
 ablation/
-  no_semantic_anchor/       Runner for disabling semantic anchors.
-  no_reference_repo/        Runner for disabling reference repository grounding.
+  no_implementation_requirement/
+                             Runner for disabling implementation requirements.
+  no_reference_evidence/        Runner for disabling reference evidence.
 experiment_runners/         Convenience shell runners for the three variants.
 fig/                        Architecture figures used by this README.
 run_paperbench.py           Main CLI entrypoint.
@@ -78,8 +82,8 @@ PAPERBENCH_REPRO_STRUCTURED_STAGE_API_KEY=...
 PAPERBENCH_REPRO_STRUCTURED_STAGE_BASE_URL=...
 ```
 
-Reference-repository search benefits from `PAPERBENCH_REPRO_GITHUB_TOKEN`, but
-the pipeline can run without it.
+Reference-evidence source search benefits from `PAPERBENCH_REPRO_GITHUB_TOKEN`,
+but the pipeline can run without it.
 
 ## Data
 
@@ -146,23 +150,23 @@ python run_paperbench.py rice \
 
 ## Ablations
 
-Run without semantic anchors:
+Run without implementation requirements:
 
 ```bash
-python ablation/no_semantic_anchor/run_ablation.py rice --stage repair
+python ablation/no_implementation_requirement/run_ablation.py rice --stage repair
 ```
 
 Equivalent environment switch:
 
 ```bash
-export PAPERBENCH_REPRO_DISABLE_SEMANTIC_ANCHOR=1
+export PAPERBENCH_REPRO_DISABLE_IMPLEMENTATION_REQUIREMENTS=1
 python run_paperbench.py rice --stage repair
 ```
 
-Run without reference-repository grounding:
+Run without reference evidence:
 
 ```bash
-python ablation/no_reference_repo/run_ablation.py rice --stage repair
+python ablation/no_reference_evidence/run_ablation.py rice --stage repair
 ```
 
 Equivalent CLI switch:
@@ -182,8 +186,8 @@ bash experiment_runners/run_main_experiment.sh
 Run all cases for the two ablations:
 
 ```bash
-bash experiment_runners/run_no_semantic_anchor.sh
-bash experiment_runners/run_no_reference_repo.sh
+bash experiment_runners/run_no_implementation_requirement.sh
+bash experiment_runners/run_no_reference_evidence.sh
 ```
 
 Pass paper ids to run a subset:
@@ -203,3 +207,8 @@ REPROAGENT_STAGE=generate bash experiment_runners/run_main_experiment.sh rice
 This first public bundle contains the reproduction pipeline and ablation
 entrypoints. Benchmark scoring scripts, internal experiment outputs, raw
 PaperBench data, and generated repositories are intentionally excluded.
+
+PaperBench resources:
+
+- Benchmark repository: https://github.com/openai/frontier-evals/tree/main/project/paperbench
+- Dataset directory: https://github.com/openai/frontier-evals/tree/main/project/paperbench/data

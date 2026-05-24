@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Run ReproAgent with reference-repository cloning disabled."""
+"""Run ReproAgent with reference evidence disabled."""
 
 from __future__ import annotations
 

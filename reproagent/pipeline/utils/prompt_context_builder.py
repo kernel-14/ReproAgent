@@ -16,7 +16,7 @@ from reproagent.pipeline.schemas import (
     WorkPackagePlanningOutput,
 )
 
-from ..config import semantic_anchor_disabled
+from ..config import implementation_requirements_disabled
 from .dataset_manager import _get_dataset_preparation, _get_resource_manifest
 from .evidence_contracts import flatten_evidence_contract, infer_evidence_contract
 from .intent_contract import paperbench_prompt_safe_experiment_design, upstream_intent_payload
@@ -1428,7 +1428,7 @@ def _paper_evidence_contract_payload(state: PaperBenchReproState) -> dict[str, A
 
 def _paper_evidence_contract_payload_for_generation(state: PaperBenchReproState) -> dict[str, Any]:
     """Return the generation-facing paper evidence contract for task inputs."""
-    if semantic_anchor_disabled():
+    if implementation_requirements_disabled():
         return {}
     return _paper_evidence_contract_payload(state)
 

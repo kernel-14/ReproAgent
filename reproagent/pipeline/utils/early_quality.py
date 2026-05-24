@@ -1666,7 +1666,7 @@ def _unit_reference_grounding(units: list[Any], reference_repo_surveys: list[Any
             unit_rows.append(
                 {
                     "unit_id": unit_id,
-                    "grounding_status": "paper_only_no_reference_repos",
+                    "grounding_status": "paper_only_no_reference_evidence",
                     "paper_only_reason": "No prepared reference repositories were available; carry this unit forward from paper/addendum evidence only.",
                     "reference_evidence": [],
                     "weak_reference_evidence_count": weak_evidence_by_unit.get(unit_id, 0),
@@ -1710,7 +1710,7 @@ def _unit_reference_grounding(units: list[Any], reference_repo_surveys: list[Any
         "unit_grounding": unit_rows,
         "grounded_unit_count": grounded_count,
         "missing_ref_grounding_units": missing_ref_grounding_units,
-        "paper_only_unit_count": sum(1 for row in unit_rows if row.get("grounding_status") == "paper_only_no_reference_repos"),
+        "paper_only_unit_count": sum(1 for row in unit_rows if row.get("grounding_status") == "paper_only_no_reference_evidence"),
         "self_contained_paper_unit_count": sum(1 for row in unit_rows if row.get("grounding_status") == "self_contained_paper_grounded"),
         "weak_reference_evidence_count": sum(weak_evidence_by_unit.values()),
     }
@@ -1883,7 +1883,7 @@ def prepare_quality_gate_report(
             else:
                 warnings.append(message)
     else:
-        warnings.append("No prepared reference repositories; all units are marked paper_only_no_reference_repos.")
+        warnings.append("No prepared reference repositories; all units are marked paper_only_no_reference_evidence.")
 
     passed = not blocking_reasons
     status = "passed" if passed else "degraded_best_effort"
@@ -1917,7 +1917,7 @@ def prepare_quality_gate_report(
         "notes": [
             "Prepare quality issues are diagnostic and repair-prioritized; they do not hard-stop planning.",
             "Reference acquisition is not grounding; units need symbol/path evidence when prepared refs exist.",
-            "When no refs exist, units are explicitly marked paper_only_no_reference_repos and must remain paper/addendum grounded downstream.",
+            "When no refs exist, units are explicitly marked paper_only_no_reference_evidence and must remain paper/addendum grounded downstream.",
         ],
     }
 

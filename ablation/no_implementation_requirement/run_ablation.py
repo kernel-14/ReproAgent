@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Run ReproAgent with semantic anchors disabled."""
+"""Run ReproAgent with implementation requirements disabled."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from reproagent.pipeline.paperbench_cli import main
 
 
 def _configure_ablation() -> None:
-    os.environ["PAPERBENCH_REPRO_DISABLE_SEMANTIC_ANCHOR"] = "1"
+    os.environ["PAPERBENCH_REPRO_DISABLE_IMPLEMENTATION_REQUIREMENTS"] = "1"
 
 
 if __name__ == "__main__":

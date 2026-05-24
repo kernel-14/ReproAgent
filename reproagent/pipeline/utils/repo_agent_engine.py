@@ -13,7 +13,7 @@ from typing import Any
 
 from reproagent.pipeline.schemas import PaperBenchReproState
 from reproagent.pipeline.tools import load_project_files, merge_project_files, save_project_files
-from reproagent.pipeline.config import semantic_anchor_disabled
+from reproagent.pipeline.config import implementation_requirements_disabled
 from reproagent.pipeline.utils.claude_sdk_wrapper import ClaudeSDKWrapper
 from reproagent.pipeline.utils.codex_wrapper import CodexWrapper, aggregate_codex_usage, normalize_codex_usage
 from reproagent.pipeline.utils.llm_agent import LLMWorkflowAgent
@@ -157,7 +157,7 @@ class RepoAgentEngine:
                                 symbols.add(item.id)
         return symbols
 
-    def _semantic_anchor_terms(self, content: str) -> set[str]:
+    def _implementation_requirement_terms(self, content: str) -> set[str]:
         """Extract paper/domain-looking terms without paper-specific hard-coding."""
         text = str(content or "")
         tokens = re.findall(r"[A-Za-z][A-Za-z0-9_'-]{1,}|\d+(?:\.\d+)?[kKmM]?|\d+-[A-Za-z0-9_'-]+", text)
@@ -304,8 +304,8 @@ class RepoAgentEngine:
                     f"({len(old_symbols & new_symbols)}/{len(old_symbols)} retained; missing={missing})"
                 )
 
-            old_anchors = self._semantic_anchor_terms(old_content)
-            new_anchors = self._semantic_anchor_terms(new_content)
+            old_anchors = self._implementation_requirement_terms(old_content)
+            new_anchors = self._implementation_requirement_terms(new_content)
             anchor_retention = (
                 len(old_anchors & new_anchors) / len(old_anchors)
                 if old_anchors
@@ -318,7 +318,7 @@ class RepoAgentEngine:
             ):
                 missing_anchors = sorted(old_anchors - new_anchors)[:20]
                 issues.append(
-                    f"{path}: semantic anchor regression rejected "
+                    f"{path}: implementation requirement regression rejected "
                     f"({len(old_anchors & new_anchors)}/{len(old_anchors)} retained; missing={missing_anchors})"
                 )
 
@@ -1692,14 +1692,14 @@ class RepoAgentEngine:
             "Repository file index:\n" + json.dumps(repo_file_index, ensure_ascii=False, indent=2),
             self._artifact_instruction_block(),
         ]
-        if not semantic_anchor_disabled():
+        if not implementation_requirements_disabled():
             prompt_parts.insert(
                 4,
-                "Use the requirement anchor as the stable semantic baseline. Do not drift away from the original task semantics.",
+                "Use the implementation-requirement contract as the stable task baseline. Do not drift away from the original task semantics.",
             )
             prompt_parts.insert(
                 16,
-                "Requirement anchor:\n"
+                "Implementation-requirement contract:\n"
                 + json.dumps(
                     {
                         "goal": anchor_goal,
