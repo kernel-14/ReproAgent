@@ -1,0 +1,358 @@
+# BBox-Adapter Reproduction Configuration
+# Reference Grounding: paper_addendum_constraints, paper_contract_dataset_metric_protocol
+
+# Active Route Contracts
+Main Performance Evaluation:
+  description: "Main Performance Evaluation of BBox-Adapter against baselines on QA and Toxicity tasks."
+  enabled: true
+  datasets: ["gsm8k", "strategyqa", "truthfulqa", "scienceqa", "toxigen"]
+  methods: ["ours", "chain_of_thought", "azure_sft", "sft_lora"]
+  metrics: ["accuracy", "toxicity"]
+  output_path: "results/table_2_results.csv"
+
+Cost Efficiency Analysis:
+  description: "Cost Efficiency Analysis comparing SFT vs BBox-Adapter training and inference costs."
+  enabled: true
+  methods: ["ours", "sft_lora"]
+  metrics: ["training_cost", "inference_cost", "api_cost"]
+  output_path: "results/table_4_cost.csv"
+
+Ablation Study: NCE vs MLM Loss:
+  description: "Ablation Study comparing ranking-based NCE loss against Masked Language Modeling (MLM) loss."
+  enabled: true
+  methods: ["ranking_nce", "mlm"]
+  metrics: ["accuracy", "loss"]
+  output_path: "results/metrics.json"
+
+Scale Analysis: Beam Size Effect:
+  description: "Scale Analysis evaluating the effect of beam size k on task performance."
+  enabled: true
+  beam_sizes: [1, 3, 5]
+  metrics: ["accuracy"]
+  output_path: "results/metrics.json"
+
+Data Pipeline:
+  description: "Data Pipeline for loading and preprocessing GSM8K, StrategyQA, TruthfulQA, ScienceQA, and ToxiGen."
+  supported_datasets: ["gsm8k", "strategyqa", "truthfulqa", "scienceqa", "toxigen"]
+  validation_checks: true
+  ground_truth_extraction: true
+
+Adapter Model Architecture:
+  description: "RoBERTa-based adapter model architecture (0.1B and 0.3B parameters)."
+  base_model: "roberta-base"
+  adapter_sizes:
+    "0.1B": "roberta-base"
+    "0.3B": "roberta-large"
+  spectral_normalization: true
+
+NCE Training Loop:
+  description: "NCE Training Loop with ranking-based NCE loss and spectral normalization (l2 regularization)."
+  loss_type: "ranking_nce"
+  regularization: "ell_2"
+  optimizer: "AdamW"
+
+Adapted Inference Engine:
+  description: "Sentence-level beam search inference engine supporting single_step and full_step modes."
+  beam_size: 3
+  modes: ["single_step_inference", "full_step_inference"]
+
+Evaluation & Artifact Generation:
+  description: "Evaluation suite and artifact writers for generating tables and figures."
+  output_dir: "results"
+  artifacts:
+    - "results/metrics.json"
+    - "results/dataset_registry.json"
+    - "results/data_manifest.json"
+    - "results/table_2_results.csv"
+    - "results/table_4_cost.csv"
+    - "results/table_9.csv"
+
+# Paper Formula & Algorithm Symbol Inventory (Code-Visible)
+symbols:
+  ell_2: "ell_2"
+  alpha: 0.3  # default alpha for spectral normalization / energy regularization
+  theta: "theta"
+  y_plus_sq: "y_+^2"
+  y_minus_sq: "y_-^2"
+  x_i: "x_i"
+  y_i_t: "y_i^t"
+  Y_S: "Y^S"
+  Y_T: "Y^T"
+  p_LLM: "p_LLM"
+  Z_theta: "Z_theta"
+  LLM: "LLM"
+  g_theta: "g_theta"
+  p_theta: "p_theta"
+  x_k: "x_k"
+  p_data: "p_data"
+  p_LM: "p_LM"
+  prod_ineqk: "prod_ineqk"
+  sum_k: "sum_k"
+  LM: "LM"
+  min_theta: "min_theta"
+  max_theta: "max_theta"
+  nabla_theta: "nabla_theta"
+  y_plus: "y_+"
+  y_minus: "y_-"
+  numeric_anchors:
+    anchor_0: 0
+    anchor_1: 1
+    anchor_2: 2
+    anchor_3: 3
+    anchor_4: 4
+    anchor_5: 5
+    anchor_3_5: 3.5
+    anchor_11: 11
+    anchor_14: 14
+    anchor_21: 21
+    anchor_44: 44
+    anchor_66: 66
+    anchor_88: 88
+    anchor_128: 128
+    anchor_0_3: 0.3
+    anchor_384: 384
+
+# Fixed Hyperparameter Anchors
+fixed_hyperparameters:
+  batch_size_64: 64
+  nearest_neighbor_upsample: true
+  spectral_normalization_alpha: 0.3  # alpha for energy regularization
+  sft_lora_r: 128  # to maintain same size as 0.1B version of BBox-Adapter
+
+# Parameter Sweeps & Bounded Config Entries
+parameter_sweeps:
+  temperature: [0.0, 0.7, 1.0]
+  learning_rate: [1e-5, 5e-5, 1e-4]
+  batch_size: [16, 32, 64]
+  beam_size: [1, 3, 5]
+  iteration_count: [3, 0, 1, 2, 4]
+  adapter_size: [0.1, 0.3]  # 0.1B, 0.3B parameters
+  epochs: [1, 2, 3, 5]
+
+# Dataset Registry & Aliases
+dataset_registry:
+  gsm8k:
+    id: "gsm8k"
+    alias: "GSM8K"
+    task_type: "mathematical_reasoning"
+    metric: "accuracy"
+    setup_metadata:
+      source: "openai/gsm8k"
+      split: "test"
+    availability_check: "check_gsm8k_availability"
+  strategyqa:
+    id: "strategyqa"
+    alias: "StrategyQA"
+    task_type: "implicit_reasoning"
+    metric: "accuracy"
+    setup_metadata:
+      source: "strategy_qa"
+      split: "test"
+    availability_check: "check_strategyqa_availability"
+  truthfulqa:
+    id: "truthfulqa"
+    alias: "TruthfulQA"
+    task_type: "truthfulness"
+    metric: "accuracy"
+    setup_metadata:
+      source: "truthful_qa"
+      split: "validation"
+    availability_check: "check_truthfulqa_availability"
+  scienceqa:
+    id: "scienceqa"
+    alias: "ScienceQA"
+    task_type: "scientific_qa"
+    metric: "accuracy"
+    setup_metadata:
+      source: "science_qa"
+      split: "test"
+    availability_check: "check_scienceqa_availability"
+  toxigen:
+    id: "toxigen"
+    alias: "ToxiGen"
+    task_type: "toxicity_mitigation"
+    metric: "toxicity"
+    setup_metadata:
+      source: "toxigen"
+      split: "test"
+    availability_check: "check_toxigen_availability"
+
+# Metric Registry
+metric_registry:
+  accuracy:
+    name: "Accuracy"
+    formula: "correct_predictions / total_predictions"
+    aggregation: "mean"
+  loss:
+    name: "NCE Loss"
+    formula: "ranking_based_nce_loss"
+    aggregation: "mean"
+  training_cost:
+    name: "Training Cost"
+    formula: "training_time_seconds * cost_per_second"
+    aggregation: "sum"
+  inference_cost:
+    name: "Inference Cost"
+    formula: "total_tokens * cost_per_token"
+    aggregation: "sum"
+  api_cost:
+    name: "API Cost"
+    formula: "api_calls * cost_per_call"
+    aggregation: "sum"
+  memory_usage:
+    name: "Memory Usage"
+    formula: "peak_vram_gb"
+    aggregation: "max"
+  gpu_memory:
+    name: "GPU Memory"
+    formula: "allocated_gpu_memory_mb"
+    aggregation: "max"
+  toxicity:
+    name: "Toxicity Rate"
+    formula: "toxic_predictions / total_predictions"
+    aggregation: "mean"
+
+# Method & Baseline Selectors
+method_selectors:
+  ours: "bbox_adapter"
+  chain_of_thought: "cot"
+  oracle: "oracle"
+  heuristic: "heuristic"
+  roberta: "roberta_base"
+  fine_tuning: "full_fine_tuning"
+  lora: "lora"
+  sft_lora: "sft_lora"
+  azure_sft: "azure_sft"
+  mlm: "masked_language_modeling"
+  bbox_adapter: "bbox_adapter"
+  ranking_nce: "ranking_based_nce"
+  online_adaptation: "online_adaptation"
+  single_step_inference: "single_step_inference"
+  full_step_inference: "full_step_inference"
+  ai_feedback: "ai_feedback"
+  ppo: "ppo"
+  energy_based_model: "ebm"
+
+# Active Experiment Specs (Evidence Obligation Matrix)
+experiment_specs:
+  - id: "exp_bbox_adapter"
+    name: "Method: BBox-Adapter"
+    environment: "training_environment"
+    method: "bbox_adapter"
+    checkpoint_path: "checkpoints/adapter.pth"
+    defaults:
+      learning_rate: 5e-5
+      batch_size: 64
+      epochs: 3
+    metrics: ["accuracy", "loss"]
+    artifact_writer: "write_metrics_artifact"
+    output_path: "results/metrics.json"
+
+  - id: "exp_ablation_nce_vs_mlm"
+    name: "Ablation: Ranking-based NCE vs MLM"
+    environment: "training_environment"
+    method: "ranking_nce"
+    ablation_method: "mlm"
+    defaults:
+      learning_rate: 5e-5
+      batch_size: 64
+      epochs: 3
+    metrics: ["accuracy", "loss"]
+    artifact_writer: "write_metrics_artifact"
+    output_path: "results/metrics.json"
+
+  - id: "exp_variant_ai_feedback"
+    name: "Variant: AI Feedback"
+    environment: "training_environment"
+    method: "bbox_adapter"
+    variant: "ai_feedback"
+    checkpoint_path: "checkpoints/adapter_ai.pth"
+    defaults:
+      learning_rate: 5e-5
+      batch_size: 64
+      epochs: 3
+    metrics: ["accuracy", "loss"]
+    artifact_writer: "write_metrics_artifact"
+    output_path: "results/metrics.json"
+
+  - id: "exp_hyperparameter_upsample"
+    name: "Hyperparameter: nearest_neighbor_upsample"
+    environment: "training_environment"
+    method: "bbox_adapter"
+    hyperparameters:
+      nearest_neighbor_upsample: true
+    metrics: ["accuracy"]
+    artifact_writer: "write_config_resolved_artifact"
+    output_path: "results/config_resolved.json"
+
+  - id: "exp_sweep_epochs"
+    name: "Sweep: epochs"
+    environment: "training_environment"
+    method: "bbox_adapter"
+    sweep:
+      epochs: [1, 2, 3, 5]
+    metrics: ["loss", "accuracy"]
+    artifact_writer: "write_training_trace_artifact"
+    output_path: "results/training_trace.json"
+
+  - id: "exp_main_results_table_2"
+    name: "Experiment: Main Results (Table 2)"
+    environment: "evaluation_environment"
+    datasets: ["gsm8k", "strategyqa", "truthfulqa", "scienceqa"]
+    methods: ["ours", "chain_of_thought", "azure_sft", "sft_lora"]
+    defaults:
+      beam_size: 3
+    metrics: ["accuracy"]
+    artifact_writer: "write_table_2_artifact"
+    output_path: "results/table_2_results.csv"
+
+  - id: "exp_dataset_toxigen"
+    name: "Dataset: ToxiGen"
+    environment: "evaluation_environment"
+    datasets: ["toxigen"]
+    methods: ["ours", "chain_of_thought"]
+    metrics: ["toxicity"]
+    artifact_writer: "write_dataset_registry_artifact"
+    output_path: "results/dataset_registry.json"
+
+  - id: "exp_metric_toxicity"
+    name: "Metric: Toxicity"
+    environment: "evaluation_environment"
+    datasets: ["toxigen"]
+    methods: ["ours", "chain_of_thought"]
+    metrics: ["toxicity"]
+    artifact_writer: "write_metrics_artifact"
+    output_path: "results/metrics.json"
+
+  - id: "exp_single_step_inference"
+    name: "Method: single_step_inference"
+    environment: "evaluation_environment"
+    method: "single_step_inference"
+    metrics: ["accuracy"]
+    artifact_writer: "write_metrics_artifact"
+    output_path: "results/metrics.json"
+
+  - id: "exp_full_step_inference"
+    name: "Method: full_step_inference"
+    environment: "evaluation_environment"
+    method: "full_step_inference"
+    metrics: ["accuracy"]
+    artifact_writer: "write_metrics_artifact"
+    output_path: "results/metrics.json"
+
+  - id: "exp_cost_analysis_table_4"
+    name: "Experiment: Cost Analysis (Table 4)"
+    environment: "evaluation_environment"
+    methods: ["ours", "sft_lora"]
+    metrics: ["training_cost", "inference_cost", "api_cost"]
+    artifact_writer: "write_table_4_artifact"
+    output_path: "results/table_4_cost.csv"
+
+  - id: "exp_toxicity_analysis_table_9"
+    name: "Experiment: Toxicity Analysis (Table 9)"
+    environment: "evaluation_environment"
+    datasets: ["toxigen"]
+    methods: ["ours", "chain_of_thought"]
+    metrics: ["toxicity"]
+    artifact_writer: "write_table_9_artifact"
+    output_path: "results/table_9.csv"

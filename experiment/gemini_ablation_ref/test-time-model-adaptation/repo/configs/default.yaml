@@ -1,0 +1,204 @@
+# configs/default.yaml
+# Faithful reproduction configuration for "Test-Time Model Adaptation with Only Forward Passes" (FOA)
+# reference_grounding: paper:paper_contract_method_baseline_protocol chunk_005
+
+global:
+  seed: 42
+  device: "cuda"
+  trust_remote_code: true # reference_grounding: addendum:formula_algorithm_contract
+  artifact_dir: "results"
+
+# Paper-derived fixed hyperparameters
+# reference_grounding: paper:paper_claim_inventory fixed_hyperparameters
+hyperparameters:
+  batch_size_64: 64
+  momentum_0.9: 0.9
+  prompt_length_L: 3
+  cma_population_size_K: 28 # 4 + 3 * log(prompt_dim)
+  lambda_imagenet_c: 0.4
+  lambda_imagenet_r: 0.2
+  alpha_shifting: 0.1
+  learning_rate_baselines: 0.001
+
+# Parameter sweeps for sensitivity analysis and ablations
+# reference_grounding: paper:paper_claim_inventory parameter_sweeps
+sweeps:
+  alpha_values: [0.0, 1.0]
+  lambda_values: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+  population_size_K: [2, 4, 8, 12, 16, 20, 24, 28]
+  prompt_length_L: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+  batch_sizes: [1, 4, 16, 64]
+
+# Environment and Task Registry
+# reference_grounding: paper:paper_contract_environment_protocol chunk_026
+environments:
+  imagenet:
+    alias: "imagenet-1k"
+    tasks: ["classification"]
+    metadata:
+      source: "huggingface"
+      trust_remote_code: true
+  wilds:
+    alias: "wilds_benchmark"
+    tasks: ["domain_generalization"]
+  autonomous_driving:
+    alias: "driving_benchmark"
+    tasks: ["robustness"]
+
+# Dataset Registry
+# reference_grounding: paper:paper_dataset_inventory chunk_026
+datasets:
+  imagenet_1k:
+    id: "imagenet-1k"
+    split: "validation"
+  imagenet_c:
+    id: "imagenet_c"
+    corruptions: ["gaussian_noise", "shot_noise", "impulse_noise", "defocus_blur", "glass_blur", "motion_blur", "zoom_blur", "snow", "frost", "fog", "brightness", "contrast", "elastic_transform", "pixelate", "jpeg_compression"]
+    severities: [1, 2, 3, 4, 5]
+  imagenet_r:
+    id: "imagenet_r"
+  imagenet_v2:
+    id: "imagenet_v2"
+  imagenet_sketch:
+    id: "imagenet_sketch"
+  wilds:
+    id: "wilds"
+  autonomous_driving:
+    id: "autonomous_driving"
+
+# Method and Baseline Registry
+# reference_grounding: paper:paper_contract_method_baseline_protocol chunk_005
+methods:
+  foa:
+    name: "Forward-Optimization Adaptation"
+    components:
+      - "CMA-ES Optimizer & Fitness Module"
+      - "Activation Shifting Mechanism"
+      - "ViT Prompt Wrapper"
+    params:
+      prompt_length: 3
+      population_size: 28
+      lambda_weight: 0.4
+      alpha_shifting: 0.1
+  tent:
+    name: "TENT"
+    type: "gradient_based"
+  cotta:
+    name: "CoTTA"
+    type: "gradient_based"
+  sar:
+    name: "SAR"
+    type: "gradient_based"
+  lame:
+    name: "LAME"
+    type: "gradient_free"
+  t3a:
+    name: "T3A"
+    type: "gradient_free"
+  no_adapt:
+    name: "NoAdapt"
+
+# Model Factory Configuration
+# reference_grounding: paper:paper_contract_environment_protocol chunk_026
+models:
+  vit_base:
+    backbone: "vit_base_patch16_224"
+    source: "timm"
+    precision: "fp32"
+  vit_base_int8:
+    backbone: "vit_base_patch16_224"
+    precision: "int8"
+    quantization: "PTQ4ViT"
+  resnet_50:
+    backbone: "resnet50"
+    source: "timm"
+
+# Named Experiment Specifications (Callable Protocol Matrix)
+# reference_grounding: paper:paper_claim_inventory named_experiments
+experiments:
+  experiment_i:
+    name: "ImageNet-C Full Precision Benchmark"
+    model: "vit_base"
+    dataset: "imagenet_c"
+    method: "foa"
+    metrics: ["accuracy", "ece"]
+    artifact_writer: "write_table_2_artifact"
+  experiment_ii:
+    name: "ImageNet-R/V2/Sketch Comparison"
+    model: "vit_base"
+    datasets: ["imagenet_r", "imagenet_v2", "imagenet_sketch"]
+    method: "foa"
+    metrics: ["accuracy"]
+    artifact_writer: "write_table_3_artifact"
+  experiment_iii:
+    name: "Quantized Model Adaptation"
+    model: "vit_base_int8"
+    dataset: "imagenet_c"
+    method: "foa"
+    metrics: ["accuracy"]
+    artifact_writer: "results/metrics.json"
+  experiment_iv:
+    name: "FOA Components Ablation Study"
+    model: "vit_base"
+    dataset: "imagenet_c"
+    method: "foa"
+    variants: ["no_shifting", "no_fitness"]
+    artifact_writer: "write_ablation_registry_artifact"
+  experiment_v:
+    name: "Sensitivity to K and L"
+    model: "vit_base"
+    dataset: "imagenet_c"
+    method: "foa"
+    sweeps: ["population_size_K", "prompt_length_L"]
+    artifact_writer: "results/sensitivity_report.json"
+  experiment_vi:
+    name: "ResNet-50 on ImageNet-C"
+    model: "resnet_50"
+    dataset: "imagenet_c"
+    method: "foa"
+    metrics: ["accuracy"]
+    artifact_writer: "write_table_6_artifact"
+  experiment_vii:
+    name: "Wilds and Autonomous Driving"
+    model: "vit_base"
+    datasets: ["wilds", "autonomous_driving"]
+    method: "foa"
+    metrics: ["accuracy"]
+    artifact_writer: "results/tables/experiment_results.csv"
+
+# Artifact Registry and Output Paths
+# reference_grounding: paper:paper_claim_inventory artifacts
+artifacts:
+  environment_registry: "results/environment_registry.json"
+  dataset_registry: "results/dataset_registry.json"
+  method_registry: "results/method_registry.json"
+  environment_readiness: "results/environment_readiness.json"
+  ablation_registry: "results/ablation_registry.json"
+  data_manifest: "results/data_manifest.json"
+  metrics: "results/metrics.json"
+  table_2: "results/tables/experiment_results.csv"
+  table_3: "results/tables/experiment_results.csv"
+  table_6: "results/tables/experiment_results.csv"
+  sensitivity_report: "results/sensitivity_report.json"
+
+# Executable Algorithm Anchors
+# reference_grounding: paper:paper_and_addendum_formula_algorithm_extraction
+algorithm_anchors:
+  cma_es:
+    initial_m: 0
+    initial_sigma: "I"
+    initial_tau: 1
+  activation_shifting:
+    ema_alpha: 0.1
+    shifting_direction_formula: "mu_source - mu_target"
+  fitness_function:
+    lambda_weight: 0.4
+    terms: ["entropy", "cls_alignment"]
+
+# Smoke Test Configuration
+smoke_test:
+  mode: "runtime_smoke"
+  batch_size: 1
+  max_samples: 10
+  datasets: ["imagenet_c"]
+  methods: ["foa"]

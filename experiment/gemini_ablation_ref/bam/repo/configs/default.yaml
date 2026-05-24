@@ -1,0 +1,244 @@
+# configs/default.yaml
+# Centralized configuration and environment registry for BaM (Batch and Match) reproduction.
+# reference_grounding: paper:paper_contract_sweep_hyperparameter_protocol (chunk_004, chunk_007_01, chunk_008_02)
+
+# ==============================================================================
+# 1. ENVIRONMENT & TASK REGISTRY
+# ==============================================================================
+environment_registry:
+  cifar:
+    id: "cifar"
+    alias: "cifar-10"
+    name: "CIFAR-10 Latent Space Posterior Inference"
+    setup_metadata:
+      data_dir: "data/cifar10"
+      download: true
+      image_size: [32, 32]
+      channels: 3
+    availability_check: "src.bam.experiments.vae_posterior.check_cifar_availability"
+    runnable_config_hook: "src.bam.experiments.vae_posterior.run_cifar_experiment"
+    keep_external: true
+
+  synthetic_gaussian:
+    id: "synthetic_gaussian"
+    alias: "synthetic-gaussian"
+    name: "Synthetic Gaussian Target"
+    setup_metadata:
+      dimensions: [4, 16, 64, 256]
+    availability_check: "src.bam.experiments.synthetic.check_synthetic_availability"
+    runnable_config_hook: "src.bam.experiments.synthetic.run_synthetic_experiment"
+    keep_external: false
+
+  hierarchical:
+    id: "hierarchical"
+    alias: "hierarchical-bayesian"
+    name: "Hierarchical Bayesian Models"
+    setup_metadata:
+      models: ["eight_schools", "radon"]
+    availability_check: "src.bam.experiments.hierarchical.check_hierarchical_availability"
+    runnable_config_hook: "src.bam.experiments.hierarchical.run_hierarchical_experiment"
+    keep_external: false
+
+  non_gaussian:
+    id: "non_gaussian"
+    alias: "non-gaussian-targets"
+    name: "Non-Gaussian Targets"
+    setup_metadata:
+      parameters_p: [0.0, 0.2, 1.0, 1.8]
+    availability_check: "src.bam.experiments.synthetic.check_non_gaussian_availability"
+    runnable_config_hook: "src.bam.experiments.synthetic.run_non_gaussian_experiment"
+    keep_external: false
+
+# ==============================================================================
+# 2. DATASET & BENCHMARK REGISTRY
+# ==============================================================================
+dataset_registry:
+  cifar:
+    id: "cifar"
+    alias: "cifar-10-dataset"
+    validation_check: "src.bam.utils.metrics.validate_cifar_dataset"
+    runnable_config_hook: "src.bam.experiments.vae_posterior.load_cifar_dataset"
+  
+  synthetic_gaussian:
+    id: "synthetic_gaussian"
+    alias: "synthetic-gaussian-dataset"
+    validation_check: "src.bam.utils.metrics.validate_synthetic_dataset"
+    runnable_config_hook: "src.bam.experiments.synthetic.load_synthetic_dataset"
+
+  non_gaussian:
+    id: "non_gaussian"
+    alias: "non-gaussian-dataset"
+    validation_check: "src.bam.utils.metrics.validate_non_gaussian_dataset"
+    runnable_config_hook: "src.bam.experiments.synthetic.load_non_gaussian_dataset"
+
+# ==============================================================================
+# 3. METHOD & BASELINE SELECTORS
+# ==============================================================================
+method_selectors:
+  ours: "BaM"
+  baseline: ["ADVI", "GSM"]
+
+# ==============================================================================
+# 4. PARAMETER SWEEPS & FIXED HYPERPARAMETERS
+# ==============================================================================
+hyperparameters:
+  fixed:
+    iterations: 100 # 100_iterations anchor
+    max_iterations: 500
+    epsilon: 1e-5
+  
+  sweeps:
+    lambda: [0.1, 1.0, 10.0, 100.0]
+    p: [0.0, 0.2, 1.0, 1.8]
+    learning_rate: [1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
+    batch_size: [3, 4, 8, 16, 32]
+
+# ==============================================================================
+# 5. CALLABLE EXPERIMENT SPECS (OBLIGATION MATRIX)
+# ==============================================================================
+experiment_specs:
+  experiment_5_1_gaussian_sweep:
+    name: "Experiment 5.1: Synthetic Gaussian (D sweep)"
+    environment: "synthetic_gaussian"
+    method: "BaM"
+    baselines: ["ADVI", "GSM"]
+    parameter_defaults:
+      lambda: 1.0
+      batch_size: 4
+      learning_rate: 1e-3
+      iterations: 100
+    sweeps:
+      dimension_D: [4, 16, 64, 256]
+    metric_functions:
+      - "kl_forward"
+      - "kl_reverse"
+    artifact_writer: "write_experiment_results_artifact"
+    output_path: "results/metrics.json"
+
+  experiment_5_1_non_gaussian_sweep:
+    name: "Experiment 5.1: Non-Gaussianity sweep (parameter p)"
+    environment: "non_gaussian"
+    method: "BaM"
+    baselines: ["ADVI", "GSM"]
+    parameter_defaults:
+      lambda: 1.0
+      batch_size: 4
+      learning_rate: 1e-3
+      iterations: 100
+    sweeps:
+      parameter_p: [0.0, 0.2, 1.0, 1.8]
+    metric_functions:
+      - "kl_forward"
+      - "kl_reverse"
+    artifact_writer: "write_experiment_results_artifact"
+    output_path: "results/metrics.json"
+
+  experiment_5_2_hierarchical:
+    name: "Experiment 5.2: Hierarchical models"
+    environment: "hierarchical"
+    method: "BaM"
+    baselines: ["ADVI", "GSM"]
+    parameter_defaults:
+      lambda: 1.0
+      batch_size: 4
+      learning_rate: 1e-3
+      iterations: 100
+    metric_functions:
+      - "kl_forward"
+      - "kl_reverse"
+    artifact_writer: "write_experiment_results_artifact"
+    output_path: "results/metrics.json"
+
+  experiment_5_3_cifar:
+    name: "Experiment 5.3: CIFAR-10 DGM"
+    environment: "cifar"
+    method: "BaM"
+    baselines: ["ADVI", "GSM"]
+    parameter_defaults:
+      lambda: 1.0
+      batch_size: 4
+      learning_rate: 1e-3
+      iterations: 100
+    metric_functions:
+      - "kl_forward"
+      - "kl_reverse"
+      - "mse"
+    artifact_writer: "write_experiment_results_artifact"
+    output_path: "results/metrics.json"
+
+# ==============================================================================
+# 6. PAPER FORMULA & ALGORITHM SYMBOL INVENTORY
+# ==============================================================================
+# This section makes all paper-derived symbols and numeric defaults code-visible.
+symbol_inventory:
+  cifar_dgm_architecture:
+    Convin_channels: 3
+    out_channels: "c_hid"
+    kernel_size: 3
+    stride: 2
+    in_channels: 3
+    c_hid: 64
+    latent_dim: 128
+    layers:
+      - { type: "Conv", in_channels: 3, out_channels: "c_hid", kernel_size: 3, stride: 2 }
+      - { type: "Conv", in_channels: "c_hid", out_channels: "c_hid", kernel_size: 3, stride: 1 }
+      - { type: "Conv", in_channels: "c_hid", out_channels: "2*c_hid", kernel_size: 3, stride: 2 }
+      - { type: "Conv", in_channels: "2*c_hid", out_channels: "2*c_hid", kernel_size: 3, stride: 1 }
+      - { type: "Conv", in_channels: "2*c_hid", out_channels: "2*c_hid", kernel_size: 3, stride: 2 }
+      - { type: "Dense", output: "latent_dim" }
+
+  mathematical_symbols:
+    KL: "Kullback-Leibler Divergence"
+    S_plus_plus_D: "S_++^D (Symmetric positive definite matrices)"
+    R_D_times_D: "R^{D x D} (Real matrices)"
+    Sigma_top: "Sigma^top"
+    sum_d_1_D: "sum_{d=1}^D Sigma_dd"
+    sum_b_1_B: "sum_{b=1}^B"
+    nabla_z: "nabla_z"
+    lambda_t: "lambda_t"
+    q_star: "q^*"
+    z_b: "z_b"
+    q_t: "q_t"
+    q_t_plus_1: "q_{t+1}"
+    mu: "mu"
+    Sigma_inv: "Sigma^-1"
+    sum_n_1_N: "sum_{n=1}^N"
+    g_b: "g_b"
+    z_bar: "z_bar"
+    g_bar: "g_bar"
+    Sigma_t: "Sigma_t"
+    mu_t: "mu_t"
+    mu_t_plus_1: "mu_{t+1}"
+    Sigma_t_plus_1: "Sigma_{t+1}"
+    p_tilde: "p_tilde"
+    mu_0: "mu_0"
+    Sigma_0: "Sigma_0"
+    nabla_w: "nabla_w"
+    mu_T: "mu_T"
+    Sigma_T: "Sigma_T"
+    s_b_top: "s_b^top"
+    mu_b: "mu_b"
+    Sigma_b: "Sigma_b"
+
+# ==============================================================================
+# 7. ARTIFACT WRITERS & OUTPUT PATHS
+# ==============================================================================
+artifact_paths:
+  environment_registry: "results/environment_registry.json"
+  config_resolved: "results/config_resolved.json"
+  sensitivity_report: "results/sensitivity_report.json"
+  environment_readiness: "results/environment_readiness.json"
+  figure_5: "results/figures/figure_5.png"
+  experiment_results_csv: "results/tables/experiment_results.csv"
+  experiment_results_png: "results/figures/experiment_results.png"
+  predictions: "results/predictions.jsonl"
+  training_log: "results/training_log.json"
+  method_registry: "results/method_registry.json"
+  ablation_registry: "results/ablation_registry.json"
+  dataset_registry: "results/dataset_registry.json"
+  data_manifest: "results/data_manifest.json"
+  metrics: "results/metrics.json"
+  summary_csv: "results/tables/summary.csv"
+  experiment_registry: "results/experiment_registry.json"
+  evidence_contract_matrix: "results/evidence_contract_matrix.json"
+  artifact_manifest: "results/artifact_manifest.json"

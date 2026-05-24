@@ -1,0 +1,262 @@
+# reference_grounding: paper:paper_evidence_matrix (chunk_017, chunk_019, chunk_020)
+# APT: Adaptive Pruning and Tuning Pretrained Language Models for Efficient Training and Inference.
+# Experiment Matrix Configuration
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# Active route contract: define NLU and NLG Performance Evaluation
+"NLU and NLG Performance Evaluation":
+  description: "Reproduction of NLU and NLG tasks performance and efficiency metrics."
+  
+  # reference_grounding: paper:unit_004 (chunk_015)
+  # Environment/Task Factories
+  environments:
+    unit-004:
+      id: "unit-004"
+      alias: "main_repro_env"
+      metadata: {models: ["bert", "roberta", "t5", "llama"]}
+      availability_check: "src.apt.data.pipeline.check_env_available"
+    t5:
+      id: "t5"
+      alias: "t5_tasks"
+      metadata: {model: "t5-base"}
+    llama_commonsense:
+      id: "llama commonsense"
+      alias: "llama_tasks"
+      metadata: {tasks: ["boolq", "piqa", "siqa", "hellaswag", "winogrande", "arc_e", "arc_c", "obqa"]}
+    unit-005:
+      id: "unit-005"
+      alias: "efficiency_profiling_env"
+    squad:
+      id: "squad"
+      alias: "squad_v2"
+    glue:
+      id: "glue"
+      alias: "glue_benchmark"
+    pruning_roberta_similar:
+      id: "pruning roberta models targeting similar"
+    apt_consistently_higher:
+      id: "apt consistently reach higher"
+    salience_notably_hurts:
+      id: "salience notably hurts"
+    sst2:
+      id: "sst2"
+    open_llm_leaderboard:
+      id: "open llm leaderboard few-shot"
+    fine_tuning_no_hurt:
+      id: "fine-tuning will not hurt their"
+
+  # reference_grounding: paper:unit_004 (chunk_015)
+  # Dataset/Benchmark Loaders
+  datasets:
+    sst2: {id: "SST2", loader: "src.apt.data.pipeline.load_pipeline"}
+    mnli: {id: "MNLI", loader: "src.apt.data.pipeline.load_pipeline"}
+    squad_v2: {id: "SQuAD v2.0", loader: "src.apt.data.pipeline.load_pipeline"}
+    cnn_dm: {id: "CNN/DailyMail", loader: "src.apt.data.pipeline.load_pipeline"}
+    boolq: {id: "BoolQ", loader: "src.apt.data.pipeline.load_pipeline"}
+    piqa: {id: "PIQA", loader: "src.apt.data.pipeline.load_pipeline"}
+    siqa: {id: "SIQA", loader: "src.apt.data.pipeline.load_pipeline"}
+    hellaswag: {id: "HellaSwag", loader: "src.apt.data.pipeline.load_pipeline"}
+    winogrande: {id: "WinoGrande", loader: "src.apt.data.pipeline.load_pipeline"}
+    arc_e: {id: "ARC-e", loader: "src.apt.data.pipeline.load_pipeline"}
+    arc_c: {id: "ARC-c", loader: "src.apt.data.pipeline.load_pipeline"}
+    obqa: {id: "OBQA", loader: "src.apt.data.pipeline.load_pipeline"}
+    glue: {id: "glue", loader: "src.apt.data.pipeline.load_pipeline"}
+    truthfulqa: {id: "truthfulqa", loader: "src.apt.data.pipeline.load_pipeline"}
+
+  # reference_grounding: paper:unit_004 (chunk_015)
+  # Method/Baseline Selectors
+  methods:
+    ours:
+      id: "ours"
+      factory: "src.apt.engine.trainer.train_ours_oradaptersby_inventory"
+      objective: "src.apt.engine.trainer.compute_ours_oradaptersby_inventory_objective"
+      score: "src.apt.engine.trainer.compute_ours_oradaptersby_inventory_score"
+    bert: {id: "bert", factory: "src.models.wrapper.build_wrapper"}
+    roberta: {id: "roberta", factory: "src.models.wrapper.build_wrapper"}
+    t5: {id: "t5", factory: "src.models.wrapper.build_wrapper"}
+    fine_tuning: {id: "fine_tuning", factory: "src.apt.engine.trainer.run_training_loop"}
+    lora: {id: "lora", factory: "src.models.wrapper.build_wrapper"}
+    test_time_adaptation: {id: "test_time_adaptation", factory: "src.apt.engine.trainer.run_training_loop"}
+    FT: {id: "FT", factory: "src.apt.engine.trainer.run_training_loop"}
+    LoRA: {id: "LoRA", factory: "src.models.wrapper.build_wrapper"}
+    LoRA+Prune: {id: "LoRA+Prune", factory: "src.apt.engine.trainer.run_training_loop"}
+    Co-tuning: {id: "Co-tuning", factory: "src.apt.engine.trainer.run_training_loop"}
+    LLM-Pruner: {id: "LLM-Pruner", factory: "src.apt.engine.trainer.run_training_loop"}
+
+  # reference_grounding: paper:unit_005 (chunk_017)
+  # Metric Formulas and Aggregation
+  metrics:
+    accuracy_f1_rouge_l:
+      id: "accuracy_f1_rouge_l"
+      canonical_id: "metric_accuracy_f1_rouge_l"
+    accuracy:
+      id: "accuracy"
+      canonical_id: "metric_accuracy"
+      formula: "src.apt.utils.metrics.compute_accuracy"
+      aggregation: "src.apt.utils.metrics.aggregate_accuracy"
+    f1:
+      id: "f1"
+      canonical_id: "metric_f1"
+      formula: "src.apt.utils.metrics.compute_f1"
+      aggregation: "src.apt.utils.metrics.aggregate_f1"
+    train_mem_tta_inf_mem_throughput:
+      id: "train_mem_tta_inf_mem_throughput"
+      canonical_id: "metric_train_mem_tta_inf_mem_throughput"
+    loss:
+      id: "loss"
+      canonical_id: "metric_loss"
+      formula: "src.apt.engine.trainer.compute_loss"
+      aggregation: "src.apt.engine.trainer.aggregate_loss"
+    rouge:
+      id: "rouge"
+      canonical_id: "metric_rouge"
+    training_time: {id: "training_time"}
+    training_cost: {id: "training_cost"}
+    inference_cost: {id: "inference_cost"}
+    memory_usage: {id: "memory_usage"}
+    gpu_memory: {id: "gpu_memory"}
+    table_2_reproduction_artifact:
+      id: "table_2_reproduction_artifact"
+      canonical_id: "metric_table_2_reproduction_artifact"
+    table_3_reproduction_artifact:
+      id: "table_3_reproduction_artifact"
+      canonical_id: "metric_table_3_reproduction_artifact"
+    table_5_reproduction_artifact:
+      id: "table_5_reproduction_artifact"
+      canonical_id: "metric_table_5_reproduction_artifact"
+
+  # reference_grounding: paper:unit_002 (chunk_011)
+  # Parameter Sweeps
+  sweeps:
+    early_training_steps: [0.05, 0.1, 0.2] # t << T
+    batch_size: [32, 128]
+    10_shot_setting: {num_shots: 10}
+    batch_size_128: {batch_size: 128}
+    batch_size_32: {batch_size: 32}
+
+  # reference_grounding: paper:paper_evidence_matrix (chunk_017, chunk_019, chunk_020)
+  # Result Trend Assertions
+  assertions:
+    baseline_outperformance:
+      - "APT memory < LoRA memory"
+      - "APT throughput > LoRA throughput"
+      - "APT accuracy ≈ FT accuracy"
+
+  # reference_grounding: paper:paper_evidence_matrix (chunk_017, chunk_019, chunk_020)
+  # Result Artifacts
+  artifacts:
+    table_2:
+      id: "table_2"
+      canonical_id: "artifact_table_2"
+      path: "results/tables/table_2.csv"
+      writer: "src.apt.utils.metrics.write_named_result_artifacts"
+    table_3:
+      id: "table_3"
+      canonical_id: "artifact_table_3"
+      path: "results/tables/table_3.csv"
+    table_5:
+      id: "table_5"
+      canonical_id: "artifact_table_5"
+      path: "results/tables/table_5.csv"
+    figure_1:
+      id: "figure_1"
+      canonical_id: "artifact_figure_1"
+      path: "results/figures/figure_1.png"
+    table_1:
+      id: "table_1"
+      canonical_id: "artifact_table_1"
+      path: "results/tables/table_1.csv"
+    figure_2:
+      id: "figure_2"
+      canonical_id: "artifact_figure_2"
+      path: "results/figures/figure_2.png"
+    table_4:
+      id: "table_4"
+      canonical_id: "artifact_table_4"
+      path: "results/tables/table_4.csv"
+    table_11:
+      id: "table_11"
+      canonical_id: "artifact_table_11"
+      path: "results/tables/table_11.csv"
+    table_12:
+      id: "table_12"
+      canonical_id: "artifact_table_12"
+      path: "results/tables/table_12.csv"
+    figure_3:
+      id: "figure_3"
+      canonical_id: "artifact_figure_3"
+      path: "results/figures/figure_3.png"
+    table_7:
+      id: "table_7"
+      canonical_id: "artifact_table_7"
+      path: "results/tables/table_7.csv"
+    table_8:
+      id: "table_8"
+      canonical_id: "artifact_table_8"
+      path: "results/tables/table_8.csv"
+    table_9:
+      id: "table_9"
+      canonical_id: "artifact_table_9"
+      path: "results/tables/table_9.csv"
+    figure_4:
+      id: "figure_4"
+      canonical_id: "artifact_figure_4"
+      path: "results/figures/figure_4.png"
+    figure_5:
+      id: "figure_5"
+      canonical_id: "artifact_figure_5"
+      path: "results/figures/figure_5.png"
+    table_10:
+      id: "table_10"
+      canonical_id: "artifact_table_10"
+      path: "results/tables/table_10.csv"
+    figure_5a:
+      id: "figure_5a"
+      canonical_id: "artifact_figure_5a"
+      path: "results/figures/figure_5a.png"
+    result_table:
+      id: "result_table"
+      path: "results/tables/result_table.csv"
+    table2_reproduction:
+      path: "results/table2_reproduction.csv"
+    table3_reproduction:
+      path: "results/table3_reproduction.csv"
+    evidence_contract_matrix:
+      path: "results/evidence_contract_matrix.json"
+    experiment_registry:
+      path: "results/experiment_registry.json"
+    metrics_json:
+      path: "results/metrics.json"
+    environment_registry:
+      path: "results/environment_registry.json"
+    dataset_registry:
+      path: "results/dataset_registry.json"
+    artifact_manifest:
+      path: "results/artifact_manifest.json"
+    sensitivity_report:
+      path: "results/sensitivity_report.json"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# Active route closure: wire symbols
+# These are used by the runner to call the correct implementations.
+registry_hooks:
+  loss_fn: "src.apt.engine.trainer.compute_loss"
+  agg_loss_fn: "src.apt.engine.trainer.aggregate_loss"
+  reward_fn: "src.apt.engine.trainer.compute_reward"
+  agg_reward_fn: "src.apt.engine.trainer.aggregate_reward"
+  objective_fn: "src.apt.engine.trainer.compute_ours_oradaptersby_inventory_objective"
+  score_fn: "src.apt.engine.trainer.compute_ours_oradaptersby_inventory_score"
+  wrapper_fn: "src.models.wrapper.build_wrapper"
+  load_pipeline_fn: "src.apt.data.pipeline.load_pipeline"
+  prepare_pipeline_fn: "src.apt.data.pipeline.prepare_pipeline"
+  train_trainer_fn: "src.apt.engine.trainer.train_trainer"
+  run_training_loop_fn: "src.apt.engine.trainer.run_training_loop"
+  train_ours_fn: "src.apt.engine.trainer.train_ours_oradaptersby_inventory"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# Smoke mode configuration
+smoke_mode:
+  max_steps: 10
+  batch_size: 2
+  dataset_subset: 100
+  active: true

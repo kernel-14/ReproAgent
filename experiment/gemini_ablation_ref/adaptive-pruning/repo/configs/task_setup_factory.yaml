@@ -1,0 +1,264 @@
+# reference_grounding: paper:paper_task_environment_setup (chunk_017, chunk_006, chunk_007)
+# reference_grounding: paper:unit_004 (chunk_015)
+# reference_grounding: paper:unit_005 (chunk_017)
+# reference_grounding: paper:unit_002 (chunk_011)
+# reference_grounding: paper:unit_016 (chunk_016)
+# reference_grounding: paper:paper_contract_sweep_hyperparameter_protocol (chunk_028)
+
+# Task Setup Factory Configuration for APT Reproduction
+
+environments:
+  unit-004:
+    id: "unit-004"
+    alias: "main_evaluation_env"
+    setup_metadata:
+      models: ["bert", "roberta", "t5", "llama"]
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+  
+  t5:
+    id: "t5"
+    alias: "t5_task_env"
+    setup_metadata:
+      model_type: "encoder-decoder"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+
+  llama_commonsense:
+    id: "llama commonsense"
+    alias: "llama_eval_env"
+    setup_metadata:
+      tasks: ["boolq", "piqa", "siqa", "hellaswag", "winogrande", "arc_e", "arc_c", "obqa"]
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+
+  unit-005:
+    id: "unit-005"
+    alias: "efficiency_profiling_env"
+    setup_metadata:
+      metrics: ["Train. Mem.", "TTA", "Inf. Mem.", "Inf. Speed"]
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+
+  squad:
+    id: "squad"
+    alias: "squad_v2"
+    setup_metadata:
+      version: "2.0"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+
+  glue:
+    id: "glue"
+    alias: "glue_benchmark"
+    setup_metadata:
+      tasks: ["sst2", "mnli"]
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+    config_hook: "src.data.task_setup_factory.load_task_setup_factory"
+
+  pruning_roberta_similar:
+    id: "pruning roberta models targeting similar"
+    alias: "roberta_pruning_env"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+
+  apt_consistently_higher:
+    id: "apt consistently reach higher"
+    alias: "apt_performance_env"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+
+  salience_notably_hurts:
+    id: "salience notably hurts"
+    alias: "ablation_salience_env"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+
+  sst2:
+    id: "sst2"
+    alias: "sst2_task"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+
+  open_llm_leaderboard:
+    id: "open llm leaderboard few-shot"
+    alias: "llm_leaderboard_env"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+
+  fine_tuning_no_hurt:
+    id: "fine-tuning will not hurt their"
+    alias: "ft_stability_env"
+    availability_check: "src.data.task_setup_factory.check_task_setup_factory_available"
+
+datasets:
+  SST2:
+    id: "SST2"
+    setup_metadata: {source: "glue", split: "train/dev"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+    config_hook: "src.data.task_setup_factory.make_task_setup_factory"
+  
+  MNLI:
+    id: "MNLI"
+    setup_metadata: {source: "glue", split: "train/dev"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+    config_hook: "src.data.task_setup_factory.make_task_setup_factory"
+
+  SQuAD_v2:
+    id: "SQuAD v2.0"
+    setup_metadata: {version: "2.0"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+    config_hook: "src.data.task_setup_factory.make_task_setup_factory"
+
+  CNN_DailyMail:
+    id: "CNN/DailyMail"
+    setup_metadata: {version: "3.0.0"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+    config_hook: "src.data.task_setup_factory.make_task_setup_factory"
+
+  BoolQ:
+    id: "BoolQ"
+    setup_metadata: {source: "super_glue"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+
+  PIQA:
+    id: "PIQA"
+    setup_metadata: {source: "piqa"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+
+  SIQA:
+    id: "SIQA"
+    setup_metadata: {source: "siqa"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+
+  HellaSwag:
+    id: "HellaSwag"
+    setup_metadata: {source: "hellaswag"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+
+  WinoGrande:
+    id: "WinoGrande"
+    setup_metadata: {source: "winogrande"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+
+  ARC-e:
+    id: "ARC-e"
+    setup_metadata: {source: "arc"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+
+  ARC-c:
+    id: "ARC-c"
+    setup_metadata: {source: "arc"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+
+  OBQA:
+    id: "OBQA"
+    setup_metadata: {source: "openbookqa"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+
+  glue:
+    id: "glue"
+    setup_metadata: {benchmark: "GLUE"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+
+  truthfulqa:
+    id: "truthfulqa"
+    setup_metadata: {source: "truthful_qa"}
+    validation_check: "src.data.task_setup_factory.prepare_task_setup_factory"
+
+methods:
+  ours:
+    id: "ours"
+    alias: "apt"
+    factory: "src.apt.engine.trainer.APTTrainer"
+  
+  bert:
+    id: "bert"
+    factory: "src.models.wrapper.build_wrapper"
+  
+  roberta:
+    id: "roberta"
+    factory: "src.models.wrapper.build_wrapper"
+  
+  t5:
+    id: "t5"
+    factory: "src.models.wrapper.build_wrapper"
+  
+  fine_tuning:
+    id: "fine_tuning"
+    alias: "ft"
+    factory: "src.apt.engine.trainer.run_training_loop"
+  
+  lora:
+    id: "lora"
+    factory: "src.models.wrapper.build_wrapper"
+  
+  test_time_adaptation:
+    id: "test_time_adaptation"
+    alias: "tta"
+    factory: "src.apt.engine.trainer.run_training_loop"
+
+  # reference_grounding: paper:unit_016 (chunk_016)
+  # Implement the CoFi baseline with LoRA and L0 module controls plus default hyperparameters.
+  cofi:
+    id: "cofi"
+    use_lora: true
+    use_l0: true
+    hyperparameters:
+      l0_lambda: 0.1
+      distill_weight: 1.0
+      learning_rate: 2e-5
+      batch_size: 32
+
+hyperparameters:
+  # reference_grounding: paper:unit_002 (chunk_011)
+  # early_training_steps (t << T)
+  early_training_steps: 100
+  
+  # reference_grounding: paper:paper_contract_sweep_hyperparameter_protocol (chunk_028)
+  10_shot_setting:
+    num_shots: 10
+  
+  batch_size_128:
+    value: 128
+  
+  batch_size_32:
+    value: 32
+
+  # Bounded sweep entries
+  batch_size: [32, 64, 128]
+
+measurements:
+  accuracy: "src.reporting.task_setup_factory.aggregate_accuracy"
+  runtime: "src.reporting.task_setup_factory.compute_data_pipeline_metric_data_pipeline_artifactcontext_score"
+  training_time: "src.reporting.task_setup_factory.compute_data_pipeline_metric_data_pipeline_artifactcontext_objective"
+
+artifacts:
+  table_1:
+    path: "results/tables/table_1.csv"
+    writer: "src.reporting.task_setup_factory.write_table_1_artifact"
+  
+  table_2:
+    path: "results/tables/table_2.csv"
+    runner: "src.reporting.task_setup_factory.run_table_2_route"
+    writer: "src.reporting.task_setup_factory.write_table_2_artifact"
+  
+  table_3:
+    path: "results/tables/table_3.csv"
+    writer: "src.reporting.task_setup_factory.write_table_3_artifact"
+
+  table_4:
+    path: "results/tables/table_4.csv"
+    writer: "src.reporting.task_setup_factory.write_table_4_artifact"
+
+  table_11:
+    path: "results/tables/table_11.csv"
+    runner: "src.reporting.task_setup_factory.run_table_11_route"
+    writer: "src.reporting.task_setup_factory.write_table_11_artifact"
+
+  table_12:
+    path: "results/tables/table_12.csv"
+    writer: "src.reporting.task_setup_factory.write_table_12_artifact"
+
+  figure_1:
+    path: "results/figures/figure_1.png"
+    writer: "src.reporting.task_setup_factory.write_figure_1_artifact"
+
+  figure_2:
+    path: "results/figures/figure_2.png"
+    writer: "src.reporting.task_setup_factory.write_figure_2_artifact"

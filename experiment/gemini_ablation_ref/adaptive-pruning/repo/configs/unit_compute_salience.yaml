@@ -1,0 +1,239 @@
+# reference_grounding: paper:unit_002 (chunk_011)
+# APT: Adaptive Pruning and Tuning Pretrained Language Models for Efficient Training and Inference.
+# Configuration for Salience Computation and Pruning Mask Search.
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# Environment/Task Factories
+environments:
+  unit-004:
+    id: "unit-004"
+    alias: "main_repro_env"
+    metadata:
+      models: ["bert", "roberta", "t5", "llama"]
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  t5:
+    id: "t5"
+    alias: "t5_env"
+    metadata:
+      model: "t5-base"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  llama_commonsense:
+    id: "llama commonsense"
+    alias: "llama_env"
+    metadata:
+      tasks: ["BoolQ", "PIQA", "SIQA", "HellaSwag", "WinoGrande", "ARC-e", "ARC-c", "OBQA"]
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  unit-005:
+    id: "unit-005"
+    alias: "efficiency_env"
+    metadata:
+      metrics: ["memory", "tta", "throughput"]
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  squad:
+    id: "squad"
+    alias: "squad_v2"
+    metadata:
+      version: "2.0"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  glue:
+    id: "glue"
+    alias: "glue_benchmark"
+    metadata:
+      tasks: ["sst2", "mnli"]
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  pruning_roberta_similar:
+    id: "pruning roberta models targeting similar"
+    alias: "roberta_pruning"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  apt_consistently_higher:
+    id: "apt consistently reach higher"
+    alias: "apt_performance_claim"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  salience_notably_hurts:
+    id: "salience notably hurts"
+    alias: "salience_ablation"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  sst2:
+    id: "sst2"
+    alias: "sst2_task"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  open_llm_leaderboard:
+    id: "open llm leaderboard few-shot"
+    alias: "llm_leaderboard"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  fine_tuning_no_hurt:
+    id: "fine-tuning will not hurt their"
+    alias: "ft_baseline_claim"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# Dataset/Benchmark Loaders
+datasets:
+  SST2:
+    id: "SST2"
+    alias: "glue"
+    setup_metadata: {task: "classification", num_labels: 2}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  MNLI:
+    id: "MNLI"
+    alias: "glue"
+    setup_metadata: {task: "classification", num_labels: 3}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  SQuAD_v2:
+    id: "SQuAD v2.0"
+    alias: "squad"
+    setup_metadata: {task: "qa", version: "2.0"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  CNN_DailyMail:
+    id: "CNN/DailyMail"
+    setup_metadata: {task: "summarization"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  BoolQ:
+    id: "BoolQ"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  PIQA:
+    id: "PIQA"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  SIQA:
+    id: "SIQA"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  HellaSwag:
+    id: "HellaSwag"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  WinoGrande:
+    id: "WinoGrande"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  ARC-e:
+    id: "ARC-e"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  ARC-c:
+    id: "ARC-c"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  OBQA:
+    id: "OBQA"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  glue:
+    id: "glue"
+    alias: "glue"
+    setup_metadata: {benchmark: "GLUE"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  truthfulqa:
+    id: "truthfulqa"
+    alias: "truthfulqa"
+    setup_metadata: {task: "qa"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# Method/Baseline Selectors
+methods:
+  ours:
+    id: "apt"
+    alias: "ours"
+    salience_fn: "src.apt.pruning.salience.compute_salience_scores"
+    search_fn: "src.apt.pruning.search.search_pruning_masks"
+  bert:
+    id: "bert"
+  roberta:
+    id: "roberta"
+  t5:
+    id: "t5"
+  fine_tuning:
+    id: "ft"
+    alias: "fine_tuning"
+  lora:
+    id: "lora"
+  test_time_adaptation:
+    id: "tta"
+    alias: "test_time_adaptation"
+  # reference_grounding: paper:unit_016 (chunk_016)
+  # Implement the CoFi baseline with LoRA and L0 module controls plus default hyperparameters.
+  cofi:
+    id: "cofi"
+    use_lora: true
+    use_l0: true
+    hyperparameters:
+      l0_lambda: 0.1
+      distill_weight: 1.0
+      learning_rate: 2e-5
+      batch_size: 32
+
+# reference_grounding: paper:unit_002 (chunk_011)
+# Parameter Sweeps and Fixed Hyperparameters
+hyperparameters:
+  # early_training_steps (t << T)
+  early_training_steps:
+    default: 100
+    sweep: [50, 100, 200, 500]
+  
+  # batch_size
+  batch_size:
+    default: 32
+    sweep: [32, 128]
+    anchors:
+      batch_size_32: 32
+      batch_size_128: 128
+
+  # 10_shot_setting
+  few_shot:
+    anchors:
+      10_shot_setting: 10
+
+# reference_grounding: paper:unit_002 (chunk_011)
+# Pruning Algorithm Configuration
+pruning:
+  compute_salience_scores: "src.apt.pruning.salience.compute_salience_scores"
+  search_pruning_masks: "src.apt.pruning.search.search_pruning_masks"
+  salience:
+    method: "outlier_aware"
+    implementation: "src.apt.pruning.salience.compute_salience_scores"
+    notes: "Computes salience scores of parameter blocks at each early-training step when t << T."
+  search:
+    method: "fast_search"
+    implementation: "src.apt.pruning.search.search_pruning_masks"
+    notes: "Determines optimal pruning masks m_i and m_o."
+
+# reference_grounding: paper:unit_002 (chunk_011)
+# Hypothesis: Pruning LM parameter blocks early in training using an outlier-aware salience score maintains training stability while reducing costs.
+# Decision value: Validates the core efficiency claim that pruning can occur at t << T without significant performance degradation.
+reproduction_scope:
+  active: true
+  hypothesis: "Pruning LM parameter blocks early in training using an outlier-aware salience score maintains training stability while reducing costs."
+  decision_value: "Validates the core efficiency claim that pruning can occur at t << T without significant performance degradation."
+  output_paths:
+    metrics: "results/metrics.json"
+    table_2: "results/tables/table_2.csv"
+    figure_1: "results/figures/figure_1.png"

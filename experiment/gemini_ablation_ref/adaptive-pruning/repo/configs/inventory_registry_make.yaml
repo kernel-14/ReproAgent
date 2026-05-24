@@ -1,0 +1,197 @@
+# reference_grounding: paper:paper_dataset_inventory (chunk_017, chunk_008, chunk_011)
+# reference_grounding: paper:unit_004 (chunk_015)
+# reference_grounding: paper:unit_005 (chunk_017)
+# reference_grounding: paper:unit_002 (chunk_011)
+# reference_grounding: paper:unit_016 (chunk_016)
+# reference_grounding: paper:paper_contract_sweep_hyperparameter_protocol (chunk_028)
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# Environment/Task Factories
+environments:
+  unit-004:
+    id: "unit-004"
+    alias: "main_repro_env"
+    metadata:
+      description: "Main evaluation environment for BERT, RoBERTa, T5, and LLaMA"
+      models: ["bert", "roberta", "t5", "llama"]
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+  t5:
+    id: "t5"
+    alias: "t5_env"
+    metadata:
+      description: "T5 specific tasks like CNN/DailyMail"
+      model: "t5-base"
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+  llama_commonsense:
+    id: "llama commonsense"
+    alias: "llama_env"
+    metadata:
+      tasks: ["BoolQ", "PIQA", "SIQA", "HellaSwag", "WinoGrande", "ARC-e", "ARC-c", "OBQA"]
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+  unit-005:
+    id: "unit-005"
+    alias: "efficiency_env"
+    metadata:
+      description: "Environment for profiling training and inference efficiency"
+      metrics: ["memory", "tta", "throughput"]
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+  squad:
+    id: "squad"
+    alias: "squad"
+    metadata:
+      version: "2.0"
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+  glue:
+    id: "glue"
+    alias: "glue"
+    metadata:
+      tasks: ["SST2", "MNLI"]
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+  pruning_roberta_similar:
+    id: "pruning roberta models targeting similar"
+    alias: "roberta_pruning"
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+  apt_consistently_higher:
+    id: "apt consistently reach higher"
+    alias: "apt_performance_claim"
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+  salience_notably_hurts:
+    id: "salience notably hurts"
+    alias: "ablation_claim"
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+  sst2:
+    id: "sst2"
+    alias: "sst2_task"
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+  open_llm_leaderboard:
+    id: "open llm leaderboard few-shot"
+    alias: "leaderboard_env"
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+  fine_tuning_no_hurt:
+    id: "fine-tuning will not hurt their"
+    alias: "ft_stability_claim"
+    availability_check: "src.data.inventory_registry_make.check_env_available"
+    config_hook: "src.data.inventory_registry_make.load_inventory_registry_make"
+
+# reference_grounding: paper:paper_dataset_inventory (chunk_017, chunk_008, chunk_011)
+# Dataset/Benchmark Loaders
+datasets:
+  SST2:
+    id: "SST2"
+    alias: "glue"
+    loader: "src.data.inventory_registry_make.load_inventory_registry_make"
+    validation: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+    metadata: {split: "dev"}
+  MNLI:
+    id: "MNLI"
+    alias: "glue"
+    loader: "src.data.inventory_registry_make.load_inventory_registry_make"
+    validation: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+  SQuAD_v2:
+    id: "SQuAD v2.0"
+    alias: "squad"
+    loader: "src.data.inventory_registry_make.load_inventory_registry_make"
+    validation: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+  CNN_DailyMail:
+    id: "CNN/DailyMail"
+    alias: "cnn_dm"
+    loader: "src.data.inventory_registry_make.load_inventory_registry_make"
+    validation: "src.data.inventory_registry_make.prepare_inventory_registry_make"
+  BoolQ: {id: "BoolQ", alias: "llama_commonsense"}
+  PIQA: {id: "PIQA", alias: "llama_commonsense"}
+  SIQA: {id: "SIQA", alias: "llama_commonsense"}
+  HellaSwag: {id: "HellaSwag", alias: "llama_commonsense"}
+  WinoGrande: {id: "WinoGrande", alias: "llama_commonsense"}
+  ARC-e: {id: "ARC-e", alias: "llama_commonsense"}
+  ARC-c: {id: "ARC-c", alias: "llama_commonsense"}
+  OBQA: {id: "OBQA", alias: "llama_commonsense"}
+  glue: {id: "glue", alias: "glue"}
+  truthfulqa: {id: "truthfulqa", alias: "truthfulqa"}
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# Method/Baseline Selectors
+methods:
+  ours: {id: "apt", alias: "ours"}
+  bert: {id: "bert"}
+  roberta: {id: "roberta"}
+  t5: {id: "t5"}
+  fine_tuning: {id: "ft", alias: "fine_tuning"}
+  lora: {id: "lora"}
+  test_time_adaptation: {id: "tta", alias: "test_time_adaptation"}
+  # reference_grounding: paper:unit_016 (chunk_016)
+  cofi:
+    id: "cofi"
+    use_lora: true
+    use_l0: true
+    hyperparameters:
+      l0_lambda: 0.1
+      distill_weight: 1.0
+
+# reference_grounding: paper:unit_002 (chunk_011)
+# reference_grounding: paper:paper_contract_sweep_hyperparameter_protocol (chunk_028)
+# Parameter Sweeps and Fixed Hyperparameters
+parameters:
+  early_training_steps:
+    id: "early_training_steps (t << T)"
+    sweep: [0.05, 0.1, 0.2]
+    default: 0.1
+  batch_size:
+    id: "batch_size"
+    sweep: [32, 128]
+    default: 32
+  10_shot_setting:
+    id: "10_shot_setting"
+    fixed: 10
+  batch_size_128:
+    id: "batch_size_128"
+    fixed: 128
+  batch_size_32:
+    id: "batch_size_32"
+    fixed: 32
+  seeds:
+    id: "seeds"
+    values: [42, 43, 44]
+
+# reference_grounding: paper:unit_005 (chunk_017)
+# Metrics and Aggregation
+metrics:
+  accuracy: {id: "accuracy", aggregation: "mean"}
+  runtime: {id: "runtime", aggregation: "sum"}
+  training_time: {id: "training time", aggregation: "sum"}
+
+# reference_grounding: paper:paper_evidence_matrix (chunk_017, chunk_019, chunk_020)
+# Artifact Paths
+artifacts:
+  dataset_registry: "results/dataset_registry.json"
+  data_manifest: "results/data_manifest.json"
+  figure_1: "results/figures/figure_1.png"
+  table_1: "results/tables/table_1.csv"
+  figure_2: "results/figures/figure_2.png"
+  table_2: "results/tables/table_2.csv"
+  table_4: "results/tables/table_4.csv"
+  table_11: "results/tables/table_11.csv"
+  table_3: "results/tables/table_3.csv"
+  table_12: "results/tables/table_12.csv"
+  figure_3: "results/figures/figure_3.png"
+  table_5: "results/tables/table_5.csv"
+  table_7: "results/tables/table_7.csv"
+  table_8: "results/tables/table_8.csv"
+  table_9: "results/tables/table_9.csv"
+  figure_4: "results/figures/figure_4.png"
+  figure_5: "results/figures/figure_5.png"
+  table_10: "results/tables/table_10.csv"
+
+reproduction_scope:
+  active: true
+  notes: "Reproduction focuses on RoBERTa and T5 models as per addendum."

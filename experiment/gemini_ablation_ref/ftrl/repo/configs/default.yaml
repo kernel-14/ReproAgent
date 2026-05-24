@@ -1,0 +1,204 @@
+# configs/default.yaml
+# Configuration for Fine-tuning Reinforcement Learning Models is Secretly a Forgetting Mitigation Problem
+
+# Global experiment settings
+experiment:
+  seed: 42
+  mode: "runtime_smoke" # or "full"
+  artifact_dir: "results"
+
+# Paper evidence contract: expose method/baseline/attack selectors
+methods:
+  selectors:
+    - "ours"
+    - "ppo"
+    - "sac"
+    - "bc"
+    - "oracle"
+    - "nle"
+    - "ewc"
+    - "vanilla"
+    - "scratch"
+    - "scaled-bc + fine-tuning + ks"
+    - "Fine-tuning + BC"
+  default_method: "ours"
+
+# Paper evidence contract: explicitly register environment/task aliases and factories
+environments:
+  selectors:
+    - "nethack"
+    - "montezuma"
+    - "robotics"
+  aliases:
+    nethack: ["NetHack", "nethack learning", "NLE"]
+    montezuma: ["Montezuma's Revenge", "arcade learning", "Atari"]
+    robotics: ["RoboticSequence", "robotics", "push-wall"]
+  
+  # Setup metadata and availability checks
+  factories:
+    nethack:
+      id: "NetHack-v0"
+      setup_metadata:
+        difficulty: "standard"
+        metrics:
+          - "gold score"
+          - "eating score"
+          - "staircase score"
+          - "scout score"
+          - "experience points"
+          - "dungeon depth"
+      availability_check: "importlib.util.find_spec('nle')"
+    montezuma:
+      id: "MontezumaRevenge-v4"
+      setup_metadata:
+        difficulty: "standard"
+        metrics:
+          - "reward"
+          - "return"
+      availability_check: "importlib.util.find_spec('gym')"
+    robotics:
+      id: "RoboticSequence-v0"
+      setup_metadata:
+        task: "push-wall"
+        metrics:
+          - "success_rate"
+          - "reward"
+      availability_check: "importlib.util.find_spec('continual_world')"
+
+# Paper evidence contract: explicitly register dataset/benchmark aliases and loaders
+datasets:
+  selectors:
+    - "robotics"
+    - "nld-aa-v0"
+    - "nld-nao-v0"
+  aliases:
+    robotics: ["RoboticSequenceDataset", "robotics_data"]
+    nld-aa-v0: ["TtyrecDataset", "nethack_data"]
+  loaders:
+    robotics:
+      id: "robotics_dataset"
+      setup_metadata:
+        path: "data/robotics"
+      validation_check: "os.path.exists('data/robotics')"
+    nld-aa-v0:
+      id: "ttyrec_dataset_nld_aa_v0"
+      setup_metadata:
+        path: "/path/to/nld-aa"
+        batch_size: 128 # fixed hyperparameter anchor batch_size_128
+      validation_check: "os.path.exists('/path/to/nld-aa')"
+
+# Hyperparameters and sweeps
+hyperparameters:
+  # Expose bounded sweep/config entries for learning_rate and batch_size
+  learning_rate:
+    default: 0.0003
+    sweep: [0.00001, 0.00003, 0.0001, 0.0003, 0.001]
+  batch_size:
+    default: 128 # fixed hyperparameter anchor batch_size_128
+    sweep: [32, 64, 128, 256]
+  
+  # Expose required parameter sweeps as executable constants/default accessors: [ewc_lambda]
+  ewc_lambda:
+    default: 2.0
+    sweep: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+
+# Paper formula/algorithm symbol inventory and numeric/default anchors
+formula_anchors:
+  addendum:
+    symbols:
+      add_nledata_directory: "nld.add_nledata_directory"
+      add_altorg_directory: "nld.add_altorg_directory"
+      TtyrecDataset_nld_aa_v0_batch_size_128: "nld.TtyrecDataset('nld-aa-v0', batch_size=128)"
+      batch_size: 128
+    numeric_defaults:
+      anchor_128: 128
+      anchor_2: 2
+      anchor_0: 0
+      anchor_9: 9
+      anchor_1: 1
+      anchor_0_11: 0.11
+      anchor_2_22: 2.22
+      anchor_0_5: 0.5
+      anchor_10: 10
+      anchor_0_08: 0.08
+      anchor_9_93: 9.93
+      anchor_13: 13
+      anchor_11: 11
+      anchor_30: 30
+      anchor_200: 200
+      anchor_1_5: 1.5
+    algorithm_terms: ["algorithm", "distill", "compute"]
+    steps: "The 'from scratch' model doesn't use any behavioral cloning"
+
+  two_state_mdp:
+    symbols:
+      theta: 0.5
+      gamma: 0.9
+      f_theta: "f_theta"
+      epsilon: 0.11
+      s_0: "s_0"
+      v_0: "v_0"
+      r_0: 0.0
+      r_1: 1.0
+      s_1: "s_1"
+      f_0: 0.0
+      f_1: 1.0
+    numeric_defaults:
+      theta_init: 0.5
+      gamma: 0.9
+      r_0: 0.0
+      r_1: 1.0
+      epsilon: 0.11
+      v_0_limit: 2.22
+      f_theta_limit: 2.0
+      max_steps: 10
+    algorithm_terms: ["gradient"]
+    steps: "The value of state s_0 equals v_0(theta) = 1/(1-gamma) * ..."
+
+  apple_retrieval:
+    symbols:
+      pi_w_b: "pi_w,b"
+      sigma: "sigma"
+      asset_13: "asset_13"
+    numeric_defaults:
+      phase_1_reward: 1.0
+      phase_2_reward: -1.0
+      c_param: 2.0
+      M_grid: 13
+      obs_dim: 11
+      max_turns: 30
+    algorithm_terms: ["algorithm", "gradient", "ema", "increase"]
+    steps: "We can guide the model towards focusing on one or the other by setting the c parameter"
+
+  forgetting_capabilities:
+    symbols:
+      L_aux: "L_aux"
+      theta: "theta"
+      sum_i: "sum_i"
+      F_i: "F^i"
+      theta_star_i: "theta_*^i"
+      theta_i: "theta^i"
+      theta_star: "theta_*"
+      L_BC: "L_BC"
+      B_BC: "B_BC"
+      D_KL: "D_KL"
+      pi_star: "pi_*"
+      pi_theta: "pi_theta"
+      L_KS: "L_KS"
+    numeric_defaults:
+      ewc_lambda: 2.0
+    algorithm_terms: ["loss", "objective", "sample", "initialize"]
+    steps: "EWC is a regularization-based approach that applies a penalty on parameter changes by introducing an auxiliary loss"
+
+  distillation_methods:
+    symbols:
+      D_KL_s: "D_KL^s"
+      pi_theta: "pi_theta"
+      theta: "theta"
+      pi_star: "pi_*"
+      L_BC: "L_BC"
+      B_theta: "B_theta"
+      L_KS: "L_KS"
+      E_asimpcdotmids: "E_asimpcdotmids"
+    algorithm_terms: ["loss", "teacher", "student"]
+    steps: "In behavioral cloning, we apply the following loss: L_BC(theta) = E_{s ~ B}[D_KL^s(pi_theta || pi_*)]"

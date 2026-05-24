@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stay-on-topic-cfg"
+version = "0.1.0"
+description = "Faithful reproduction of Classifier-Free Guidance for Language Models"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "Paperbench Repro Agent" }
+]
+dependencies = [
+    "numpy>=1.20.0",
+    "pandas>=1.3.0",
+    "matplotlib>=3.4.0",
+    "pyyaml>=6.0",
+    "jinja2>=3.0.0",
+]
+
+[project.optional-dependencies]
+heavy = [
+    "torch>=1.12.0",
+    "transformers>=4.20.0",
+    "accelerate>=0.12.0",
+    "scikit-learn>=1.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.0.0",
+]
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.paperbench]
+# Global reproduction metadata and environment registry configuration
+environment_registry_path = "results/environment_registry.json"
+environment_readiness_path = "results/environment_readiness.json"
+
+[tool.paperbench.environments]
+# Explicit environment/task coverage and initialization surfaces
+humanoid = { type = "humanoid", decides_which = "humanoid_task", config_tests_artifact_writer_expose_explicit = true }
+glue = { type = "glue", decides_which = "glue_task", config_tests_artifact_writer_expose_explicit = true }
+
+[tool.paperbench.experiments]
+# Core method claim testable on the paper's named environment families
+ours = { baseline_outperformance = true }
+chain_of_thought = { baseline_outperformance = true }
+bert = { baseline_outperformance = true }
+
+[tool.paperbench.formulas]
+# 3.3.1. PROGRAM SYNTHESIS EVALUATIONS
+# We test different CFG strength gamma and different temperatures, evaluating at pass@k for k=1,10,100.
+program_synthesis = { symbols = ["gamma"], numeric_defaults = [4, 8, 2, 3, 1, 10, 100, 0.2], algorithm_terms = ["increase"], formula = "pass@k for k=1,10,100" }
+
+# 5.3. Visualizing Classifier-Free Guidance
+# We visualize the vocabulary at each timestep ranked by the difference log P(w_t | w_<t) - log P(w_T | w_hat)
+visualizing_cfg = { symbols = ["w_t", "w_<t", "w_T", "w_hat", "c_bar"], numeric_defaults = [3], algorithm_terms = ["rank"], formula = "log P(w_t | w_<t) - log P(w_T | w_hat)" }
+
+# C.5. Deliberative Prompting: Chain-of-Thought
+# In each cell, the first value is the result for gamma=1 (baseline) and the second value is the result for gamma=1.5 (ours).
+cot_prompting = { symbols = ["gamma"], numeric_defaults = [1, 1.5, 14, 0.8, 15, 0.6], formula = "gamma=1 vs gamma=1.5" }
+
+# Return a red square on a 32x32 picture
+# We produce 1600 completions for each CFG strength gamma = 1.0, 2.0.
+red_square = { symbols = ["gamma"], numeric_defaults = [1600, 1.0, 2.0, 1, 1.25, 1.5, 1.75, 73], formula = "draw() -> np.ndarray" }
+
+# G.2. User prompts
+# We also know that 20% of the swim team is not in the chess club, which we can write as 0.2 = 1 - P(C | S).
+user_prompts = { numeric_defaults = [8, 20, 0.2, 1, 0.24, 0.52, 3, 2.67], algorithm_terms = ["student"], formula = "0.2 = 1 - P(C | S)" }
+
+# 2.1. Classifier Guidance in Text-to-Image Models
+# log P_hat(epsilon_t | x_t+1, c) = gamma * log P_theta(epsilon_t | x_t+1, c) - (gamma - 1) * log P_theta(epsilon_t | x_t+1)
+classifier_guidance = { symbols = ["P_theta", "P_phi", "gamma", "theta", "epsilon_t", "x_t+1"], numeric_defaults = [4, 1, 0, 3], algorithm_terms = ["equation", "ema", "sample"], steps = ["log P_hat(epsilon_t | x_t+1, c) = gamma * log P_theta(epsilon_t | x_t+1, c) - (gamma - 1) * log P_theta(epsilon_t | x_t+1)"] }
+
+# 3.1. Basic Prompting: Zero-Shot Prompts
+# LLaMA 7B model achieves 81% accuracy in Lambada (OpenAI) zero-shot benchmark with gamma=1.5, outperforming PaLM-540B (77.9%).
+zero_shot_prompts = { symbols = ["gamma"], numeric_defaults = [81, 1.5, 77.9] }
+
+# 3.4. Negative Prompting: Improving Assistants
+# To test this approach with chatbots, we generate system-prompts, n_c=25, and user-prompts, n_p=46, and sample 1740 random combinations of them.
+negative_prompting = { symbols = ["c_bar", "n_c", "n_p", "gamma"], numeric_defaults = [5, 25, 46, 1740, 3, 75, 1, 52], algorithm_terms = ["equation", "sample"] }
+
+[tool.paperbench.artifacts]
+# Concrete reproduction artifacts for result verification
+table_1615 = { path = "results/tables/table_1615.csv", description = "Qualitative comparison table" }
+figure_3 = { path = "results/figures/figure_3.png", description = "HumanEval task count comparison between gamma=1, 1.25 for CodeGen-350M-mono" }

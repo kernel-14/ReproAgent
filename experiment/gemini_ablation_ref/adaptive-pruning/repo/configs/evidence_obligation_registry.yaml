@@ -1,0 +1,267 @@
+# reference_grounding: paper:paper_evidence_matrix (chunk_017, chunk_019, chunk_020)
+# Evidence Obligation Registry for APT reproduction.
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# reference_grounding: paper:unit_005 (chunk_017)
+environments:
+  unit-004:
+    id: "unit-004"
+    alias: "apt_main_env"
+    metadata:
+      models: ["bert", "roberta", "t5", "llama"]
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  t5:
+    id: "t5"
+    alias: "t5_env"
+    metadata:
+      model: "t5-base"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  llama_commonsense:
+    id: "llama commonsense"
+    alias: "llama_env"
+    metadata:
+      tasks: ["boolq", "piqa", "siqa", "hellaswag", "winogrande", "arc_e", "arc_c", "obqa"]
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  unit-005:
+    id: "unit-005"
+    alias: "efficiency_env"
+    metadata:
+      metrics: ["memory", "tta", "throughput"]
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  squad:
+    id: "squad"
+    alias: "squad_v2"
+    metadata:
+      version: "2.0"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  glue:
+    id: "glue"
+    alias: "glue_benchmark"
+    metadata:
+      tasks: ["sst2", "mnli"]
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  pruning_roberta_similar:
+    id: "pruning roberta models targeting similar"
+    alias: "roberta_pruning"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  apt_higher:
+    id: "apt consistently reach higher"
+    alias: "apt_performance"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  salience_hurts:
+    id: "salience notably hurts"
+    alias: "salience_ablation"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  sst2:
+    id: "sst2"
+    alias: "sst2_task"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  open_llm_leaderboard:
+    id: "open llm leaderboard few-shot"
+    alias: "few_shot_eval"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  fine_tuning_not_hurt:
+    id: "fine-tuning will not hurt their"
+    alias: "ft_stability"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+datasets:
+  SST2:
+    id: "SST2"
+    alias: "glue"
+    metadata:
+      source: "huggingface:glue:sst2"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "configs/inventory_registry_make.yaml"
+  MNLI:
+    id: "MNLI"
+    alias: "glue"
+    metadata:
+      source: "huggingface:glue:mnli"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "configs/inventory_registry_make.yaml"
+  SQuAD_v2.0:
+    id: "SQuAD v2.0"
+    alias: "squad"
+    metadata:
+      source: "huggingface:squad_v2"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "configs/inventory_registry_make.yaml"
+  CNN_DailyMail:
+    id: "CNN/DailyMail"
+    alias: "cnn_dm"
+    metadata:
+      source: "huggingface:cnn_dailymail"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "configs/inventory_registry_make.yaml"
+  BoolQ:
+    id: "BoolQ"
+    alias: "llama_commonsense"
+  PIQA:
+    id: "PIQA"
+    alias: "llama_commonsense"
+  SIQA:
+    id: "SIQA"
+    alias: "llama_commonsense"
+  HellaSwag:
+    id: "HellaSwag"
+    alias: "llama_commonsense"
+  WinoGrande:
+    id: "WinoGrande"
+    alias: "llama_commonsense"
+  ARC-e:
+    id: "ARC-e"
+    alias: "llama_commonsense"
+  ARC-c:
+    id: "ARC-c"
+    alias: "llama_commonsense"
+  OBQA:
+    id: "OBQA"
+    alias: "llama_commonsense"
+  glue:
+    id: "glue"
+    alias: "glue"
+  truthfulqa:
+    id: "truthfulqa"
+    alias: "truthfulqa"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+methods:
+  ours:
+    id: "ours"
+    alias: "apt"
+    selector: "apt"
+  bert:
+    id: "bert"
+    selector: "bert"
+  roberta:
+    id: "roberta"
+    selector: "roberta"
+  t5:
+    id: "t5"
+    selector: "t5"
+  fine_tuning:
+    id: "fine_tuning"
+    alias: "ft"
+    selector: "ft"
+  lora:
+    id: "lora"
+    selector: "lora"
+  test_time_adaptation:
+    id: "test_time_adaptation"
+    alias: "tta"
+    selector: "tta"
+  # reference_grounding: paper:unit_016 (chunk_016)
+  cofi:
+    id: "cofi"
+    alias: "cofi_baseline"
+    metadata:
+      use_lora: true
+      use_l0: true
+    hyperparameters:
+      l0_lambda: 0.1
+      distill_weight: 1.0
+      learning_rate: 2e-5
+      batch_size: 32
+
+# reference_grounding: paper:unit_002 (chunk_011)
+parameters:
+  early_training_steps:
+    id: "early_training_steps"
+    description: "early_training_steps (t << T)"
+    sweep_values: [0.05, 0.1, 0.2]
+    default: 0.1
+  batch_size:
+    id: "batch_size"
+    sweep_values: [32, 128]
+    default: 32
+
+# reference_grounding: paper:paper_contract_sweep_hyperparameter_protocol (chunk_028)
+hyperparameter_anchors:
+  10_shot_setting:
+    num_shots: 10
+  batch_size_128:
+    batch_size: 128
+  batch_size_32:
+    batch_size: 32
+
+# reference_grounding: paper:paper_evidence_matrix (chunk_017)
+metrics:
+  accuracy:
+    id: "accuracy"
+    aggregation: "src.apt.utils.metrics.aggregate_accuracy"
+  f1:
+    id: "f1"
+    aggregation: "src.apt.utils.metrics.aggregate_f1"
+  loss:
+    id: "loss"
+    aggregation: "src.apt.utils.metrics.aggregate_loss"
+  rouge:
+    id: "rouge"
+    aggregation: "src.apt.utils.metrics.aggregate_rouge"
+  training_time:
+    id: "training_time"
+    aggregation: "src.apt.utils.efficiency.aggregate_time"
+  training_cost:
+    id: "training_cost"
+    aggregation: "src.apt.utils.efficiency.aggregate_cost"
+  inference_cost:
+    id: "inference_cost"
+    aggregation: "src.apt.utils.efficiency.aggregate_cost"
+  memory_usage:
+    id: "memory_usage"
+    aggregation: "src.apt.utils.efficiency.aggregate_memory"
+  gpu_memory:
+    id: "gpu_memory"
+    aggregation: "src.apt.utils.efficiency.aggregate_memory"
+  F1:
+    id: "F1"
+    alias: "f1"
+
+# reference_grounding: paper:paper_evidence_matrix (chunk_017, chunk_019, chunk_020)
+artifacts:
+  evidence_contract_matrix: "results/evidence_contract_matrix.json"
+  experiment_registry: "results/experiment_registry.json"
+  metrics: "results/metrics.json"
+  environment_registry: "results/environment_registry.json"
+  dataset_registry: "results/dataset_registry.json"
+  artifact_manifest: "results/artifact_manifest.json"
+  sensitivity_report: "results/sensitivity_report.json"
+  figure_1: "results/figures/figure_1.png"
+  table_1: "results/tables/table_1.csv"
+  figure_2: "results/figures/figure_2.png"
+  table_2: "results/tables/table_2.csv"
+  table_3: "results/tables/table_3.csv"
+  table_4: "results/tables/table_4.csv"
+  table_5: "results/tables/table_5.csv"
+  table_7: "results/tables/table_7.csv"
+  table_8: "results/tables/table_8.csv"
+  table_9: "results/tables/table_9.csv"
+  figure_3: "results/figures/figure_3.png"
+  figure_4: "results/figures/figure_4.png"
+  figure_5: "results/figures/figure_5.png"
+  table_10: "results/tables/table_10.csv"
+  table_11: "results/tables/table_11.csv"
+  table_12: "results/tables/table_12.csv"
+  figure_5a: "results/figures/figure_5a.png"
+  result_table: "results/tables/result_table.csv"
+
+# reference_grounding: paper:paper_evidence_matrix (chunk_017, chunk_019, chunk_020)
+trends:
+  baseline_outperformance:
+    id: "baseline_outperformance"
+    description: "proposed method should be compared against explicit baselines"
+    assertion: "ours > baselines"

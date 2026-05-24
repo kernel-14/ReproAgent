@@ -1,0 +1,158 @@
+# reference_grounding: addendum:formula_algorithm_contract configs/default.yaml
+
+data_pipeline_setup:
+  dataset_registry:
+    squad:
+      id: "squad"
+      alias: "squad"
+      setup_metadata:
+        task_type: "question_answering"
+        can_perform_diverse_natural_language: true
+      availability_check: "check_squad_available"
+      runnable_config_hook: "load_squad"
+    glue:
+      id: "glue"
+      alias: "glue"
+      setup_metadata:
+        task_type: "classification"
+        can_perform_diverse_natural_language: true
+      availability_check: "check_glue_available"
+      runnable_config_hook: "load_glue"
+    p3_test:
+      id: "p3_test"
+      alias: "P3-Test"
+      setup_metadata:
+        task_type: "instruction_tuning"
+        can_perform_diverse_natural_language: true
+      availability_check: "check_p3_available"
+      runnable_config_hook: "load_p3_test"
+    d_pt:
+      id: "d_pt"
+      alias: "D_PT"
+      setup_metadata:
+        task_type: "pretraining"
+        examples_per_task: 100
+      availability_check: "check_d_pt_available"
+      runnable_config_hook: "load_d_pt"
+    d_r:
+      id: "d_r"
+      alias: "D_R"
+      setup_metadata:
+        task_type: "refinement"
+      availability_check: "check_d_r_available"
+      runnable_config_hook: "load_d_r"
+
+environment_registry:
+  bart_large:
+    id: "BART-Large"
+    alias: "bart-large"
+    setup_metadata:
+      model_name: "facebook/bart-large"
+      determines_which_adapters: "fine_tuning"
+    availability_check: "check_model_available"
+  flan_t5_large:
+    id: "FLAN-T5-Large"
+    alias: "flan-t5-large"
+    setup_metadata:
+      model_name: "google/flan-t5-large"
+      determines_which_adapters: "lora"
+    availability_check: "check_model_available"
+  flan_t5_3b:
+    id: "FLAN-T5-3B"
+    alias: "flan-t5-3b"
+    setup_metadata:
+      model_name: "google/flan-t5-xl"
+      determines_which_adapters: "lora"
+    availability_check: "check_model_available"
+
+experiment_i:
+  name: "Experiment I: Data Loading -> D_PT, D_R, P3-Test"
+  datasets: ["D_PT", "D_R", "P3-Test"]
+  metrics: ["accuracy", "f1"]
+
+forecasting_methods_implementation:
+  methods:
+    threshold:
+      name: "Threshold"
+      alias: "threshold"
+      algorithm: "frequency_threshold"
+      gamma: 1
+    trainable_logit:
+      name: "Trainable Logit"
+      alias: "trainable_logit"
+      algorithm: "logit_change_trainable"
+    fixed_logit:
+      name: "Fixed-Logit"
+      alias: "fixed_logit"
+      algorithm: "logit_change_fixed"
+    representation:
+      name: "Representation"
+      alias: "representation"
+      algorithm: "representation_similarity"
+  selectors: ["ours", "t5", "fine_tuning", "lora"]
+
+refinement_evaluation:
+  metrics:
+    edit_success_rate:
+      name: "Edit Success Rate"
+      formula: "EM_D_R_f_i"
+    em_drop_ratio:
+      name: "EM Drop Ratio"
+      formula: "EM_D_PT_f_0 - EM_D_PT_f_i"
+  baselines: ["No Replay", "Random Replay", "MIR"]
+
+d_hat_pt:
+  description: "Pre-training dataset filtering out samples the model got wrong"
+  symbol: "D_hat_PT"
+  evaluated_on: true
+
+lora_config:
+  task_type: "SEQ_2_SEQ_LM"
+  inference_mode: false
+  lora_alpha: 32
+  lora_dropout: 0.1
+  target_modules: ["q", "v"]
+  r: 16
+
+parameter_sweeps:
+  learning_rate:
+    default: 0.0001
+    sweep_values: [0.00001, 0.00005, 0.0001, 0.0005]
+  threshold_gamma:
+    default: 1
+    sweep_values: [0, 1, 2, 3, 4]
+
+symbol_inventory:
+  D_hat_PT: "D_hat_PT"
+  lora_config: "lora_config"
+  task_type: "task_type"
+  SEQ_2_SEQ_LM: "SEQ_2_SEQ_LM"
+  inference_mode: "inference_mode"
+  lora_alpha: "lora_alpha"
+  lora_dropout: "lora_dropout"
+  target_modules: "target_modules"
+  EM_D_f: "EM_D,f"
+  x_i: "x_i"
+  y_i: "y_i"
+  D_R: "D_R"
+  f_i: "f_i"
+  D_PT: "D_PT"
+  PT: "PT"
+  f_0: "f_0"
+  D_hat: "D_hat"
+  x_j: "x_j"
+  y_j: "y_j"
+  z_ij: "z_ij"
+  gamma: "gamma"
+  Delta: "Delta"
+  theta_i: "theta_i"
+  theta_0: "theta_0"
+  numeric_anchors: [0, 1, 2, 3, 4, 16, 32, 100, 0.1]
+
+task_type: "SEQ_2_SEQ_LM"
+seq_2_seq_lm: "SEQ_2_SEQ_LM"
+inference_mode: false
+lora_alpha: 32
+lora_dropout: 0.1
+target_modules: ["q", "v"]
+algorithm: "logit_change"

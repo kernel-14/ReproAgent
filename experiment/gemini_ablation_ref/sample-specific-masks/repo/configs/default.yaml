@@ -1,0 +1,306 @@
+# configs/default.yaml
+# Reference Grounding: paper:unit_002 (chunk_010)
+# Faithful reproduction configuration for "Sample-specific Masks for Visual Reprogramming-based Prompting"
+
+metadata:
+  project_name: "Sample-specific Masks for Visual Reprogramming (SMM)"
+  paper_title: "Sample-specific Masks for Visual Reprogramming-based Prompting"
+  reproduction_version: "1.0"
+
+# -----------------------------------------------------------------------------
+# Environment & Task Factories
+# -----------------------------------------------------------------------------
+environments:
+  aliases:
+    cifar: "cifar_env"
+    imagenet: "imagenet_env"
+    svhn: "svhn_env"
+  
+  factories:
+    - id: "unit-001"
+      alias: "unit-001"
+      setup_metadata:
+        description: "Unit 001 environment setup for smoke testing"
+        requires_gpu: false
+      availability_check: "src.smm.utils.env_check.check_unit_001"
+      runnable_config_hook: "src.smm.config.get_unit_001_config"
+      
+    - id: "cifar_env"
+      alias: "cifar"
+      setup_metadata:
+        description: "CIFAR environment for target tasks"
+        requires_gpu: true
+      availability_check: "src.smm.utils.env_check.check_cifar"
+      runnable_config_hook: "src.smm.config.get_cifar_config"
+      
+    - id: "imagenet_env"
+      alias: "imagenet"
+      setup_metadata:
+        description: "ImageNet pretraining environment"
+        requires_gpu: true
+      availability_check: "src.smm.utils.env_check.check_imagenet"
+      runnable_config_hook: "src.smm.config.get_imagenet_config"
+      
+    - id: "svhn_env"
+      alias: "svhn"
+      setup_metadata:
+        description: "SVHN environment for target tasks"
+        requires_gpu: true
+      availability_check: "src.smm.utils.env_check.check_svhn"
+      runnable_config_hook: "src.smm.config.get_svhn_config"
+      
+    - id: "ucf101_env"
+      alias: "ucf101"
+      setup_metadata:
+        description: "UCF101 action recognition target task"
+        requires_gpu: true
+      availability_check: "src.smm.utils.env_check.check_ucf101"
+      runnable_config_hook: "src.smm.config.get_ucf101_config"
+      
+    - id: "food101_env"
+      alias: "food101"
+      setup_metadata:
+        description: "Food101 target task"
+        requires_gpu: true
+      availability_check: "src.smm.utils.env_check.check_food101"
+      runnable_config_hook: "src.smm.config.get_food101_config"
+      
+    - id: "sun397_env"
+      alias: "sun397"
+      setup_metadata:
+        description: "SUN397 scene classification target task"
+        requires_gpu: true
+      availability_check: "src.smm.utils.env_check.check_sun397"
+      runnable_config_hook: "src.smm.config.get_sun397_config"
+
+    - id: "one_can_address_new"
+      alias: "one can address new"
+      setup_metadata:
+        description: "Dynamic target task addressability factory"
+      availability_check: "src.smm.utils.env_check.check_dynamic"
+      runnable_config_hook: "src.smm.config.get_dynamic_config"
+
+    - id: "target_tasks"
+      alias: "target tasks"
+      setup_metadata:
+        description: "General target tasks factory"
+      availability_check: "src.smm.utils.env_check.check_targets"
+      runnable_config_hook: "src.smm.config.get_targets_config"
+
+    - id: "across_some"
+      alias: "across some"
+      setup_metadata:
+        description: "Cross-dataset evaluation factory"
+      availability_check: "src.smm.utils.env_check.check_cross"
+      runnable_config_hook: "src.smm.config.get_cross_config"
+
+    - id: "paper_semantic_chunk_046"
+      alias: "paper-semantic-chunk-046-dataset-registry-additional-visualization-additional-visualization-figure"
+      setup_metadata:
+        description: "Visualization and registry verification factory"
+      availability_check: "src.smm.utils.env_check.check_visualization"
+      runnable_config_hook: "src.smm.config.get_visualization_config"
+
+    - id: "determines_which"
+      alias: "determines which"
+      setup_metadata:
+        description: "Conditional adapter selection factory"
+      availability_check: "src.smm.utils.env_check.check_adapter_selection"
+      runnable_config_hook: "src.smm.config.get_adapter_selection_config"
+
+# -----------------------------------------------------------------------------
+# Dataset & Benchmark Loaders
+# -----------------------------------------------------------------------------
+datasets:
+  aliases:
+    cifar: "CIFAR10"
+    imagenet: "imagenet_1k"
+    imagenet_1k: "imagenet_1k"
+    dtd: "DTD"
+    eurosat: "EuroSAT"
+    flowers: "Flowers102"
+    oxford_pets: "OxfordPets"
+    svhn: "SVHN"
+
+  loaders:
+    - id: "CIFAR10"
+      setup_metadata:
+        num_classes: 10
+        image_size: 32
+      validation_check: "src.smm.data.pipeline.validate_cifar10"
+      runnable_config_hook: "src.smm.data.pipeline.load_cifar10"
+
+    - id: "CIFAR100"
+      setup_metadata:
+        num_classes: 100
+        image_size: 32
+      validation_check: "src.smm.data.pipeline.validate_cifar100"
+      runnable_config_hook: "src.smm.data.pipeline.load_cifar100"
+
+    - id: "SVHN"
+      setup_metadata:
+        num_classes: 10
+        image_size: 32
+      validation_check: "src.smm.data.pipeline.validate_svhn"
+      runnable_config_hook: "src.smm.data.pipeline.load_svhn"
+
+    - id: "GTSRB"
+      setup_metadata:
+        num_classes: 43
+        image_size: 32
+      validation_check: "src.smm.data.pipeline.validate_gtsrb"
+      runnable_config_hook: "src.smm.data.pipeline.load_gtsrb"
+
+    - id: "Flowers102"
+      setup_metadata:
+        num_classes: 102
+        image_size: 224
+      validation_check: "src.smm.data.pipeline.validate_flowers"
+      runnable_config_hook: "src.smm.data.pipeline.load_flowers"
+
+    - id: "DTD"
+      setup_metadata:
+        num_classes: 47
+        image_size: 224
+      validation_check: "src.smm.data.pipeline.validate_dtd"
+      runnable_config_hook: "src.smm.data.pipeline.load_dtd"
+
+    - id: "EuroSAT"
+      setup_metadata:
+        num_classes: 10
+        image_size: 64
+      validation_check: "src.smm.data.pipeline.validate_eurosat"
+      runnable_config_hook: "src.smm.data.pipeline.load_eurosat"
+
+    - id: "OxfordPets"
+      setup_metadata:
+        num_classes: 37
+        image_size: 224
+      validation_check: "src.smm.data.pipeline.validate_oxford_pets"
+      runnable_config_hook: "src.smm.data.pipeline.load_oxford_pets"
+
+# -----------------------------------------------------------------------------
+# Method & Baseline Selectors
+# -----------------------------------------------------------------------------
+methods:
+  selectors:
+    - "ours"
+    - "vit"
+    - "resnet"
+    - "lora"
+  
+  baselines:
+    - "PAD"
+    - "NARROW"
+    - "MEDIUM"
+    - "FULL"
+
+# -----------------------------------------------------------------------------
+# Hyperparameters & Sweeps
+# -----------------------------------------------------------------------------
+hyperparameters:
+  three_seed_protocol:
+    seeds: [42, 43, 44]
+  
+  defaults:
+    learning_rate: 0.01
+    patch_size: 4
+    l: 2
+    delta_init: 0.0
+    phi_init: "random"
+    p: 0.5
+    batch_size: 32
+    epochs: 10
+    weight_decay: 0.0001
+    momentum: 0.9
+
+  sweeps:
+    p: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    learning_rate: [0.1, 0.01, 0.001]
+    patch_size: [4, 2, 1]
+    l: [0, 1, 2, 3]
+
+# -----------------------------------------------------------------------------
+# Formula & Algorithm Anchors (Code-Visible Symbols & Constants)
+# -----------------------------------------------------------------------------
+formula_anchors:
+  imagenet_normalize:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+  
+  vit_b32:
+    imgsize: 384
+  
+  resnet:
+    imgsize: 224
+
+  numeric_defaults:
+    mean_r: 0.485
+    mean_g: 0.456
+    mean_b: 0.406
+    std_r: 0.229
+    std_g: 0.224
+    std_b: 0.225
+    vit_imgsize: 384
+    resnet_imgsize: 224
+    default_patch_size: 32
+    default_l: 1
+    default_delta_init: 0
+    default_phi_layers: 2
+
+  symbols:
+    - "ViT_B32"
+    - "train_preprocess"
+    - "Compose[transforms.Resizeimgsize+32,imgsize+32"
+    - "RandomCropimgsize"
+    - "Lambdalambdax:x.convert'RGB'"
+    - "NormalizeIMAGENETNORMALIZE['mean'],IMAGENETNORMALIZE['std'"
+    - "test_preprocess"
+    - "Compose[transforms.Resizeimgsize,imgsize"
+    - "d_T"
+    - "k_T"
+    - "x_i"
+    - "y_i"
+    - "f_P"
+    - "f_out"
+    - "f_in"
+    - "Y_sub"
+    - "min_thetainTheta,omegainOmega"
+    - "sum_i=1^n"
+    - "theta"
+    - "R^+"
+    - "Theta"
+    - "delta"
+    - "f_mask"
+    - "d_P"
+    - "phi"
+    - "phi^*"
+    - "delta^*"
+    - "alpha_1"
+    - "alpha_2"
+
+# -----------------------------------------------------------------------------
+# Reproduction Scope & Artifact Paths
+# -----------------------------------------------------------------------------
+reproduction_scope:
+  active: true
+  mode: "smoke" # "smoke" or "full"
+  output_paths:
+    table_1: "results/table_1_results.csv"
+    table_3: "results/table_3_ablations.csv"
+    metrics: "results/metrics.json"
+    model_checkpoint: "checkpoints/model.pth"
+    evidence_matrix: "results/evidence_contract_matrix.json"
+    experiment_registry: "results/experiment_registry.json"
+    environment_registry: "results/environment_registry.json"
+    dataset_registry: "results/dataset_registry.json"
+    artifact_manifest: "results/artifact_manifest.json"
+    sensitivity_report: "results/sensitivity_report.json"
+    experiment_results_table: "results/tables/experiment_results.csv"
+    table_1_csv: "results/tables/table_1.csv"
+    table_2_csv: "results/tables/table_2.csv"
+    table_3_csv: "results/tables/table_3.csv"
+    figure_4_png: "results/figures/figure_4.png"
+    figure_5_png: "results/figures/figure_5.png"
+    figure_12_png: "results/figures/figure_12.png"
+    table_12_csv: "results/tables/table_12.csv"

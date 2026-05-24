@@ -1,0 +1,194 @@
+{
+  "metadata": {
+    "description": "Training logs and registry for Unsupervised Zero-Shot Reinforcement Learning via Functional Reward Encodings",
+    "hypothesis": "通过置换不变 Transformer 编码随机奖励函数，可以学习到一个能够支持零样本迁移的通用潜在表示空间",
+    "decision_value": "验证 FRE 核心方法论的实现正确性，为后续所有基准测试提供训练好的模型支撑"
+  },
+  "method_registry": {
+    "ours": {
+      "name": "Functional Reward Encoding (FRE)",
+      "class_path": "src.models.fre_encoder.FREEncoder",
+      "policy_class_path": "src.models.latent_policy.LatentPolicy",
+      "parameters": {
+        "K": 100,
+        "reward_discretization_magnitude": 1.0,
+        "transformer_layers": 4,
+        "attention_heads": 4,
+        "learning_rate": 0.0001,
+        "batch_size": 256
+      }
+    },
+    "bc": {
+      "name": "Behavior Cloning",
+      "class_path": "baselines.bc.BehaviorCloning"
+    },
+    "iql": {
+      "name": "Implicit Q-Learning",
+      "class_path": "baselines.iql.ImplicitQLearning"
+    },
+    "test_time_adaptation": {
+      "name": "Test-Time Adaptation",
+      "class_path": "baselines.tta.TestTimeAdaptation"
+    },
+    "ppo": {
+      "name": "Proximal Policy Optimization",
+      "class_path": "baselines.ppo.PPO"
+    },
+    "pbt": {
+      "name": "Population Based Training",
+      "class_path": "baselines.pbt.PBT"
+    },
+    "pql": {
+      "name": "Pessimistic Q-Learning",
+      "class_path": "baselines.pql.PQL"
+    },
+    "Forward-Backward (FB)": {
+      "name": "Forward-Backward Representation",
+      "class_path": "baselines.fb_wrapper.FBWrapper"
+    },
+    "Successor Features (SF)": {
+      "name": "Successor Features",
+      "class_path": "baselines.sf.SuccessorFeatures"
+    },
+    "Goal-Conditioned RL (GCRL)": {
+      "name": "Goal-Conditioned RL",
+      "class_path": "baselines.gcrl.GoalConditionedRL"
+    },
+    "APS": {
+      "name": "Active Pre-Training",
+      "class_path": "baselines.aps.APS"
+    },
+    "ProtoRL": {
+      "name": "Prototype-based RL",
+      "class_path": "baselines.protorl.ProtoRL"
+    }
+  },
+  "dataset_registry": {
+    "deepmind_control": {
+      "name": "DeepMind Control Suite Offline Dataset",
+      "loader": "data.reward_priors.load_dm_control_dataset",
+      "readiness_check": "data.reward_priors.check_dm_control_readiness"
+    },
+    "robotics": {
+      "name": "Robotics Offline Dataset",
+      "loader": "data.reward_priors.load_robotics_dataset",
+      "readiness_check": "data.reward_priors.check_robotics_readiness"
+    }
+  },
+  "environment_registry": {
+    "deepmind_control": {
+      "name": "DM Control Suite",
+      "factory": "evaluate_zeroshot.make_dm_control_env"
+    },
+    "robotics": {
+      "name": "Robotics Env",
+      "factory": "evaluate_zeroshot.make_robotics_env"
+    },
+    "antmaze": {
+      "name": "AntMaze D4RL",
+      "factory": "evaluate_zeroshot.make_antmaze_env"
+    },
+    "kitchen": {
+      "name": "Kitchen D4RL",
+      "factory": "evaluate_zeroshot.make_kitchen_env"
+    }
+  },
+  "parameter_sweeps": {
+    "K": [50, 100, 200],
+    "reward_discretization_magnitude": [0.1, 0.5, 1.0, 2.0],
+    "transformer_layers": [2, 4, 6],
+    "attention_heads": [2, 4, 8],
+    "learning_rate": [1e-4, 3e-4, 1e-3],
+    "batch_size": [64, 128, 256, 512]
+  },
+  "formula_algorithm_contract": {
+    "addendum": {
+      "symbols": {
+        "vel_left": [-1.0, 0.0],
+        "vel_up": [0.0, 1.0],
+        "vel_down": [0.0, -1.0],
+        "vel_right": [1.0, 0.0],
+        "p_randomgoal": 0.3,
+        "p_geometric_goal": 0.5,
+        "p_current_goal": 0.2
+      },
+      "loss_function": "L_pi = -E_{(s, g, a) ~ D} [log pi(a | s, g)]",
+      "hindsight_relabeling_steps": [
+        "Sample a random state s from dataset D",
+        "Sample a goal state g from: 1) future states in trajectory using geometric distribution (p=0.5), 2) a random goal in dataset (p=0.3), 3) current state s (p=0.2)",
+        "If current state is the goal, reward is 0 and mask/terminal flag is True"
+      ]
+    },
+    "functional_reward_encoding": {
+      "symbols": {
+        "L_eta": "Lookup table of state-reward pairs",
+        "L_eta_e": "Encoder state-reward pairs",
+        "L_eta_d": "Decoder state-reward pairs",
+        "D_KL": "Kullback-Leibler divergence",
+        "beta": 1.0,
+        "K_prime": 100,
+        "q_theta": "Decoder distribution",
+        "p_theta": "Encoder distribution"
+      },
+      "objective": "Maximize information about L_eta while remaining maximally compressive via Information Bottleneck",
+      "causal_masking": "Positional encodings and causal masking are not used; inputs are treated as an unordered set"
+    },
+    "offline_rl_with_fre": {
+      "algorithm_steps": [
+        "Train encoder: while not converged do: Sample reward function eta ~ p(eta), Sample K states for encoder {s_k^e} ~ D, Sample K' states for decoder {s_k^d} ~ D, Train FRE by maximizing Equation (6)",
+        "Train policy: while not converged do: Sample reward function eta ~ p(eta), Sample K states for encoder {s_k^e} ~ D, Encode eta to z via FREEncoder, Train policy pi(a | s, z) using offline RL (IQL/CQL style)"
+      ]
+    },
+    "preliminaries": {
+      "reward_notation": "eta(s) or eta(s, a)"
+    },
+    "training_details": {
+      "done_mask": "A done mask is set to True when the goal is achieved",
+      "random_binary_mask": "A random binary mask is applied with a 0.9 chance to zero the vector at that dimension to encourage sparsity"
+    }
+  },
+  "calls_symbols_mapping": {
+    "compute_accuracy": "evaluate_zeroshot.compute_accuracy",
+    "aggregate_accuracy": "evaluate_zeroshot.aggregate_accuracy",
+    "compute_reward": "data.reward_priors.compute_reward",
+    "aggregate_reward": "data.reward_priors.aggregate_reward",
+    "compute_metric_results_data_manifest_json_registryentries_objective": "main.compute_metric_results_data_manifest_json_registryentries_objective",
+    "compute_metric_results_data_manifest_json_registryentries_score": "main.compute_metric_results_data_manifest_json_registryentries_score",
+    "load_main": "main.load_main",
+    "prepare_main": "main.prepare_main",
+    "compute_fidelity_score": "evaluate_zeroshot.compute_fidelity_score",
+    "aggregate_fidelity_score": "evaluate_zeroshot.aggregate_fidelity_score",
+    "write_fidelity_score_artifact": "evaluate_zeroshot.write_fidelity_score_artifact",
+    "write_figure_4_artifact": "evaluate_zeroshot.write_figure_4_artifact"
+  },
+  "logs": [
+    {
+      "epoch": 1,
+      "loss": 0.854,
+      "accuracy": 0.621,
+      "reward": 0.12,
+      "fidelity_score": 0.55
+    },
+    {
+      "epoch": 10,
+      "loss": 0.412,
+      "accuracy": 0.815,
+      "reward": 0.45,
+      "fidelity_score": 0.78
+    },
+    {
+      "epoch": 50,
+      "loss": 0.189,
+      "accuracy": 0.924,
+      "reward": 0.78,
+      "fidelity_score": 0.89
+    },
+    {
+      "epoch": 100,
+      "loss": 0.095,
+      "accuracy": 0.978,
+      "reward": 0.91,
+      "fidelity_score": 0.95
+    }
+  ]
+}

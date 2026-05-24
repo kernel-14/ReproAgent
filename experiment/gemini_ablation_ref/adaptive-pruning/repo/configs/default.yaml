@@ -1,0 +1,151 @@
+# reference_grounding: paper:unit_001 (chunk_010)
+# APT: Adaptive Pruning and Tuning Pretrained Language Models for Efficient Training and Inference.
+# Default configuration for reproduction.
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# selector set must include ours, bert, roberta, t5, fine_tuning, lora, test_time_adaptation.
+methods:
+  ours:
+    id: "apt"
+    alias: "ours"
+    class: "src.apt.layers.apt_layer.APTAdapter"
+    trainer: "src.apt.engine.trainer.APTTrainer"
+    hyperparameters:
+      rank: 8
+      r_apt: 8
+      alpha: 16
+      dropout: 0.1
+  bert:
+    id: "bert"
+    base_model: "bert-base-uncased"
+  roberta:
+    id: "roberta"
+    base_model: "roberta-base"
+  t5:
+    id: "t5"
+    base_model: "t5-base"
+  fine_tuning:
+    id: "ft"
+    alias: "fine_tuning"
+  lora:
+    id: "lora"
+    hyperparameters:
+      rank: 8
+      alpha: 16
+  test_time_adaptation:
+    id: "tta"
+    alias: "test_time_adaptation"
+  # reference_grounding: paper:unit_016 (chunk_016)
+  # Implement the CoFi baseline with LoRA and L0 module controls plus default hyperparameters.
+  cofi:
+    id: "cofi"
+    use_lora: true
+    use_l0: true
+    hyperparameters:
+      l0_lambda: 0.1
+      distill_weight: 1.0
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# factories for: unit-004 | t5 | llama commonsense | unit-005 | squad | glue | sst2
+tasks:
+  glue:
+    id: "glue"
+    alias: "glue"
+    subtasks: ["sst2", "mnli"]
+  squad:
+    id: "squad"
+    alias: "squad"
+    version: "v2.0"
+  cnn_dm:
+    id: "cnn_dailymail"
+    alias: "cnn_dm"
+  llama_commonsense:
+    id: "llama_commonsense"
+    tasks: ["boolq", "piqa", "siqa", "hellaswag", "winogrande", "arc_e", "arc_c", "obqa"]
+  sst2:
+    id: "sst2"
+    alias: "sst2"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# loaders for: SST2, MNLI, SQuAD v2.0, CNN/DailyMail, BoolQ, PIQA, SIQA, HellaSwag, WinoGrande, ARC-e, ARC-c, OBQA | glue | truthfulqa
+datasets:
+  glue:
+    path: "glue"
+    aliases: ["sst2", "mnli"]
+  squad_v2:
+    path: "squad_v2"
+    aliases: ["squad"]
+  cnn_dailymail:
+    path: "cnn_dailymail"
+  truthfulqa:
+    path: "truthful_qa"
+    alias: "truthfulqa"
+  alpaca:
+    path: "alpaca"
+    notes: "GPT4-generated Alpaca dataset for LLaMA instruction tuning"
+
+# reference_grounding: paper:unit_002 (chunk_011)
+# required parameter sweeps: early_training_steps (t << T)
+# priority sweeps: batch_size
+sweeps:
+  early_training_steps_ratio: [0.05, 0.1, 0.2]
+  batch_size: [32, 128]
+
+# reference_grounding: paper:paper_claim_inventory
+# fixed hyperparameter anchors for 10_shot_setting, batch_size_128, batch_size_32.
+fixed_hyperparameters:
+  10_shot_setting:
+    num_shots: 10
+  batch_size_128:
+    batch_size: 128
+  batch_size_32:
+    batch_size: 32
+
+# reference_grounding: paper:unit_017 (chunk_017)
+# metrics: accuracy, f1, loss, rouge, training_time, training_cost, inference_cost, memory_usage, gpu_memory
+metrics:
+  accuracy: "src.apt.utils.metrics.compute_accuracy"
+  f1: "src.apt.utils.metrics.compute_f1"
+  rouge: "src.apt.utils.metrics.compute_rouge"
+  efficiency:
+    train_mem: "src.apt.utils.efficiency.measure_train_mem"
+    tta: "src.apt.utils.efficiency.measure_tta"
+    inf_mem: "src.apt.utils.efficiency.measure_inf_mem"
+    throughput: "src.apt.utils.efficiency.measure_throughput"
+
+# reference_grounding: paper:paper_claim_inventory
+# artifacts: Figure 1, Table 1, Figure 2, Table 2, Table 4, Table 11, Table 3, Table 12, Figure 3, Table 5, Table 7, Table 8, Table 9, Figure 4, Figure 5, Table 10, Figure 5a
+artifacts:
+  output_dir: "results"
+  metrics_file: "results/metrics.json"
+  efficiency_file: "results/efficiency_stats.json"
+  tables:
+    table2: "results/table2_reproduction.csv"
+    table3: "results/table3_reproduction.csv"
+  figures:
+    figure1: "results/figures/figure_1.png"
+    figure2: "results/figures/figure_2.png"
+    figure4: "results/figures/figure_4.png"
+
+# reference_grounding: paper:unit_001 (chunk_010)
+# APTAdapter configuration
+apt_adapter:
+  rank: 8
+  r_apt: 8
+  dynamic_rank: true
+  pruning:
+    enabled: true
+    early_steps_ratio: 0.1
+    salience_type: "outlier_aware"
+
+# reference_grounding: paper:unit_003 (chunk_012)
+# Self-distillation configuration
+distillation:
+  enabled: true
+  type: "self_distillation"
+  alpha: 1.0
+  temperature: 2.0
+
+# Execution mode
+mode: "runtime_smoke" # Default to smoke mode for safety
+seed: 42

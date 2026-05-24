@@ -1,0 +1,577 @@
+{
+  "reference_grounding": {
+    "addendum_constraints": "paper:paper_addendum_constraints (addendum.md)",
+    "environment_protocol": "paper:paper_contract_environment_protocol (chunk_029, chunk_030, chunk_010)",
+    "task_environment_setup": "paper:paper_task_environment_setup (chunk_029, chunk_030, chunk_009)",
+    "unit_005": "paper:unit_005 (chunk_014_01)"
+  },
+  "datasets": {
+    "ffhq": {
+      "id": "ffhq",
+      "aliases": ["FFHQ", "ffhq"],
+      "setup_metadata": {
+        "source_domain": true,
+        "resolution": 256,
+        "url": "https://github.com/NVlabs/ffhq-dataset"
+      },
+      "validation_checks": {
+        "min_samples": 10000,
+        "channels": 3
+      },
+      "config_hooks": {
+        "loader_factory": "src.data.pipeline.load_ffhq"
+      }
+    },
+    "lsun_church": {
+      "id": "lsun_church",
+      "aliases": ["LSUN Church", "lsun_church"],
+      "setup_metadata": {
+        "source_domain": true,
+        "resolution": 256,
+        "url": "http://dl.yf.io/lsun/scenes/church_outdoor_train_lmdb.zip"
+      },
+      "validation_checks": {
+        "min_samples": 10000,
+        "channels": 3
+      },
+      "config_hooks": {
+        "loader_factory": "src.data.pipeline.load_lsun_church"
+      }
+    },
+    "sunglasses": {
+      "id": "sunglasses",
+      "aliases": ["Sunglasses", "sunglasses"],
+      "setup_metadata": {
+        "target_domain": true,
+        "shot_count": 10,
+        "resolution": 256
+      },
+      "validation_checks": {
+        "exact_samples": 10,
+        "channels": 3
+      },
+      "config_hooks": {
+        "loader_factory": "src.data.pipeline.load_10_shot_target"
+      }
+    },
+    "babies": {
+      "id": "babies",
+      "aliases": ["Babies", "babies"],
+      "setup_metadata": {
+        "target_domain": true,
+        "shot_count": 10,
+        "resolution": 256
+      },
+      "validation_checks": {
+        "exact_samples": 10,
+        "channels": 3
+      },
+      "config_hooks": {
+        "loader_factory": "src.data.pipeline.load_10_shot_target"
+      }
+    },
+    "sketches": {
+      "id": "sketches",
+      "aliases": ["Sketches", "sketches"],
+      "setup_metadata": {
+        "target_domain": true,
+        "shot_count": 10,
+        "resolution": 256
+      },
+      "validation_checks": {
+        "exact_samples": 10,
+        "channels": 3
+      },
+      "config_hooks": {
+        "loader_factory": "src.data.pipeline.load_10_shot_target"
+      }
+    },
+    "raphael_peale": {
+      "id": "raphael_peale",
+      "aliases": ["Raphael Peale", "raphael_peale"],
+      "setup_metadata": {
+        "target_domain": true,
+        "shot_count": 10,
+        "resolution": 256
+      },
+      "validation_checks": {
+        "exact_samples": 10,
+        "channels": 3
+      },
+      "config_hooks": {
+        "loader_factory": "src.data.pipeline.load_10_shot_target"
+      }
+    },
+    "modigliani": {
+      "id": "modigliani",
+      "aliases": ["Modigliani", "Amedeo's paintings", "modigliani"],
+      "setup_metadata": {
+        "target_domain": true,
+        "shot_count": 10,
+        "resolution": 256
+      },
+      "validation_checks": {
+        "exact_samples": 10,
+        "channels": 3
+      },
+      "config_hooks": {
+        "loader_factory": "src.data.pipeline.load_10_shot_target"
+      }
+    },
+    "haunted_houses": {
+      "id": "haunted_houses",
+      "aliases": ["Haunted Houses", "haunted_houses"],
+      "setup_metadata": {
+        "target_domain": true,
+        "shot_count": 10,
+        "resolution": 256
+      },
+      "validation_checks": {
+        "exact_samples": 10,
+        "channels": 3
+      },
+      "config_hooks": {
+        "loader_factory": "src.data.pipeline.load_10_shot_target"
+      }
+    },
+    "landscape_drawings": {
+      "id": "landscape_drawings",
+      "aliases": ["Landscape drawings", "landscape_drawings"],
+      "setup_metadata": {
+        "target_domain": true,
+        "shot_count": 10,
+        "resolution": 256
+      },
+      "validation_checks": {
+        "exact_samples": 10,
+        "channels": 3
+      },
+      "config_hooks": {
+        "loader_factory": "src.data.pipeline.load_10_shot_target"
+      }
+    },
+    "imagenet": {
+      "id": "imagenet",
+      "aliases": ["imagenet", "ImageNet"],
+      "setup_metadata": {
+        "source_domain": true,
+        "resolution": 256
+      },
+      "validation_checks": {
+        "channels": 3
+      },
+      "config_hooks": {
+        "loader_factory": "src.data.pipeline.load_imagenet"
+      }
+    }
+  },
+  "environments": {
+    "ant": {
+      "id": "ant",
+      "aliases": ["ant", "DPMs-ANT"],
+      "setup_metadata": {
+        "framework": "DDPM/LDM",
+        "adversarial_noise": true
+      },
+      "availability_checks": {
+        "required_packages": ["torch", "torchvision"]
+      },
+      "config_hooks": {
+        "factory": "src.data.data_env_setup.make_environment"
+      }
+    },
+    "shot_image_generation": {
+      "id": "shot_image_generation",
+      "aliases": ["shot image generation", "10-shot image generation"],
+      "setup_metadata": {
+        "shot_count": 10
+      },
+      "availability_checks": {
+        "required_packages": ["torch"]
+      },
+      "config_hooks": {
+        "factory": "src.data.data_env_setup.make_environment"
+      }
+    },
+    "ffhq_to_babies": {
+      "id": "ffhq_to_babies",
+      "aliases": ["FFHQ -> Babies"],
+      "setup_metadata": {
+        "source": "ffhq",
+        "target": "babies",
+        "shot_count": 10
+      },
+      "availability_checks": {
+        "source_available": true,
+        "target_available": true
+      },
+      "config_hooks": {
+        "factory": "src.data.data_env_setup.make_environment"
+      }
+    },
+    "ffhq_to_sunglasses": {
+      "id": "ffhq_to_sunglasses",
+      "aliases": ["FFHQ -> Sunglasses"],
+      "setup_metadata": {
+        "source": "ffhq",
+        "target": "sunglasses",
+        "shot_count": 10
+      },
+      "availability_checks": {
+        "source_available": true,
+        "target_available": true
+      },
+      "config_hooks": {
+        "factory": "src.data.data_env_setup.make_environment"
+      }
+    },
+    "ffhq_to_raphael_peale": {
+      "id": "ffhq_to_raphael_peale",
+      "aliases": ["FFHQ -> Raphael Peale"],
+      "setup_metadata": {
+        "source": "ffhq",
+        "target": "raphael_peale",
+        "shot_count": 10
+      },
+      "availability_checks": {
+        "source_available": true,
+        "target_available": true
+      },
+      "config_hooks": {
+        "factory": "src.data.data_env_setup.make_environment"
+      }
+    },
+    "ffhq_to_sketches": {
+      "id": "ffhq_to_sketches",
+      "aliases": ["FFHQ -> Sketches"],
+      "setup_metadata": {
+        "source": "ffhq",
+        "target": "sketches",
+        "shot_count": 10
+      },
+      "availability_checks": {
+        "source_available": true,
+        "target_available": true
+      },
+      "config_hooks": {
+        "factory": "src.data.data_env_setup.make_environment"
+      }
+    },
+    "ffhq_to_modigliani": {
+      "id": "ffhq_to_modigliani",
+      "aliases": ["FFHQ -> Modigliani"],
+      "setup_metadata": {
+        "source": "ffhq",
+        "target": "modigliani",
+        "shot_count": 10
+      },
+      "availability_checks": {
+        "source_available": true,
+        "target_available": true
+      },
+      "config_hooks": {
+        "factory": "src.data.data_env_setup.make_environment"
+      }
+    },
+    "lsun_church_to_haunted_houses": {
+      "id": "lsun_church_to_haunted_houses",
+      "aliases": ["LSUN Church -> Haunted Houses"],
+      "setup_metadata": {
+        "source": "lsun_church",
+        "target": "haunted_houses",
+        "shot_count": 10
+      },
+      "availability_checks": {
+        "source_available": true,
+        "target_available": true
+      },
+      "config_hooks": {
+        "factory": "src.data.data_env_setup.make_environment"
+      }
+    },
+    "lsun_church_to_landscape_drawings": {
+      "id": "lsun_church_to_landscape_drawings",
+      "aliases": ["LSUN Church -> Landscape drawings"],
+      "setup_metadata": {
+        "source": "lsun_church",
+        "target": "landscape_drawings",
+        "shot_count": 10
+      },
+      "availability_checks": {
+        "source_available": true,
+        "target_available": true
+      },
+      "config_hooks": {
+        "factory": "src.data.data_env_setup.make_environment"
+      }
+    },
+    "imagenet_env": {
+      "id": "imagenet_env",
+      "aliases": ["imagenet"],
+      "setup_metadata": {
+        "source": "imagenet",
+        "target": "imagenet"
+      },
+      "availability_checks": {
+        "source_available": true
+      },
+      "config_hooks": {
+        "factory": "src.data.data_env_setup.make_environment"
+      }
+    }
+  },
+  "methods": {
+    "ours": {
+      "aliases": ["ours", "DPMs-ANT"],
+      "description": "Our proposed DPMs-ANT method"
+    },
+    "diffusion_model": {
+      "aliases": ["diffusion_model"],
+      "description": "Standard Diffusion Model baseline"
+    },
+    "ddpm": {
+      "aliases": ["ddpm"],
+      "description": "Denoising Diffusion Probabilistic Models baseline"
+    },
+    "ldm": {
+      "aliases": ["ldm"],
+      "description": "Latent Diffusion Models baseline"
+    },
+    "dpms_ant": {
+      "aliases": ["dpms_ant"],
+      "description": "Diffusion Probabilistic Models with Adversarial Noise Transfer"
+    },
+    "similarity_guided_training": {
+      "aliases": ["similarity_guided_training"],
+      "description": "Similarity-Guided Training only baseline"
+    },
+    "adversarial_noise_selection": {
+      "aliases": ["adversarial_noise_selection"],
+      "description": "Adversarial Noise Selection mechanism"
+    },
+    "ddpm_pa": {
+      "aliases": ["ddpm_pa"],
+      "description": "DDPM-PA baseline"
+    },
+    "tgan": {
+      "aliases": ["tgan"],
+      "description": "Transferring GANs baseline"
+    },
+    "ada": {
+      "aliases": ["ada", "TGAN+ADA"],
+      "description": "Adaptive Data Augmentation baseline"
+    },
+    "ewc": {
+      "aliases": ["ewc"],
+      "description": "Elastic Weight Consolidation baseline"
+    },
+    "cdc": {
+      "aliases": ["cdc"],
+      "description": "Cross-Domain Consistency baseline"
+    },
+    "dcl": {
+      "aliases": ["dcl"],
+      "description": "Domain Co-occurrence Learning baseline"
+    }
+  },
+  "parameter_sweeps": {
+    "shot_count": {
+      "values": [100]
+    },
+    "training_iteration_count": {
+      "values": [0, 50, 100, 150, 200, 250, 300, 350]
+    },
+    "similarity_guidance_scale": {
+      "values": [1, 3, 5, 7, 9]
+    },
+    "adversarial_noise_scale": {
+      "values": [0.01, 0.02, 0.03, 0.04, 0.05]
+    },
+    "learning_rate": {
+      "values": [5e-6, 5e-5, 1e-4]
+    },
+    "batch_size": {
+      "values": [64]
+    }
+  },
+  "fixed_hyperparameters": {
+    "5000_iterations": 5000,
+    "300_training_iterations": 300,
+    "10_shot_setting": 10,
+    "gamma_5": 5,
+    "omega_0.02": 0.02,
+    "adversarial_inner_steps_10": 10,
+    "batch_size_64": 64
+  },
+  "experiment_protocol_matrix": {
+    "Experiment I: Toy Data Visualization": {
+      "environment": "toy_data",
+      "method_selector": "dpms_ant",
+      "metric_functions": ["gradient_directions", "heat_maps"],
+      "artifact_writer": "src.reporting.experiment_artifacts.write_figure_2b"
+    },
+    "Experiment II: 10-shot FFHQ -> Babies/Sunglasses (Table 2)": {
+      "environment": "ffhq_to_babies_sunglasses",
+      "method_selector": "dpms_ant",
+      "metric_functions": ["fid", "intra_lpips"],
+      "artifact_writer": "src.reporting.experiment_artifacts.write_table_2"
+    },
+    "Experiment III: Ablation Study (Figure 4)": {
+      "environment": "ffhq_to_babies_sunglasses",
+      "method_selector": "dpms_ant_ablation",
+      "metric_functions": ["fid"],
+      "artifact_writer": "src.reporting.experiment_artifacts.write_figure_4"
+    },
+    "Experiment IV: Sensitivity Analysis (Table 6)": {
+      "environment": "ffhq_to_babies_sunglasses",
+      "method_selector": "dpms_ant_sensitivity",
+      "metric_functions": ["fid"],
+      "artifact_writer": "src.reporting.experiment_artifacts.write_table_6"
+    },
+    "Experiment V: Additional Comparisons (Table 7-9)": {
+      "environment": "ffhq_to_babies_sunglasses",
+      "method_selector": "baselines",
+      "metric_functions": ["fid", "intra_lpips"],
+      "artifact_writer": "src.reporting.experiment_artifacts.write_tables_7_8_9"
+    },
+    "experiment_did": {
+      "environment": "ffhq_to_sketches",
+      "method_selector": "dpms_ant",
+      "metric_functions": ["fid", "intra_lpips"],
+      "artifact_writer": "src.reporting.experiment_artifacts.write_table_4"
+    }
+  },
+  "evidence_obligation_matrix": {
+    "Table 2: FID results": {
+      "target_path": "results/table_2_results.json",
+      "metrics": ["fid"],
+      "environments": ["ffhq_to_babies", "ffhq_to_sunglasses"]
+    },
+    "Table 5: Additional results": {
+      "target_path": "results/table_5.json",
+      "metrics": ["fid", "intra_lpips"],
+      "environments": ["ffhq_to_raphael_peale", "ffhq_to_modigliani"]
+    },
+    "Table 6: Sensitivity analysis": {
+      "target_path": "results/table_6.json",
+      "metrics": ["fid"],
+      "environments": ["ffhq_to_sunglasses"]
+    },
+    "Table 7: Comparison results": {
+      "target_path": "results/table_7.json",
+      "metrics": ["fid"],
+      "environments": ["lsun_church_to_haunted_houses", "lsun_church_to_landscape_drawings"]
+    },
+    "Table 8: Additional results": {
+      "target_path": "results/table_8.json",
+      "metrics": ["intra_lpips"],
+      "environments": ["ffhq_to_babies", "ffhq_to_sunglasses"]
+    },
+    "Table 9: Further analysis": {
+      "target_path": "results/table_9.json",
+      "metrics": ["fid"],
+      "environments": ["ffhq_to_sketches"]
+    },
+    "Figure 2b: Visualization": {
+      "target_path": "results/figure_2b.png",
+      "metrics": ["gradient_directions"],
+      "environments": ["toy_data"]
+    },
+    "Ablation: Adversarial Noise Selection": {
+      "target_path": "results/ablation_an_results.json",
+      "metrics": ["fid"],
+      "environments": ["ffhq_to_babies"]
+    },
+    "Trained Model": {
+      "target_path": "results/trained_model.pth",
+      "metrics": ["model_weights"],
+      "environments": ["ffhq_to_sunglasses"]
+    }
+  },
+  "formula_algorithm_anchors": {
+    "5.2_experimental_setup": {
+      "symbols": ["gamma", "W_down", "psi^l", "x^l-1", "W_up", "R^wtimeshtimesr"],
+      "numeric_defaults": {
+        "gamma": 5,
+        "W_down": 4,
+        "psi^l": 8,
+        "x^l-1": 1,
+        "W_up": 2,
+        "R^wtimeshtimesr": 10,
+        "omega": 0.02
+      },
+      "algorithm_terms": ["objective", "select", "sample"]
+    },
+    "4.2_adversarial_noise_selection": {
+      "symbols": ["gamma", "p_phi", "epsilon_theta", "x_0", "epsilon^j", "epsilon^star", "epsilon^J", "nabla_psi", "min_theta", "max_epsilon", "epsilon", "x_t", "sigma_hat_t^2", "epsilon^j+1"],
+      "numeric_defaults": {
+        "J": 10,
+        "omega": 0.02,
+        "gamma": 8,
+        "p_phi": 0,
+        "epsilon_theta": 1,
+        "x_0": 7,
+        "epsilon^j": 2
+      },
+      "algorithm_terms": ["equation", "algorithm", "formula", "loss", "gradient", "ema", "compute", "update"]
+    },
+    "5.1_visualization_on_toy_data": {
+      "algorithm_terms": ["gradient", "compute", "sample"],
+      "steps": [
+        "cyan line denotes gradient computed on 10,000 samples in one step",
+        "blue, red, orange lines are gradients of baseline, ours w/o AN, and full ours computed on 10 samples in one step"
+      ]
+    },
+    "addendum": {
+      "numeric_defaults": {
+        "C": 8,
+        "omega": 0.02,
+        "J": 10
+      },
+      "ddpm_ffhq_to_babies": {
+        "learning_rate": 5e-6,
+        "Gamma": 3,
+        "training_iterations": 160
+      },
+      "ddpm_ffhq_to_sunglasses": {
+        "learning_rate": 5e-5,
+        "Gamma": 15,
+        "training_iterations": 200
+      },
+      "ddpm_ffhq_to_raphael": {
+        "learning_rate": 5e-5,
+        "Gamma": 10,
+        "training_iterations": 500
+      }
+    },
+    "4.3_optimization": {
+      "symbols": ["gamma", "x_t", "x_0", "epsilon^star", "epsilon_theta,psi", "x_t^star", "sigma_hat_t^2", "p_phi", "alpha_bar_t", "epsilon_mean", "epsilon_std", "max_epsilon", "epsilon", "epsilon_theta", "theta^l", "psi^l"],
+      "numeric_defaults": {
+        "gamma": 2,
+        "x_t": 0,
+        "x_0": 1
+      },
+      "algorithm_terms": ["equation", "loss", "compute", "sample"]
+    },
+    "4.1_similarity_guided_training": {
+      "symbols": ["gamma", "phi", "x_t-1", "x_t", "sigma_t^2", "p_phi", "mu", "theta_S", "theta_T", "KL", "theta", "x_0", "epsilon", "epsilon_t", "epsilon_theta", "sigma_hat_t", "alpha_bar_t-1"],
+      "numeric_defaults": {
+        "gamma": 4,
+        "phi": 2,
+        "x_t-1": 1,
+        "x_t": 0
+      },
+      "algorithm_terms": ["equation", "loss"]
+    },
+    "A.2_similarity_guided_loss": {
+      "symbols": ["p_theta,phi", "KL", "beta_t^2", "sigma_t^2", "alpha_t", "alpha_bar_t", "sigma_hat_t", "alpha_bar_t-1", "D_KL", "mu_tilde_t", "mu_t", "gamma", "p_phi", "epsilon"],
+      "numeric_defaults": {
+        "p_theta,phi": 0,
+        "KL": 1,
+        "beta_t^2": 13,
+        "sigma_t^2": 2
+      },
+      "algorithm_terms": ["equation", "loss", "gradient"]
+    }
+  }
+}

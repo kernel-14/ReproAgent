@@ -1,0 +1,249 @@
+# configs/default.yaml
+# Configuration file for LCA-on-the-Line reproduction pipeline
+
+metadata:
+  trust_remote_code: true
+  tree_prefix: "latent_taxonomy"
+  paper_anchors:
+    numeric_defaults:
+      k_min: 1
+      k_step1: 2
+      k_step2: 4
+      n_levels: 9
+      num_classes: 1000
+      lambda_weight: 0.03
+      temperature: 1.0
+      batch_size: 64
+      learning_rate: 0.001
+      epochs: 25
+      mae_threshold: 0.03
+      lca_distance_default: 3
+      elca_default: 1
+      depth_default: 2
+      info_content_default: 1.0
+    symbols:
+      - trust_remote_code
+      - load_dataset
+      - imagenet_sketch
+      - M_LCA
+      - LCA
+      - M^T
+      - process_lca_matrixlca_matrix_raw
+      - tree_prefix
+      - lca_matrix_raw
+      - result_matrix
+      - lca_matrix_raw-lca_matrix_raw
+      - fit_transformresult_matrix
+      - from_numpyresult_matrix
+      - not_similarity
+      - process_lca_matrix
+      - fit_transform
+      - from_numpy
+      - y^prime
+      - N_LCA
+      - D_LCA
+      - asset_3
+      - X_i
+      - X_1
+      - X_n
+
+environment_registry:
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    factory: "src.lca_on_the_line.data.make_environment"
+    setup_metadata:
+      num_classes: 1000
+      split: "val"
+    availability_check: "src.lca_on_the_line.data.check_imagenet_availability"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_imagenet_config"
+  laion:
+    id: "laion"
+    alias: "laion"
+    factory: "src.lca_on_the_line.data.make_environment"
+    setup_metadata:
+      num_classes: 1000
+      split: "val"
+    availability_check: "src.lca_on_the_line.data.check_laion_availability"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_laion_config"
+
+dataset_registry:
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    loader: "src.lca_on_the_line.data.load_dataset"
+    validation_check: "src.lca_on_the_line.data.validate_dataset"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_dataset_config"
+  laion:
+    id: "laion"
+    alias: "laion"
+    loader: "src.lca_on_the_line.data.load_dataset"
+    validation_check: "src.lca_on_the_line.data.validate_dataset"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_dataset_config"
+  imagenet_c:
+    id: "imagenet_c"
+    alias: "imagenet_c"
+    loader: "src.lca_on_the_line.data.load_dataset"
+    validation_check: "src.lca_on_the_line.data.validate_dataset"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_dataset_config"
+  imagenet_r:
+    id: "imagenet_r"
+    alias: "imagenet_r"
+    loader: "src.lca_on_the_line.data.load_dataset"
+    validation_check: "src.lca_on_the_line.data.validate_dataset"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_dataset_config"
+  imagenet_v2:
+    id: "imagenet_v2"
+    alias: "imagenet_v2"
+    loader: "src.lca_on_the_line.data.load_dataset"
+    validation_check: "src.lca_on_the_line.data.validate_dataset"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_dataset_config"
+  imagenet_sketch:
+    id: "imagenet_sketch"
+    alias: "imagenet_sketch"
+    loader: "src.lca_on_the_line.data.load_dataset"
+    validation_check: "src.lca_on_the_line.data.validate_dataset"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_dataset_config"
+  imagenet_a:
+    id: "imagenet_a"
+    alias: "imagenet_a"
+    loader: "src.lca_on_the_line.data.load_dataset"
+    validation_check: "src.lca_on_the_line.data.validate_dataset"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_dataset_config"
+  objectnet:
+    id: "objectnet"
+    alias: "objectnet"
+    loader: "src.lca_on_the_line.data.load_dataset"
+    validation_check: "src.lca_on_the_line.data.validate_dataset"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_dataset_config"
+
+method_registry:
+  ours:
+    alias: "ours"
+    selector: "src.lca_on_the_line.methods.get_method"
+    description: "LCA-on-the-Line taxonomy-based prediction and alignment"
+  resnet:
+    alias: "resnet"
+    selector: "src.lca_on_the_line.baselines.get_baseline"
+    description: "Standard ResNet baseline"
+  average_confidence:
+    alias: "AC"
+    selector: "src.lca_on_the_line.baselines.get_baseline"
+  aline_d:
+    alias: "Aline-D"
+    selector: "src.lca_on_the_line.baselines.get_baseline"
+  aline_s:
+    alias: "Aline-S"
+    selector: "src.lca_on_the_line.baselines.get_baseline"
+
+metric_registry:
+  accuracy:
+    alias: "accuracy"
+    formula: "correct / total"
+    function: "src.lca_on_the_line.metrics.compute_accuracy"
+  loss:
+    alias: "loss"
+    formula: "cross_entropy"
+    function: "src.lca_on_the_line.metrics.compute_loss"
+  mae:
+    alias: "mae"
+    formula: "mean_absolute_error"
+    function: "src.lca_on_the_line.metrics.compute_mae"
+  lca_distance:
+    alias: "lca"
+    formula: "D_LCA(y_prime, y) = f(y) - f(N_LCA(y, y_prime))"
+    function: "src.lca_on_the_line.metrics.compute_lca_distance"
+  elca_distance:
+    alias: "elca"
+    formula: "D_ELCA(model, M) = sum_i sum_k p_k * D_LCA(k, y_i)"
+    function: "src.lca_on_the_line.metrics.compute_elca_distance"
+
+parameter_sweeps:
+  num_clusters_per_level:
+    default: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+    values:
+      - [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+  learning_rate:
+    default: 0.001
+    values: [0.0001, 0.0005, 0.001, 0.005]
+  batch_size:
+    default: 64
+    values: [32, 64, 128, 256]
+  lambda_weight:
+    default: 0.03
+    values: [0.01, 0.03, 0.1, 0.3]
+  soft_label_temperature:
+    default: 1.0
+    values: [0.5, 1.0, 2.0]
+
+evidence_obligation_matrix:
+  taxonomy_construction:
+    experiment_name: "Taxonomy Construction"
+    environment: "imagenet"
+    method: "ours"
+    metrics: ["lca_distance"]
+    artifact_writer: "src.lca_on_the_line.taxonomy.write_latent_taxonomy"
+    output_path: "results/latent_taxonomy.json"
+  experiment_4_1:
+    experiment_name: "Experiment 4.1: LCA-on-the-Line"
+    environment: "imagenet"
+    method: "ours"
+    metrics: ["lca_distance", "accuracy"]
+    artifact_writer: "src.lca_on_the_line.metrics.write_figure_5_lca_on_the_line_artifact"
+    output_path: "results/figure_5_lca_on_the_line.png"
+  experiment_4_2:
+    experiment_name: "Experiment 4.2: Predicting OOD Performance"
+    environment: "imagenet"
+    method: "ours"
+    metrics: ["mae"]
+    artifact_writer: "src.lca_on_the_line.baselines.write_baseline_comparison_artifact"
+    output_path: "results/baseline_comparison.json"
+  appendix_model_stats:
+    experiment_name: "Appendix: Detailed Model Stats"
+    environment: "imagenet"
+    method: "ours"
+    metrics: ["accuracy", "lca_distance"]
+    artifact_writer: "src.lca_on_the_line.metrics.write_table_10_artifact"
+    output_path: "results/table_10.json"
+  appendix_detailed_correlation:
+    experiment_name: "Appendix: Detailed Correlation"
+    environment: "imagenet"
+    method: "ours"
+    metrics: ["mae"]
+    artifact_writer: "src.lca_on_the_line.metrics.write_table_3_artifact"
+    output_path: "results/table_3.json"
+  experiment_4_3_2:
+    experiment_name: "Experiment 4.3.2: Soft Labeling"
+    environment: "imagenet"
+    method: "ours"
+    metrics: ["accuracy", "loss"]
+    artifact_writer: "src.lca_on_the_line.methods.write_table_5_6_results"
+    output_path: "results/table_5_6_results.json"
+  experiment_4_3_3:
+    experiment_name: "Experiment 4.3.3: VLM Prompt Engineering"
+    environment: "laion"
+    method: "ours"
+    metrics: ["accuracy"]
+    artifact_writer: "src.lca_on_the_line.methods.write_vlm_taxonomy_results"
+    output_path: "results/vlm_taxonomy_results.json"
+  final_reporting:
+    experiment_name: "Final Reporting"
+    environment: "imagenet"
+    method: "ours"
+    metrics: ["mae", "accuracy"]
+    artifact_writer: "src.lca_on_the_line.metrics.write_summary_report"
+    output_path: "results/summary_report.pdf"
+
+callable_protocol_matrix:
+  lca_on_the_line_correlation:
+    experiment: "LCA-on-the-Line Correlation"
+    environment: "imagenet"
+    method_selector: "ours"
+    metric_functions: ["compute_lca_distance", "compute_accuracy"]
+    artifact_writer: "write_correlation_analysis_artifact"
+  ood_prediction_benchmarking:
+    experiment: "OOD Prediction Benchmarking"
+    environment: "imagenet"
+    method_selector: "ours"
+    metric_functions: ["compute_mae"]
+    artifact_writer: "write_baseline_comparison_artifact"

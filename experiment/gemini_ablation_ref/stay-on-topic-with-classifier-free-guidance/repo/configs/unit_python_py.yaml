@@ -1,0 +1,273 @@
+# configs/unit_python_py.yaml
+# Faithful reproduction configuration for Classifier-Free Guidance of Language Models
+# reference_grounding: chunk_004, chunk_005, chunk_007, chunk_010, addendum
+
+metadata:
+  project_name: "stay-on-topic-cfg"
+  description: "Configuration for reproducing Classifier-Free Guidance (CFG) experiments across zero-shot, CoT, code generation, and negative prompting tasks."
+  active_reproduction_scope: "Zero-shot NLP, CoT reasoning, Program Synthesis, and Mechanistic Analysis of CFG"
+  cli_command: "python main.py --config configs/repro_all.yaml"
+  output_summary_path: "results/summary.json"
+
+# 1. Environment and Task Factories
+environment_factories:
+  unit-003:
+    id: "unit-003"
+    alias: "lambada_zero_shot"
+    setup_metadata:
+      task_type: "zero-shot-completion"
+      metric: "accuracy"
+    availability_check: "src.data_pipeline.check_lambada_availability"
+    runnable_config_hook: "src.config.get_lambada_config"
+  unit-004:
+    id: "unit-004"
+    alias: "cot_reasoning"
+    setup_metadata:
+      task_type: "chain-of-thought"
+      metric: "accuracy"
+    availability_check: "src.data_pipeline.check_cot_availability"
+    runnable_config_hook: "src.config.get_cot_config"
+  unit-005:
+    id: "unit-005"
+    alias: "code_generation"
+    setup_metadata:
+      task_type: "program-synthesis"
+      metric: "pass_at_k"
+    availability_check: "src.data_pipeline.check_code_gen_availability"
+    runnable_config_hook: "src.config.get_code_gen_config"
+  unit-008:
+    id: "unit-008"
+    alias: "repro_all_tasks"
+    setup_metadata:
+      task_type: "multi-task-evaluation"
+      metric: "all_metrics"
+    availability_check: "src.data_pipeline.check_all_tasks_availability"
+    runnable_config_hook: "src.config.get_repro_all_config"
+  zero-shot:
+    id: "zero-shot"
+    alias: "zero_shot_nlp"
+    setup_metadata:
+      task_type: "zero-shot"
+      metric: "accuracy"
+    availability_check: "src.data_pipeline.check_zero_shot_availability"
+    runnable_config_hook: "src.config.get_zero_shot_config"
+  glue:
+    id: "glue"
+    alias: "glue_benchmark"
+    setup_metadata:
+      task_type: "classification"
+      metric: "accuracy"
+    availability_check: "src.data_pipeline.check_glue_availability"
+    runnable_config_hook: "src.config.get_glue_config"
+  significantly_different:
+    id: "significantly_different"
+    alias: "significantly_different_distributions"
+    setup_metadata:
+      task_type: "distribution-shift"
+      metric: "kl_divergence"
+    availability_check: "src.data_pipeline.check_distribution_availability"
+    runnable_config_hook: "src.config.get_distribution_config"
+  underperform_distributions_among_all:
+    id: "underperform_distributions_among_all"
+    alias: "underperform_distributions"
+    setup_metadata:
+      task_type: "robustness-check"
+      metric: "worst_case_accuracy"
+    availability_check: "src.data_pipeline.check_underperform_availability"
+    runnable_config_hook: "src.config.get_underperform_config"
+  humanoid:
+    id: "humanoid"
+    alias: "humanoid_evaluation"
+    setup_metadata:
+      task_type: "human-like-generation"
+      metric: "fidelity_score"
+    availability_check: "src.data_pipeline.check_humanoid_availability"
+    runnable_config_hook: "src.config.get_humanoid_config"
+  decides_which:
+    id: "decides_which"
+    alias: "task_selector"
+    setup_metadata:
+      task_type: "dynamic-routing"
+      metric: "selection_accuracy"
+    availability_check: "src.data_pipeline.check_selector_availability"
+    runnable_config_hook: "src.config.get_selector_config"
+  config_tests_artifact_writer_expose_explicit:
+    id: "config_tests_artifact_writer_expose_explicit"
+    alias: "artifact_writer_test"
+    setup_metadata:
+      task_type: "validation"
+      metric: "write_success"
+    availability_check: "src.data_pipeline.check_artifact_writer_availability"
+    runnable_config_hook: "src.config.get_artifact_writer_config"
+  common_sense_reasoning:
+    id: "common_sense_reasoning"
+    alias: "common_sense"
+    setup_metadata:
+      task_type: "reasoning"
+      metric: "accuracy"
+    availability_check: "src.data_pipeline.check_common_sense_availability"
+    runnable_config_hook: "src.config.get_common_sense_config"
+
+# 2. Dataset and Benchmark Loaders
+dataset_loaders:
+  LAMBADA:
+    id: "LAMBADA"
+    alias: "lambada_dataset"
+    setup_metadata:
+      source: "openai"
+      split: "test"
+    validation_checks:
+      - "src.data_pipeline.validate_lambada_format"
+      - "src.data_pipeline.validate_lambada_size"
+    runnable_config_hook: "src.data_pipeline.load_lambada"
+  glue:
+    id: "glue"
+    alias: "glue_dataset"
+    setup_metadata:
+      source: "huggingface"
+      split: "validation"
+    validation_checks:
+      - "src.data_pipeline.validate_glue_format"
+    runnable_config_hook: "src.data_pipeline.load_glue"
+
+# 3. Method, Baseline, and Attack Selectors
+selectors:
+  methods:
+    ours:
+      name: "Classifier-Free Guidance (CFG)"
+      description: "Autoregressive logit-level classifier-free guidance"
+      enabled: true
+    chain_of_thought:
+      name: "Chain-of-Thought (CoT)"
+      description: "Prompting with step-by-step reasoning"
+      enabled: true
+    bert:
+      name: "BERT Baseline"
+      description: "Masked language model baseline"
+      enabled: false
+    ppo:
+      name: "PPO Baseline"
+      description: "Reinforcement learning from human feedback baseline"
+      enabled: false
+
+# 4. Parameter Sweeps and Hyperparameters
+parameter_sweeps:
+  gamma:
+    name: "guidance_scale"
+    description: "Classifier-free guidance strength parameter"
+    default: 1.5
+    sweep_values: [1.0, 1.5, 2.0, 3.0, 5.0]
+  temperature:
+    name: "temperature"
+    description: "Sampling temperature for language generation"
+    default: 0.2
+    sweep_values: [0.2, 0.6, 0.8, 1.0]
+  p:
+    name: "top_p"
+    description: "Nucleus sampling probability threshold"
+    default: 0.9
+    sweep_values: [0.5, 0.8, 0.9, 0.95]
+
+fixed_hyperparameters:
+  gamma_5:
+    name: "gamma_5"
+    value: 5.0
+    description: "Fixed high guidance scale anchor used in negative prompting experiments"
+  baseline_defaults:
+    ours:
+      gamma: 1.5
+      temperature: 0.2
+    chain_of_thought:
+      gamma: 1.5
+      temperature: 0.8
+    bert:
+      temperature: 1.0
+    ppo:
+      temperature: 0.7
+
+# 5. Paper Formula and Algorithm Symbol Inventory
+symbols:
+  w_p: "prompt context"
+  flops_computation: "flops measurement formula"
+  sum_k: "sum over k"
+  p_k: "probability of k"
+  x_i: "token or state at step i"
+  x_lt_i: "tokens or states before step i"
+  sum_i_1_n: "sum from i=1 to n"
+  P_theta: "conditional or unconditional model probability"
+  P_phi: "classifier probability"
+  gamma: "guidance scale"
+  theta: "model parameters"
+  epsilon_t: "noise prediction at step t"
+  x_t_plus_1: "state at step t+1"
+  prod_i_1_T: "product from i=1 to T"
+  w_i: "token at index i"
+  w_j_lt_i: "tokens before index i"
+  prod_i_T: "product over i to T"
+  c_bar: "negative or null conditioning"
+  n_c: "number of conditioning tokens"
+  n_p: "number of prompt tokens"
+  w_t: "token at step t"
+  w_lt_t: "tokens before step t"
+  w_T: "terminal token"
+  w_hat: "guided token distribution"
+
+numeric_anchors:
+  val_5_1: 5.1
+  val_1: 1.0
+  val_0: 0.0
+  val_3: 3.0
+  val_4: 4.0
+  val_6: 6.0
+  val_7: 7.0
+  val_5: 5.0
+  val_3_4: 3.4
+  val_81: 81.0
+  val_1_5: 1.5
+  val_77_9: 77.9
+  val_2: 2.0
+  val_10: 10.0
+  val_100: 100.0
+  val_0_2: 0.2
+  val_8: 8.0
+  val_14: 14.0
+  val_0_8: 0.8
+  val_15: 15.0
+  val_0_6: 0.6
+
+# 6. Executable Paper Formula / Algorithm Anchors
+formula_anchors:
+  classifier_guidance_image:
+    section: "2.1. Classifier Guidance in Text-to-Image Models"
+    symbols: ["P_theta", "P_phi", "gamma", "theta", "epsilon_t", "x_t_plus_1"]
+    numeric_defaults: [4.0, 1.0, 0.0, 3.0]
+    algorithm_terms: ["equation", "ema", "sample"]
+    steps: "log P_hat_theta(epsilon_t | x_t+1, c) = gamma * log P_theta(epsilon_t | x_t+1, c) - (gamma - 1) * log P_theta(epsilon_t | x_t+1)"
+  cfg_language_models:
+    section: "2.2. Classifier-Free Guidance of Language Models"
+    symbols: ["P_theta", "prod_i_1_T", "gamma", "prod_i_T", "w_i", "w_j_lt_i"]
+    numeric_defaults: [1.0, 6.0, 7.0, 5.0, 3.4]
+    algorithm_terms: ["equation", "formula", "sample"]
+    steps: "log P_hat_theta(w_i | w_j<i, c) = log P_theta(w_i | w_j<i) + gamma * (log P_theta(w_i | w_j<i, c) - log P_theta(w_i | w_j<i))"
+  flops_computation_addendum:
+    section: "addendum"
+    symbols: ["flops_computation", "sum_k", "sum_i_1_n", "w_p", "p_k", "x_i", "x_lt_i"]
+    numeric_defaults: [5.1, 1.0]
+    algorithm_terms: ["equation", "formula", "search"]
+    steps: "FLOPs are measured using the Electra flops_computation.py formula with Falcon-7b-Base model."
+  zero_shot_prompts:
+    section: "3.1. Basic Prompting: Zero-Shot Prompts"
+    symbols: ["gamma"]
+    numeric_defaults: [81.0, 1.5, 77.9]
+    formula: "LLaMA 7B achieves 81% accuracy in Lambada zero-shot with gamma=1.5, outperforming PaLM-540B (77.9%)."
+  program_synthesis:
+    section: "3.3.1. PROGRAM SYNTHESIS EVALUATIONS"
+    symbols: ["gamma"]
+    numeric_defaults: [4.0, 8.0, 2.0, 3.0, 1.0, 10.0, 100.0, 0.2]
+    algorithm_terms: ["increase"]
+    formula: "Evaluate pass@k for k=1,10,100 at temperature=0.2. Pass@1 increases with CFG across 1 <= gamma <= 1.5 and degrades thereafter."
+  chain_of_thought:
+    section: "C.5. Deliberative Prompting: Chain-of-Thought"
+    symbols: ["gamma"]
+    numeric_defaults: [1.0, 1.5, 14.0, 0.8, 15.0, 0.6]
+    formula: "Compare gamma=1 (baseline) vs gamma=1.5 (ours) on Chain-of-Thought reasoning tasks."

@@ -1,0 +1,317 @@
+# configs/default.yaml
+# Configuration for Refined Coreset Selection (LBCS) Reproduction
+# Reference Grounding: chunk_005, chunk_006, chunk_008, chunk_009, chunk_017_01
+
+# 1. Global Metadata & Invariants
+metadata:
+  paper_title: "Refined Coreset Selection: Towards Minimal Coreset Size under Model Performance Constraints"
+  method_name: "Lexicographic Bilevel Coreset Selection (LBCS)"
+  task_family: "computer_vision"
+
+# 2. Paper Formula & Algorithm Symbol Inventory (Code-Visible Anchors)
+# These symbols are mapped to their mathematical definitions and default values
+symbols:
+  L_p: "L_p norm of vectors or matrices"
+  x_i: "Input instance"
+  y_i: "Label"
+  m_i: "Binary mask value for sample i"
+  f_1: "Performance constraint objective (e.g., cross-entropy loss or error rate)"
+  sum_i_1_n: "Summation over all samples in the dataset"
+  theta: "Model parameters trained on the coreset"
+  L_0: "L_0 norm representing coreset size"
+  f_2: "Coreset size objective (sum of mask values)"
+  lambda: "Weighted combination parameter (used in baseline weighted optimization)"
+  f_i: "Objective function i"
+  i_prime: "Index of priority objective"
+  M_star: "Optimal mask set"
+  M_1_star: "Optimal mask set for objective 1"
+  M_2_star: "Optimal mask set for objective 2"
+  f_1_star: "Infimum value of f_1"
+  f_2_star: "Infimum value of f_2"
+  f_star: "Infimum value of objective f"
+  S_1: "Search space or subset 1"
+  S_2: "Search space or subset 2"
+  gamma_1: "Theoretical convergence parameter 1"
+  eta_1: "Learning rate or step size 1"
+  gamma_2: "Theoretical convergence parameter 2"
+  eta_2: "Learning rate or step size 2"
+  t_hat: "Iteration threshold or index"
+  psi_t_plus_1: "State or potential at iteration t+1"
+
+# 3. Numeric and Default Anchors from the Paper
+numeric_anchors:
+  T_search_times: 1000
+  default_lambda: 0.5
+  default_noise_rate: 0.3
+  default_noise_type: "symmetric"
+  default_momentum: 0.9
+  default_weight_decay: 0.001
+  default_batch_size: 256
+  default_learning_rate: 0.01
+  default_epochs: 100
+  group_size: 100
+  anchor_values:
+    - 1000
+    - 1
+    - 0
+    - 2
+    - 3
+    - 5
+    - 4000
+    - 10
+    - 80.3
+    - 0.6
+    - 3000
+    - 14
+    - 16
+    - 17
+    - 4
+    - 29
+
+# 4. Environment & Task Registry
+# Explicitly register environment/task aliases for cifar, imagenet, mnist, svhn
+environments:
+  cifar:
+    id: "cifar"
+    alias: "cifar"
+    setup_metadata:
+      task_family: "computer_vision"
+      num_classes: 10
+    availability_check: "import torchvision"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    setup_metadata:
+      task_family: "computer_vision"
+      num_classes: 1000
+    availability_check: "import torchvision"
+  mnist:
+    id: "mnist"
+    alias: "mnist"
+    setup_metadata:
+      task_family: "computer_vision"
+      num_classes: 10
+    availability_check: "import torchvision"
+  svhn:
+    id: "svhn"
+    alias: "svhn"
+    setup_metadata:
+      task_family: "computer_vision"
+      num_classes: 10
+    availability_check: "import torchvision"
+
+# 5. Dataset & Benchmark Loader Registry
+# Explicitly register dataset/benchmark aliases for imagenet, mnist, imagenet_1k, cifar, svhn
+datasets:
+  mnist:
+    id: "mnist"
+    alias: "mnist"
+    full_name: "Fashion-MNIST"
+    loader_path: "data_pipeline/loaders.py"
+    validation_checks:
+      - "check_mnist_exists"
+  cifar:
+    id: "cifar"
+    alias: "cifar"
+    full_name: "CIFAR-10"
+    loader_path: "data_pipeline/loaders.py"
+    validation_checks:
+      - "check_cifar_exists"
+  cifar100:
+    id: "cifar100"
+    alias: "cifar100"
+    full_name: "CIFAR-100"
+    loader_path: "data_pipeline/loaders.py"
+    validation_checks:
+      - "check_cifar100_exists"
+  svhn:
+    id: "svhn"
+    alias: "svhn"
+    full_name: "SVHN"
+    loader_path: "data_pipeline/loaders.py"
+    validation_checks:
+      - "check_svhn_exists"
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    full_name: "ImageNet-1k"
+    loader_path: "data_pipeline/loaders.py"
+    validation_checks:
+      - "check_imagenet_exists"
+  imagenet_1k:
+    id: "imagenet_1k"
+    alias: "imagenet_1k"
+    full_name: "ImageNet-1k"
+    loader_path: "data_pipeline/loaders.py"
+    validation_checks:
+      - "check_imagenet_exists"
+
+# 6. Method, Baseline, and Attack Selectors
+# Expose method/baseline/attack selectors for ours, oracle, vit, ppo, resnet
+methods:
+  ours:
+    id: "ours"
+    alias: "ours"
+    full_name: "LBCS (Lexicographic Bilevel Coreset Selection)"
+    implementation_path: "model_or_method/lbcs.py"
+  oracle:
+    id: "oracle"
+    alias: "oracle"
+    full_name: "Oracle Coreset Selection"
+    implementation_path: "baseline_or_ablation/baselines.py"
+  vit:
+    id: "vit"
+    alias: "vit"
+    full_name: "Vision Transformer Backbone"
+    implementation_path: "model_or_method/model_factory.py"
+  ppo:
+    id: "ppo"
+    alias: "ppo"
+    full_name: "Proximal Policy Optimization (RL Baseline)"
+    implementation_path: "baseline_or_ablation/rl_baselines.py"
+  resnet:
+    id: "resnet"
+    alias: "resnet"
+    full_name: "ResNet Backbone (ResNet-18 / ResNet-50)"
+    implementation_path: "model_or_method/model_factory.py"
+  baselines:
+    - "Uniform"
+    - "EL2N"
+    - "GraNd"
+    - "Influential"
+    - "Moderate"
+    - "CCS"
+    - "Probabilistic"
+  rl_baselines:
+    - "PPO"
+    - "PBT"
+    - "PQL"
+
+# 7. Parameter Sweeps & Bounded Config Entries
+# Expose bounded sweep/config entries for lambda values 0, 1; epsilon values 0.2, 0.3, 0.4; epochs
+sweeps:
+  lambda_values: [0.0, 0.5, 1.0]
+  epsilon_values: [0.2, 0.3, 0.4]
+  k_values: [200, 400]
+  epochs: [10, 50, 100]
+  noise_rate: [0.0, 0.3, 0.5]
+  noise_type: ["symmetric", "asymmetric"]
+
+# 8. Fixed Hyperparameters
+fixed_hyperparameters:
+  momentum: 0.9
+  weight_decay: 0.001
+  optimizer: "SGD"
+  base_lr: 0.01
+  batch_size: 256
+
+# 9. Callable Experiment Specs (Evidence Obligation Matrix Rows)
+experiments:
+  table1:
+    name: "Experiment I: Preliminary Presentation (Table 1)"
+    environment: "mnist"
+    method: "ours"
+    parameters:
+      k: 200
+      epsilon: 0.2
+      lambda: 0.5
+    metric_function: "compute_accuracy"
+    artifact_writer: "write_table_1_artifact"
+    output_path: "results/table1.json"
+  table2:
+    name: "Experiment II: Main Comparison (Table 2)"
+    environment: "cifar"
+    method: "ours"
+    parameters:
+      k: 400
+      epsilon: 0.3
+      lambda: 0.0
+    metric_function: "compute_accuracy"
+    artifact_writer: "write_table_2_artifact"
+    output_path: "results/table2.json"
+  table6_8:
+    name: "Experiment III: RL Comparison (Table 6-8)"
+    environment: "svhn"
+    method: "ppo"
+    parameters:
+      k: 400
+      epsilon: 0.4
+      lambda: 1.0
+    metric_function: "compute_accuracy"
+    artifact_writer: "write_table_6_artifact"
+    output_path: "results/table6.json"
+  robustness:
+    name: "Robustness: 30% symmetric label noise"
+    environment: "cifar"
+    method: "ours"
+    parameters:
+      noise_rate: 0.3
+      noise_type: "symmetric"
+      epsilon: 0.3
+    metric_function: "compute_accuracy"
+    artifact_writer: "write_table_8_artifact"
+    output_path: "results/table8.json"
+  imagenet:
+    name: "Experiment V: ImageNet-1k Evaluation"
+    environment: "imagenet_1k"
+    method: "ours"
+    parameters:
+      group_size: 100
+      epsilon: 0.3
+    metric_function: "compute_accuracy"
+    artifact_writer: "write_imagenet_results_artifact"
+    output_path: "results/imagenet_results.json"
+
+# 10. Theoretical Analysis & Optimization Algorithm Steps
+theoretical_analysis:
+  section_4:
+    title: "4. Theoretical Analysis"
+    symbols: ["gamma_1", "eta_1", "t_hat", "gamma_2", "eta_2", "f_star", "f_1", "f_2", "M_1_star", "S_1", "S_2", "psi_t_plus_1", "M_2_star"]
+    numeric_defaults: [0, 1, 2, 3]
+    algorithm_terms: ["algorithm", "objective", "mask", "ema", "update", "search"]
+    steps:
+      - "Specifically, for an objective function f, its infimum value in the search space M is denoted by f_star."
+      - "We employ m^t to represent the mask at the t-th iteration generated by our algorithm."
+  section_3_2:
+    title: "3.2. Optimization Algorithm"
+    symbols: ["i_prime", "epsilon", "f_1", "f_2", "f_i", "M_star", "M_2_star", "M_1_star", "f_1_star", "f_2_star"]
+    numeric_defaults: [5, 1, 2]
+    algorithm_terms: ["algorithm", "formula", "objective", "gradient", "mask", "search", "select"]
+    steps:
+      - "As under lexicographic optimization, it is inaccessible to the gradients of f_1(m) and f_2(m) with respect to m, the methods that require analytic forms of gradients are inapplicable."
+  appendix_a:
+    title: "A. Details of the Black-box Optimization Algorithm"
+    symbols: ["epsilon", "t_prime", "f_1", "f_2", "delta_init", "delta", "F_H"]
+    numeric_defaults: [1, 2, 0, 14]
+    algorithm_terms: ["algorithm", "objective", "mask", "update", "search", "sample"]
+    steps:
+      - "For the black-box optimization of f_1 and f_2 in order of priority, we make use of a randomized direct search algorithm named LexiFlow and make necessary modifications to it."
+  section_6:
+    title: "6. More Justifications and Analyses"
+    numeric_defaults: [1000, 3000, 4000]
+    algorithm_terms: ["gradient", "mask", "search", "initialize"]
+    steps:
+      - "LBCS+Moderate means the mask is initialized by Moderate and then is refined by our LBCS."
+      - "As a comparison, the time complexity of Probabilistic is O(T K C), where C is the number of sampling times required by its policy gradient estimator."
+  section_3_1:
+    title: "3.1. Lexicographic Bilevel Coreset Selection"
+    symbols: ["theta", "f_1", "f_2"]
+    numeric_defaults: [1, 2, 0, 3]
+    algorithm_terms: ["algorithm", "formula", "objective", "mask", "update", "search", "select", "initialize"]
+    steps:
+      - "theta(m) in arg min_theta L(m, theta) where min represents the lexicographic optimization procedure over the ordered list F(m)."
+  appendix_b:
+    title: "B. Proofs of Theoretical Results"
+    symbols: ["t_hat", "gamma_1", "gamma_2", "epsilon", "M_1_star", "M_2_star", "f_i", "n_1", "R_plus", "n_2", "f_1", "f_2", "S_1", "S_2"]
+    numeric_defaults: [2, 1, 0]
+    algorithm_terms: ["objective", "mask", "ema"]
+    steps:
+      - "We use m^0 to denote the mask generated at the step 0, where the mask m^0 is not in M_1_star and m^0 is not in M_2_star."
+
+# 11. CLI Flag Mapping to Paper Sections/Tables
+cli_flag_mapping:
+  table1: "Experiment I: Preliminary Presentation (Table 1)"
+  table2: "Experiment II: Main Comparison (Table 2)"
+  table6-11: "Experiment III: RL Comparison (Table 6-8) & Ablations"
+  robustness: "Robustness against Imperfect Supervision (Figure 2 & Table 8)"
+  imagenet: "Evaluations on ImageNet-1k (Table 4)"

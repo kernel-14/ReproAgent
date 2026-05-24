@@ -1,0 +1,262 @@
+# configs/default.yaml
+# reference_grounding: chunk_035 configs/default.yaml
+
+project_metadata:
+  name: "RICE: Breaking Through the Training Bottlenecks of Reinforcement Learning with Explanation"
+  hypothesis: "使用 PPO 训练的掩码网络可以识别出与 StateMask 具有相当保真度的关键状态，同时提高效率"
+  decision_value: "为下游的微调过程启用基于解释引导的 roll-in 状态选择"
+
+# 状态掩码网络与PPO训练模块
+ppo_mask_training:
+  enabled: true
+  learning_rate: 0.0003
+  blinding_penalty_coefficient: 0.1
+  alpha: 0.01
+  mask_threshold_k: 20
+  roll_in_steps: 10
+  exploration_steps: 50
+
+# 基线方法与环境封装模块
+environment_registry:
+  mujoco:
+    aliases: ["Hopper", "Walker2d", "Reacher", "HalfCheetah"]
+    setup_metadata:
+      xml_path: "mujoco_assets/"
+    availability_check: "src.rice.environments.check_mujoco_available"
+    runnable_config_hook: "src.rice.environments.setup_mujoco"
+  selfish_mining:
+    aliases: ["selfish mining"]
+    setup_metadata:
+      difficulty: "medium"
+    availability_check: "src.rice.environments.check_selfish_mining_available"
+    runnable_config_hook: "src.rice.environments.setup_selfish_mining"
+  network_defense:
+    aliases: ["network defense"]
+    setup_metadata:
+      nodes: 10
+    availability_check: "src.rice.environments.check_network_defense_available"
+    runnable_config_hook: "src.rice.environments.setup_network_defense"
+  autonomous_driving:
+    aliases: ["autonomous driving", "MetaDrive"]
+    setup_metadata:
+      traffic_density: 0.2
+    availability_check: "src.rice.environments.check_autonomous_driving_available"
+    runnable_config_hook: "src.rice.environments.setup_autonomous_driving"
+  cage:
+    aliases: ["CAGE Challenge 2", "cage"]
+    setup_metadata:
+      scenario: "cyborg-v2"
+    availability_check: "src.rice.environments.check_cage_available"
+    runnable_config_hook: "src.rice.environments.setup_cage"
+  gym:
+    aliases: ["gym"]
+    setup_metadata:
+      env_id: "CartPole-v1"
+    availability_check: "src.rice.environments.check_gym_available"
+    runnable_config_hook: "src.rice.environments.setup_gym"
+
+dataset_registry:
+  cage:
+    aliases: ["cage_dataset"]
+    setup_metadata:
+      path: "data/cage/"
+    validation_check: "src.rice.utils.validate_cage_dataset"
+  gym:
+    aliases: ["gym_dataset"]
+    setup_metadata:
+      path: "data/gym/"
+    validation_check: "src.rice.utils.validate_gym_dataset"
+  mujoco:
+    aliases: ["mujoco_dataset"]
+    setup_metadata:
+      path: "data/mujoco/"
+    validation_check: "src.rice.utils.validate_mujoco_dataset"
+  selfish_mining:
+    aliases: ["selfish_mining_dataset"]
+    setup_metadata:
+      path: "data/selfish_mining/"
+    validation_check: "src.rice.utils.validate_selfish_mining_dataset"
+  network_defense:
+    aliases: ["network_defense_dataset"]
+    setup_metadata:
+      path: "data/network_defense/"
+    validation_check: "src.rice.utils.validate_network_defense_dataset"
+  autonomous_driving:
+    aliases: ["autonomous_driving_dataset"]
+    setup_metadata:
+      path: "data/autonomous_driving/"
+    validation_check: "src.rice.utils.validate_autonomous_driving_dataset"
+
+method_registry:
+  ours:
+    name: "RICE (Ours)"
+    selector: "ours"
+    callable_path: "src.rice.ppo.make_method"
+  random:
+    name: "Random Mask Baseline"
+    selector: "random"
+    callable_path: "src.rice.ppo.make_method"
+  statemask:
+    name: "StateMask Baseline"
+    selector: "statemask"
+    callable_path: "src.rice.ppo.make_method"
+  ppo:
+    name: "Vanilla PPO"
+    selector: "ppo"
+    callable_path: "src.rice.ppo.make_method"
+  sac:
+    name: "Soft Actor-Critic"
+    selector: "sac"
+    callable_path: "src.rice.ppo.make_method"
+  gail:
+    name: "Generative Adversarial Imitation Learning"
+    selector: "gail"
+    callable_path: "src.rice.ppo.make_method"
+  jsrl:
+    name: "Jump-Start Reinforcement Learning"
+    selector: "jsrl"
+    callable_path: "src.rice.ppo.make_method"
+  heuristic:
+    name: "Heuristic Baseline"
+    selector: "heuristic"
+    callable_path: "src.rice.ppo.make_method"
+
+baseline_registry:
+  - "random"
+  - "statemask"
+  - "ppo"
+  - "sac"
+  - "gail"
+  - "jsrl"
+  - "heuristic"
+
+parameter_sweeps:
+  alpha_values: [0.01, 0.001, 0.0001]
+  lambda_values: [0.0, 0.1, 0.01, 0.001]
+  p_values: [0.0, 0.25, 0.5, 0.75, 1.0]
+  learning_rate_values: [0.0003, 0.0001, 0.00005]
+  k_values: [10, 20, 30, 40]
+
+# 解释保真度与效率对比实验 & 策略微调性能对比实验 & 评估指标与产物生成模块
+experiments:
+  experiment_i:
+    name: "Experiment I: Fidelity and Efficiency comparison"
+    environments: ["mujoco", "selfish_mining", "network_defense", "autonomous_driving", "cage", "gym"]
+    methods: ["ours", "statemask", "random"]
+    metrics: ["fidelity_score", "training_time"]
+    artifact_writers:
+      - "write_metrics_artifact"
+    output_paths:
+      - "results/metrics.json"
+  experiment_ii:
+    name: "Experiment II: Refining performance comparison"
+    environments: ["mujoco", "selfish_mining", "network_defense", "autonomous_driving", "cage", "gym"]
+    methods: ["ours", "jsrl", "random", "ppo"]
+    metrics: ["reward", "training_time"]
+    artifact_writers:
+      - "write_experiment_results_artifact"
+      - "write_method_registry_artifact"
+      - "write_ablation_registry_artifact"
+    output_paths:
+      - "results/experiment_registry.json"
+      - "results/tables/experiment_results.csv"
+  experiment_iii:
+    name: "Experiment III: Sensitivity and Ablation"
+    environments: ["mujoco"]
+    methods: ["ours"]
+    parameter_sweeps:
+      alpha: [0.01, 0.001, 0.0001]
+      lambda: [0.0, 0.1, 0.01, 0.001]
+      p: [0.0, 0.25, 0.5, 0.75, 1.0]
+    metrics: ["reward", "fidelity_score"]
+    artifact_writers:
+      - "write_sensitivity_report_artifact"
+      - "write_config_resolved_artifact"
+    output_paths:
+      - "results/sensitivity_report.json"
+      - "results/config_resolved.json"
+  experiment_iv:
+    name: "Experiment IV: Ablation on Mask Threshold K"
+    environments: ["mujoco"]
+    methods: ["ours"]
+    parameter_sweeps:
+      k: [10, 20, 30, 40]
+    metrics: ["fidelity_score"]
+    artifact_writers:
+      - "write_metrics_artifact"
+    output_paths:
+      - "results/metrics.json"
+  experiment_v:
+    name: "Experiment V: Additional comparisons"
+    environments: ["cage", "gym"]
+    methods: ["ours", "heuristic", "ppo"]
+    metrics: ["reward"]
+    artifact_writers:
+      - "write_experiment_results_artifact"
+    output_paths:
+      - "results/tables/table_7.csv"
+
+# Paper formula/algorithm symbol inventory and numeric anchors
+formula_algorithm_symbols:
+  d_max: 100
+  V_pi: "V^pi(s) = E_pi[sum_t=0^infty gamma^t R(s_t, a_t) | s_0 = s]"
+  E_pi: "E_pi"
+  sum_t_0_infty: "sum_t=0^infty"
+  gamma_t: "gamma^t"
+  s_t: "s_t"
+  a_t: "a_t"
+  s_0: "s_0"
+  Q_pi: "Q^pi(s, a) = E_pi[sum_t=0^infty gamma^t R(s_t, a_t) | s_0 = s, a_0 = a]"
+  a_0: "a_0"
+  A_pi: "A^pi(s, a) = Q^pi(s, a) - V^pi(s)"
+  pi_star: "pi^*"
+  max_pi: "max_pi"
+  E_ssimrho: "E_ssimrho"
+  d_rho_pi: "d_rho^pi"
+  gamma: 0.99
+  Pr_pi: "Pr^pi"
+  pi_r: "pi^r"
+  d_rho: "d_rho"
+  a_t_m: "a_t^m"
+  a_random: "a_random"
+  theta: "theta"
+  pi_bar: "pi_bar"
+  pi_tilde_theta: "pi_tilde_theta"
+  theta_old: "theta_old"
+  pi_tilde: "pi_tilde"
+  s_t_plus_1: "s_t+1"
+  R_t_prime: "R_t^prime"
+  R_prime: "R^prime(s_t, a_t) = R(s_t, a_t) + alpha * a_t^m"
+  alpha: 0.01
+  pi_prime: "pi^prime"
+  f_hat: "f_hat"
+  lambda: 0.01
+  pi_theta: "pi_theta"
+  f_hat_theta: "f_hat_theta"
+  pi_hat: "pi_hat"
+  tau: "tau"
+  pi_e: "pi_e"
+  pi_g: "pi_g"
+  formula: "formula"
+  mask: "mask"
+  ema: "ema"
+  calculate: "calculate"
+  v_pi: "v_pi"
+  e_pi: "e_pi"
+  numeric_anchors:
+    zero: 0
+    one: 1
+    two: 2
+    three_point_one: 3.1
+    three_point_six: 3.6
+    three: 3
+    ten: 10
+    twenty: 20
+    thirty: 30
+    forty: 40
+    three_point_three: 3.3
+    four: 4
+    three_point_five: 3.5
+    three_point_four: 3.4
+    zero_point_two_five: 0.25
+    zero_point_five: 0.5

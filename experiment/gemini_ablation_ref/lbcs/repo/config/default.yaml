@@ -1,0 +1,255 @@
+# config/default.yaml
+# Configuration for Refined Coreset Selection (LBCS) Reproduction
+# Reference Grounding: chunk_005, chunk_006, chunk_008, chunk_009, chunk_017_01
+
+# Global Metadata & Invariants
+metadata:
+  paper_title: "Refined Coreset Selection: Towards Minimal Coreset Size under Model Performance Constraints"
+  method_name: "Lexicographic Bilevel Coreset Selection (LBCS)"
+  task_family: "computer_vision"
+
+# Paper Formula & Algorithm Symbol Inventory (Code-Visible Anchors)
+# These symbols are mapped to their mathematical definitions and default values
+symbols:
+  L_p: "L_p norm of vectors or matrices"
+  x_i: "Input instance"
+  y_i: "Label"
+  m_i: "Binary mask value for sample i"
+  f_1: "Performance constraint objective (e.g., cross-entropy loss or error rate)"
+  sum_i_1_n: "Summation over all samples in the dataset"
+  theta: "Model parameters trained on the coreset"
+  L_0: "L_0 norm representing coreset size"
+  f_2: "Coreset size objective (sum of mask values)"
+  lambda: "Weighted combination parameter (used in baseline weighted optimization)"
+  f_i: "Objective function i"
+  i_prime: "Index of priority objective"
+  M_star: "Optimal mask set"
+  M_1_star: "Optimal mask set for objective 1"
+  M_2_star: "Optimal mask set for objective 2"
+  f_1_star: "Infimum value of f_1"
+  f_2_star: "Infimum value of f_2"
+  f_star: "Infimum value of objective f"
+  S_1: "Search space or subset 1"
+  S_2: "Search space or subset 2"
+  gamma_1: "Theoretical convergence parameter 1"
+  eta_1: "Learning rate or step size 1"
+  gamma_2: "Theoretical convergence parameter 2"
+  eta_2: "Learning rate or step size 2"
+  t_hat: "Iteration threshold or index"
+  psi_t_plus_1: "State or potential at iteration t+1"
+
+# Numeric and Default Anchors from the Paper
+numeric_anchors:
+  T_search_times: 1000
+  default_lambda: 0.5
+  noise_rate: 0.3
+  noise_type: "symmetric"
+  momentum: 0.9
+  weight_decay: 0.001
+  batch_size: 256
+  base_lr: 0.01
+  group_size: 100
+  epochs_default: 100
+  k_choices: [200, 400]
+  epsilon_choices: [0.2, 0.3, 0.4]
+  lambda_choices: [0.0, 0.5, 1.0]
+
+# Environment & Task Registry
+environments:
+  cifar:
+    aliases: ["cifar-10", "cifar-100", "cifar"]
+    task_family: "computer_vision"
+    setup_metadata:
+      input_size: [3, 32, 32]
+      num_classes: 10
+    availability_check: "import torchvision"
+  imagenet:
+    aliases: ["imagenet", "imagenet_1k"]
+    task_family: "computer_vision"
+    setup_metadata:
+      input_size: [3, 224, 224]
+      num_classes: 1000
+    availability_check: "import torchvision"
+  mnist:
+    aliases: ["mnist", "f-mnist", "fashion-mnist"]
+    task_family: "computer_vision"
+    setup_metadata:
+      input_size: [1, 28, 28]
+      num_classes: 10
+    availability_check: "import torchvision"
+  svhn:
+    aliases: ["svhn"]
+    task_family: "computer_vision"
+    setup_metadata:
+      input_size: [3, 32, 32]
+      num_classes: 10
+    availability_check: "import torchvision"
+
+# Dataset & Benchmark Loaders Configuration
+datasets:
+  mnist:
+    id: "mnist"
+    aliases: ["mnist"]
+    loader_factory: "data_pipeline.loaders.load_mnist"
+    validation_check: "check_mnist_exists"
+  f_mnist:
+    id: "f-mnist"
+    aliases: ["f-mnist", "fashion-mnist"]
+    loader_factory: "data_pipeline.loaders.load_fmnist"
+    validation_check: "check_fmnist_exists"
+  cifar10:
+    id: "cifar-10"
+    aliases: ["cifar-10", "cifar10"]
+    loader_factory: "data_pipeline.loaders.load_cifar10"
+    validation_check: "check_cifar10_exists"
+  cifar100:
+    id: "cifar-100"
+    aliases: ["cifar-100", "cifar100"]
+    loader_factory: "data_pipeline.loaders.load_cifar100"
+    validation_check: "check_cifar100_exists"
+  svhn:
+    id: "svhn"
+    aliases: ["svhn"]
+    loader_factory: "data_pipeline.loaders.load_svhn"
+    validation_check: "check_svhn_exists"
+  imagenet_1k:
+    id: "imagenet_1k"
+    aliases: ["imagenet", "imagenet_1k"]
+    loader_factory: "data_pipeline.loaders.load_imagenet"
+    validation_check: "check_imagenet_exists"
+
+# Method & Baseline Selectors
+methods:
+  ours:
+    id: "ours"
+    aliases: ["ours", "lbcs"]
+    class_path: "model_or_method.lbcs.LBCS"
+    description: "Lexicographic Bilevel Coreset Selection"
+  oracle:
+    id: "oracle"
+    aliases: ["oracle"]
+    class_path: "baseline_or_ablation.baselines.Oracle"
+    description: "Oracle baseline using full dataset"
+  vit:
+    id: "vit"
+    aliases: ["vit"]
+    class_path: "model_or_method.model_factory.ViT"
+    description: "Vision Transformer backbone"
+  resnet:
+    id: "resnet"
+    aliases: ["resnet", "resnet50", "resnet18"]
+    class_path: "model_or_method.model_factory.ResNet"
+    description: "ResNet backbone (ResNet-18 or ResNet-50)"
+  ppo:
+    id: "ppo"
+    aliases: ["ppo"]
+    class_path: "baseline_or_ablation.rl_baselines.PPO"
+    description: "Proximal Policy Optimization RL baseline"
+  pbt:
+    id: "pbt"
+    aliases: ["pbt"]
+    class_path: "baseline_or_ablation.rl_baselines.PBT"
+    description: "Population Based Training RL baseline"
+  pql:
+    id: "pql"
+    aliases: ["pql"]
+    class_path: "baseline_or_ablation.rl_baselines.PQL"
+    description: "Policy Q-Learning RL baseline"
+  uniform:
+    id: "uniform"
+    aliases: ["uniform"]
+    class_path: "baseline_or_ablation.baselines.Uniform"
+  el2n:
+    id: "el2n"
+    aliases: ["el2n"]
+    class_path: "baseline_or_ablation.baselines.EL2N"
+  grand:
+    id: "grand"
+    aliases: ["grand"]
+    class_path: "baseline_or_ablation.baselines.GraNd"
+  influential:
+    id: "influential"
+    aliases: ["influential"]
+    class_path: "baseline_or_ablation.baselines.Influential"
+  moderate:
+    id: "moderate"
+    aliases: ["moderate"]
+    class_path: "baseline_or_ablation.baselines.Moderate"
+  ccs:
+    id: "ccs"
+    aliases: ["ccs"]
+    class_path: "baseline_or_ablation.baselines.CCS"
+  probabilistic:
+    id: "probabilistic"
+    aliases: ["probabilistic"]
+    class_path: "baseline_or_ablation.baselines.Probabilistic"
+
+# CLI Experiment Mapping & Specs
+experiments:
+  table1:
+    cli_flag: "--experiment table1"
+    description: "Preliminary Presentation (Table 1) - Utility of LBCS in optimizing f1 and f2"
+    target_artifact: "results/table1.json"
+    dataset: "f-mnist"
+    methods: ["ours", "uniform", "moderate", "probabilistic"]
+    parameters:
+      k: 200
+      epsilon: 0.2
+      epochs: 10
+      search_times: 1000
+  table2:
+    cli_flag: "--experiment table2"
+    description: "Main Comparison (Table 2) - Test accuracy on different benchmarks with various coreset sizes"
+    target_artifact: "results/table2.json"
+    datasets: ["f-mnist", "cifar-10", "cifar-100", "svhn"]
+    methods: ["ours", "uniform", "el2n", "grand", "influential", "moderate", "ccs", "probabilistic"]
+    parameters:
+      k_sweep: [200, 400]
+      epsilon_sweep: [0.2, 0.3, 0.4]
+      epochs: 10
+      search_times: 1000
+  table6-11:
+    cli_flag: "--experiment table6-11"
+    description: "RL Comparison and Network Structures (Table 6-8, 9-11)"
+    target_artifacts:
+      table6: "results/table6.json"
+      table7: "results/table7.json"
+      table8: "results/table8.json"
+    datasets: ["svhn", "f-mnist"]
+    methods: ["ours", "ppo", "pbt", "pql"]
+    parameters:
+      epochs: 10
+      search_times: 1000
+  robustness:
+    cli_flag: "--experiment robustness"
+    description: "Robustness against Imperfect Supervision (30% symmetric label noise)"
+    target_artifact: "results/metrics.json"
+    dataset: "f-mnist"
+    noise_rate: 0.3
+    noise_type: "symmetric"
+    methods: ["ours", "uniform", "moderate", "probabilistic"]
+    parameters:
+      epochs: 10
+      search_times: 1000
+  imagenet:
+    cli_flag: "--experiment imagenet"
+    description: "ImageNet-1k Evaluation (Section 5.4) - Bounded/Grouped Coreset Selection"
+    target_artifact: "results/imagenet_results.json"
+    dataset: "imagenet_1k"
+    methods: ["ours", "probabilistic"]
+    parameters:
+      group_size: 100
+      epochs: 10
+      search_times: 1000
+      momentum: 0.9
+      weight_decay: 0.001
+      base_lr: 0.01
+      batch_size: 256
+
+# Artifact Consolidation & Evidence Matrix
+artifacts:
+  dataset_registry: "results/dataset_registry.json"
+  evidence_contract_matrix: "results/evidence_contract_matrix.json"
+  experiment_registry: "results/experiment_registry.json"
+  data_manifest: "results/data_manifest.json"
+  metrics: "results/metrics.json"

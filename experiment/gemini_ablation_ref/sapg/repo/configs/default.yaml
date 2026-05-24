@@ -1,0 +1,237 @@
+# configs/default.yaml
+# Configuration for SAPG: Split and Aggregate Policy Gradients
+# Reference Grounding: paper_task_environment_setup, paper_training_or_optimization_loop, paper_addendum_constraints
+
+# Active Route Contracts & Defined Symbols
+active_routes:
+  hard_task_performance_comparison:
+    name: "Hard Task Performance Comparison"
+    description: "Compare SAPG against PPO, PQL, and DDPG on hard AllegroKuka tasks."
+    tasks: ["AllegroKuka-Throw", "AllegroKuka-Regrasping", "AllegroKuka-Reorientation"]
+    metrics: ["success_rate", "reward", "entropy_per_follower"]
+    target_csv: "results/tables/table_2.csv"
+    target_plot: "results/plots/learning_curves.png"
+
+  easy_task_robustness_check:
+    name: "Easy Task Robustness Check"
+    description: "Verify PQL and SAPG performance on easier hand tasks."
+    tasks: ["AllegroHand", "ShadowHand"]
+    metrics: ["success_rate", "reward"]
+    target_csv: "results/tables/table_3.csv"
+
+  sapg_leader_follower_engine:
+    name: "SAPG Leader-Follower Engine"
+    description: "Algorithm 1: Split and Aggregate Policy Gradients optimization engine."
+    leader_update_frequency: 1
+    follower_update_frequency: 1
+    data_aggregation: "Off-Policy Data Aggregator"
+    diversity_control: "Diversity Controller"
+
+  latent_conditioned_policy_architecture:
+    name: "Latent Conditioned Policy Architecture"
+    description: "Section 4.4: Shared network B_theta and C_psi conditioned on local parameters phi_j."
+    shared_actor_params: "theta"
+    shared_critic_params: "psi"
+    local_policy_params: "phi_i"
+    latent_dim: 32
+
+  off_policy_data_aggregator:
+    name: "Off-Policy Data Aggregator"
+    description: "Section 4.1: Aggregating data using off-policy updates with importance sampling."
+    importance_weight_method: "Compute Importance Weights"
+    n_step_return: 3
+    gamma: 0.99
+    lambda_coef: 1.0  # off-policy loss scaling coefficient lambda
+
+  diversity_controller:
+    name: "Diversity Controller"
+    description: "Section 4.5: Enforcing diversity through entropy regularization."
+    entropy_loss_method: "Compute Per-Follower Entropy Loss"
+    sigma_sweep: [0.0, 0.003, 0.005]
+    default_sigma: 0.005
+
+  compute_importance_weights:
+    name: "Compute Importance Weights"
+    description: "Calculate importance sampling ratio mu = pi_i(a|s) / pi_j(a|s) with clipping."
+    clip_epsilon: 0.2
+    max_mu: 10.0
+
+  compute_per_follower_entropy_loss:
+    name: "Compute Per-Follower Entropy Loss"
+    description: "Calculate entropy H(pi_i(a|s)) scaled by follower-specific coefficient sigma_i."
+    formula: "sigma_i * H(pi_i)"
+
+# Paper Formula & Algorithm Symbol Inventory
+formula_symbols:
+  s_0: "initial_state"
+  a_t: "action_at_t"
+  s_t: "state_at_t"
+  sum_t_0_t_1: "sum_t=0^T-1"
+  gamma_t: "gamma^t"
+  A_hat: "advantage_estimate"
+  pi_theta: "policy_pi_theta"
+  nabla_theta: "gradient_wrt_theta"
+  rho_d: "state_visitation_distribution"
+  Q_hat: "q_value_estimate"
+  V_hat: "value_estimate"
+  L_on: "on_policy_loss"
+  pi_old: "old_policy"
+  r_t: "reward_at_t"
+  epsilon: "ppo_clip_epsilon"
+  A_t: "advantage_at_t"
+  pi_1: "policy_1"
+  pi_M: "policy_M"
+  pi_i: "policy_i"
+  pi_j: "policy_j"
+  L_off: "off_policy_loss"
+  mu: "importance_weight_ratio"
+  pi_i_old: "old_policy_i"
+  lambda: "off_policy_loss_weight"
+
+# Numeric and Default Anchors
+numeric_anchors:
+  zero: 0
+  one: 1
+  two: 2
+  three: 3
+  six: 6
+  thirty: 30
+  batch_size_default: 24576
+  sigma_default: 0.005
+  dof_robot: 23
+  dof_arm: 7
+
+# Environment & Task Factories
+environment_factory:
+  simulator: "IsaacGym"
+  support_large_scale: true
+  max_parallel_envs: 32768
+  tasks:
+    AllegroKuka-Throw:
+      id: "AllegroKuka-Throw"
+      alias: "allegrokuka_throw"
+      difficulty: "hard"
+      dof: 23
+      observation_dim: 60
+      action_dim: 23
+      varying_exploration_noise: true
+      setup_metadata:
+        robot: "Allegro Hand + Kuka Arm"
+        object: "cuboidal"
+        table: "fixed"
+    AllegroKuka-Regrasping:
+      id: "AllegroKuka-Regrasping"
+      alias: "allegrokuka_regrasping"
+      difficulty: "hard"
+      dof: 23
+      observation_dim: 60
+      action_dim: 23
+      varying_exploration_noise: true
+      setup_metadata:
+        robot: "Allegro Hand + Kuka Arm"
+        object: "cuboidal"
+        table: "fixed"
+    AllegroKuka-Reorientation:
+      id: "AllegroKuka-Reorientation"
+      alias: "allegrokuka_reorientation"
+      difficulty: "hard"
+      dof: 23
+      observation_dim: 60
+      action_dim: 23
+      varying_exploration_noise: true
+      setup_metadata:
+        robot: "Allegro Hand + Kuka Arm"
+        object: "cuboidal"
+        table: "fixed"
+    AllegroHand:
+      id: "AllegroHand"
+      alias: "allegro_hand"
+      difficulty: "easy"
+      dof: 16
+      observation_dim: 48
+      action_dim: 16
+      varying_exploration_noise: false
+      setup_metadata:
+        robot: "Allegro Hand"
+    ShadowHand:
+      id: "ShadowHand"
+      alias: "shadow_hand"
+      difficulty: "easy"
+      dof: 24
+      observation_dim: 64
+      action_dim: 20
+      varying_exploration_noise: false
+      setup_metadata:
+        robot: "Shadow Hand"
+
+# Dataset & Benchmark Loaders
+dataset_loaders:
+  tasks:
+    - "AllegroKuka-Throw"
+    - "AllegroKuka-Regrasping"
+    - "AllegroKuka-Reorientation"
+    - "AllegroHand"
+    - "ShadowHand"
+  validation_checks:
+    check_state_dim: true
+    check_action_dim: true
+    check_reward_bounds: true
+
+# Method & Baseline Selectors
+method_selectors:
+  ours: "sapg"
+  sapg:
+    name: "Split and Aggregate Policy Gradients"
+    is_ours: true
+  ppo:
+    name: "Proximal Policy Optimization"
+    is_baseline: true
+  pbt:
+    name: "Population Based Training"
+    is_baseline: true
+  pql:
+    name: "Policy Q-Learning"
+    is_baseline: true
+  ddpg:
+    name: "Deep Deterministic Policy Gradient"
+    is_baseline: true
+
+# Parameter Sweeps & Hyperparameters
+hyperparameters:
+  M: 4  # Number of policies (leader + followers)
+  N: 16384  # Environments per policy (total environments = M * N)
+  batch_size: 24576
+  epochs: 100
+  learning_rate: 0.0003
+  gamma: 0.99
+  tau: 0.005
+  clip_epsilon: 0.2
+  entropy_coefs: [0.0, 0.003, 0.005]  # sigma list for followers
+  mu_clip: 10.0
+  lambda_off: 1.0  # off-policy loss weight lambda
+
+# Baseline Default Hyperparameters
+baselines_defaults:
+  ppo:
+    clip_epsilon: 0.2
+    entropy_coef: 0.0
+    learning_rate: 0.0003
+    batch_size: 24576
+  pql:
+    gamma: 0.99
+    learning_rate: 0.0003
+    batch_size: 24576
+  ddpg:
+    gamma: 0.99
+    tau: 0.005
+    learning_rate: 0.0001
+    batch_size: 24576
+
+# Bounded Execution Defaults for Smoke/Dry-run
+smoke_run:
+  max_epochs: 2
+  max_steps_per_epoch: 10
+  num_envs: 64
+  save_checkpoints: true
+  checkpoint_path: "checkpoints/model_final.pth"
+  log_path: "results/training_log.json"

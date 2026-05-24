@@ -1,0 +1,90 @@
+# Stochastic Interpolants with Data-Dependent Couplings Configuration
+# This configuration defines the experiment protocols, dataset registries, 
+# and hyperparameter anchors for the reproduction of the paper.
+
+version: "1.0"
+
+# Experiment Protocol Matrix
+# Links named experiments to environments, methods, metrics, and artifact writers.
+experiments:
+  in_painting_imagenet:
+    task: "in_painting"
+    dataset: "imagenet_1k"
+    method: "ours"
+    metrics: ["fid"]
+    artifacts:
+      table: "results/tables/experiment_results.csv"
+      figure: "results/figures/figure_3.png"
+  super_resolution_imagenet:
+    task: "super_resolution"
+    dataset: "imagenet_1k"
+    method: "ours"
+    metrics: ["fid"]
+    artifacts:
+      table: "results/tables/experiment_results.csv"
+
+# Method and Baseline Registry
+methods:
+  ours:
+    type: "stochastic_interpolant"
+    coupling: "data_dependent"
+    description: "Stochastic Interpolant with Data-Dependent Couplings"
+  resnet:
+    type: "baseline"
+    description: "ResNet baseline"
+  ddpm:
+    type: "baseline"
+    description: "DDPM baseline"
+
+# Dataset and Benchmark Registry
+datasets:
+  imagenet_1k:
+    id: "imagenet_1k"
+    path: "data/imagenet_1k"
+    split: "train"
+    validation_check: true
+  imagenet_c:
+    id: "imagenet_c"
+    path: "data/imagenet_c"
+    split: "test"
+    validation_check: true
+
+# Hyperparameter Anchors and Sweeps
+hyperparameters:
+  batch_size: 32
+  mask_tiles: 64
+  mask_probability: 0.3
+  gamma_values: [0, 1]
+  # Formula-derived constants
+  alpha_t_default: 0
+  beta_t_default: 1
+
+# Artifact Path Registry
+artifacts:
+  registry:
+    method: "results/method_registry.json"
+    ablation: "results/ablation_registry.json"
+    dataset: "results/dataset_registry.json"
+  config:
+    resolved: "results/config_resolved.json"
+  reports:
+    sensitivity: "results/sensitivity_report.json"
+    data_manifest: "results/data_manifest.json"
+    training_trace: "results/training_trace.json"
+  code:
+    metric_formula: "metric_formula.py"
+
+# Environment/Task Factory Configuration
+environment_factories:
+  imagenet:
+    alias: "imagenet"
+    setup_metadata: "standard_imagenet_setup"
+    availability_check: true
+  imagenet_1k:
+    alias: "imagenet_1k"
+    setup_metadata: "imagenet_1k_setup"
+    availability_check: true
+  imagenet_c:
+    alias: "imagenet_c"
+    setup_metadata: "imagenet_c_setup"
+    availability_check: true

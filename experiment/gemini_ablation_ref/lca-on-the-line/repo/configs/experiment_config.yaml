@@ -1,0 +1,290 @@
+# configs/experiment_config.yaml
+# Faithful reproduction configuration for LCA-on-the-Line
+
+metadata:
+  trust_remote_code: true
+  load_dataset: "imagenet-1k"
+  imagenet_sketch: "songweig/imagenet_sketch"
+  tree_prefix: "latent_taxonomy"
+  m_lca: "MinMax(M^T)"
+  lca: "Lowest Common Ancestor"
+  m_t: "M^T"
+  process_lca_matrixlca_matrix_raw: "process_lca_matrix"
+  lca_matrix_raw: "lca_matrix_raw"
+  result_matrix: "result_matrix"
+  lca_matrix_raw_lca_matrix_raw: "lca_matrix_raw-lca_matrix_raw"
+  fit_transformresult_matrix: "fit_transform"
+
+  paper_anchors:
+    numeric_defaults:
+      k_min: 1
+      k_step1: 2
+      k_step2: 4
+      n_levels: 9
+      num_classes: 1000
+      lambda_weight: 0.03
+      temperature: 1.0
+      batch_size: 64
+      learning_rate: 0.001
+      epochs: 25
+      mae_threshold: 0.03
+      lca_distance_default: 3
+      elca_default: 1
+      depth_default: 2
+      info_content_default: 1.0
+    symbols:
+      - trust_remote_code
+      - load_dataset
+      - imagenet_sketch
+      - M_LCA
+      - LCA
+      - M^T
+      - process_lca_matrixlca_matrix_raw
+      - tree_prefix
+      - lca_matrix_raw
+      - result_matrix
+      - lca_matrix_raw-lca_matrix_raw
+      - fit_transformresult_matrix
+
+environment_registry:
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    factory: "src.lca_on_the_line.data.make_environment"
+    setup_metadata:
+      num_classes: 1000
+      split: "val"
+    availability_check: "src.lca_on_the_line.data.check_imagenet_availability"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_imagenet_config"
+  laion:
+    id: "laion"
+    alias: "laion"
+    factory: "src.lca_on_the_line.data.make_environment"
+    setup_metadata:
+      num_classes: 1000
+      split: "val"
+    availability_check: "src.lca_on_the_line.data.check_laion_availability"
+    runnable_config_hook: "src.lca_on_the_line.data.setup_laion_config"
+
+dataset_registry:
+  imagenet:
+    id: "imagenet"
+    alias: "imagenet"
+    loader: "src.lca_on_the_line.data.load_imagenet"
+    setup_metadata:
+      path: "imagenet-1k"
+      trust_remote_code: true
+    validation_check: "src.lca_on_the_line.data.validate_imagenet"
+  laion:
+    id: "laion"
+    alias: "laion"
+    loader: "src.lca_on_the_line.data.load_laion"
+    setup_metadata:
+      path: "laion"
+    validation_check: "src.lca_on_the_line.data.validate_laion"
+  imagenet_c:
+    id: "imagenet_c"
+    alias: "imagenet_c"
+    loader: "src.lca_on_the_line.data.load_imagenet_c"
+    setup_metadata:
+      path: "imagenet_c"
+    validation_check: "src.lca_on_the_line.data.validate_imagenet_c"
+  imagenet_r:
+    id: "imagenet_r"
+    alias: "imagenet_r"
+    loader: "src.lca_on_the_line.data.load_imagenet_r"
+    setup_metadata:
+      path: "imagenet-r"
+    validation_check: "src.lca_on_the_line.data.validate_imagenet_r"
+  imagenet_v2:
+    id: "imagenet_v2"
+    alias: "imagenet_v2"
+    loader: "src.lca_on_the_line.data.load_imagenet_v2"
+    setup_metadata:
+      path: "imagenet-v2"
+    validation_check: "src.lca_on_the_line.data.validate_imagenet_v2"
+  imagenet_sketch:
+    id: "imagenet_sketch"
+    alias: "imagenet_sketch"
+    loader: "src.lca_on_the_line.data.load_imagenet_sketch"
+    setup_metadata:
+      path: "songweig/imagenet_sketch"
+    validation_check: "src.lca_on_the_line.data.validate_imagenet_sketch"
+  imagenet_a:
+    id: "imagenet_a"
+    alias: "imagenet_a"
+    loader: "src.lca_on_the_line.data.load_imagenet_a"
+    setup_metadata:
+      path: "imagenet-a"
+    validation_check: "src.lca_on_the_line.data.validate_imagenet_a"
+  objectnet:
+    id: "objectnet"
+    alias: "objectnet"
+    loader: "src.lca_on_the_line.data.load_objectnet"
+    setup_metadata:
+      path: "objectnet"
+    validation_check: "src.lca_on_the_line.data.validate_objectnet"
+
+metric_registry:
+  accuracy:
+    id: "accuracy"
+    alias: "top_1_accuracy"
+    formula: "compute_accuracy"
+    aggregation: "aggregate_accuracy"
+    canonical_identifier: "metric_top_1_accuracy"
+  loss:
+    id: "loss"
+    alias: "cross_entropy_loss"
+    formula: "compute_loss"
+    aggregation: "aggregate_loss"
+    canonical_identifier: "metric_loss"
+  mae:
+    id: "mae"
+    alias: "mean_absolute_error"
+    formula: "compute_mae"
+    aggregation: "aggregate_mae"
+    canonical_identifier: "metric_mae"
+  return:
+    id: "return"
+    alias: "return_metric"
+    formula: "compute_reward"
+    aggregation: "aggregate_reward"
+    canonical_identifier: "metric_return"
+  lca_distance:
+    id: "lca_distance"
+    alias: "lca_distance"
+    formula: "compute_lca_distance"
+    aggregation: "aggregate_lca_distance"
+    canonical_identifier: "metric_lca_distance"
+  elca_distance:
+    id: "elca_distance"
+    alias: "expected_lca_distance"
+    formula: "compute_elca_distance"
+    aggregation: "aggregate_elca_distance"
+    canonical_identifier: "metric_elca_distance"
+
+experiment_registry:
+  lca_on_the_line_correlation:
+    id: "lca_on_the_line_correlation"
+    name: "LCA-on-the-Line Correlation"
+    environment: "imagenet"
+    datasets: ["imagenet", "imagenet_v2", "imagenet_r", "imagenet_sketch", "imagenet_a", "objectnet"]
+    metrics: ["accuracy", "lca_distance", "mae"]
+    artifact_writer: "src.lca_on_the_line.metrics.write_correlation_artifacts"
+    expected_outputs:
+      - "results/correlation_analysis.json"
+      - "results/figure_5_lca_on_the_line.png"
+  ood_prediction_benchmarking:
+    id: "ood_prediction_benchmarking"
+    name: "OOD Prediction Benchmarking"
+    environment: "imagenet"
+    datasets: ["imagenet", "imagenet_v2", "imagenet_r", "imagenet_sketch", "imagenet_a", "objectnet"]
+    metrics: ["accuracy", "lca_distance", "mae"]
+    artifact_writer: "src.lca_on_the_line.metrics.write_prediction_artifacts"
+    expected_outputs:
+      - "results/baseline_comparison.json"
+      - "results/table_3.json"
+
+evidence_obligation_matrix:
+  taxonomy_construction:
+    name: "Taxonomy Construction"
+    environment: "imagenet"
+    method: "K-Means Latent Taxonomy Inference"
+    parameters:
+      num_clusters_per_level: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+    metrics: ["lca_distance"]
+    artifact_path: "results/latent_taxonomy.json"
+  experiment_4_1:
+    name: "Experiment 4.1: LCA-on-the-Line"
+    environment: "imagenet"
+    method: "LCA Distance (Taxonomy Loss)"
+    parameters:
+      models_count: 75
+    metrics: ["accuracy", "lca_distance"]
+    artifact_path: "results/figure_5_lca_on_the_line.png"
+  experiment_4_2:
+    name: "Experiment 4.2: Predicting OOD Performance"
+    environment: "imagenet"
+    method: "Average Confidence (AC), Aline-D, Aline-S, Ours"
+    parameters:
+      models_count: 75
+    metrics: ["mae"]
+    artifact_path: "results/baseline_comparison.json"
+  appendix_detailed_model_stats:
+    name: "Appendix: Detailed Model Stats"
+    environment: "imagenet"
+    method: "ours"
+    parameters:
+      models_count: 75
+    metrics: ["accuracy", "lca_distance"]
+    artifact_path: "results/table_10.json, results/table_11.json"
+  appendix_detailed_correlation:
+    name: "Appendix: Detailed Correlation"
+    environment: "imagenet"
+    method: "ours"
+    parameters:
+      models_count: 75
+    metrics: ["accuracy", "lca_distance", "mae"]
+    artifact_path: "results/table_3.json, results/table_12.json, results/table_13.json"
+  experiment_4_3_2:
+    name: "Experiment 4.3.2: Soft Labeling"
+    environment: "imagenet"
+    method: "Soft Labeling (WordNet), Soft Labeling (Latent)"
+    parameters:
+      learning_rate: 0.001
+      batch_size: 64
+      lambda_weight: 0.03
+    metrics: ["accuracy"]
+    artifact_path: "results/table_5_6_results.json, results/table_14.json"
+  experiment_4_3_3:
+    name: "Experiment 4.3.3: VLM Prompt Engineering"
+    environment: "imagenet"
+    method: "Taxonomy-aware Prompt Engineering"
+    parameters:
+      models_count: 39
+    metrics: ["accuracy", "lca_distance"]
+    artifact_path: "results/vlm_taxonomy_results.json, results/table_15.json"
+  final_reporting:
+    name: "Final Reporting"
+    environment: "imagenet"
+    method: "ours"
+    parameters: {}
+    metrics: ["accuracy", "lca_distance", "mae"]
+    artifact_path: "results/summary_report.pdf"
+
+parameter_sweeps:
+  num_clusters_per_level:
+    default: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+    values: [[1, 2, 4, 8, 16, 32, 64, 128, 256, 512]]
+  learning_rate:
+    default: 0.001
+    values: [0.0001, 0.0005, 0.001, 0.005]
+  batch_size:
+    default: 64
+    values: [32, 64, 128, 256]
+  soft_label_temperature:
+    default: 1.0
+    values: [0.5, 1.0, 2.0]
+  lambda_weight:
+    default: 0.03
+    values: [0.01, 0.03, 0.1, 0.3]
+
+trend_assertions:
+  lca_depth_reflection:
+    assertion: "LCA distance should reflect hierarchical depth"
+  linear_correlation:
+    assertion: "Strong linear correlation between ID LCA and OOD Top-1"
+  negative_correlation:
+    assertion: "ID LCA 与 OOD Top-1 应呈现负相关（LCA 越低，Top-1 越高）"
+  baseline_outperformance:
+    assertion: "proposed method should be compared against explicit baselines"
+  soft_labeling_improvement:
+    assertion: "Soft labeling improves OOD generalization over standard linear probing"
+
+models_75_config:
+  vision_models:
+    count: 36
+    families: ["resnet", "vit", "swin", "convnext"]
+  vision_language_models:
+    count: 39
+    families: ["clip", "open_clip"]

@@ -1,0 +1,274 @@
+# configs/default.yaml
+# Configuration for "A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity"
+# Reference Grounding: paperbench_repro
+
+# Environment Registry
+environment_registry:
+  environments:
+    - id: jigsaw
+      alias: Jigsaw dataset
+      task: binary toxicity classification
+      setup_metadata:
+        total_comments: 561808
+        train_val_split: 0.90
+        random_seed: 42
+      availability_check: true
+    - id: realtoxicityprompts
+      alias: RealToxicityPrompts
+      task: toxicity generation evaluation
+      setup_metadata:
+        num_prompts: 295
+      availability_check: true
+    - id: wikitext
+      alias: wikitext
+      task: language modeling perplexity evaluation
+      setup_metadata:
+        keep_external: true
+      availability_check: true
+
+# Model Registry
+model_registry:
+  models:
+    - id: gpt2
+      alias: GPT-2
+      d_model: 768
+      num_layers: 12
+      checkpoint_path: "checkpoints/gpt2_dpo.pt"
+    - id: llama2
+      alias: Llama-2-7b
+      d_model: 4096
+      num_layers: 32
+      checkpoint_path: "checkpoints/llama2_dpo.pt"
+
+# Dataset Registry
+dataset_registry:
+  datasets:
+    - id: jigsaw
+      alias: Jigsaw, RealToxicityPrompts
+      path: "data/jigsaw"
+      split_ratio: 0.90
+    - id: wikitext
+      alias: wikitext
+      path: "data/wikitext"
+
+# Method Registry
+method_registry:
+  methods:
+    - id: ours
+      alias: ours
+      description: "Linear Probing, MLP Weight Projection, SVD and Intervention"
+    - id: ppo
+      alias: ppo
+      description: "PPO RLHF baseline"
+
+# Parameter Sweeps and Hyperparameters
+hyperparameters:
+  probe_learning_rate: 0.001
+  svd_components: 10
+  train_val_split: 0.90 # 90:10 split for probe training
+  p_intervention_strength: [0.0, 0.5, 1.0, 2.0, 5.0, 10.0] # p (intervention strength alpha)
+  dpo_beta: 0.1
+  pplm_step_size: 0.02
+  beta: 0.1 # DPO hyperparameter
+  cosine_similarity_threshold: 0.5
+  kl_divergence_beta: 0.1
+  patience: 10
+  max_sample_pairs: 6700
+  toxicity_classifier: "unitary/unbiased-toxic-roberta" # HF model for measuring toxicity instead of Perspective API
+
+# Paper Formula and Algorithm Symbol Inventory
+formula_algorithm_inventory:
+  preliminaries:
+    symbols:
+      - w_0
+      - w_t
+      - x_i
+      - R^d
+      - w_i
+      - x^ell-mid
+      - x_i^ell
+      - MLP^ell
+      - Att^ell
+      - sigma
+      - W_K^ell
+      - W_V^ell
+    numeric_defaults:
+      - 0
+      - 1
+      - 2
+    equation: "x_i^{l+1} = x_i^l + MLP^l(x_i^l + Att^l(x_i^l))"
+    algorithm_terms:
+      - equation
+      - rank
+      - update
+    steps: "The residual stream is then updated by attention heads and MLP blocks from subsequent layers (bias terms omitted)"
+
+  toxic_vector_extraction:
+    symbols:
+      - W_Toxic
+      - R^d
+    numeric_defaults:
+      - 1
+      - 94
+    formula: "P(Toxic | x_bar^{L-1}) = softmax(W_Toxic * x_bar^{L-1})"
+    accuracy_target: 0.94
+
+  dpo_background:
+    symbols:
+      - DPO
+      - sigma
+      - beta
+      - y_+
+      - y_-
+      - pi_ref
+      - pi_theta
+    algorithm_terms:
+      - algorithm
+      - loss
+      - update
+      - sample
+    formula: "L_DPO = -E[log sigma(beta * log P - beta * log N)]"
+    p_term: "P = pi_theta(y_+ | w) / pi_ref(y_+ | w)"
+    n_term: "N = pi_theta(y_- | w) / pi_ref(y_- | w)"
+
+  pairwise_toxic_data:
+    algorithm_terms:
+      - loss
+      - gradient
+      - compute
+      - sample
+      - increase
+    steps: "During generation, PPLM uses the attribute classifier to compute the gradients that increases the likelihood of the language model's output to contain the desired attribute a, and shifts the activations in such direction"
+    patience: 10
+    approx_sample_pairs: 6700
+
+  dpo_avoids_mlp:
+    symbols:
+      - sigma
+      - W_1
+      - W_2
+    algorithm_terms:
+      - equation
+    formula: "sigma(W_1 * x) * (W_2 * x)"
+
+  value_vector_projection:
+    symbols:
+      - d_mlp
+      - m_i^ell
+      - v_i^ell
+      - MLP^ell
+      - x^ell
+      - sum_i=1
+      - sigma
+      - k_i^ell
+      - l_p
+      - e_w
+      - W_1^ell
+      - r_i^ell
+    numeric_defaults:
+      - 2
+      - 1
+    algorithm_terms:
+      - equation
+      - update
+    formula: "MLP^l(x^l) = sum_{i=1}^{d_mlp} sigma(x^l * k_i^l) * v_i^l = sum_{i=1}^{d_mlp} m_i^l * v_i^l"
+
+# Callable Experiment Specifications
+experiments:
+  toxic_vector_extraction:
+    id: toxic_vector_extraction
+    environment: jigsaw
+    method: ours
+    checkpoint_output: "checkpoints/toxic_vectors.pt"
+    metrics:
+      - accuracy
+      - precision
+      - recall
+      - f1
+    artifact_writers:
+      - write_table_1_artifact
+      - write_table_6_artifact
+      - write_table_8_artifact
+      - write_table_9_artifact
+
+  intervention_validation:
+    id: intervention_validation
+    environment: realtoxicityprompts
+    method: ours
+    results_output: "results/intervention_results.json"
+    metrics:
+      - toxicity
+      - perplexity
+    artifact_writers:
+      - write_table_2_artifact
+      - write_table_7_artifact
+      - write_figure_1_artifact
+
+  oracle_baseline:
+    id: oracle_baseline
+    environment: jigsaw
+    method: oracle
+    results_output: "results/tables/table_4.csv"
+    metrics:
+      - accuracy
+      - precision
+      - recall
+      - f1
+    artifact_writers:
+      - write_table_4_artifact
+
+  dpo_alignment_training:
+    id: dpo_alignment_training
+    environment: realtoxicityprompts
+    method: ours
+    checkpoint_outputs:
+      gpt2: "checkpoints/gpt2_dpo.pt"
+      llama2: "checkpoints/llama2_dpo.pt"
+    metrics:
+      - loss
+      - toxicity
+      - perplexity
+    artifact_writers:
+      - write_table_3_artifact
+
+  mechanistic_analysis:
+    id: mechanistic_analysis
+    environment: wikitext
+    method: ours
+    results_output: "results/mechanistic_analysis.json"
+    metrics:
+      - cosine_similarity
+      - mean_activation
+    artifact_writers:
+      - write_table_5_artifact
+
+  unaligning_intervention:
+    id: unaligning_intervention
+    environment: realtoxicityprompts
+    method: ours
+    results_output: "results/unaligning_results.json"
+    metrics:
+      - toxicity
+      - perplexity
+    protocol: jailbreak_attack_protocol
+
+# Artifact Manifest
+artifact_manifest:
+  tables:
+    table_1: "results/tables/table_1.csv"
+    table_2: "results/tables/table_2.csv"
+    table_3: "results/tables/table_3.csv"
+    table_4: "results/tables/table_4.csv"
+    table_6: "results/tables/table_6.csv"
+    table_7: "results/tables/table_7.csv"
+    table_8: "results/tables/table_8.csv"
+    table_9: "results/tables/table_9.csv"
+  figures:
+    figure_1: "results/figures/figure_1.png"
+    figure_2: "results/figures/figure_2.png"
+    figure_3: "results/figures/figure_3.png"
+    figure_4: "results/figures/figure_4.png"
+    figure_5: "results/figures/figure_5.png"
+    figure_6: "results/figures/figure_6.png"
+    figure_9: "results/figures/figure_9.png"
+    figure_10: "results/figures/figure_10.png"

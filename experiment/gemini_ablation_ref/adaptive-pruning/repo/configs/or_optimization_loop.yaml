@@ -1,0 +1,198 @@
+# reference_grounding: paper:paper_training_or_optimization_loop (chunk_017, chunk_005)
+# APT: Adaptive Pruning and Tuning Pretrained Language Models for Efficient Training and Inference.
+# Optimization Loop Configuration
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# selector set must include ours, bert, roberta, t5, fine_tuning, lora, test_time_adaptation.
+# selectable method/baseline/variant factories for: FT, LoRA, LoRA+Prune, Co-tuning, LLM-Pruner
+methods:
+  ours:
+    id: "apt"
+    alias: "ours"
+    factory: "src.apt.engine.trainer.train_ours_oradaptersby_inventory"
+    objective: "src.apt.engine.trainer.compute_ours_oradaptersby_inventory_objective"
+    score: "src.apt.engine.trainer.compute_ours_oradaptersby_inventory_score"
+  Ours:
+    id: "apt"
+    factory: "src.apt.engine.trainer.train_ours_oradaptersby_inventory"
+  bert:
+    id: "bert"
+    factory: "src.models.wrapper.build_wrapper"
+  roberta:
+    id: "roberta"
+    factory: "src.models.wrapper.build_wrapper"
+  t5:
+    id: "t5"
+    factory: "src.models.wrapper.build_wrapper"
+  fine_tuning:
+    id: "ft"
+    alias: "fine_tuning"
+    factory: "src.apt.engine.trainer.run_training_loop"
+  lora:
+    id: "lora"
+    factory: "src.models.wrapper.build_wrapper"
+  test_time_adaptation:
+    id: "tta"
+    alias: "test_time_adaptation"
+    factory: "src.apt.engine.trainer.run_training_loop"
+  FT:
+    id: "ft"
+    factory: "src.apt.engine.trainer.run_training_loop"
+  LoRA:
+    id: "lora"
+    factory: "src.models.wrapper.build_wrapper"
+  LoRA+Prune:
+    id: "lora_prune"
+    factory: "src.apt.engine.trainer.run_training_loop"
+  Co-tuning:
+    id: "co_tuning"
+    factory: "src.apt.engine.trainer.run_training_loop"
+  LLM-Pruner:
+    id: "llm_pruner"
+    factory: "src.apt.engine.trainer.run_training_loop"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# factories for: unit-004 | t5 | llama commonsense | unit-005 | squad | glue | pruning roberta models targeting similar | apt consistently reach higher | salience notably hurts | sst2 | open llm leaderboard few-shot | fine-tuning will not hurt their
+environments:
+  unit-004:
+    id: "unit-004"
+    alias: "main_env"
+    setup_metadata: {models: ["bert", "roberta", "t5", "llama"]}
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+  t5:
+    id: "t5"
+    alias: "t5_env"
+    setup_metadata: {model: "t5-base"}
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+  llama_commonsense:
+    id: "llama commonsense"
+    alias: "llama_env"
+    setup_metadata: {tasks: ["boolq", "piqa", "siqa", "hellaswag", "winogrande", "arc_e", "arc_c", "obqa"]}
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+  unit-005:
+    id: "unit-005"
+    alias: "efficiency_env"
+    setup_metadata: {metrics: ["memory", "tta", "throughput"]}
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+  squad:
+    id: "squad"
+    alias: "squad_v2"
+    setup_metadata: {version: "2.0"}
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+  glue:
+    id: "glue"
+    alias: "glue_benchmark"
+    setup_metadata: {tasks: ["sst2", "mnli"]}
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+  pruning_roberta_similar:
+    id: "pruning roberta models targeting similar"
+    alias: "roberta_pruning"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+  apt_consistently_higher:
+    id: "apt consistently reach higher"
+    alias: "apt_performance"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+  salience_notably_hurts:
+    id: "salience notably hurts"
+    alias: "salience_ablation"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+  sst2:
+    id: "sst2"
+    alias: "sst2_task"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+  open_llm_leaderboard:
+    id: "open llm leaderboard few-shot"
+    alias: "llama_eval"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+  fine_tuning_no_hurt:
+    id: "fine-tuning will not hurt their"
+    alias: "ft_stability"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "src.apt.data.pipeline.prepare_pipeline"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# loaders for: SST2, MNLI, SQuAD v2.0, CNN/DailyMail, BoolQ, PIQA, SIQA, HellaSwag, WinoGrande, ARC-e, ARC-c, OBQA | glue | truthfulqa
+datasets:
+  SST2: {id: "SST2", loader: "src.apt.data.pipeline.load_pipeline"}
+  MNLI: {id: "MNLI", loader: "src.apt.data.pipeline.load_pipeline"}
+  SQuAD_v2: {id: "SQuAD v2.0", loader: "src.apt.data.pipeline.load_pipeline"}
+  CNN_DailyMail: {id: "CNN/DailyMail", loader: "src.apt.data.pipeline.load_pipeline"}
+  BoolQ: {id: "BoolQ", loader: "src.apt.data.pipeline.load_pipeline"}
+  PIQA: {id: "PIQA", loader: "src.apt.data.pipeline.load_pipeline"}
+  SIQA: {id: "SIQA", loader: "src.apt.data.pipeline.load_pipeline"}
+  HellaSwag: {id: "HellaSwag", loader: "src.apt.data.pipeline.load_pipeline"}
+  WinoGrande: {id: "WinoGrande", loader: "src.apt.data.pipeline.load_pipeline"}
+  ARC_e: {id: "ARC-e", loader: "src.apt.data.pipeline.load_pipeline"}
+  ARC_c: {id: "ARC-c", loader: "src.apt.data.pipeline.load_pipeline"}
+  OBQA: {id: "OBQA", loader: "src.apt.data.pipeline.load_pipeline"}
+  glue: {id: "glue", loader: "src.apt.data.pipeline.load_pipeline"}
+  truthfulqa: {id: "truthfulqa", loader: "src.apt.data.pipeline.load_pipeline"}
+
+# reference_grounding: paper:unit_002 (chunk_011)
+# sweeps: batch_size, early_training_steps (t << T)
+# fixed hyperparameters: 10_shot_setting, batch_size_128, batch_size_32
+optimization:
+  seeds: [42, 43, 44]
+  batch_size:
+    default: 32
+    sweep: [32, 128]
+  early_training_steps:
+    description: "Steps t << T for salience estimation and pruning"
+    default: 0.1 # Ratio of total steps
+    sweep: [0.05, 0.1, 0.2]
+  fixed_hyperparameters:
+    10_shot_setting: {num_shots: 10}
+    batch_size_128: {batch_size: 128}
+    batch_size_32: {batch_size: 32}
+  hyperparameters:
+    learning_rate: 2e-5
+    weight_decay: 0.01
+    warmup_ratio: 0.06
+    max_grad_norm: 1.0
+
+# reference_grounding: paper:unit_005 (chunk_017)
+# metrics: accuracy, runtime, training time
+metrics:
+  accuracy: {formula: "src.apt.utils.metrics.compute_accuracy", aggregation: "src.apt.utils.metrics.aggregate_accuracy"}
+  loss: {formula: "src.apt.engine.trainer.compute_loss", aggregation: "src.apt.engine.trainer.aggregate_loss"}
+  reward: {formula: "src.apt.engine.trainer.compute_reward", aggregation: "src.apt.engine.trainer.aggregate_reward"}
+  runtime: {id: "runtime"}
+  training_time: {id: "training_time"}
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# artifacts: table 2, table 11
+artifacts:
+  output_dir: "results"
+  table_2: {path: "results/tables/table_2.csv", writer: "src.reporting.or_optimization_loop.write_table_2"}
+  table_11: {path: "results/tables/table_11.csv", writer: "src.reporting.or_optimization_loop.write_table_11"}
+
+# reference_grounding: paper:paper_training_or_optimization_loop (chunk_017, chunk_005)
+# Canonical route contract: smoke mode must execute the same implementation path with bounded data/config
+training_loop:
+  entrypoint: "src.apt.engine.trainer.train_trainer"
+  smoke_mode:
+    max_steps: 10
+    batch_size: 2
+    dataset_size: 20
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# Full experiment-matrix route contract
+experiment_matrix:
+  datasets_or_tasks: ["unit-004", "t5", "llama commonsense", "unit-005", "squad", "glue", "pruning roberta models targeting similar", "apt consistently reach higher", "salience notably hurts", "sst2"]
+  methods_or_models: ["FT", "LoRA", "LoRA+Prune", "Co-tuning", "LLM-Pruner", "ours", "bert", "roberta", "t5", "fine_tuning", "lora", "test_time_adaptation", "10_shot_setting", "batch_size_128"]
+  parameters: ["early_training_steps"]
+
+reproduction_scope:
+  active: true
+  notes: "Reproduction focuses on RoBERTa and T5 models as per addendum. LLaMA models are configured but marked as non-mandatory for replication."

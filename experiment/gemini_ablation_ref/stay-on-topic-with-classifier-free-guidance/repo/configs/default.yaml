@@ -1,0 +1,335 @@
+# configs/default.yaml
+# Classifier-Free Guidance for Language Models - Default Configuration
+
+# Project Metadata
+project:
+  name: "stay-on-topic-cfg"
+  description: "Faithful reproduction of Classifier-Free Guidance for Language Models"
+  active_reproduction_scope: "Zero-shot NLP, CoT reasoning, Program Synthesis, and Mechanistic Analysis of CFG"
+
+# Paper Formula & Algorithm Symbol Inventory (Code-Visible Anchors)
+# reference_grounding: chunk_004, chunk_005, chunk_007, chunk_010, addendum
+symbols:
+  w_p: "prompt context"
+  flops_computation: "flops measurement formula"
+  sum_k: "sum over k"
+  p_k: "probability of k"
+  x_i: "token or state at step i"
+  x_lt_i: "tokens or states before step i"
+  sum_i_1_n: "sum from i=1 to n"
+  P_theta: "conditional or unconditional model probability"
+  P_phi: "classifier probability"
+  gamma: "guidance scale"
+  theta: "model parameters"
+  epsilon_t: "noise prediction at step t"
+  x_t_plus_1: "state at step t+1"
+  prod_i_1_T: "product from i=1 to T"
+  w_i: "token at index i"
+  w_j_lt_i: "tokens before index i"
+  prod_i_T: "product over i to T"
+  c_bar: "negative or null conditioning"
+  n_c: "number of conditioning tokens"
+  n_p: "number of prompt tokens"
+  w_t: "token at step t"
+  w_lt_t: "tokens before step t"
+  w_T: "terminal token"
+  w_hat: "guided token distribution"
+  lambda: "guidance weight parameter"
+  f_w: "weak model logits"
+  f_s: "strong model logits"
+  CFG: "Classifier-Free Guidance"
+  P_instruct: "instruction-tuned model probability"
+
+# Numeric and Default Anchors from the Paper
+numeric_anchors:
+  val_5_1: 5.1
+  val_1: 1.0
+  val_0: 0.0
+  val_3: 3.0
+  val_4: 4.0
+  val_6: 6.0
+  val_7: 7.0
+  val_5: 5.0
+  val_3_4: 3.4
+  val_81: 81.0
+  val_1_5: 1.5
+  val_77_9: 77.9
+  val_2: 2.0
+  val_10: 10.0
+  val_100: 100.0
+  val_0_2: 0.2
+  val_8: 8.0
+  val_14: 14.0
+  val_0_8: 0.8
+  val_15: 15.0
+  val_0_6: 0.6
+  val_0_9: 0.9
+  val_90: 90.0
+  val_50: 50.0
+  val_19: 19.0
+  val_20: 20.0
+  val_25: 25.0
+  val_46: 46.0
+  val_1740: 1740.0
+  val_75: 75.0
+  val_52: 52.0
+
+# Paper Formula / Algorithm Anchors
+formulas:
+  classifier_guidance_image:
+    section: "2.1. Classifier Guidance in Text-to-Image Models"
+    equation: "log P_hat(epsilon_t | x_t+1, c) = gamma * log P_theta(epsilon_t | x_t+1, c) - (gamma - 1) * log P_theta(epsilon_t | x_t+1)"
+    symbols: ["P_theta", "P_phi", "gamma", "theta", "epsilon_t", "x_t+1"]
+    defaults:
+      gamma: 1.0
+      theta: 0.0
+      epsilon_t: 3.0
+      x_t_plus_1: 4.0
+    terms: ["equation", "ema", "sample"]
+
+  classifier_free_guidance_lm:
+    section: "2.2. Classifier-Free Guidance of Language Models"
+    equation: "log P_hat(w_i | w_j<i, c) = log P_theta(w_i | w_j<i) + gamma * (log P_theta(w_i | w_j<i, c) - log P_theta(w_i | w_j<i))"
+    symbols: ["P_theta", "prod_i=1^T", "gamma", "prod_i^T", "w_i", "w_j<i"]
+    defaults:
+      gamma: 1.5
+      w_i: 1.0
+      w_j_lt_i: 6.0
+      prod_i_T: 7.0
+      prod_i_1_T: 5.0
+      P_theta: 3.4
+    terms: ["equation", "formula", "sample"]
+
+  program_synthesis_eval:
+    section: "3.3.1. PROGRAM SYNTHESIS EVALUATIONS"
+    formula: "pass@k for k in [1, 10, 100]"
+    symbols: ["gamma"]
+    defaults:
+      gamma: 1.5
+      temperature: 0.2
+      k_list: [1, 10, 100]
+      numeric_defaults: [4, 8, 2, 3, 1, 10, 100, 0.2]
+    terms: ["increase"]
+
+  deliberative_prompting_cot:
+    section: "C.5. Deliberative Prompting: Chain-of-Thought"
+    formula: "In each cell, the first value is the result for gamma=1 (baseline) and the second value is the result for gamma=1.5 (ours)."
+    symbols: ["gamma"]
+    defaults:
+      gamma_baseline: 1.0
+      gamma_ours: 1.5
+      numeric_defaults: [1, 1.5, 14, 0.8, 15, 0.6]
+
+  basic_prompting_zero_shot:
+    section: "3.1. Basic Prompting: Zero-Shot Prompts"
+    formula: "LLaMA 7B model achieves 81% accuracy in Lambada (OpenAI) zero-shot benchmark with gamma=1.5, outperforming PaLM-540B (77.9%)."
+    symbols: ["gamma"]
+    defaults:
+      gamma: 1.5
+      llama_7b_accuracy: 81.0
+      palm_540b_accuracy: 77.9
+
+  generative_guidance_nlp:
+    section: "B.2. Generative Guidance in NLP"
+    formula: "f_s(x | y) - f_w(x | y)"
+    symbols: ["lambda", "f_w", "f_s"]
+    terms: ["formula"]
+
+  cfg_vs_instruction_tuning:
+    section: "E. Further Comparison between CFG and Instruction-Tuning"
+    formula: "Entropy of logits for vanilla prompted P(y|x), unprompted P(x), CFG-gamma=1.5, and P_instruct(y|x)"
+    symbols: ["CFG", "gamma", "P_instruct"]
+    defaults:
+      gamma: 1.5
+      numeric_defaults: [0.9, 1.5, 90, 50]
+
+  user_prompts:
+    section: "G.2. User prompts"
+    formula: "Comparison of (CFG-gamma=1.5, Instruct) logits across a large sample set from P3."
+    symbols: ["gamma"]
+    defaults:
+      gamma: 1.5
+      numeric_defaults: [19, 1.5, 20, 1]
+    terms: ["sample"]
+
+  addendum_flops:
+    section: "addendum"
+    formula: "flops_computation = 6 * N * P"
+    symbols: ["flops_computation", "sum_k", "sum_i=1^n", "w_p", "p_k", "x_i", "x_<i"]
+    defaults:
+      numeric_defaults: [5.1, 1]
+    terms: ["equation", "formula", "search"]
+
+# Environment and Task Factories
+# Exposes paper-derived environment/task factories with ids, aliases, setup metadata, availability checks, and runnable config hooks
+environments:
+  unit-003:
+    id: "unit-003"
+    alias: "unit_003_zero_shot"
+    type: "zero-shot"
+    setup_metadata:
+      task: "lambada"
+      model: "llama-7b"
+      gamma: 2.0
+    availability_check: "src.data_pipeline.check_availability"
+    runnable_config_hook: "src.main.run_zero_shot"
+
+  unit-004:
+    id: "unit-004"
+    alias: "unit_004_cot"
+    type: "cot"
+    setup_metadata:
+      task: "cot"
+      gamma: 1.5
+    availability_check: "src.data_pipeline.check_availability"
+    runnable_config_hook: "src.main.run_cot"
+
+  unit-005:
+    id: "unit-005"
+    alias: "unit_005_code_gen"
+    type: "code_gen"
+    setup_metadata:
+      task: "code_gen"
+      model: "gpt-j"
+      gamma: 2.0
+    availability_check: "src.data_pipeline.check_availability"
+    runnable_config_hook: "src.main.run_code_gen"
+
+  unit-008:
+    id: "unit-008"
+    alias: "unit_008_all"
+    type: "repro_all"
+    setup_metadata:
+      config: "configs/repro_all.yaml"
+    availability_check: "src.data_pipeline.check_availability"
+    runnable_config_hook: "src.main.run_all"
+
+  zero-shot:
+    id: "zero-shot"
+    alias: "zero_shot_eval"
+    type: "zero-shot"
+    setup_metadata:
+      tasks: ["lambada", "common_sense"]
+    availability_check: "src.data_pipeline.check_availability"
+    runnable_config_hook: "src.main.run_zero_shot"
+
+  glue:
+    id: "glue"
+    alias: "glue_benchmark"
+    type: "glue"
+    setup_metadata:
+      tasks: ["sst2", "mrpc", "cola"]
+    availability_check: "src.data_pipeline.check_availability"
+    runnable_config_hook: "src.main.run_glue"
+
+  significantly_different:
+    id: "significantly-different"
+    alias: "significantly_different_eval"
+    type: "ablation"
+    setup_metadata:
+      description: "Evaluate significantly different distributions or ablations"
+    availability_check: "src.data_pipeline.check_availability"
+    runnable_config_hook: "src.main.run_ablation"
+
+  underperform_distributions:
+    id: "underperform-distributions-among-all"
+    alias: "underperform_distributions"
+    type: "ablation"
+    setup_metadata:
+      description: "Evaluate underperforming distributions among all variants"
+    availability_check: "src.data_pipeline.check_availability"
+    runnable_config_hook: "src.main.run_ablation"
+
+  humanoid:
+    id: "humanoid"
+    alias: "humanoid_task"
+    type: "humanoid"
+    setup_metadata:
+      decides_which: "humanoid_task"
+      config_tests_artifact_writer_expose_explicit: true
+    availability_check: "src.data_pipeline.check_availability"
+    runnable_config_hook: "src.main.run_humanoid"
+
+  common_sense_reasoning:
+    id: "common-sense-reasoning"
+    alias: "common_sense"
+    type: "zero-shot"
+    setup_metadata:
+      tasks: ["piqa", "hellaswag", "winogrande", "arc_easy", "arc_challenge"]
+    availability_check: "src.data_pipeline.check_availability"
+    runnable_config_hook: "src.main.run_zero_shot"
+
+# Dataset and Benchmark Loaders
+datasets:
+  LAMBADA:
+    id: "lambada"
+    alias: "lambada_dataset"
+    setup_metadata:
+      source: "openai"
+      split: "test"
+    validation_check: "src.data_pipeline.validate_lambada"
+    runnable_config_hook: "src.data_pipeline.load_lambada"
+  
+  glue:
+    id: "glue"
+    alias: "glue_dataset"
+    setup_metadata:
+      source: "huggingface"
+      tasks: ["sst2", "mrpc", "cola"]
+    validation_check: "src.data_pipeline.validate_glue"
+    runnable_config_hook: "src.data_pipeline.load_glue"
+
+# Method, Baseline, and Attack Selectors
+methods:
+  selectors:
+    - "ours"
+    - "chain_of_thought"
+    - "bert"
+    - "ppo"
+  
+  defaults:
+    ours:
+      name: "Classifier-Free Guidance (CFG)"
+      gamma: 1.5
+      temperature: 0.2
+    chain_of_thought:
+      name: "Chain of Thought (CoT)"
+      prompt_template: "Let's think step by step."
+      gamma: 1.5
+      temperature: 0.2
+    bert:
+      name: "BERT Baseline"
+      gamma: 1.0
+      temperature: 1.0
+    ppo:
+      name: "PPO RL Baseline"
+      gamma: 1.0
+      temperature: 0.7
+
+# Parameter Sweeps and Fixed Hyperparameters
+sweeps:
+  gamma:
+    name: "guidance_scale"
+    values: [1.0, 1.2, 1.5, 2.0, 2.5, 3.0, 5.0]
+    default: 1.5
+  temperature:
+    name: "temperature"
+    values: [0.2, 0.5, 0.7, 1.0]
+    default: 0.2
+  p:
+    name: "nucleus_p"
+    values: [0.9, 0.95, 1.0]
+    default: 1.0
+
+fixed_hyperparameters:
+  gamma_5:
+    gamma: 5.0
+    description: "Fixed hyperparameter anchor for strong guidance scale"
+
+# Active Reproduction Scope and Bounded Execution Defaults
+reproduction_scope:
+  mode: "runtime_smoke" # Options: runtime_smoke, full
+  bounded_execution: true
+  max_samples_smoke: 5
+  output_dir: "results"
+  artifact_dir_env_var: "PAPERBENCH_REPRO_ARTIFACT_DIR"

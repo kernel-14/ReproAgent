@@ -1,0 +1,110 @@
+# Configuration for FRE Reproduction
+# This file defines the experiment protocols, environment/dataset registries,
+# parameter sweeps, and constants required for the FRE reproduction.
+
+experiments:
+  experiment_5_2_main_benchmark:
+    description: "Main benchmark comparison"
+    environment: "deepmind_control"
+    method: "ours"
+    artifact_path: "results/tables/table1_exorl.csv"
+    metric_function: "compute_average_return"
+    artifact_writer: "write_table_1_artifact"
+  
+  experiment_5_3_scaling_properties:
+    description: "Scaling properties of reward families"
+    environment: "antmaze"
+    method: "ours"
+    artifact_path: "results/plots/figure5_scaling.png"
+    metric_function: "compute_average_return"
+    artifact_writer: "write_figure_5_artifact"
+    
+  experiment_5_4_domain_knowledge:
+    description: "Domain knowledge augmentation"
+    environment: "antmaze"
+    method: "ours"
+    artifact_path: "results/plots/figure6_specificity.png"
+    metric_function: "compute_average_return"
+    artifact_writer: "write_figure_6_artifact"
+    
+  extended_comparison_ppo_pbt_pql:
+    description: "Comparison with PPO, PBT, PQL"
+    environment: "kitchen"
+    method: "ppo"
+    artifact_path: "results/tables/table3.csv"
+    metric_function: "compute_average_return"
+    artifact_writer: "write_table3_artifact"
+
+environments:
+  deepmind_control:
+    id: "deepmind_control"
+    alias: "dm_control"
+    setup: "default"
+  antmaze:
+    id: "antmaze"
+    alias: "antmaze_d4rl"
+    setup: "default"
+  kitchen:
+    id: "kitchen"
+    alias: "kitchen_d4rl"
+    setup: "default"
+
+datasets:
+  deepmind_control:
+    id: "deepmind_control"
+    loader: "load_dm_control_dataset"
+  robotics:
+    id: "robotics"
+    loader: "load_robotics_dataset"
+
+methods:
+  ours:
+    id: "ours"
+    name: "Functional Reward Encoding (FRE)"
+    encoder_path: "src/models/fre_encoder.py"
+  bc:
+    id: "bc"
+    name: "Behavior Cloning"
+  iql:
+    id: "iql"
+    name: "Implicit Q-Learning"
+  test_time_adaptation:
+    id: "test_time_adaptation"
+    name: "Test-time Adaptation"
+  ppo:
+    id: "ppo"
+    name: "PPO"
+  pbt:
+    id: "pbt"
+    name: "PBT"
+  pql:
+    id: "pql"
+    name: "PQL"
+
+parameters:
+  K: 100
+  reward_discretization_magnitude: 0.5
+  transformer_layers: 2
+  attention_heads: 4
+  offline_rl_hyperparameters:
+    learning_rate: 3e-4
+    batch_size: 256
+
+constants:
+  # Velocity targets
+  vel_left: [-1, 0]
+  vel_up: [0, 1]
+  vel_down: [0, -1]
+  vel_right: [1, 0]
+  
+  # Algorithm constants
+  L_pi: -1.0
+  E_s_g_asimD: 0.0
+  p_randomgoal: 0.3
+  p_geometric_goal: 0.5
+  p_current_goal: 0.2
+  
+  # Training constants
+  K_prime: 6
+  beta: 1.0
+  KL_weight: 2.0

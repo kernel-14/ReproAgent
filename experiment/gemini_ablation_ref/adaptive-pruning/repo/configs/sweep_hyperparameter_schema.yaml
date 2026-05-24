@@ -1,0 +1,239 @@
+# reference_grounding: paper:paper_contract_sweep_hyperparameter_protocol (chunk_028, chunk_017, chunk_011)
+# APT: Adaptive Pruning and Tuning Pretrained Language Models for Efficient Training and Inference.
+# Sweep and Hyperparameter Schema Configuration
+
+reproduction_scope:
+  active: true
+  notes: "Reproduction focuses on RoBERTa and T5 models. LLaMA models are configured but marked as non-mandatory for replication."
+  seeds: [42, 123, 2024]
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# selector set must include ours, bert, roberta, t5, fine_tuning, lora, test_time_adaptation.
+# selectable method/baseline/variant factories for: FT, LoRA, LoRA+Prune, Co-tuning, LLM-Pruner
+methods:
+  ours:
+    id: "apt"
+    alias: "ours"
+    hyperparameters:
+      rank_init: 8
+      scaling_factor: 2
+      early_training_steps: 100 # t << T
+  bert:
+    id: "bert"
+  roberta:
+    id: "roberta"
+  t5:
+    id: "t5"
+  fine_tuning:
+    id: "ft"
+    alias: "fine_tuning"
+  lora:
+    id: "lora"
+  test_time_adaptation:
+    id: "tta"
+    alias: "test_time_adaptation"
+  FT:
+    id: "ft"
+  LoRA:
+    id: "lora"
+  LoRA+Prune:
+    id: "lora_prune"
+  Co-tuning:
+    id: "co_tuning"
+  LLM-Pruner:
+    id: "llm_pruner"
+  # reference_grounding: paper:unit_016 (chunk_016)
+  # Implement the CoFi baseline with LoRA and L0 module controls plus default hyperparameters.
+  cofi:
+    id: "cofi"
+    use_lora: true
+    use_l0: true
+    hyperparameters:
+      l0_lambda: 0.1
+      distill_weight: 1.0
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# factories for: unit-004 | t5 | llama commonsense | unit-005 | squad | glue | sst2
+environments:
+  unit-004:
+    id: "unit-004"
+    alias: "main_repro_env"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  t5:
+    id: "t5"
+    alias: "t5_env"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  llama_commonsense:
+    id: "llama commonsense"
+    alias: "llama_env"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  unit-005:
+    id: "unit-005"
+    alias: "efficiency_env"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  squad:
+    id: "squad"
+    alias: "squad_v2"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  glue:
+    id: "glue"
+    alias: "glue_benchmark"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  sst2:
+    id: "sst2"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  pruning_roberta_similar:
+    id: "pruning roberta models targeting similar"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+  apt_consistently_higher:
+    id: "apt consistently reach higher"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+  salience_notably_hurts:
+    id: "salience notably hurts"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+  open_llm_leaderboard:
+    id: "open llm leaderboard few-shot"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+  fine_tuning_no_hurt:
+    id: "fine-tuning will not hurt their"
+    availability_check: "src.apt.data.pipeline.check_env_available"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# loaders for: SST2, MNLI, SQuAD v2.0, CNN/DailyMail, BoolQ, PIQA, SIQA, HellaSwag, WinoGrande, ARC-e, ARC-c, OBQA | glue | truthfulqa
+datasets:
+  sst2:
+    id: "SST2"
+    alias: "glue"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  mnli:
+    id: "MNLI"
+    alias: "glue"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  squad:
+    id: "SQuAD v2.0"
+    alias: "squad"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  cnn_dm:
+    id: "CNN/DailyMail"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  boolq:
+    id: "BoolQ"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  piqa:
+    id: "PIQA"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  siqa:
+    id: "SIQA"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  hellaswag:
+    id: "HellaSwag"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  winogrande:
+    id: "WinoGrande"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  arc_e:
+    id: "ARC-e"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  arc_c:
+    id: "ARC-c"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  obqa:
+    id: "OBQA"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+  truthfulqa:
+    id: "truthfulqa"
+    alias: "truthfulqa"
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    config_hook: "src.apt.data.pipeline.load_pipeline"
+
+# reference_grounding: paper:paper_contract_sweep_hyperparameter_protocol (chunk_028)
+# bounded sweep/config entries for batch_size.
+# fixed hyperparameter anchors for 10_shot_setting, batch_size_128, batch_size_32.
+sweeps:
+  batch_size:
+    values: [32, 128]
+    default: 32
+  settings:
+    - "10_shot_setting"
+  early_training_steps:
+    values: [50, 100, 200]
+    default: 100 # t << T
+
+# reference_grounding: paper:paper_contract_sweep_hyperparameter_protocol (chunk_028)
+# Implement measurement collection and result aggregation for: fidelity score; accuracy; runtime; training time
+metrics:
+  fidelity_score: {id: "fidelity score"}
+  accuracy: {id: "accuracy"}
+  runtime: {id: "runtime"}
+  training_time: {id: "training time"}
+
+# Artifact writers
+artifacts:
+  config_resolved: 
+    path: "results/config_resolved.json"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_config_resolved_artifact"
+  sensitivity_report: 
+    path: "results/sensitivity_report.json"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_sensitivity_report_artifact"
+  figure_1: 
+    path: "results/figures/figure_1.png"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_figure_1_artifact"
+  table_1: 
+    path: "results/tables/table_1.csv"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_table_1_artifact"
+  figure_2: 
+    path: "results/figures/figure_2.png"
+    route: "src.reporting.sweep_hyperparameter_schema.run_figure_2_route"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_figure_2_artifact"
+  table_2: 
+    path: "results/tables/table_2.csv"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_table_2_artifact"
+  table_4: 
+    path: "results/tables/table_4.csv"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_table_4_artifact"
+  table_6:
+    path: "results/tables/table_6.csv"
+    route: "src.reporting.sweep_hyperparameter_schema.run_table_6_route"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_table_6_artifact"
+  table_11: 
+    path: "results/tables/table_11.csv"
+    writer: "src.reporting.sweep_hyperparameter_schema.write_table_11_artifact"
+  table_3: 
+    path: "results/tables/table_3.csv"
+  table_12: 
+    path: "results/tables/table_12.csv"
+  figure_3: 
+    path: "results/figures/figure_3.png"
+  table_5: 
+    path: "results/tables/table_5.csv"
+  table_7: 
+    path: "results/tables/table_7.csv"
+  table_8: 
+    path: "results/tables/table_8.csv"
+  table_9: 
+    path: "results/tables/table_9.csv"
+  figure_4: 
+    path: "results/figures/figure_4.png"
+  figure_5: 
+    path: "results/figures/figure_5.png"
+  table_10: 
+    path: "results/tables/table_10.csv"

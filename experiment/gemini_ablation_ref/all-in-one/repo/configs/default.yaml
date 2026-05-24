@@ -1,0 +1,202 @@
+# configs/default.yaml
+# Reference Grounding: addendum:formula_algorithm_contract configs/default.yaml
+
+# Global experiment settings
+experiment_name: "simformer_reproduction"
+mode: "runtime_smoke" # Options: runtime_smoke, full_experiment
+seed: 42
+
+# Method Registry
+# Expose method/baseline/attack selectors for ours, simformer, npe, nle, nre, diffusion_model, vit
+method_registry:
+  ours: "simformer"
+  simformer: "src.model.SimformerModel"
+  npe: "src.baselines.NPEBaseline"
+  nle: "src.baselines.NLEBaseline"
+  nre: "src.baselines.NREBaseline"
+  diffusion_model: "src.baselines.DiffusionBaseline"
+  vit: "src.model.ViTBackbone"
+
+# Baseline Registry
+baseline_registry:
+  - "npe"
+  - "nle"
+  - "nre"
+  - "diffusion_model"
+
+# Dataset/Benchmark Registry
+# Explicitly register dataset/benchmark aliases for two_moons, gaussian_linear, sird, lotka_volterra, hodgkin_huxley
+dataset_registry:
+  two_moons:
+    dim_theta: 2
+    dim_x: 2
+    M_E: "M_E_two_moons"
+  gaussian_linear:
+    dim_theta: 10
+    dim_x: 10
+    M_E: "M_E_gaussian"
+  sird:
+    dim_theta: 4
+    dim_x: 8
+    M_E: "block_diag"
+  lotka_volterra:
+    dim_theta: 4
+    dim_x: 20
+    M_E: "M_xx"
+  hodgkin_huxley:
+    dim_theta: 4
+    dim_x: 1000
+    M_E: "M_E_tree"
+
+# Fixed Hyperparameters
+# Expose fixed hyperparameter anchors for mask_probability_0.3
+hyperparameters:
+  mask_probability: 0.3
+  batch_size: 64
+  learning_rate: 0.001
+  epochs: 10
+  smoke_epochs: 1
+  smoke_samples: 100
+  p: 0.5 # Bounded sweep/config entry for p
+
+# SDE Configurations (VESDE and VPSDE)
+sde_config:
+  type: "VESDE" # Options: VESDE, VPSDE
+  sigma_min: 0.0001
+  sigma_max: 15.0
+  beta_min: 0.01
+  beta_max: 20.0
+  T_min: 0.0
+  T_max: 1.0
+  steps: 100
+
+# Tokenizer and Masking Policies
+# Symbols: M_C, rand_mask1, Ber0.3, rand_mask2, Ber0.7, M_E
+tokenizer:
+  mask_policies:
+    rand_mask1: "Ber0.3"
+    rand_mask2: "Ber0.7"
+    joint_mask: "all_false"
+    posterior_mask: "param_false_data_true"
+    likelihood_mask: "param_true_data_false"
+  condition_state_M_C: "M_C"
+  attention_mask_M_E: "M_E"
+
+# Guided Diffusion Settings
+guidance:
+  scale: 1.5 # guided diffusion scale
+  metabolic_cost_threshold: 4.2 # metabolic cost threshold for Hodgkin-Huxley
+  T_min: 0.0
+  T_max: 15.0 # grid between t=0 and t=15
+
+# Paper formula/algorithm symbol inventory must be code-visible
+symbol_inventory:
+  M_C: "M_C"
+  rand_mask1: "rand_mask1"
+  Ber0.3: "Ber0.3"
+  rand_mask2: "rand_mask2"
+  Ber0.7: "Ber0.7"
+  M_E: "M_E"
+  convert_charge_to_energyE: "convert_charge_to_energyE"
+  convert_total_energyE: "convert_total_energyE"
+  N_Na: "N_Na"
+  valence_Na: "valence_Na"
+  number_of_transports: "number_of_transports"
+  ATP_Na: "ATP_Na"
+  ATP_energy: "ATP_energy"
+  convert_charge_to_energy: "convert_charge_to_energy"
+  convert_total_energy: "convert_total_energy"
+  M_xx: "M_xx"
+  M_E_gaussian: "M_E_gaussian"
+  M_E_two_moons: "M_E_two_moons"
+  block_diag: "block_diag"
+  for_in: "for_in"
+  M_E_slcp: "M_E_slcp"
+  M_E_tree: "M_E_tree"
+  HMMHiddenMarkovModel: "HMMHiddenMarkovModel"
+  M_E_hmm: "M_E_hmm"
+
+# Numeric and Default Anchors
+# 4.2, 0, 15, 1, 5, 1000, 0.628e-3, 1.602176634e-19, 3, 10e-19, 0.2, 1e+6, 10, 2, 4, 8
+numeric_anchors:
+  metabolic_cost_threshold: 4.2
+  t_min: 0
+  t_max: 15
+  valence_Na: 1
+  number_of_transports: 5
+  N_Na: 1000
+  ATP_Na: 3
+  ATP_energy: 0.000628 # 0.628e-3
+  convert_charge_to_energy: 1.602176634e-19
+  convert_total_energy: 1.0e-18 # 10e-19
+  noise_level_t: 0.2
+  max_samples: 1000000 # 1e+6
+  dim_theta: 10
+  dim_x: 2
+  num_layers: 4
+  num_heads: 8
+
+# Parameter Sweeps Registry
+# Expose required parameter sweeps: noise level t, attention mask M_E, condition state M_C, C2ST accuracy metric, training_time, nll, per_sample_lowest_score_selection, model_loader_factory_path, metabolic cost threshold, guided diffusion scale
+sweep_registry:
+  noise_level_t: [0.01, 0.1, 0.2, 0.5, 1.0]
+  attention_mask_M_E: ["M_E_gaussian", "M_E_two_moons", "block_diag", "M_E_tree", "M_E_hmm"]
+  condition_state_M_C: ["joint", "posterior", "likelihood", "rand_mask1", "rand_mask2"]
+  metrics: ["c2st", "nll", "training_time"]
+  protocols: ["per_sample_lowest_score_selection", "random_sample_manifest"]
+  model_loader_factory_path: "src.model.model_loader_factory"
+  metabolic_cost_threshold: [2.0, 4.2, 6.0]
+  guided_diffusion_scale: [0.0, 1.0, 1.5, 3.0, 5.0]
+  p: [0.1, 0.3, 0.5, 0.7, 0.9]
+  batch_size: [16, 32, 64, 128]
+
+# Named Experiment Protocols
+# Expose named experiment protocols in code/config rather than collapsing them into a generic runner
+experiment_protocols:
+  simformer_core_architecture:
+    description: "Simformer Core -> Tokenizer, Attention Mask, Score Matching Loss"
+    metrics: ["loss"]
+    artifact_paths:
+      - "results/method_registry.json"
+      - "results/ablation_registry.json"
+      - "results/config_resolved.json"
+  denoising_score_matching_training:
+    description: "Denoising Score Matching Training Loop"
+    metrics: ["loss", "training_time"]
+    artifact_paths:
+      - "results/training_trace.json"
+      - "results/diffusion_config.json"
+  diffusion_sampling_guidance:
+    description: "Diffusion Sampling & Guidance for Interval Conditioning"
+    metrics: ["c2st", "nll"]
+    artifact_paths:
+      - "results/sampling_trace.json"
+      - "results/mask_policy.json"
+  benchmark_tasks_evaluation:
+    description: "Benchmark Tasks -> C2ST accuracy comparison & training_time/nll metrics"
+    tasks: ["two_moons", "gaussian_linear", "sird"]
+    metrics: ["c2st", "nll", "training_time"]
+    artifact_paths:
+      - "results/metrics.json"
+  lotka_volterra_unstructured:
+    description: "Lotka-Volterra -> Unstructured observations inference"
+    metrics: ["c2st", "nll"]
+    artifact_paths:
+      - "results/lotka_volterra_metrics.json"
+  sird_functional_parameter:
+    description: "SIRD-model -> Infinite dimensional parameter inference"
+    metrics: ["c2st", "nll"]
+    artifact_paths:
+      - "results/sird_metrics.json"
+  hodgkin_huxley_constrained:
+    description: "Hodgkin-Huxley -> Guided diffusion interval conditioning"
+    metrics: ["c2st", "nll"]
+    artifact_paths:
+      - "results/hodgkin_huxley_metrics.json"
+  artifact_validation_reporting:
+    description: "Reporting -> Evidence contract matrix & sensitivity report"
+    artifact_paths:
+      - "results/evidence_contract_matrix.json"
+      - "results/experiment_registry.json"
+      - "results/artifact_manifest.json"
+      - "results/sensitivity_report.json"

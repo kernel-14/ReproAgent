@@ -1,0 +1,170 @@
+# configs/default.yaml
+# Reproduction configuration for "Sequential Neural Score Estimation"
+# reference_grounding: paper:paper_addendum_constraints
+
+project:
+  name: "snpse_repro"
+  paper_title: "Sequential Neural Score Estimation: Likelihood-Free Inference with Conditional Score Based Diffusion Models"
+
+# Paper evidence contract: explicitly register dataset/benchmark aliases
+# reference_grounding: paper:paper_dataset_inventory
+dataset_registry:
+  slcp:
+    id: "slcp"
+    name: "SLCP"
+    dim_theta: 5
+    dim_x: 8
+    factory: "src.data.sbi_environment.get_benchmark_task"
+  lotka_volterra:
+    id: "lotka_volterra"
+    name: "Lotka-Volterra"
+    dim_theta: 4
+    dim_x: 9
+    factory: "src.data.sbi_environment.get_benchmark_task"
+  two_moons:
+    id: "two_moons"
+    name: "Two Moons"
+    dim_theta: 2
+    dim_x: 2
+    factory: "src.data.sbi_environment.get_benchmark_task"
+  # 8 SBI benchmarks total (Lueckmann et al. 2021)
+  gaussian_linear:
+    id: "gaussian_linear"
+  gaussian_linear_uniform:
+    id: "gaussian_linear_uniform"
+  gaussian_mixture:
+    id: "gaussian_mixture"
+  sir:
+    id: "sir"
+  bernoulli_glm:
+    id: "bernoulli_glm"
+
+# Paper evidence contract: expose method/baseline/attack selectors
+# reference_grounding: paper:method_inventory
+method_selectors:
+  ours: "TSNPSE"
+  npe: "NPE"
+  nle: "NLE"
+  nre: "NRE"
+  diffusion_model: "Conditional Score-Based Diffusion Model"
+
+# Paper evidence contract: expose bounded sweep/config entries
+# reference_grounding: paper:parameter_inventory
+hyperparameters:
+  score_network:
+    num_layers: 3
+    hidden_dim: 256
+    activation: "SiLU"
+    time_embedding: "Sinusoidal"
+  training:
+    learning_rate: 0.0001 # 10^-4
+    batch_size: 128
+    optimizer: "Adam"
+    ema_decay: 0.999
+  sequential:
+    num_rounds: 10
+    budget_per_round: 1000 # Options: 1000, 10000, 100000
+    hpr_epsilon: 0.01 # 1 - epsilon HPR for truncation
+
+# Callable protocol matrix linking named experiments to environments/tasks, method selectors, metric functions, and artifact writer functions
+# reference_grounding: paper:obligation_matrix
+experiment_protocols:
+  sequential_training_rounds:
+    id: "sequential_training_rounds"
+    task: "two_moons"
+    method: "ours"
+    metrics: ["loss", "c2st"]
+    artifact_writer: "src.reporting.tsnpse.write_sequential_results"
+    checkpoint_path: "checkpoints/tsnpse_round_{r}.pt"
+  benchmark_comparison:
+    id: "benchmark_comparison"
+    tasks: ["two_moons", "slcp", "lotka_volterra"]
+    methods: ["ours", "npe", "nle", "nre"]
+    metrics: ["c2st"]
+    artifact_writer: "src.reporting.repro_orchestration.write_comparison_table"
+    output_csv: "results/tables/experiment_results.csv"
+    output_json: "results/metrics.json"
+
+# Paper formula/algorithm symbol inventory
+# reference_grounding: paper:formula_algorithm_contract
+symbols:
+  theta: "theta"
+  theta_t: "theta_t"
+  theta_0: "theta_0"
+  r_d: "R^d"
+  r: "r"
+  w_t: "w_t"
+  theta_bar_0: "theta_bar_0"
+  p_T: "p_T"
+  theta_bar_t: "theta_bar_t"
+  g_2: "g^2"
+  p_t: "p_t"
+  p_tmid0: "p_t|0"
+  nabla_theta: "nabla_theta"
+  p_T_minus_t: "p_T-t"
+  lambda_t: "lambda_t"
+  J_post: "J_post"
+  SM: "SM"
+  int_0_T: "int_0^T"
+  s_psi: "s_psi"
+  DSM: "DSM"
+  R_p: "R^p"
+  x_obs: "x_obs"
+  p_tilde: "p_tilde"
+  N_r: "N_r"
+  psi_lik: "psi_lik"
+  psi_post: "psi_post"
+  J_lik: "J_lik"
+  p_0midt: "p_0|t"
+  gradient: "gradient"
+  ema: "ema"
+
+# Numeric/default anchors
+# reference_grounding: paper:formula_algorithm_contract
+numeric_anchors:
+  0: 0
+  1: 1
+  2: 2
+  3: 3
+  4: 4
+  6: 6
+  7: 7
+  9: 9
+  12: 12
+  13: 13
+  14: 14
+  18: 18
+  19: 19
+  2.1: 2.1
+  2.115: 2.115
+  54: 54
+  4.3: 4.3
+  5: 5
+  123: 123
+  103: 103
+  121: 121
+  81: 81
+  2.3: 2.3
+  99: 99
+  3.3: 3.3
+
+# Artifact paths
+# reference_grounding: paper:artifact_inventory
+paths:
+  dataset_registry: "results/dataset_registry.json"
+  data_manifest: "results/data_manifest.json"
+  metrics: "results/metrics.json"
+  experiment_results: "results/tables/experiment_results.csv"
+  checkpoints: "checkpoints/"
+
+# Addendum constraints
+# reference_grounding: paper:paper_addendum_constraints
+addendum_constraints:
+  neuroscience_problem:
+    repo: "https://github.com/mackelab/tsnpe_neurips/"
+    replicate: false
+  vesde:
+    sigma_max_round_1_only: true
+  baselines:
+    library: "sbibm"
+    c2st_defaults: true

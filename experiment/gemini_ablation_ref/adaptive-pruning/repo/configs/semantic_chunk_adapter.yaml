@@ -1,0 +1,265 @@
+# reference_grounding: paper:paper_semantic_chunk_029_adapter_shift_module_block_salience_calculation_correlations_block_salience_calculation (chunk_029)
+# reference_grounding: paper:unit_001 (chunk_010)
+# APT: Adaptive Pruning and Tuning Pretrained Language Models for Efficient Training and Inference.
+# Configuration for APT Adapter and Shift Module.
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# selector set must include ours, bert, roberta, t5, fine_tuning, lora, test_time_adaptation.
+# selectable method/baseline/variant factories for: FT, LoRA, LoRA+Prune, Co-tuning, LLM-Pruner
+methods:
+  ours:
+    id: "apt"
+    alias: "ours"
+    factory: "src.methods.semantic_chunk_adapter.make_adapter"
+    shift_module: "src.methods.semantic_chunk_adapter.apply_shift_module"
+    hyperparameters:
+      rank: 8
+      r_apt: 8
+      alpha: 16
+      dropout: 0.1
+  Ours:
+    id: "apt"
+    factory: "src.methods.semantic_chunk_adapter.make_adapter"
+  bert:
+    id: "bert"
+    factory: "src.models.wrapper.build_wrapper"
+  roberta:
+    id: "roberta"
+    factory: "src.models.wrapper.build_wrapper"
+  t5:
+    id: "t5"
+    factory: "src.models.wrapper.build_wrapper"
+  fine_tuning:
+    id: "ft"
+    alias: "fine_tuning"
+    factory: "src.apt.engine.trainer.run_training_loop"
+  lora:
+    id: "lora"
+    factory: "src.models.wrapper.build_wrapper"
+  test_time_adaptation:
+    id: "tta"
+    alias: "test_time_adaptation"
+    factory: "src.apt.engine.trainer.run_training_loop"
+  FT:
+    id: "ft"
+    factory: "src.apt.engine.trainer.run_training_loop"
+  LoRA:
+    id: "lora"
+    factory: "src.models.wrapper.build_wrapper"
+  LoRA+Prune:
+    id: "lora_prune"
+    factory: "src.apt.engine.trainer.run_training_loop"
+  Co-tuning:
+    id: "co_tuning"
+    factory: "src.apt.engine.trainer.run_training_loop"
+  LLM-Pruner:
+    id: "llm_pruner"
+    factory: "src.apt.engine.trainer.run_training_loop"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# factories for: unit-004 | t5 | llama commonsense | unit-005 | squad | glue | pruning roberta models targeting similar | apt consistently reach higher | salience notably hurts | sst2 | open llm leaderboard few-shot | fine-tuning will not hurt their
+environments:
+  unit-004:
+    id: "unit-004"
+    alias: "main_repro_env"
+    metadata: {models: ["bert", "roberta", "t5", "llama"]}
+    availability_check: "src.apt.data.pipeline.check_env_available"
+    config_hook: "configs/task_setup_factory.yaml"
+  t5:
+    id: "t5"
+    alias: "t5_env"
+    metadata: {model: "t5-base"}
+  llama_commonsense:
+    id: "llama commonsense"
+    alias: "llama_env"
+    metadata: {tasks: ["BoolQ", "PIQA", "SIQA", "HellaSwag", "WinoGrande", "ARC-e", "ARC-c", "OBQA"]}
+  unit-005:
+    id: "unit-005"
+    alias: "efficiency_env"
+    metadata: {metrics: ["memory", "tta", "throughput"]}
+  squad:
+    id: "squad"
+    alias: "squad_v2"
+    metadata: {version: "2.0"}
+  glue:
+    id: "glue"
+    alias: "glue_benchmark"
+    metadata: {tasks: ["sst2", "mnli"]}
+  pruning_roberta_similar:
+    id: "pruning roberta models targeting similar"
+    alias: "roberta_pruning"
+  apt_consistently_higher:
+    id: "apt consistently reach higher"
+    alias: "apt_performance"
+  salience_notably_hurts:
+    id: "salience notably hurts"
+    alias: "salience_ablation"
+  sst2:
+    id: "sst2"
+    alias: "sst2_task"
+  open_llm_leaderboard:
+    id: "open llm leaderboard few-shot"
+    alias: "llama_eval"
+  fine_tuning_no_hurt:
+    id: "fine-tuning will not hurt their"
+    alias: "ft_stability"
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# loaders for: SST2, MNLI, SQuAD v2.0, CNN/DailyMail, BoolQ, PIQA, SIQA, HellaSwag, WinoGrande, ARC-e, ARC-c, OBQA | glue | truthfulqa
+datasets:
+  SST2:
+    id: "SST2"
+    alias: "sst2"
+    setup_metadata: {task: "classification", benchmark: "glue"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  MNLI:
+    id: "MNLI"
+    alias: "mnli"
+    setup_metadata: {task: "classification", benchmark: "glue"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  SQuAD_v2:
+    id: "SQuAD v2.0"
+    alias: "squad"
+    setup_metadata: {task: "qa", benchmark: "squad"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  CNN_DailyMail:
+    id: "CNN/DailyMail"
+    alias: "cnn_dm"
+    setup_metadata: {task: "summarization"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  BoolQ:
+    id: "BoolQ"
+    alias: "boolq"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  PIQA:
+    id: "PIQA"
+    alias: "piqa"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  SIQA:
+    id: "SIQA"
+    alias: "siqa"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  HellaSwag:
+    id: "HellaSwag"
+    alias: "hellaswag"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  WinoGrande:
+    id: "WinoGrande"
+    alias: "winogrande"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  ARC-e:
+    id: "ARC-e"
+    alias: "arc_e"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  ARC-c:
+    id: "ARC-c"
+    alias: "arc_c"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  OBQA:
+    id: "OBQA"
+    alias: "obqa"
+    setup_metadata: {task: "commonsense"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  glue:
+    id: "glue"
+    alias: "glue"
+    setup_metadata: {benchmark: "glue"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+  truthfulqa:
+    id: "truthfulqa"
+    alias: "truthfulqa"
+    setup_metadata: {task: "qa"}
+    validation_check: "src.apt.data.pipeline.validate_dataset"
+    runnable_config_hook: "src.apt.data.pipeline.load_pipeline"
+
+# reference_grounding: paper:unit_005 (chunk_017)
+# sweeps: batch_size, early_training_steps (t << T)
+sweeps:
+  batch_size: [32, 128]
+  early_training_steps: [100, 500, 1000] # t << T
+
+# reference_grounding: paper:unit_005 (chunk_017)
+# fixed hyperparameters: 10_shot_setting, batch_size_128, batch_size_32
+fixed_hyperparameters:
+  10_shot_setting: 10
+  batch_size_128: 128
+  batch_size_32: 32
+
+# reference_grounding: paper:unit_004 (chunk_015)
+# artifact writers
+artifacts:
+  model_registry: 
+    path: "results/model_registry.json"
+    writer: "src.reporting.semantic_chunk_adapter.write_model_registry_artifact"
+  figure_1: 
+    path: "results/figures/figure_1.png"
+    writer: "src.reporting.semantic_chunk_adapter.write_figure_1_artifact"
+  table_1: 
+    path: "results/tables/table_1.csv"
+    writer: "src.reporting.semantic_chunk_adapter.write_table_1_artifact"
+  figure_2: 
+    path: "results/figures/figure_2.png"
+    writer: "src.reporting.semantic_chunk_adapter.write_figure_2_artifact"
+  table_2: 
+    path: "results/tables/table_2.csv"
+    writer: "src.reporting.semantic_chunk_adapter.write_table_2_artifact"
+  table_4: 
+    path: "results/tables/table_4.csv"
+    writer: "src.reporting.semantic_chunk_adapter.write_table_4_artifact"
+  table_11: 
+    path: "results/tables/table_11.csv"
+    writer: "src.reporting.semantic_chunk_adapter.write_table_11_artifact"
+  table_3: 
+    path: "results/tables/table_3.csv"
+    writer: "src.reporting.semantic_chunk_adapter.write_table_3_artifact"
+
+# reference_grounding: paper:unit_001 (chunk_010)
+# APT Adapter Architecture
+# H_apt(X) = (W_o * m_o) * (W_i * m_i) * X
+# where m_i and m_o are binary pruning masks.
+architecture:
+  adapter:
+    input_projection: "W_i"
+    output_projection: "W_o"
+    input_mask: "m_i"
+    output_mask: "m_o"
+    rank: "r_apt"
+    factory: "src.methods.semantic_chunk_adapter.make_adapter"
+  shift_module:
+    type: "linear"
+    bias: true
+    apply: "src.methods.semantic_chunk_adapter.apply_shift_module"
+
+# reference_grounding: paper:paper_semantic_chunk_029_adapter_shift_module_block_salience_calculation_correlations_block_salience_calculation (chunk_029)
+# Salience scoring function S(W_i,j) = sum |dL/dW_i,j * W_i,j|
+salience:
+  metric: "weight_gradient_production"
+  formula: "abs(grad * weight)"
+  aggregation: "sum"
+  outlier_aware: true
+
+# reference_grounding: paper:paper_evidence_matrix (chunk_017, chunk_019, chunk_020)
+experiment_matrix:
+  datasets_or_tasks: ["unit-004", "t5", "llama commonsense", "unit-005", "squad", "glue", "pruning roberta models targeting similar", "apt consistently reach higher", "salience notably hurts", "sst2"]
+  methods_or_models: ["FT", "LoRA", "LoRA+Prune", "Co-tuning", "LLM-Pruner", "ours", "bert", "roberta", "t5", "fine_tuning", "lora", "test_time_adaptation", "10_shot_setting", "batch_size_128"]
+  parameters: ["early_training_steps"]

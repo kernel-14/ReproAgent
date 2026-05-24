@@ -1,0 +1,236 @@
+# reference_grounding: addendum:formula_algorithm_contract configs/default.yaml
+# reference_grounding: chunk_010 configs/default.yaml
+# reference_grounding: chunk_011 configs/default.yaml
+# reference_grounding: chunk_014_01 configs/default.yaml
+
+# Global configuration defaults
+defaults:
+  learning_rate: 0.00005
+  batch_size: 64
+  training_iterations: 300
+  shot_count: 10
+  gamma: 5.0
+  omega: 0.02
+  adversarial_inner_steps: 10
+  image_size: 256
+
+# Fixed hyperparameter anchors from the paper
+fixed_hyperparameters:
+  5000_iterations:
+    training_iterations: 5000
+  300_training_iterations:
+    training_iterations: 300
+  10_shot_setting:
+    shot_count: 10
+  gamma_5:
+    gamma: 5.0
+  omega_0.02:
+    omega: 0.02
+  adversarial_inner_steps_10:
+    adversarial_inner_steps: 10
+  batch_size_64:
+    batch_size: 64
+
+# Specific hyperparameters from the addendum for Table 3
+addendum_hyperparameters:
+  ddpm_ffhq_to_babies:
+    learning_rate: 0.000005
+    C: 8
+    omega: 0.02
+    J: 10
+    gamma: 3.0
+    training_iterations: 160
+  ddpm_ffhq_to_sunglasses:
+    learning_rate: 0.00005
+    C: 8
+    omega: 0.02
+    J: 10
+    gamma: 15.0
+    training_iterations: 200
+
+# Parameter sweeps registry
+parameter_sweeps:
+  shot_count: [100]
+  training_iteration_count: [0, 50, 100, 150, 200, 250, 300, 350]
+  similarity_guidance_scale: [1, 3, 5, 7, 9]
+  adversarial_noise_scale: [0.01, 0.02, 0.03, 0.04, 0.05]
+  learning_rate: [0.000005, 0.00001, 0.00005, 0.0001]
+  batch_size: [16, 32, 64]
+
+# Environment/Task Registry
+environments:
+  ant:
+    id: "ant"
+    aliases: ["ant", "ANT"]
+    setup_metadata:
+      type: "transfer_learning"
+      framework: "diffusion"
+    availability_check: "src.data.data_env_setup.check_ant_available"
+    config_hook: "src.data.data_env_setup.setup_ant"
+  shot_image_generation:
+    id: "shot_image_generation"
+    aliases: ["shot_image_generation", "few_shot_generation"]
+    setup_metadata:
+      type: "few_shot"
+    availability_check: "src.data.data_env_setup.check_few_shot_available"
+    config_hook: "src.data.data_env_setup.setup_few_shot"
+  ffhq:
+    id: "ffhq"
+    aliases: ["FFHQ", "ffhq"]
+    setup_metadata:
+      domain: "faces"
+    availability_check: "src.data.data_env_setup.check_ffhq_available"
+    config_hook: "src.data.data_env_setup.setup_ffhq"
+  lsun_church:
+    id: "lsun_church"
+    aliases: ["LSUN Church", "lsun_church"]
+    setup_metadata:
+      domain: "churches"
+    availability_check: "src.data.data_env_setup.check_lsun_available"
+    config_hook: "src.data.data_env_setup.setup_lsun"
+  babies:
+    id: "babies"
+    aliases: ["Babies", "babies"]
+    setup_metadata:
+      domain: "baby_faces"
+    availability_check: "src.data.data_env_setup.check_babies_available"
+    config_hook: "src.data.data_env_setup.setup_babies"
+  sunglasses:
+    id: "sunglasses"
+    aliases: ["Sunglasses", "sunglasses"]
+    setup_metadata:
+      domain: "faces_with_sunglasses"
+    availability_check: "src.data.data_env_setup.check_sunglasses_available"
+    config_hook: "src.data.data_env_setup.setup_sunglasses"
+  raphael_peale:
+    id: "raphael_peale"
+    aliases: ["Raphael Peale", "raphael_peale"]
+    setup_metadata:
+      domain: "still_life"
+    availability_check: "src.data.data_env_setup.check_raphael_available"
+    config_hook: "src.data.data_env_setup.setup_raphael"
+  sketches:
+    id: "sketches"
+    aliases: ["Sketches", "sketches"]
+    setup_metadata:
+      domain: "sketches"
+    availability_check: "src.data.data_env_setup.check_sketches_available"
+    config_hook: "src.data.data_env_setup.setup_sketches"
+  modigliani:
+    id: "modigliani"
+    aliases: ["Modigliani", "modigliani"]
+    setup_metadata:
+      domain: "paintings"
+    availability_check: "src.data.data_env_setup.check_modigliani_available"
+    config_hook: "src.data.data_env_setup.setup_modigliani"
+  haunted_houses:
+    id: "haunted_houses"
+    aliases: ["Haunted Houses", "haunted_houses"]
+    setup_metadata:
+      domain: "haunted_houses"
+    availability_check: "src.data.data_env_setup.check_haunted_houses_available"
+    config_hook: "src.data.data_env_setup.setup_haunted_houses"
+  landscape_drawings:
+    id: "landscape_drawings"
+    aliases: ["Landscape drawings", "landscape_drawings"]
+    setup_metadata:
+      domain: "landscapes"
+    availability_check: "src.data.data_env_setup.check_landscapes_available"
+    config_hook: "src.data.data_env_setup.setup_landscapes"
+  imagenet:
+    id: "imagenet"
+    aliases: ["imagenet", "ImageNet"]
+    setup_metadata:
+      domain: "general"
+    availability_check: "src.data.data_env_setup.check_imagenet_available"
+    config_hook: "src.data.data_env_setup.setup_imagenet"
+
+# Dataset Registry
+datasets:
+  ffhq:
+    id: "ffhq"
+    aliases: ["ffhq", "FFHQ"]
+    setup_metadata:
+      source_domain: true
+    validation_checks:
+      min_samples: 10000
+    config_hooks:
+      loader_factory: "src.data.pipeline.load_ffhq"
+  lsun_church:
+    id: "lsun_church"
+    aliases: ["lsun_church", "LSUN Church"]
+    setup_metadata:
+      source_domain: true
+    validation_checks:
+      min_samples: 10000
+    config_hooks:
+      loader_factory: "src.data.pipeline.load_lsun_church"
+  sunglasses:
+    id: "sunglasses"
+    aliases: ["sunglasses", "Sunglasses"]
+    setup_metadata:
+      target_domain: true
+      shot_count: 10
+    validation_checks:
+      exact_samples: 10
+    config_hooks:
+      loader_factory: "src.data.pipeline.load_sunglasses"
+  imagenet:
+    id: "imagenet"
+    aliases: ["imagenet", "ImageNet"]
+    setup_metadata:
+      source_domain: true
+    validation_checks:
+      min_samples: 10000
+    config_hooks:
+      loader_factory: "src.data.pipeline.load_imagenet"
+  babies:
+    id: "babies"
+    aliases: ["babies", "Babies"]
+    setup_metadata:
+      target_domain: true
+      shot_count: 10
+    validation_checks:
+      exact_samples: 10
+    config_hooks:
+      loader_factory: "src.data.pipeline.load_babies"
+  sketches:
+    id: "sketches"
+    aliases: ["sketches", "Sketches"]
+    setup_metadata:
+      target_domain: true
+      shot_count: 10
+    validation_checks:
+      exact_samples: 10
+    config_hooks:
+      loader_factory: "src.data.pipeline.load_sketches"
+
+# Method/Baseline Registry
+methods:
+  ours:
+    id: "ours"
+    aliases: ["ours", "Ours", "dpms_ant"]
+    selector: "dpms_ant"
+    config:
+      use_adaptor: true
+      use_similarity_guidance: true
+      use_adversarial_noise: true
+  diffusion_model:
+    id: "diffusion_model"
+    aliases: ["diffusion_model", "Diffusion Model"]
+    selector: "ddpm"
+    config:
+      use_adaptor: false
+      use_similarity_guidance: false
+      use_adversarial_noise: false
+  ddpm:
+    id: "ddpm"
+    aliases: ["ddpm", "DDPM"]
+    selector: "ddpm"
+    config:
+      use_adaptor: false
+      use_similarity_guidance: false
+      use_adversarial_noise: false
+  ldm:
+    id: "ldm"
+    aliases: ["ldm", "LDM"]

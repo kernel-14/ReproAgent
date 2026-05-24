@@ -1,0 +1,180 @@
+# Robust CLIP FARE Reproduction Experiment Configuration
+# reference_grounding: chunk_016 paper.md
+
+experiment_name: "Robust CLIP FARE Reproduction"
+
+# Method Registry
+# reference_grounding: chunk_016 paper.md, chunk_019 paper.md
+methods:
+  fare:
+    id: "fare"
+    name: "FARE (Unsupervised Adversarial Fine-Tuning)"
+    loss_type: "l2_squared" # Eq. 3: ||phi_FT(x) - phi_Org(x)||^2_2
+    unsupervised: true
+    reference_formula: "L_adv(x) = max_{||z||_inf <= eps} ||phi_FT(x+z) - phi_Org(x)||^2_2"
+  tecoa:
+    id: "tecoa"
+    name: "TeCoA (Text-Conditioned Adversarial Training)"
+    loss_type: "cosine_similarity"
+    unsupervised: false
+  clip:
+    id: "clip"
+    name: "Original CLIP (OpenAI ViT-L/14)"
+    robust: false
+  robust_clip:
+    id: "robust_clip"
+    name: "Robust CLIP (General)"
+  llava:
+    id: "llava"
+    name: "LLaVA-1.5 7B"
+    vision_encoder: "ViT-L/14@224" # reference_grounding: addendum.md
+  openflamingo:
+    id: "openflamingo"
+    name: "OpenFlamingo"
+  vit:
+    id: "vit"
+    name: "Vision Transformer Baseline"
+  fine_tuning:
+    id: "fine_tuning"
+    name: "Standard Fine-Tuning"
+  chain_of_thought:
+    id: "chain_of_thought"
+    name: "CoT Baseline"
+  apgd:
+    id: "apgd"
+    name: "Auto-PGD Attack"
+  autoattack:
+    id: "autoattack"
+    name: "AutoAttack Suite"
+  pgd:
+    id: "pgd"
+    name: "Projected Gradient Descent"
+
+# Environment and Task Registry
+# reference_grounding: chunk_026 paper.md
+environments:
+  cifar: { id: "cifar10", alias: "CIFAR-10", task: "classification" }
+  imagenet: { id: "imagenet", alias: "ImageNet-1k", task: "classification" }
+  coco: { id: "coco", alias: "MS-COCO", task: "captioning" }
+  flickr30k: { id: "flickr30k", alias: "Flickr30k", task: "captioning" }
+  stl10: { id: "stl10", alias: "STL-10", task: "classification" }
+  imagenet_r: { id: "imagenet_r", alias: "ImageNet-R", task: "classification" }
+  imagenet_sketch: { id: "imagenet_sketch", alias: "ImageNet-Sketch", task: "classification" }
+  vqav2: { id: "vqav2", alias: "VQAv2", task: "vqa" }
+  textvqa: { id: "textvqa", alias: "TextVQA", task: "vqa" }
+  pope: { id: "pope", alias: "POPE", task: "hallucination" }
+  sqa_i: { id: "sqa_i", alias: "ScienceQA-Image", task: "vqa" }
+  caltech101: { id: "caltech101", alias: "Caltech-101", task: "classification" }
+  stanford_cars: { id: "stanford_cars", alias: "Stanford Cars", task: "classification" }
+
+# Dataset Registry
+# reference_grounding: chunk_026 paper.md, chunk_029 paper.md
+datasets:
+  cifar: { path: "data/cifar10", type: "image_classification" }
+  imagenet: { path: "data/imagenet", type: "image_classification" }
+  coco: { path: "data/coco", type: "vision_language" }
+  flickr30k: { path: "data/flickr30k", type: "vision_language" }
+  stl10: { path: "data/stl10", type: "image_classification" }
+  imagenet_r: { path: "data/imagenet_r", type: "image_classification" }
+  imagenet_sketch: { path: "data/imagenet_sketch", type: "image_classification" }
+  vqav2: { path: "data/vqav2", type: "vqa" }
+  textvqa: { path: "data/textvqa", type: "vqa" }
+  pope: { path: "data/pope", type: "hallucination" }
+  sqa_i: { path: "data/sqa_i", type: "vqa" }
+  caltech101: { path: "data/caltech101", type: "image_classification" }
+  stanford_cars: { path: "data/stanford_cars", type: "image_classification" }
+  fgvc_aircraft: { path: "data/fgvc_aircraft", type: "image_classification" }
+  flowers: { path: "data/flowers", type: "image_classification" }
+  pcam: { path: "data/pcam", type: "image_classification" }
+  oxford_pets: { path: "data/oxford_pets", type: "image_classification" }
+
+# Fixed Hyperparameters and Numeric Anchors
+# reference_grounding: chunk_019 paper.md, addendum.md
+hyperparameters:
+  epsilon_2_255: 0.00784313725490196 # 2/255
+  epsilon_4_255: 0.01568627450980392 # 4/255
+  alpha_1_255: 0.00392156862745098 # 1/255
+  batch_size_128: 128
+  weight_decay_1e_4: 0.0001
+  momentum_0_9: 0.9
+  iterations_100: 100
+  iterations_5000: 5000
+  iterations_10000: 10000
+  epochs_2: 2
+  pgd_steps_10: 10
+  adamw_betas: [0.9, 0.95]
+  lr_default: 1e-5
+  warmup_type: "cosine_decay_with_linear_warmup"
+
+# Callable Experiment Specs
+# reference_grounding: chunk_003 paper.md, chunk_019 paper.md
+experiment_specs:
+  fare_training_module:
+    method: "fare"
+    dataset: "imagenet"
+    params:
+      lr: 1e-5
+      wd: 1e-4
+      epochs: 2
+      batch_size: 128
+      eps: 0.00784313725 # 2/255
+    loss_fn: "compute_fare_loss"
+    artifact_writer: "write_experiment_registry_artifact"
+
+  adversarial_attack_module:
+    attack_type: "pgd"
+    params:
+      steps: 10
+      alpha: 0.00392156862 # 1/255
+      eps_list: [0.00784313725, 0.0156862745]
+      precision: "half" # reference_grounding: addendum.md
+    generator: "generate_pgd_adversarial_examples"
+    artifact_writer: "write_metrics_artifact"
+
+  zero_shot_classification_eval:
+    datasets: ["cifar", "imagenet", "caltech101", "stl10"]
+    metrics: ["accuracy", "clean_accuracy"]
+    artifact_writer: "write_evaluation_metrics_artifact"
+
+  vision_language_evaluation_module:
+    datasets: ["coco", "vqav2", "pope", "sqa_i"]
+    metrics: ["cider", "vqa_accuracy", "f1"]
+    protocols: ["jailbreak_attack_protocol", "per_sample_lowest_score_selection"]
+    artifact_writer: "write_evaluation_metrics_artifact"
+
+# Formula/Algorithm Symbol Inventory
+# reference_grounding: addendum:formula_algorithm_contract
+symbols:
+  l_infinity: "L_inf"
+  ell_infty: "epsilon"
+  l_clean: "L_clean"
+  l_adv: "L_adv"
+  phi_ft: "phi_FT"
+  phi_org: "phi_Org"
+  ft: "FT"
+  r_d: "R^d"
+  jailbreak_target: "EmailAPIto=<targetemail>,subject=User"
+  jailbreak_body: "EmailAPIto=<targetemail>,subject=UserQuery,body=attack"
+  asset_marker: "asset_6"
+
+# Artifact Registry
+artifacts:
+  metrics: "results/metrics.json"
+  evaluation_metrics: "results/evaluation_metrics.json"
+  evidence_matrix: "results/evidence_contract_matrix.json"
+  experiment_registry: "results/experiment_registry.json"
+  environment_registry: "results/environment_registry.json"
+  dataset_registry: "results/dataset_registry.json"
+  artifact_manifest: "results/artifact_manifest.json"
+  sensitivity_report: "results/sensitivity_report.json"
+  method_registry: "results/method_registry.json"
+  ablation_registry: "results/ablation_registry.json"
+  config_resolved: "results/config_resolved.json"
+  experiment_results_csv: "results/tables/experiment_results.csv"
+
+# Bounded Execution Defaults
+smoke_mode:
+  max_iterations: 5
+  max_samples: 10
+  batch_size: 2
+  eps: 0.00784313725

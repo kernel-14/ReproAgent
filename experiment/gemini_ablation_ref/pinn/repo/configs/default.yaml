@@ -1,0 +1,354 @@
+# configs/default.yaml
+# Challenges in Training PINNs: A Loss Landscape Perspective
+# Faithful reproduction configuration and evidence contract registry
+
+metadata:
+  hypothesis: "A unified framework for Convection, Wave, and Reaction PDEs will allow reproduction of the Adam+L-BFGS performance advantage and the Loss-L2RE correlation."
+  decision_value: "Establishes the experimental baseline and validates the core observation that high-quality solutions require near-zero loss."
+  project_type: "single_experiment_project"
+  entrypoints:
+    main: "main.py"
+    runtime_smoke: "python main.py --mode runtime_smoke"
+    docker_validate: "python main.py --mode docker_validate"
+
+# Expose paper-derived environment/task factories
+environments:
+  convection_pde:
+    id: "convection_pde"
+    alias: "Convection PDE"
+    setup_metadata:
+      dimension: 1
+      domain: [0.0, 2.0]
+      t_domain: [0.0, 1.0]
+      beta: 30.0 # Challenging coefficient setting
+    availability_check: "src.pinn.pdes.ConvectionPDE"
+    runnable_config_hook: "get_convection_config"
+    oracle_solution: "analytical_convection"
+  
+  wave_pde:
+    id: "wave_pde"
+    alias: "Wave PDE"
+    setup_metadata:
+      dimension: 1
+      domain: [0.0, 1.0]
+      t_domain: [0.0, 1.0]
+      beta: 4.0 # Challenging coefficient setting
+    availability_check: "src.pinn.pdes.WavePDE"
+    runnable_config_hook: "get_wave_config"
+    oracle_solution: "analytical_wave"
+
+  reaction_ode:
+    id: "reaction_ode"
+    alias: "Reaction ODE"
+    setup_metadata:
+      dimension: 1
+      domain: [0.0, 1.0]
+      rho: 10.0 # Challenging coefficient setting
+    availability_check: "src.pinn.pdes.ReactionODE"
+    runnable_config_hook: "get_reaction_config"
+    oracle_solution: "analytical_reaction"
+
+# Expose method/baseline/attack selectors
+methods:
+  ours:
+    id: "ours"
+    alias: "Adam+L-BFGS"
+    description: "Combined optimization method Adam+L-BFGS consistently provides a smaller loss and L2RE than using Adam or L-BFGS alone."
+    switching_logic:
+      adam_epochs: 2000
+      lbfgs_max_iter: 5000
+      line_search_fn: "strong_wolfe" # Ensure L-BFGS uses Strong Wolfe line search
+  
+  oracle:
+    id: "oracle"
+    alias: "Oracle Solution"
+    description: "Analytical or high-fidelity solution used for L2RE calculation."
+    method_type: "analytical"
+
+  bc:
+    id: "bc"
+    alias: "Boundary Condition Baseline"
+    description: "Baseline focusing on boundary condition satisfaction."
+    method_type: "baseline"
+
+  adam:
+    id: "adam"
+    alias: "Adam Optimizer"
+    learning_rate: 0.001
+
+  lbfgs:
+    id: "lbfgs"
+    alias: "L-BFGS Optimizer"
+    line_search_fn: "strong_wolfe"
+
+  nncg:
+    id: "nncg"
+    alias: "NysNewton-CG"
+    description: "NysNewton-CG (NNCG) preconditioned conjugate gradient method."
+    damping_factor: 0.1
+    armijo_constants:
+      c1: 1e-4
+      c2: 0.9
+    lanczos_iterations: 100
+
+  damped_newton:
+    id: "damped_newton"
+    alias: "Damped Newton"
+    description: "Damped version of Newton's method with Armijo line search."
+    damping_factor: 0.1
+
+# Expose required parameter sweeps as executable constants/default accessors
+parameter_sweeps:
+  network_widths: [10, 20, 40, 80, 128, 256, 512]
+  pde_coefficients:
+    convection_beta: [0.0, 1.0, 2.0, 10.0, 20.0, 30.0, 40.0]
+    wave_beta: [1.0, 2.0, 4.0, 8.0]
+    reaction_rho: [1.0, 5.0, 10.0, 20.0]
+  beta_values: [0, 2, 1]
+  learning_rates: [1e-4, 1e-3, 1e-2]
+  lanczos_iterations: [20, 60, 100]
+  damping_factors: [0.1, 0.5, 1.0]
+  armijo_constants:
+    alpha: 0.5
+    beta: 0.8
+    mu: 1e-4
+
+# Implement per-sample lowest score selection protocol
+selection_protocol:
+  name: "per_sample_lowest_score_selection"
+  metric: "loss"
+  description: "For a given PDE, the configuration of Adam learning rate, seed and network width with the smallest L2RE or loss is selected."
+
+# Paper formula/algorithm symbol inventory
+symbol_inventory:
+  R_p: "Parameter space dimension"
+  H_f: "Hessian of function f"
+  w_i: "Weights at iteration i"
+  R_d: "Domain space dimension"
+  PDE: "Partial Differential Equation operator"
+  n_res: "Number of residual points"
+  sum_i_1: "Summation index"
+  x_r_i: "Residual point coordinates"
+  n_bc: "Number of boundary condition points"
+  x_b_j: "Boundary point coordinates"
+  y_i: "PINN prediction"
+  y_prime: "Ground truth solution"
+  y_i_prime: "Ground truth at point i"
+  RE: "Relative Error"
+  sum_i_1_n: "Summation over n points"
+  y_i_prime2: "Squared ground truth"
+  H_L: "Hessian of the loss L"
+  epsilon: "Small regularization parameter"
+  kappa_f: "Condition number of function f"
+  K_GD: "Gradient Descent iterations"
+  GD: "Gradient Descent"
+  eta_GD: "Gradient Descent step size"
+  K_DN: "Damped Newton iterations"
+  DN: "Damped Newton"
+  eta_k: "Step size at iteration k"
+  beta: "Line search contraction factor"
+  d_k_minus_1: "Search direction at iteration k-1"
+  alpha: "Armijo line search parameter"
+  mu: "Preconditioner regularization parameter"
+  w_0: "Initial weights"
+  CGNNCG: "Conjugate Gradient NNCG"
+  d_minus_1: "Initial search direction"
+  Lambda_hat: "Nystrom eigenvalues approximation"
+  w_k: "Weights at iteration k"
+  d_k: "Search direction at iteration k"
+  w_k_plus_1: "Weights at iteration k+1"
+  kappa_L: "Condition number of the loss Hessian"
+  w_star: "Optimal weights"
+  W_star: "Set of optimal weights"
+  PŁ_star: "Polyak-Lojasiewicz condition variant"
+  P_star: "P-star condition"
+  PL_star: "PL-star condition"
+  sum_l_2_m: "Summation over L-BFGS history"
+  H_k: "Inverse Hessian approximation at iteration k"
+  s_k: "Iterate difference vector"
+  x_k_plus_1: "Iterate at k+1"
+  x_k: "Iterate at k"
+  y_k: "Gradient difference vector"
+  f_k_plus_1: "Function value at k+1"
+  f_k: "Function value at k"
+  rho_k: "L-BFGS scaling factor"
+  y_k_T: "Transpose of y_k"
+  gamma_k: "L-BFGS scaling parameter"
+  s_k_minus_1_T: "Transpose of s_k-1"
+  y_k_minus_1: "Gradient difference at k-1"
+  y_k_minus_1_T: "Transpose of y_k-1"
+  beta_L: "Lipschitz constant of the gradient"
+  mu_3_2: "Mu to the power of 1.5"
+  rho_2: "Rho squared"
+  r_2: "Radius squared"
+  J_F: "Jacobian of F"
+  H_F: "Hessian of F"
+
+# Numeric/default anchors
+numeric_anchors:
+  zero: 0
+  one: 1
+  two: 2
+  three: 3
+  four: 4
+  five: 5
+  six: 6
+  seven: 7
+  eight: 8
+  eight_point_one: 8.1
+  eight_point_four: 8.4
+  ten: 10
+  sixteen: 16
+  twenty: 20
+  forty: 40
+  sixty: 60
+  one_hundred: 100
+  two_hundred: 200
+  one_thousand: 1000
+  zero_point_one: 0.1
+  zero_point_five: 0.5
+  nineteen: 19
+
+# Paper formula/algorithm anchors implemented as executable config
+formula_algorithm_anchors:
+  section_2_1:
+    title: "2.1. Physics-informed Neural Networks"
+    symbols: ["PDE", "n_res", "sum_i=1", "n_bc", "R^d", "R^p", "x_r^i", "x_b^j"]
+    defaults: [0, 1, 2]
+    terms: ["equation", "loss"]
+    steps: "For this loss, L(w)=0 means that u(x; w) solves the PDE and boundary conditions exactly."
+
+  section_5_1:
+    title: "5.1. The PINN Loss is Ill-conditioned"
+    symbols: ["H_L"]
+    defaults: [4, 10, 3, 5, 0]
+    terms: ["loss"]
+    steps: "The conditioning of the loss L plays a key role in the performance of first-order optimization methods. We can understand the conditioning of an optimization problem through the eigenvalues of the Hessian of the loss, H_L."
+
+  section_8_1:
+    title: "8.1. Preliminaries"
+    symbols: ["w_star", "W_star", "mu", "PŁ^star", "P^star", "PL^star", "kappa_L", "epsilon", "H_L"]
+    defaults: [0, 2]
+    terms: ["loss", "gradient"]
+    steps: "Then L is mu-PL* in S if ||grad L(w)||^2 / (2 * mu) >= L(w). The P*-condition relates the gradient norm to the loss and implies that any minimizer in S is a global minimizer."
+
+  section_B:
+    title: "B. Why can Low Losses Correspond to Large L2RE?"
+    symbols: ["n_res", "sum_i=1", "x_r^i"]
+    defaults: [1, 2, 0]
+    terms: ["loss"]
+    steps: "PINNs can be attracted to points in the loss landscape that minimize the residual portion of the PINN loss, 1/(2*n_res) * sum(D[u(x_r^i)]^2)."
+
+  section_C_2:
+    title: "C.2. Preconditioned Spectral Density Computation"
+    symbols: ["rho_k", "gamma_k", "sum_l=2^m", "rho_k-l", "rho_k-1", "H_k", "s_k", "x_k+1", "x_k", "y_k", "f_k+1", "f_k", "y_k^T", "s_k-1^T"]
+    defaults: [100, 1, 0, 2, 7, 3]
+    terms: ["algorithm", "formula", "gradient", "compute", "update"]
+    steps: "L-BFGS stores a set of vector pairs given by the difference in consecutive iterates and gradients from most recent m iterations (we use m=100 in our experiments)."
+
+  section_E_2:
+    title: "E.2. NysNewton-CG (NNCG)"
+    symbols: ["eta_k", "epsilon", "alpha", "beta", "mu", "CGNNCG", "Lambda_hat", "d_k-1", "w_0", "d_-1", "H_L", "w_k", "d_k", "w_k+1"]
+    defaults: [0.1, 1, 60, 20, 10, 16, 1000, 0.5]
+    terms: ["algorithm", "objective", "loss", "compute", "update", "search", "decrease"]
+    steps: "After computing the Newton step, we compute the step size eta_k using Armijo line search - this guarantees that the loss will decrease when we update the parameters."
+
+  section_G_2:
+    title: "G.2. Global Behavior: Reaching a Small Ball About a Minimizer"
+    symbols: ["beta_L", "mu", "P^star", "W_star", "mu^3/2", "rho^2", "w_star", "w_0", "w_k+1", "w_k", "r^2", "H_L", "J_F", "H_F"]
+    defaults: [4, 1, 0, 2, 3, 19]
+    terms: ["loss", "gradient", "linearly"]
+    steps: "The mapping F(w) is L_F-Lipschitz, and the loss L(w) is beta_L-smooth. Gradient descent converges linearly."
+
+# Callable experiment specs that bind environments, methods, parameter defaults, metric functions, and artifact writer call sites
+experiments:
+  experiment_i:
+    name: "Experiment I: Optimizer Comparison"
+    environment_ids: ["convection_pde", "wave_pde", "reaction_ode"]
+    method_ids: ["adam", "lbfgs", "ours"]
+    parameter_defaults:
+      network_width: 128
+      learning_rate: 0.001
+      beta: 2.0
+    metrics: ["loss", "L2RE", "training_time"]
+    artifact_writer: "write_optimizer_comparison_artifact"
+    output_path: "results/optimizer_comparison.json"
+
+  experiment_ii:
+    name: "Experiment II: Loss vs L2RE Correlation"
+    environment_ids: ["convection_pde", "wave_pde", "reaction_ode"]
+    method_ids: ["adam", "lbfgs", "ours"]
+    parameter_defaults:
+      network_width: 128
+      learning_rate: 0.001
+      beta: 2.0
+    metrics: ["loss", "L2RE"]
+    artifact_writer: "write_loss_vs_l2re_artifact"
+    output_path: "results/loss_vs_l2re.json"
+
+  experiment_iii:
+    name: "Experiment III: Hessian Spectral Density Analysis"
+    environment_ids: ["convection_pde", "wave_pde"]
+    method_ids: ["adam", "lbfgs"]
+    parameter_defaults:
+      network_width: 128
+      lanczos_iterations: 100
+    metrics: ["Hessian eigenvalues", "spectral density", "condition number"]
+    artifact_writer: "write_spectral_density_artifact"
+    output_path: "results/spectral_density.json"
+
+  experiment_iv:
+    name: "Experiment IV: Advanced Optimizers"
+    environment_ids: ["convection_pde", "wave_pde", "reaction_ode"]
+    method_ids: ["nncg", "damped_newton", "ours"]
+    parameter_defaults:
+      network_width: 128
+      damping_factor: 0.1
+      armijo_alpha: 0.5
+    metrics: ["loss", "L2RE", "training_time"]
+    artifact_writer: "write_nncg_vs_adam_lbfgs_artifact"
+    output_path: "results/nncg_vs_adam_lbfgs.json"
+
+  experiment_v:
+    name: "Experiment V: Appendix Results"
+    environment_ids: ["convection_pde"]
+    method_ids: ["ours"]
+    parameter_defaults:
+      network_width: 256
+      learning_rate: 0.001
+    metrics: ["loss", "L2RE"]
+    artifact_writer: "write_figure_10_artifact"
+    output_path: "results/figures/figure_10.png"
+
+  final_validation:
+    name: "Final Validation: Evidence Contract Closure"
+    environment_ids: ["convection_pde", "wave_pde", "reaction_ode"]
+    method_ids: ["ours", "oracle", "bc"]
+    parameter_defaults:
+      network_width: 128
+    metrics: ["accuracy", "precision", "loss", "return", "training_time"]
+    artifact_writer: "write_evidence_contract_matrix_artifact"
+    output_path: "results/evidence_contract_matrix.json"
+
+# Declared runtime artifacts under the repository output paths
+artifacts:
+  manifest_path: "results/artifact_manifest.json"
+  registry_path: "results/experiment_registry.json"
+  metrics_path: "results/metrics.json"
+  sensitivity_report_path: "results/sensitivity_report.json"
+  tables:
+    table_1: "results/tables/table_1.csv"
+    table_2: "results/tables/table_2.csv"
+    table_3: "results/tables/table_3.csv"
+    experiment_results: "results/tables/experiment_results.csv"
+  figures:
+    figure_1: "results/figures/figure_1.png"
+    figure_2: "results/figures/figure_2.png"
+    figure_3: "results/figures/figure_3.png"
+    figure_4: "results/figures/figure_4.png"
+    figure_5: "results/figures/figure_5.png"
+    figure_6: "results/figures/figure_6.png"
+    figure_7: "results/figures/figure_7.png"
+    figure_8: "results/figures/figure_8.png"
+    figure_9: "results/figures/figure_9.png"
+    figure_10: "results/figures/figure_10.png"
