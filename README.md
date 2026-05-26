@@ -1,21 +1,15 @@
-> Experiment artifacts are stored in this repository's `experiment` branch. For anonymous review, please use: https://anonymous.4open.science/r/ReproAgent-4C1E/experiment/README.md
-
 # ReproAgent
 
-ReproAgent is an automated pipeline for PaperBench-style paper reproduction.
-Given a paper case, it extracts implementation units, builds a faithful
-reproduction plan, generates a runnable repository, and optionally repairs the
-repository using validation feedback.
+ReproAgent is a contract-guided agent pipeline for paper-to-code reproduction. Given a research paper, it generates a runnable repository while preserving the paper-specific methods, protocols, metrics, and artifacts that matter for faithful reproduction.
 
-The current release focuses on the core reproduction pipeline and two ablation
-entrypoints used in our experiments:
+The core idea is a persistent implementation contract with two channels:
 
-- **Full ReproAgent**: implementation-requirement channel on,
-  reference-evidence channel on.
-- **w/o Implementation Requirements**: removes the paper-derived
-  implementation-requirement channel from generation and repair.
-- **w/o Reference Evidence**: disables reference-evidence source acquisition
-  and grounding.
+- **Implementation-requirement channel**: extracts explicit paper obligations, such as algorithms, losses, metrics, artifacts, dataset rules, and evaluation protocols, and keeps them visible during planning, generation, and repair.
+- **Reference-evidence channel**: retrieves content and structure evidence from related repositories so implicit implementation details, file organization, entry points, and artifact conventions are grounded rather than guessed.
+
+ReproAgent instantiates this contract in a four-stage **Prepare--Plan--Generate--Repair** pipeline. Prepare extracts paper-facing obligations and reference evidence; Plan binds them into work packages and file-level contracts; Generate writes the repository file by file; Repair audits the result against the same contract and runtime feedback.
+
+> Code and experiment artifacts for anonymous review: https://anonymous.4open.science/r/ReproAgent-E760
 
 ## Overview
 
@@ -23,24 +17,45 @@ entrypoints used in our experiments:
 
 ![ReproAgent pipeline](fig/reproagent.png)
 
-At a high level, ReproAgent is organized as four stages:
+## Main Results
 
-1. **Prepare** extracts paper chunks, implementation units, datasets,
-   evaluation obligations, and candidate reference-evidence sources.
-2. **Plan** converts the extracted units into work packages, contracts,
-   architecture decisions, and file-level implementation tasks.
-3. **Generate** materializes a complete reproduction repository from the plan.
-4. **Repair** patches the generated repository using validation feedback while
-   preserving the implementation contract.
+We evaluate on **PaperBench Code-Dev**, which contains 20 ICML 2024 paper-reproduction tasks with repository-level rubrics. Scores are macro-averaged PaperBench percentages over all 20 papers.
 
-The two main evidence mechanisms are:
+### Full-Suite Comparison
 
-- **Implementation-requirement channel**: a persistent paper-derived contract
-  that keeps methods, datasets, metrics, algorithms, formulas, and acceptance
-  signals visible from planning through repair.
-- **Reference-evidence channel**: package-local content and structure evidence
-  recovered from official or high-quality repositories cited by, or relevant
-  to, the paper.
+| System | Reported score |
+| --- | ---: |
+| PaperCoder | 45.1 |
+| AutoP2C | 49.2 |
+| AutoReproduce | 49.6 |
+| Deep-Reproducer | 63.2 |
+| DeepCode | 73.5 |
+| **ReproAgent (ours, Claude-Sonnet-4.5)** | **73.7** |
+
+### Same-Backbone Comparison
+
+All rows below use Gemini-3-Flash, making this the controlled scaffold comparison.
+
+| System | Backbone | Reported score |
+| --- | --- | ---: |
+| BasicAgent | Gemini-3-Flash | 19.3 |
+| IterAgent | Gemini-3-Flash | 20.6 |
+| AiScientist | Gemini-3-Flash | 30.5 |
+| **ReproAgent (ours)** | **Gemini-3-Flash** | **39.7** |
+
+### Channel Ablations
+
+Both ablations use the same Gemini-3-Flash backbone and the same repair budget as the full Gemini run.
+
+| Setting | Mean | Median | Drop from full |
+| --- | ---: | ---: | ---: |
+| Full contract | 39.7 | 41.8 | - |
+| w/o reference evidence | 21.6 | 21.4 | -18.1 |
+| w/o implementation requirements | 25.6 | 24.6 | -14.1 |
+
+The full contract beats both ablations on all 20 targets. This supports the main mechanism: the requirement channel preserves explicit paper obligations, while the evidence channel grounds implicit repository knowledge.
+
+Full per-paper scores, token usage, time, cost, and generated repositories are included in the paper appendix and experiment artifacts.
 
 ## Repository Layout
 
@@ -49,11 +64,11 @@ reproagent/                 Core Python package and pipeline implementation.
 ablation/
   no_implementation_requirement/
                              Runner for disabling implementation requirements.
-  no_reference_evidence/        Runner for disabling reference evidence.
-experiment_runners/         Convenience shell runners for the three variants.
-fig/                        Architecture figures used by this README.
+  no_reference_evidence/    Runner for disabling reference evidence.
+experiment_runners/         Batch runners for the full and ablated variants.
+fig/                        README figures.
 run_paperbench.py           Main CLI entrypoint.
-requirements.txt            Minimal Python dependencies.
+requirements.txt            Python dependencies.
 .env.example                Environment-variable template.
 ```
 
@@ -73,7 +88,7 @@ Create a local `.env` from the template:
 cp .env.example .env
 ```
 
-Fill in at least:
+Fill in the model endpoints used by your run, for example:
 
 ```bash
 PAPERBENCH_REPRO_NODE_MODEL=gemini-3-flash-preview
@@ -84,13 +99,11 @@ PAPERBENCH_REPRO_STRUCTURED_STAGE_API_KEY=...
 PAPERBENCH_REPRO_STRUCTURED_STAGE_BASE_URL=...
 ```
 
-Reference-evidence source search benefits from `PAPERBENCH_REPRO_GITHUB_TOKEN`,
-but the pipeline can run without it.
+Reference-evidence search benefits from `PAPERBENCH_REPRO_GITHUB_TOKEN`, but the pipeline can run without it.
 
 ## Data
 
-The CLI expects PaperBench-style case folders containing the paper text and
-metadata. By default it looks under:
+The CLI expects PaperBench-style case folders containing the paper text and metadata. By default it looks under:
 
 ```text
 paperbench_data/<paper-id>/
@@ -204,46 +217,11 @@ By default the runners execute `--stage repair`. To stop after generation:
 REPROAGENT_STAGE=generate bash experiment_runners/run_main_experiment.sh rice
 ```
 
-## Notes
+## Artifacts and PaperBench Resources
 
-This first public bundle contains the reproduction pipeline and ablation
-entrypoints. Benchmark scoring scripts, internal pipeline traces, raw
-PaperBench data, and judge score artifacts are intentionally excluded from the
-main branch. Generated reproduction repositories are available on the
-`experiment` branch; for anonymous review, see:
-https://anonymous.4open.science/r/ReproAgent-4C1E/experiment/README.md
+Generated reproduction repositories are stored separately from the main code branch. For anonymous review, use the artifact link above.
 
 PaperBench resources:
 
 - Benchmark repository: https://github.com/openai/frontier-evals/tree/main/project/paperbench
 - Dataset directory: https://github.com/openai/frontier-evals/tree/main/project/paperbench/data
-
-## Experiment Results
-
-Scores are percentages. `Gemini full` is the full ReproAgent pipeline.
-`w/o Ref. Evidence` removes the reference-evidence channel, and `w/o Impl.
-Req.` removes the implementation-requirement channel.
-
-| Paper | Claude | Gemini full | w/o Ref. Evidence | w/o Impl. Req. | DeepCode | Basic | Iter | RUC AiSci |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **Mean** | **73.7** | **39.7** | **21.6** | **25.6** | **73.5** | **19.3** | **20.6** | **30.5** |
-| `adaptive-pruning` | 67.8 | 41.9 | 6.2 | 14.3 | 54.4 | 24.5 | 3.0 | 27.2 |
-| `all-in-one` | 76.9 | 51.6 | 23.7 | 28.0 | 75.9 | 20.9 | 45.1 | 46.3 |
-| `bam` | 61.8 | 48.5 | 20.7 | 30.8 | 74.8 | 48.5 | 45.0 | 56.6 |
-| `bbox` | 86.4 | 15.6 | 14.6 | 14.2 | 64.4 | 15.4 | 8.3 | 33.8 |
-| `bridging-data-gaps` | 66.0 | 50.6 | 13.9 | 38.4 | 58.1 | 12.6 | 12.4 | 23.1 |
-| `fre` | 76.8 | 26.9 | 12.7 | 25.1 | 81.4 | 21.7 | 23.9 | 35.2 |
-| `ftrl` | 63.9 | 40.1 | 11.7 | 13.4 | 59.8 | 5.9 | 4.2 | 10.1 |
-| `lbcs` | 65.8 | 42.5 | 34.6 | 23.2 | 74.7 | 17.8 | 15.3 | 27.9 |
-| `lca-on-the-line` | 64.9 | 41.8 | 33.8 | 16.1 | 74.9 | 13.0 | 18.3 | 30.2 |
-| `mechanistic-understanding` | 75.7 | 48.1 | 25.9 | 4.6 | 92.5 | 14.9 | 21.9 | 29.9 |
-| `pinn` | 81.5 | 61.3 | 52.2 | 53.3 | 91.0 | 26.6 | 30.8 | 49.9 |
-| `rice` | 75.1 | 31.0 | 19.9 | 27.8 | 70.2 | 10.4 | 8.9 | 10.9 |
-| `robust-clip` | 63.0 | 29.5 | 15.7 | 25.6 | 73.3 | 15.4 | 10.4 | 18.3 |
-| `sample-specific-masks` | 82.0 | 53.8 | 28.0 | 21.3 | 67.1 | 25.4 | 33.3 | 36.8 |
-| `sapg` | 86.5 | 29.0 | 21.5 | 24.2 | 73.8 | 11.4 | 12.7 | 19.9 |
-| `sequential-neural-score-estimation` | 78.0 | 45.7 | 21.5 | 42.6 | 87.0 | 53.5 | 60.2 | 64.9 |
-| `stay-on-topic-with-classifier-free-guidance` | 58.5 | 25.3 | 21.2 | 22.2 | 70.5 | 8.4 | 13.7 | 20.1 |
-| `stochastic-interpolants` | 80.8 | 39.1 | 21.5 | 29.9 | 81.5 | 17.0 | 17.4 | 18.8 |
-| `test-time-model-adaptation` | 75.6 | 54.9 | 23.8 | 47.1 | 64.9 | 15.3 | 18.1 | 32.5 |
-| `what-will-my-model-forget` | 87.6 | 16.8 | 8.4 | 10.7 | 80.8 | 6.6 | 9.0 | 17.9 |
