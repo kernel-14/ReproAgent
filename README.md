@@ -1,114 +1,38 @@
 # ReproAgent：Contract-Guided Paper-to-Code Reproduction
 
-ReproAgent is a contract-guided agent pipeline for paper-to-code reproduction. Given a research paper, it generates a runnable repository while preserving the paper-specific methods, protocols, metrics, and artifacts that matter for faithful reproduction.
+<p align="center">
+  <a href="https://arxiv.org/abs/2608.24291"><img src="https://img.shields.io/badge/arXiv-2608.24291-b31b1b.svg?logo=arxiv&logoColor=white" alt="arXiv"></a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/kernel-14/ReproAgent"><img src="https://img.shields.io/badge/GitHub-ReproAgent-181717.svg?logo=github&logoColor=white" alt="GitHub"></a>
+</p>
 
-The core idea is a persistent implementation contract with two channels:
+## 1. Overview
 
-- **Implementation-requirement channel**: extracts explicit paper obligations, such as algorithms, losses, metrics, artifacts, dataset rules, and evaluation protocols, and keeps them visible during planning, generation, and repair.
-- **Reference-evidence channel**: retrieves content and structure evidence from related repositories so implicit implementation details, file organization, entry points, and artifact conventions are grounded rather than guessed.
+Paper-to-code reproduction asks an agent to turn a research paper into an executable repository that preserves its method, protocol, metrics, and artifacts. The specification is split across the paper and the surrounding research ecosystem: algorithms and evaluation requirements may be stated explicitly, while framework defaults, file organization, entry points, and implementation conventions often remain implicit. Long generation trajectories can lose the explicit requirements, and model priors alone are unreliable for recovering the implicit details.
 
-ReproAgent instantiates this contract in a four-stage **Prepare--Plan--Generate--Repair** pipeline. Prepare extracts paper-facing obligations and reference evidence; Plan binds them into work packages and file-level contracts; Generate writes the repository file by file; Repair audits the result against the same contract and runtime feedback.
-
-## Overview
+ReproAgent treats reproduction as contract-guided repository construction. It extracts paper-derived code obligations, grounds implicit choices with evidence from related repositories, and carries both forms of information through planning, file generation, validation, and repair. The result is a runnable repository that can be inspected against the paper's requirements instead of being judged only by whether it executes.
 
 ![ReproAgent architecture](fig/architecture.png)
 
+## 2. Method
+
+ReproAgent uses a persistent implementation contract with two complementary channels:
+
+- **Implementation-requirement channel**: converts paper snippets into concrete obligations for algorithms, losses, datasets, training settings, metrics, and artifacts.
+- **Reference-evidence channel**: retrieves content and structure evidence from related repositories to ground implementation details, interfaces, file layout, and entry points.
+
+The contract is organized into work packages and projected into file-level contracts. Each generated file has declared responsibilities, interfaces, evidence, artifacts, and validation checks. The four stages are:
+
+1. **Prepare** segments the paper, extracts implementation requirements, and builds a reference-repository index.
+2. **Plan** binds requirements to evidence, work packages, architecture, and file contracts.
+3. **Generate** writes the repository file by file in dependency order and records implementation provenance.
+4. **Repair** checks requirement coverage and runtime behavior, then applies bounded, targeted fixes.
+
 ![ReproAgent pipeline](fig/reproagent.png)
 
-## Result Snapshot
+## 3. Quick Start
 
-PaperBench Code-Dev scores are percentages averaged over 20 ICML 2024 paper-reproduction tasks. Higher is better.
-
-| Setting | Score |
-| --- | ---: |
-| **ReproAgent (ours, Claude-Sonnet-4.5)** | **73.7** |
-| DeepCode | 73.5 |
-| Deep-Reproducer | 63.2 |
-| AutoReproduce | 49.6 |
-| AutoP2C | 49.2 |
-| PaperCoder | 45.1 |
-
-**Same-backbone scaffold comparison.** All rows below use Gemini-3-Flash.
-
-| System | Score |
-| --- | ---: |
-| **ReproAgent (ours)** | **39.7** |
-| AiScientist | 30.5 |
-| IterAgent | 20.6 |
-| BasicAgent | 19.3 |
-
-**Channel ablations.** Both ablations use Gemini-3-Flash and the same repair budget as the full Gemini run.
-
-| Setting | Mean | Median | Drop from full |
-| --- | ---: | ---: | ---: |
-| Full contract | 39.7 | 41.8 | - |
-| w/o reference evidence | 21.6 | 21.4 | -18.1 |
-| w/o implementation requirements | 25.6 | 24.6 | -14.1 |
-
-The full contract beats both ablations on all 20 targets, supporting the mechanism that the requirement channel preserves explicit paper obligations while the evidence channel grounds implicit repository knowledge.
-
-## Per-Paper PaperBench Results
-
-This table summarizes the paper-level scores used in the main comparison and ablation study. `Ref ablation` removes reference evidence; `Req ablation` removes implementation requirements.
-
-| Paper | Ours Claude | Ours Gemini | Ref ablation | Req ablation | DeepCode | Basic Gemini | Iter Gemini | AiScientist |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Adaptive Pruning | 67.8 | 41.9 | 6.2 | 14.3 | 54.4 | 24.5 | 3.0 | 27.2 |
-| All-in-One | 76.9 | 51.6 | 23.7 | 28.0 | 75.9 | 20.9 | 45.1 | 46.3 |
-| BAM | 61.8 | 48.5 | 20.7 | 30.8 | 74.8 | 48.5 | 45.0 | 56.6 |
-| BBOX | 86.4 | 15.6 | 14.6 | 14.2 | 64.4 | 15.4 | 8.3 | 33.8 |
-| Bridging Data Gaps | 66.0 | 50.6 | 13.9 | 38.4 | 58.1 | 12.6 | 12.4 | 23.1 |
-| FRE | 76.8 | 26.9 | 12.7 | 25.1 | 81.4 | 21.7 | 23.9 | 35.2 |
-| FTRL | 63.9 | 40.1 | 11.7 | 13.4 | 59.8 | 5.9 | 4.2 | 10.1 |
-| LBCS | 65.8 | 42.5 | 34.6 | 23.2 | 74.7 | 17.8 | 15.3 | 27.9 |
-| LCA-on-the-Line | 64.9 | 41.8 | 33.8 | 16.1 | 74.9 | 13.0 | 18.3 | 30.2 |
-| Mechanistic Understanding | 75.7 | 48.1 | 25.9 | 4.6 | 92.5 | 14.9 | 21.9 | 29.9 |
-| PINN | 81.5 | 61.3 | 52.2 | 53.3 | 91.0 | 26.6 | 30.8 | 49.9 |
-| RICE | 75.1 | 31.0 | 19.9 | 27.8 | 70.2 | 10.4 | 8.9 | 10.9 |
-| Robust CLIP | 63.0 | 29.5 | 15.7 | 25.6 | 73.3 | 15.4 | 10.4 | 18.3 |
-| Sample-specific Masks | 82.0 | 53.8 | 28.0 | 21.3 | 67.1 | 25.4 | 33.3 | 36.8 |
-| SAPG | 86.5 | 29.0 | 21.5 | 24.2 | 73.8 | 11.4 | 12.7 | 19.9 |
-| Sequential Neural Score Estimation | 78.0 | 45.7 | 21.5 | 42.6 | 87.0 | 53.5 | 60.2 | 64.9 |
-| Stay on Topic with Classifier-Free Guidance | 58.5 | 25.3 | 21.2 | 22.2 | 70.5 | 8.4 | 13.7 | 20.1 |
-| Stochastic Interpolants | 80.8 | 39.1 | 21.5 | 29.9 | 81.5 | 17.0 | 17.4 | 18.8 |
-| Test-Time Model Adaptation | 75.6 | 54.9 | 23.8 | 47.1 | 64.9 | 15.3 | 18.1 | 32.5 |
-| What Will My Model Forget | 87.6 | 16.8 | 8.4 | 10.7 | 80.8 | 6.6 | 9.0 | 17.9 |
-| **Mean** | **73.7** | **39.7** | **21.6** | **25.6** | **73.5** | **19.3** | **20.6** | **30.5** |
-
-## Additional Reported Baselines
-
-These rows are useful context but are not the primary same-backbone comparison because they differ in scaffold, backbone, runtime budget, or reporting protocol.
-
-| Method | Backbone / setting | Reported score |
-| --- | --- | ---: |
-| BasicAgent | Gemini-2.0-Flash | 5.0 |
-| BasicAgent | o3-mini | 5.1 |
-| BasicAgent | GPT-4o | 7.7 |
-| BasicAgent | o1 | 19.5 |
-| BasicAgent | Claude-3.5-Sonnet | 35.4 |
-| IterativeAgent | o3-mini | 16.4 |
-| IterativeAgent | Claude-3.5-Sonnet | 27.5 |
-| IterativeAgent | o1 | 43.3 |
-| RePro | o3-mini, PRroot@5 | 62.6 |
-
-## Repository Layout
-
-```text
-reproagent/                 Core Python package and pipeline implementation.
-ablation/
-  no_implementation_requirement/
-                             Runner for disabling implementation requirements.
-  no_reference_evidence/    Runner for disabling reference evidence.
-experiment_runners/         Batch runners for the full and ablated variants.
-fig/                        README figures.
-run_paperbench.py           Main CLI entrypoint.
-requirements.txt            Python dependencies.
-.env.example                Environment-variable template.
-```
-
-## Setup
-
-Create a Python environment and install dependencies:
+Create an environment and install dependencies:
 
 ```bash
 python -m venv .venv
@@ -116,13 +40,13 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Create a local `.env` from the template:
+Create a local environment file and fill in the model endpoint variables:
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in the model endpoints used by your run, for example:
+At minimum, configure the node and structured-stage model settings:
 
 ```bash
 PAPERBENCH_REPRO_NODE_MODEL=gemini-3-flash-preview
@@ -133,125 +57,85 @@ PAPERBENCH_REPRO_STRUCTURED_STAGE_API_KEY=...
 PAPERBENCH_REPRO_STRUCTURED_STAGE_BASE_URL=...
 ```
 
-Reference-evidence search benefits from `PAPERBENCH_REPRO_GITHUB_TOKEN`, but the pipeline can run without it.
+Place PaperBench-style cases under `paperbench_data/<paper-id>/`, or pass an explicit data root. Run one case through generation and repair:
 
-## Data
-
-The CLI expects PaperBench-style case folders containing the paper text and metadata. By default it looks under:
-
-```text
-paperbench_data/<paper-id>/
+```bash
+python run_paperbench.py rice --stage repair
 ```
 
-You can also pass an explicit data root:
+Run only through repository generation:
 
 ```bash
 python run_paperbench.py rice --data-root /path/to/paperbench_data --stage generate
 ```
 
-## Run ReproAgent
+Outputs are written to `output/reproagent/<run-id>/`. The PaperBench benchmark and data format are documented in the [PaperBench repository](https://github.com/openai/frontier-evals/tree/main/project/paperbench).
 
-Run the full pipeline for one paper:
+## 4. Experiments and Findings
 
-```bash
-python run_paperbench.py rice --stage repair
-```
+We evaluate on PaperBench Code-Dev, a 20-task suite of ICML 2024 paper-reproduction problems. Scores are macro-averaged percentages; higher is better.
 
-Run only through generation:
+### Full-Suite Comparison
 
-```bash
-python run_paperbench.py rice --stage generate
-```
+| System | Backbone / setting | Mean score |
+| --- | --- | ---: |
+| PaperCoder | reported setting | 45.1 |
+| AutoP2C | reported setting | 49.2 |
+| AutoReproduce | reported setting | 49.6 |
+| Deep-Reproducer | reported setting | 63.2 |
+| DeepCode | reported setting | 73.5 |
+| **ReproAgent** | **Claude-Sonnet-4.5** | **73.7** |
 
-Use a stable run id:
+### Same-Backbone Comparison
 
-```bash
-python run_paperbench.py rice --run-id main_rice --stage repair
-```
+All systems use Gemini-3-Flash in this controlled comparison.
 
-Outputs are written under:
+| System | Mean score |
+| --- | ---: |
+| BasicAgent | 19.3 |
+| IterAgent | 20.6 |
+| AiScientist | 30.5 |
+| **ReproAgent** | **39.7** |
+
+### Channel Ablations
+
+| Setting | Mean | Median | Drop from full |
+| --- | ---: | ---: | ---: |
+| Full contract | 39.7 | 41.8 | - |
+| Without reference evidence | 21.6 | 21.4 | -18.1 |
+| Without implementation requirements | 25.6 | 24.6 | -14.1 |
+
+The full contract achieves the best mean score among same-backbone scaffolds under both Claude-Sonnet-4.5 and Gemini-3-Flash. It also outperforms both channel ablations on all 20 targets. The results show that the two channels are complementary: the requirement channel preserves paper-specific obligations, while the evidence channel grounds repository-level implementation choices.
+
+Per-paper scores, ablation outputs, generated repositories, and supporting artifacts are stored on the [`experiment` branch](https://github.com/kernel-14/ReproAgent/tree/experiment).
+
+## 5. Repository Architecture
 
 ```text
-output/reproagent/<run-id>/
+reproagent/                 Core Python package and pipeline implementation.
+  pipeline/
+    nodes/                  Prepare, Plan, Generate, and Repair stages.
+    utils/                  Planning, evidence, generation, validation, and storage utilities.
+    paperbench_cli.py       PaperBench command-line entry point.
+ablation/                   Runners for the two channel ablations.
+experiment_runners/         Batch runners for the full and ablated settings.
+fig/                        Architecture and pipeline figures.
+run_paperbench.py           Top-level CLI entry point.
+requirements.txt            Python dependencies.
+.env.example                Environment-variable template.
 ```
 
-## Resume
+The `main` branch contains the source code and documentation. The [`experiment` branch](https://github.com/kernel-14/ReproAgent/tree/experiment) contains experiment data and generated outputs.
 
-Resume generation after an interrupted local-file-generation stage:
+## 6. Citation
 
-```bash
-python run_paperbench.py rice \
-  --resume-from-run-id main_rice \
-  --resume-in-place \
-  --resume-start-stage local_file_generation \
-  --stage generate
+```bibtex
+@article{hu2026reproagent,
+  title         = {ReproAgent: Contract-Guided Paper-to-Code Reproduction},
+  author        = {Hu, Xue and Pan, Zewei and Wang, Zhongyuan and Liu, Zhou and Su, Zeli and Zhang, Wentao},
+  journal       = {arXiv preprint arXiv:2608.24291},
+  year          = {2026},
+  doi           = {10.48550/arXiv.2608.24291},
+  url           = {https://arxiv.org/abs/2608.24291}
+}
 ```
-
-Resume repair:
-
-```bash
-python run_paperbench.py rice \
-  --resume-from-run-id main_rice \
-  --resume-in-place \
-  --resume-start-stage repair_validation \
-  --stage repair
-```
-
-## Ablations
-
-Run without implementation requirements:
-
-```bash
-python ablation/no_implementation_requirement/run_ablation.py rice --stage repair
-```
-
-Equivalent environment switch:
-
-```bash
-export PAPERBENCH_REPRO_DISABLE_IMPLEMENTATION_REQUIREMENTS=1
-python run_paperbench.py rice --stage repair
-```
-
-Run without reference evidence:
-
-```bash
-python ablation/no_reference_evidence/run_ablation.py rice --stage repair
-```
-
-Equivalent CLI switch:
-
-```bash
-python run_paperbench.py rice --no-clone-references --stage repair
-```
-
-## Batch Runners
-
-Run all configured PaperBench cases for the main variant:
-
-```bash
-bash experiment_runners/run_main_experiment.sh
-```
-
-Run all cases for the two ablations:
-
-```bash
-bash experiment_runners/run_no_implementation_requirement.sh
-bash experiment_runners/run_no_reference_evidence.sh
-```
-
-Pass paper ids to run a subset:
-
-```bash
-bash experiment_runners/run_main_experiment.sh rice pinn
-```
-
-By default the runners execute `--stage repair`. To stop after generation:
-
-```bash
-REPROAGENT_STAGE=generate bash experiment_runners/run_main_experiment.sh rice
-```
-
-## PaperBench Resources
-
-- Benchmark repository: https://github.com/openai/frontier-evals/tree/main/project/paperbench
-- Dataset directory: https://github.com/openai/frontier-evals/tree/main/project/paperbench/data
