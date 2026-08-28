@@ -4,6 +4,8 @@
   <a href="https://arxiv.org/abs/2608.24291"><img src="https://img.shields.io/badge/arXiv-2608.24291-b31b1b.svg?logo=arxiv&logoColor=white" alt="arXiv"></a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://github.com/kernel-14/ReproAgent"><img src="https://img.shields.io/badge/GitHub-ReproAgent-181717.svg?logo=github&logoColor=white" alt="GitHub"></a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
 </p>
 
 ## 1. Overview
@@ -139,3 +141,7 @@ The `main` branch contains the source code and documentation. The [`experiment` 
   url           = {https://arxiv.org/abs/2608.24291}
 }
 ```
+
+## 7. License
+
+ReproAgent is released under the [MIT License](LICENSE).
