@@ -140,6 +140,15 @@ def _should_stop_pipeline(state: PaperBenchReproState) -> bool:
     }
 
 
+def _should_skip_repair(state: PaperBenchReproState) -> bool:
+    """Repair runs unless generation failed outright.
+
+    The completed_* statuses that stop the earlier stages (runtime risk, degraded contract,
+    unverified) are exactly the cases repo-level repair is meant to fix.
+    """
+    return str(getattr(state, "status", "") or "") == "failed"
+
+
 def _normalize_resume_start_stage(stage_name: str) -> str:
     normalized = str(stage_name or "").strip()
     return _RESUME_STAGE_ALIASES.get(normalized, normalized)
@@ -201,7 +210,7 @@ def run_stage(repro_input: PaperBenchReproInput, *, stage: str, run_id: str = ""
         if _should_stop_pipeline(state):
             return state
         state = workflow.generate_node(state)
-        if _should_stop_pipeline(state) or not str(getattr(state, "project_root", "") or "").strip():
+        if _should_skip_repair(state) or not str(getattr(state, "project_root", "") or "").strip():
             return state
         state = workflow.repair_node(state)
         return state

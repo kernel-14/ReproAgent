@@ -1356,6 +1356,111 @@ class RepoAgentEngine:
                 return candidate
         return ""
 
+    _SPEC_SHEET_PROMPT = (
+        "Read the paper below and extract a specification sheet for re-implementing it in code.\n"
+        "Return one JSON object with these keys, each a list of objects:\n"
+        '- "hyperparameters": {"name", "value", "applies_to", "quote"} for every numeric setting '
+        "(learning rates, batch sizes, epochs/steps, dimensions, layer counts, coefficients, thresholds, seeds).\n"
+        '- "equations": {"name", "formula", "variables", "applies_to"} for every loss, update rule, metric '
+        "and model equation; write formulas in plain text math.\n"
+        '- "algorithms": {"name", "steps"} for every algorithm or procedure, steps in order.\n'
+        '- "architecture": {"component", "details"} for model components with sizes and wiring.\n'
+        '- "protocol": {"item", "details"} for datasets, splits, preprocessing, baselines, ablations, '
+        "evaluation metrics and how they are computed, training schedule, hardware and repetitions.\n"
+        "Copy numbers exactly as written. Keep each entry short (quotes under 15 words) and the whole sheet "
+        "under about 200 entries. Do not invent anything not in the paper.\n\n"
+        "Paper:\n"
+    )
+    _SPEC_SHEET_MAX_CHARS = 24000
+
+    def _paper_spec_sheet(self, state: Any) -> str:
+        """Paper-derived spec sheet (one LLM call per run, cached in the generate node dir)."""
+        cache = self._node_dir() / "paper_spec_sheet.json"
+        if cache.exists():
+            return cache.read_text(encoding="utf-8")
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        paper_input = getattr(state, "input", None)
+        paper = str(getattr(paper_input, "paper_text", "") or "")
+        paper_path = str(getattr(paper_input, "paper_path", "") or "")
+        if not paper and paper_path and Path(paper_path).is_file():
+            paper = Path(paper_path).read_text(encoding="utf-8", errors="replace")
+        sheet = ""
+        if paper.strip():
+            try:
+                raw = LLMWorkflowAgent(node_name="file_generation").execute(
+                    self._SPEC_SHEET_PROMPT + paper, {}, output_mode="text"
+                )
+                text = str(raw or "")
+                match = re.search(r"\{.*\}", text, flags=re.DOTALL)
+                try:
+                    parsed = json.loads(match.group(0)) if match else None
+                except json.JSONDecodeError:
+                    parsed = None
+                if isinstance(parsed, dict):
+                    sheet = json.dumps(parsed, ensure_ascii=False, indent=1)
+                elif "{" in text:
+                    # Long papers can exhaust the output budget mid-sheet; the partial sheet is still usable.
+                    sheet = text[text.index("{"):]
+            except Exception as exc:  # the sheet is an aid; generation proceeds without it
+                sheet = ""
+                (self._node_dir() / "paper_spec_sheet.error.txt").write_text(f"{type(exc).__name__}: {exc}", encoding="utf-8")
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(sheet, encoding="utf-8")
+        return sheet
+
+    def _with_paper_spec(self, prompt: str, iteration_context: dict[str, Any] | None) -> str:
+        state = (iteration_context or {}).get("state") if isinstance(iteration_context, dict) else None
+        if not isinstance(state, PaperBenchReproState):
+            return prompt
+        sheet = self._paper_spec_sheet(state)
+        guidance = (
+            "Implementation priority: the code must carry out the paper's computations. Write the equations as code, "
+            "implement the algorithms step by step, build the architecture with the stated sizes, and use the paper's "
+            "numeric settings as the actual defaults that the training/evaluation code reads. A registry entry, selector "
+            "name, manifest, artifact writer, comment or docstring that names a method is not an implementation of it; "
+            "spend this file on real logic first and keep scaffolding minimal."
+        )
+        block = guidance
+        if sheet:
+            block += (
+                "\n\nPaper specification sheet (extracted from the paper; implement the entries that belong to this file "
+                "with exactly these values and formulas):\n" + sheet[: self._SPEC_SHEET_MAX_CHARS]
+            )
+        head, sep, tail = prompt.partition("\n\nTarget:\n")
+        if sep:
+            return f"{head}\n\n{block}{sep}{tail}"
+        return f"{prompt}\n\n{block}"
+
+    def _diagnose_unusable_output(self, response: str, task_manifest: dict[str, Any]) -> str:
+        """Explain why a generation response yielded no file, so the retry can fix it."""
+        text = str(response or "").strip()
+        if not text:
+            return "No files were produced by the generator: the response was empty."
+        task_inputs = list(task_manifest.get("task_inputs", []) or [])
+        target_file = ""
+        if task_inputs and isinstance(task_inputs[0], dict):
+            target_file = str(task_inputs[0].get("file_path", "") or "").strip()
+        body = text
+        match = re.search(r"```[A-Za-z0-9_+.-]*\n(.*?)(?:```|$)", text, flags=re.DOTALL)
+        if match:
+            body = match.group(1)
+        line_count = body.count("\n") + 1
+        if target_file.endswith(".py"):
+            try:
+                ast.parse(body)
+            except SyntaxError as exc:
+                bad_line = ""
+                lines = body.splitlines()
+                if exc.lineno and 0 < exc.lineno <= len(lines):
+                    bad_line = lines[exc.lineno - 1].strip()[:200]
+                return (
+                    f"No files were produced by the generator: the Python code for {target_file} "
+                    f"({line_count} lines) does not parse. SyntaxError at line {exc.lineno}: {exc.msg}. "
+                    f"Offending line: {bad_line!r}. "
+                    + ("The code block was not closed, so the output was probably cut off. " if text.count("```") % 2 else "")
+                )
+        return f"No files were produced by the generator for {target_file or 'the target file'} ({line_count} lines returned)."
+
     def _parse_updated_files(
         self,
         response: str,
@@ -1523,6 +1628,7 @@ class RepoAgentEngine:
             ),
         )
 
+        prompt = self._with_paper_spec(prompt, iteration_context)
         if self.output_dir is not None:
             (task_dir / "current_prompt.md").write_text(prompt, encoding="utf-8")
 
@@ -1568,7 +1674,7 @@ class RepoAgentEngine:
             "success": bool(updated_files),
             "output": response,
             "raw_output": response,
-            "error": "" if updated_files else "No files were produced by the generator.",
+            "error": "" if updated_files else self._diagnose_unusable_output(response, task_manifest),
             "usage": {},
         }
         project_files = merge_project_files(previous_files, updated_files)
