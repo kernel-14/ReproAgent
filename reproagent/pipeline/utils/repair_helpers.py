@@ -837,11 +837,18 @@ def materialize_selected_tasks(
                 and not attempt_generated_files
                 and not bool(dict(generated.get("agent_result", {}) or {}).get("success", False))
             ):
+                agent_error = str(dict(generated.get("agent_result", {}) or {}).get("error", "") or "").strip()
                 task_suggestions = [
                     "Previous generation agent call did not produce the target file. Create or update the target file on disk before summarizing.",
+                    *([agent_error[:600]] if agent_error else []),
+                    "Return the complete target file in a single fenced code block that parses. Keep it focused: "
+                    "move bulky literal data (long tables, docstrings, repeated templates) out of the code and "
+                    "prefer compact helper functions so the file fits in one response.",
                     *task_suggestions,
                 ][:10]
                 latest_suggestions = list(task_suggestions)
+                if attempt_index + 1 < max_task_attempts:
+                    continue
                 break
             if not task_review_result["success"]:
                 if not first_failed_checks:
